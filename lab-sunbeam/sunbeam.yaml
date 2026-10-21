@@ -1,0 +1,18 @@
+core:
+  config:
+    bootstrap:
+      management_cidr: 192.168.56.0/24
+    database: single
+    region: RegionOne
+    k8s-addons:
+      loadbalancer: 192.168.56.200-192.168.56.220
+    endpoints:
+      ingress-public:
+        ip: 192.168.56.201
+        hostname: cloud.lab.test
+      ingress-internal:
+        ip: 192.168.56.202
+        hostname: internal.lab.test
+      ingress-rgw:
+        ip: 192.168.56.203
+        hostname: rgw.lab.test

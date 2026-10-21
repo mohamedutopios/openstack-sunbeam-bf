@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenStack Sunbeam — Mise en place : du lab à la production</title>
+<style>
+:root{--ink:#0f172a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;--navy:#101a33;--red:#e4002b;--red2:#b3122f;--blue:#2563eb;--teal:#0d9488;--amber:#d97706;--violet:#7c3aed;--green:#16a34a;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;--z:.2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#070b17;overflow:hidden;font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:#fff;color:var(--ink);padding:38px 64px 46px;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide>header{border-left:5px solid var(--red);padding:2px 0 2px 18px;margin-bottom:18px;flex:none}
+.kick{display:block;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+h2{font-size:32px;line-height:1.15;letter-spacing:-.012em;font-weight:750}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;font-size:17.5px;line-height:1.45;color:var(--ink2)}
+.body b,.body strong{color:var(--ink);font-weight:680}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;min-height:0}
+.cols.c3{grid-template-columns:repeat(3,1fr);gap:18px}
+.cols.c4{grid-template-columns:repeat(4,1fr);gap:14px}
+.cols.c5{grid-template-columns:repeat(5,1fr);gap:12px}
+.cols.w64{grid-template-columns:1.45fr 1fr}
+.cols.w46{grid-template-columns:1fr 1.35fr}
+.cols.nf{flex:none}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+ul.pts{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.pts li{padding-left:22px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.52em;width:8px;height:8px;border-radius:2px;background:var(--red)}
+ul.pts.sm{gap:5px;font-size:15px;line-height:1.38}
+ul.pts.sm li{padding-left:17px}
+ul.pts.sm li::before{width:6px;height:6px;top:.5em}
+.card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--c,var(--red));border-radius:10px;padding:13px 16px;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:15px;line-height:1.4;min-width:0}
+.card h3{font-size:16.5px;color:var(--ink);margin-bottom:5px;line-height:1.2}
+.card .os{display:block;margin-top:7px;font-size:13px;color:var(--mut)}
+.card .os b{color:var(--red2)}
+.cb{--c:var(--blue)}.ct{--c:var(--teal)}.ca{--c:var(--amber)}.cv{--c:var(--violet)}.cg{--c:var(--green)}.cn{--c:var(--navy)}
+.note{background:#fff5f6;border-left:4px solid var(--red);padding:9px 16px;border-radius:0 8px 8px 0;font-size:15.5px;color:var(--ink);flex:none}
+.note.b{background:#eff5ff;border-color:var(--blue)}
+.note.g{background:#f1f5f9;border-color:#64748b}
+table.tbl{width:100%;border-collapse:collapse;font-size:14.5px;line-height:1.35}
+.tbl th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-size:13px;letter-spacing:.03em;font-weight:650}
+.tbl td{padding:6.5px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:nth-child(even) td{background:#f8fafc}
+.tbl td:first-child{font-weight:680;color:var(--ink);white-space:nowrap}
+.tbl.os td:nth-child(2){color:var(--red2);font-weight:650}
+.tbl.tight td{padding:5px 12px;font-size:14px}
+table.resp{width:100%;border-collapse:separate;border-spacing:5px 4px;font-size:14.5px;text-align:center}
+.resp thead th{font-size:15px;color:var(--ink);padding:2px 4px 6px;line-height:1.2}
+.resp thead small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+.resp tbody th{text-align:right;padding-right:12px;font-weight:650;color:var(--ink);white-space:nowrap;width:210px}
+.resp td{padding:6px;border-radius:6px;font-weight:600}
+.resp .u{background:#e3edff;color:#1d4ed8}
+.resp .p{background:#fde8ec;color:var(--red2)}
+code{font-family:var(--mono);font-size:.87em;background:#f1f5f9;padding:1px 6px;border-radius:4px;color:var(--ink)}
+pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;font:13.5px/1.5 var(--mono);white-space:pre;overflow:hidden}
+pre .c{color:#7dd3fc}pre .k{color:#fda4af}pre .m{color:#94a3b8}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:#fde8ec;color:var(--red2);letter-spacing:.03em}
+.fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:100%}
+.foot{position:absolute;left:64px;right:64px;bottom:15px;display:flex;justify-content:space-between;font-size:11.5px;color:#94a3b8;letter-spacing:.02em}
+/* dark slides */
+.slide.dark{background:radial-gradient(1100px 600px at 85% 15%,#1c2a55 0%,var(--navy) 55%,#0b1226 100%);color:#fff;justify-content:center}
+.dark .foot{color:#64748b}
+.dark .kick{color:#ff6b84}
+h1{font-size:68px;line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:10px 0 14px}
+.sub{font-size:27px;color:#cbd5e1;font-weight:400}
+.chips{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin-top:34px}
+.chips li{border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:7px 16px;font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.04)}
+.ref{margin-top:36px;font-size:14px;color:#94a3b8}
+.deco{position:absolute;right:0;top:0;width:1280px;height:720px;pointer-events:none}
+.tt{position:relative;max-width:760px}
+.sec .num{font-size:150px;font-weight:800;line-height:.9;color:transparent;-webkit-text-stroke:2px #ff4d6a;letter-spacing:-.04em}
+.sec h2{font-size:50px;margin:16px 0 12px;letter-spacing:-.02em}
+.sec p{font-size:20px;color:#cbd5e1;max-width:820px;line-height:1.45}
+.sec ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:9px 40px;margin-top:30px;max-width:980px;font-size:16.5px;color:#e2e8f0}
+.sec ol li{padding-left:20px;position:relative}
+.sec ol li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:3px;background:#ff4d6a}
+/* svg */
+svg{display:block}
+svg{font-size:14px}
+svg text{font-family:inherit;fill:#0f172a}
+svg g.ts text{fill:#475569}svg g.tw text{fill:#fff}
+.big .card{font-size:17px;padding:18px 16px;display:flex;flex-direction:column;line-height:1.42}.big .card h3{font-size:19px;margin-bottom:12px}.big .card .os{font-size:14.5px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line);line-height:1.4}
+.dense .card{font-size:14px;padding:10px 14px;line-height:1.36}.dense .card h3{font-size:15.5px;margin-bottom:3px}
+.tc{text-anchor:middle}.te{text-anchor:end}
+svg .tb{font-weight:700}svg .ts{font-size:12px;fill:#475569}svg .tl{font-size:17px;font-weight:750}svg .tw{fill:#fff}svg .tr{fill:#b3122f}
+svg .tm{font-family:var(--mono);font-size:12px}
+.bx{fill:#fff;stroke:#94a3b8;stroke-width:1.5}
+.b-red{fill:#fde8ec;stroke:#e4002b;stroke-width:1.5}
+.b-blue{fill:#e3edff;stroke:#2563eb;stroke-width:1.5}
+.b-teal{fill:#d8f3ee;stroke:#0d9488;stroke-width:1.5}
+.b-amber{fill:#fdf0d5;stroke:#d97706;stroke-width:1.5}
+.b-violet{fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5}
+.b-green{fill:#dcf5e3;stroke:#16a34a;stroke-width:1.5}
+.b-grey{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5}
+.b-dark{fill:#101a33;stroke:#101a33}
+.f-red{fill:#e4002b}
+.zone{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 4}
+.ln{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar)}
+.ln2{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar);marker-start:url(#ar)}
+.lr{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr)}
+.lr2{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr);marker-start:url(#arr)}
+.ld{stroke-dasharray:5 4}
+.nl{stroke:#94a3b8;stroke-width:1.5;fill:none}
+/* ui */
+#bar{position:fixed;left:0;bottom:0;height:3px;background:var(--red);width:0;transition:width .2s;z-index:5}
+#nav{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;display:flex;gap:6px;z-index:6;opacity:.07;transition:opacity .2s}
+#nav:hover{opacity:1}
+#nav button{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;font:600 13px/1 inherit;padding:7px 10px;cursor:pointer}
+#nav button:hover{background:var(--red);border-color:var(--red)}
+body.ov{overflow:auto}
+body.ov #stage{position:static;margin:0;width:auto;height:auto;transform:none!important;display:flex;flex-wrap:wrap;gap:14px;padding:20px}
+body.ov .slide{display:flex;position:relative;inset:auto;flex:none;width:1280px;height:720px;zoom:var(--z);cursor:pointer;border-radius:8px}
+body.ov .slide.active{outline:14px solid var(--red)}
+@page{size:1280px 720px;margin:0}
+@media print{
+html,body{height:auto;overflow:visible;background:#fff}
+#stage{position:static;margin:0;width:1280px;height:auto;transform:none!important;display:block}
+.slide{display:flex!important;position:relative;inset:auto;width:1280px;height:720px;break-after:page;page-break-after:always;zoom:1!important}
+#bar,#nav{display:none}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.la{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA)}.la2{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA);marker-start:url(#arA)}
+.lt{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT)}.lt2{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT);marker-start:url(#arT)}
+.lb{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB)}.lb2{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB);marker-start:url(#arB)}
+svg text.fa,svg .fa{fill:#b45309}svg text.ft,svg .ft{fill:#0f766e}svg text.fb,svg .fb{fill:#1d4ed8}
+.tbl td.c,.tbl th.c{text-align:center}.tbl td.y{color:#16a34a;font-weight:800}.tbl td.n{color:#cbd5e1}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e4002b"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+<marker id="arT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker>
+<marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+</defs></svg>
+<div id="stage">
+
+<style>
+.tbl.xs td{font-size:12.8px;padding:5px 9px;line-height:1.32}
+.tbl.xs th{font-size:12.2px;padding:7px 9px}
+.tbl.xs td:first-child{white-space:normal}
+.tbl.wrap td:first-child{white-space:normal}
+pre.xs{font-size:11.6px;line-height:1.42;padding:11px 13px}
+pre.s{font-size:12.4px;line-height:1.45}
+.steps{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:8px 22px;counter-reset:s}
+.steps li{position:relative;padding-left:40px;font-size:15.5px;line-height:1.35;counter-increment:s}
+.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--navy);color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
+.steps li.lab::before{background:var(--teal)}
+.steps li.prod::before{background:var(--red)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14.5px}
+.kv b{color:var(--ink)}
+.did{background:#ecfdf5;border-left:4px solid var(--green);padding:8px 14px;border-radius:0 8px 8px 0;font-size:14.5px;color:var(--ink);flex:none}
+.did b{color:#15803d}
+</style>
+
+<!-- 1 -->
+<section class="slide dark">
+<svg class="deco" viewBox="0 0 1280 720" aria-hidden="true"><g transform="translate(-60,0)">
+<g fill="none" stroke="#ff4d6a" stroke-width="2" opacity=".85">
+<path d="M900,470 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.16)"/>
+<path d="M900,400 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.24)"/>
+<path d="M900,330 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.34)"/>
+<path d="M900,260 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.5)"/>
+</g>
+<g font-weight="700" letter-spacing="2" style="font-size:12px"><text x="1210" y="264" style="fill:#cbd5e1">CONFIGURE</text><text x="1210" y="334" style="fill:#cbd5e1">BOOTSTRAP</text><text x="1210" y="404" style="fill:#cbd5e1">MANIFESTE</text><text x="1210" y="474" style="fill:#cbd5e1">RÉSEAU</text></g>
+</g></svg>
+<div class="tt">
+<span class="kick">Support de formation</span>
+<h1>Mettre en place OpenStack Sunbeam</h1>
+<p class="sub">De zéro au lab de formation (Lab-Sunbeam + Lab-Services), puis un déploiement de production simulé : 3 nœuds de contrôle, 2 nœuds de calcul, 1 nœud de stockage</p>
+<ul class="chips"><li>VirtualBox · netplan · dnsmasq</li><li>Manifeste</li><li>bootstrap · join · resize</li><li>MicroCeph · OVN · MetalLB</li><li>MAAS</li></ul>
+<p class="ref">Références : Canonical OpenStack 2024.1 (snap <code>openstack</code> rev 1101), lab construit du 9 au 18 octobre 2026 · documentation Canonical consultée en octobre 2026</p>
+</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Objectif et déroulé</h2></header>
+<div class="body">
+<div class="note"><b>Objectif :</b> savoir dérouler, dans le bon ordre et avec les bonnes commandes, la mise en place d'un cloud Sunbeam — en comprenant à chaque étape ce qui est créé, et en distinguant ce qui est propre au lab de ce qu'exige une production.</div>
+<div class="cols">
+<div class="col">
+<p><b>À l'issue de ce module, vous saurez :</b></p>
+<ul class="pts">
+<li>Nommer les <b>briques</b> qu'installe Sunbeam et les <b>rôles</b> d'un nœud.</li>
+<li>Préparer le <b>réseau</b> (gestion, externe, stockage), le <b>DNS</b> et les <b>disques</b> avant d'installer.</li>
+<li>Écrire un <b>manifeste</b> et lancer <code>bootstrap</code>, <code>join</code>, <code>resize</code>, <code>configure</code>.</li>
+<li>Expliquer, commande par commande, <b>comment le lab a été construit</b> et ce qu'il a fallu corriger.</li>
+<li>Dérouler un déploiement <b>3 contrôle + 2 calcul + 1 stockage</b> et en juger les limites.</li>
+</ul>
+</div>
+<div class="col dense">
+<div class="card"><h3>1 · Ce qu'est un déploiement Sunbeam</h3>Briques, rôles, réseaux, et l'ordre des étapes — commun au lab et à la production.</div>
+<div class="card ct"><h3>2 · Le lab, de zéro</h3>VirtualBox, Lab-Services (DNS, NAT, Keycloak), Lab-Sunbeam (manifeste, bootstrap, configure), corrections après import.</div>
+<div class="card cn"><h3>3 · Une production simulée : 3 + 2 + 1</h3>Inventaire, plan d'adressage, netplan, manifeste, bootstrap HA, nœuds de calcul et de stockage, durcissement, MAAS.</div>
+<div class="card cg"><h3>Synthèse</h3>Lab contre production : ce qui change, ce qu'il faut retenir.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 3 -->
+<section class="slide dark sec">
+<div class="num">01</div>
+<h2>Ce qu'est un déploiement Sunbeam</h2>
+<p>Sunbeam n'installe pas OpenStack « à la main » : il pilote Juju, qui déploie des charms sur Kubernetes et sur les machines. Comprendre cette chaîne, c'est comprendre pourquoi les étapes sont dans cet ordre.</p>
+<ol><li>Les briques</li><li>Les rôles d'un nœud</li><li>Les réseaux</li><li>Les étapes, dans l'ordre</li></ol>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+<header><span class="kick">1 · Ce qu'est un déploiement Sunbeam</span><h2>Les briques : qui installe quoi</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 400">
+<g class="tc">
+<rect x="20" y="20" width="250" height="120" rx="12" class="b-red"/><text x="145" y="52" class="tl tr">snap openstack</text><text x="145" y="76" class="ts">la commande <tspan class="tm">sunbeam</tspan></text><text x="145" y="94" class="ts">le démon sunbeamd (cluster)</text><text x="145" y="112" class="ts">les manifestes, les plans Terraform</text>
+<path d="M270,80 L330,80" class="lr"/>
+<rect x="335" y="20" width="250" height="120" rx="12" class="b-amber"/><text x="460" y="52" class="tl">Juju</text><text x="460" y="76" class="ts">contrôleur sur Kubernetes</text><text x="460" y="94" class="ts">modèles : controller, openstack,</text><text x="460" y="112" class="ts">openstack-machines</text>
+<path d="M585,80 L645,80" class="la"/>
+<rect x="650" y="20" width="480" height="120" rx="12" class="b-blue"/><text x="890" y="52" class="tl">Charms</text><text x="890" y="76" class="ts">sur Kubernetes : keystone-k8s, nova-k8s, neutron-k8s, glance-k8s, cinder-k8s,</text><text x="890" y="94" class="ts">horizon-k8s, placement-k8s, mysql-k8s, rabbitmq-k8s, ovn-central-k8s, traefik-k8s…</text><text x="890" y="112" class="ts">sur les machines : k8s, microceph, openstack-hypervisor, cinder-volume, sunbeam-machine</text>
+<rect x="20" y="200" width="1110" height="60" rx="12" class="b-grey"/><text x="575" y="224" class="tb">Snaps installés sur chaque nœud, selon son rôle</text><text x="575" y="246" class="ts tm">openstack · juju · k8s (contrôle) · microceph (stockage) · openstack-hypervisor (calcul) · cinder-volume</text>
+<rect x="20" y="290" width="1110" height="90" rx="12" class="b-teal"/><text x="575" y="316" class="tb">Ce que vous écrivez vous-même</text><text x="575" y="338" class="ts">le réseau du nœud (netplan), le DNS, les disques libres, le manifeste YAML — tout le reste est déduit par Sunbeam</text><text x="575" y="360" class="ts">Sur le lab : snap openstack 2024.1 rev 1101, Juju 3.6.29, k8s 1.32.13, MicroCeph 19.2.3 (squid), openstack-hypervisor 2024.1</text>
+</g>
+</svg>
+</div>
+<div class="note b"><b>Conséquence :</b> on ne modifie jamais un service dans son pod ou son snap. On agit par le manifeste, par <code>sunbeam</code>, ou par la configuration des charms (<code>juju config</code>). Sinon, la prochaine action de Sunbeam écrase la modification.</div>
+</div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+<header><span class="kick">1 · Ce qu'est un déploiement Sunbeam</span><h2>Les rôles d'un nœud : control, compute, storage</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th style="width:14%">Rôle</th><th style="width:36%">Ce qui tourne sur le nœud</th><th style="width:26%">Ce qu'il lui faut</th><th>Combien pour une production</th></tr></thead>
+<tbody>
+<tr><td>control</td><td>le snap <code>k8s</code>, donc le plan de contrôle OpenStack (les charms <code>*-k8s</code>), MySQL, RabbitMQ, OVN central, Traefik, et le contrôleur Juju</td><td>CPU et RAM pour Kubernetes (4 GiB) et le plan de contrôle (10 GiB), réseau de gestion</td><td><b>3</b> : Kubernetes, MySQL et Juju deviennent redondants à 3 ; 1 ou 2 n'apportent aucune tolérance de panne</td></tr>
+<tr><td>compute</td><td>le snap <code>openstack-hypervisor</code> : nova-compute, libvirt/KVM, l'agent OVN (chassis), Open vSwitch</td><td>VT-x/AMD-V, RAM pour les instances, carte sur le réseau externe (sans adresse)</td><td>autant que la charge ; <b>2</b> au minimum pour pouvoir évacuer un hôte</td></tr>
+<tr><td>storage</td><td>le snap <code>microceph</code> : OSD, MON, MGR, RGW ; sert Glance, Cinder, Nova (disques des VM) et le stockage objet</td><td>des disques <b>vides</b>, dédiés, un par OSD (5 GiB de RAM par OSD) ; réseau de stockage</td><td><b>3</b> : Ceph réplique chaque objet sur 3 hôtes ; en dessous, pas de résilience</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="col">
+<div class="note"><b>Un nœud peut cumuler les rôles.</b> Le lab est un seul nœud <code>control,compute,storage</code>. Les trois nœuds du tutoriel Canonical cumulent aussi les trois rôles (« hyperconvergé »). Séparer les rôles, c'est isoler les pannes et dimensionner chaque machine pour son travail.</div>
+</div>
+<div class="col">
+<div class="note g"><b>Minimum officiel multi-nœuds (2024.1) :</b> par nœud, 16 cœurs amd64, 32 GiB de RAM, 500 GiB SSD libres pour le système, un SSD de 500 GiB pour Ceph, deux réseaux 1 Gbps. « Trois nœuds sont nécessaires pour un fonctionnement multi-nœuds. »</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+<header><span class="kick">1 · Ce qu'est un déploiement Sunbeam</span><h2>Les réseaux : gestion, externe, stockage</h2></header>
+<div class="body"><div class="cols w64">
+<div class="col">
+<table class="tbl tight wrap">
+<thead><tr><th style="width:22%">Réseau</th><th>Rôle</th><th style="width:26%">Sur le lab</th></tr></thead>
+<tbody>
+<tr><td>gestion<br><small>management</small></td><td>tout le plan de contrôle : Juju, Kubernetes, les API OpenStack entre elles ; MetalLB y prend les <b>adresses virtuelles</b> des API (<code>k8s-addons.loadbalancer</code>) et du contrôleur Juju</td><td><code>192.168.56.0/24</code>, VIP <code>.200</code> (Juju), <code>.201</code> public, <code>.202</code> interne, <code>.203</code> objet</td></tr>
+<tr><td>externe<br><small>external / provider</small></td><td>les <b>IP flottantes</b> des instances ; une carte <b>sans adresse</b> sur chaque nœud compute, prise par Open vSwitch (<code>physnet1</code>)</td><td><code>192.168.57.0/24</code>, passerelle <code>.2</code> (Lab-Services), plage <code>.100-.199</code></td></tr>
+<tr><td>stockage<br><small>storage</small></td><td>trafic Ceph client (Nova, Cinder, Glance → OSD)</td><td>confondu avec la gestion</td></tr>
+<tr><td>stockage interne<br><small>storage-cluster</small></td><td>réplication entre OSD</td><td>un seul nœud : aucun</td></tr>
+<tr><td>interne / public<br><small>internal / public</small></td><td>avec MAAS : séparer les API internes (services entre eux) des API publiques (clients)</td><td>même réseau, deux VIP et deux noms</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<div class="card cb"><h3>Trois adresses à nommer avant d'installer</h3>Le manifeste fixe les VIP et leurs <b>noms</b> (<code>endpoints</code>). Le DNS doit les résoudre <b>avant</b> le bootstrap : les services valident les jetons sur le nom interne. Lab : <code>cloud.lab.test</code>, <code>internal.lab.test</code>, <code>rgw.lab.test</code>.</div>
+<div class="card ca"><h3>La carte externe n'a pas d'adresse</h3>Elle appartient à Open vSwitch. Lui mettre une IP casse le pont. Sur le lab, <code>provider0</code> de Lab-Sunbeam est <code>UP</code> sans adresse ; c'est Lab-Services qui porte <code>.2</code> et fait passerelle.</div>
+<div class="card ct"><h3>MTU</h3>Les réseaux des projets sont encapsulés (Geneve) : MTU 1442 au lieu de 1500. Tout ce qui est passerelle du réseau externe doit l'accepter — la cause du correctif MTU sur Lab-Services.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+<header><span class="kick">1 · Ce qu'est un déploiement Sunbeam</span><h2>Les étapes, dans l'ordre</h2></header>
+<div class="body">
+<ol class="steps">
+<li><b>Dessiner les réseaux</b> et le plan d'adressage : gestion, externe, stockage ; VIP des API ; passerelle du réseau externe.</li>
+<li><b>DNS et noms</b> : chaque nœud a un FQDN ; les trois noms des API résolvent vers les VIP. NTP en place.</li>
+<li><b>Ubuntu Server 24.04</b> sur chaque nœud, netplan écrit, disques Ceph <b>vides</b> et non partitionnés.</li>
+<li><b>Installer le snap</b> : <code>sudo snap install openstack --channel 2024.1/stable</code>, même version partout.</li>
+<li><b>Préparer le nœud</b> : <code>sunbeam prepare-node-script | bash -x</code> (dépendances, sudo sans mot de passe, groupe <code>snap_daemon</code>).</li>
+<li><b>Écrire le manifeste</b> : CIDR de gestion, plage MetalLB, noms des API, base <code>single</code> ou <code>multi</code>, réseau externe, disques Ceph.</li>
+<li><b>Bootstrap</b> sur le premier nœud : <code>sunbeam cluster bootstrap --role … --manifest …</code> — crée Juju, Kubernetes, puis déploie tout.</li>
+<li><b>Joindre</b> les autres nœuds : <code>cluster add</code> (jeton) puis <code>cluster join --role …</code> ; <b>resize</b> quand il y a 3 nœuds de contrôle.</li>
+<li><b>Configurer</b> : <code>sunbeam configure</code> — réseau externe, utilisateur de démonstration, règles de sécurité.</li>
+<li><b>Vérifier, puis durcir</b> : <code>cluster list</code>, <code>juju status</code>, une première VM ; puis TLS, observabilité, sauvegardes.</li>
+</ol>
+<div class="note"><b>Pourquoi cet ordre :</b> le bootstrap grave dans le cluster ce que le manifeste et le réseau lui donnent — CIDR, base <code>single</code>/<code>multi</code>, région, noms des API. Ces choix <b>ne se changent plus</b> ensuite sans tout refaire. Tout ce qui précède l'étape 7 est donc à vérifier deux fois.</div>
+</div>
+</section>
+
+<!-- 8 -->
+<section class="slide dark sec">
+<div class="num">02</div>
+<h2>Le lab, de zéro</h2>
+<p>Deux machines virtuelles sur un PC : Lab-Services fournit le DNS, la passerelle et Keycloak ; Lab-Sunbeam porte tout OpenStack sur un seul nœud. Ce qui suit est ce qui a réellement été fait, avec ses commandes et ses fichiers.</p>
+<ol><li>La cible</li><li>VirtualBox : réseaux et machines</li><li>Lab-Services : DNS, NAT, PKI, Keycloak</li><li>Lab-Sunbeam : système, manifeste, bootstrap, configure</li><li>Ce qu'on obtient</li><li>Ce qu'il a fallu corriger</li></ol>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+<header><span class="kick">2 · Le lab, de zéro</span><h2>La cible : deux VM, trois réseaux, un PC</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th style="width:15%">Machine</th><th style="width:30%">Rôle</th><th style="width:9%">Carte 1</th><th style="width:23%">Carte 2 · gestion <code>192.168.56.0/24</code></th><th>Carte 3 · instances <code>192.168.57.0/24</code></th></tr></thead>
+<tbody>
+<tr><td>Lab-Services</td><td>DNS du lab (dnsmasq), passerelle NAT des deux réseaux, Keycloak (SSO), autorité de certification du lab</td><td>NAT</td><td><code>mgmt0</code> = <code>192.168.56.20</code></td><td><code>provider0</code> = <code>192.168.57.2</code>, MTU 1442</td></tr>
+<tr><td>Lab-Sunbeam</td><td>OpenStack Sunbeam, un nœud <code>control,compute,storage</code> ; MicroCeph sur un disque de 100 Go</td><td>NAT</td><td><code>mgmt0</code> = <code>192.168.56.10</code> + VIP <code>.200</code> à <code>.203</code></td><td><code>provider0</code> sans adresse (pont Open vSwitch)</td></tr>
+<tr><td>Le PC</td><td>navigateur, SSH, client</td><td>—</td><td>adaptateur hôte = <code>192.168.56.1</code></td><td>adaptateur hôte = <code>192.168.57.1</code></td></tr>
+</tbody></table>
+<div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Nom</th><th>Adresse</th><th>Service</th></tr></thead>
+<tbody>
+<tr><td><code>sso.lab.test</code></td><td><code>192.168.56.20</code></td><td>Keycloak, <code>https://…:8443</code></td></tr>
+<tr><td><code>cloud.lab.test</code></td><td><code>192.168.56.201</code></td><td>API publiques, Horizon</td></tr>
+<tr><td><code>internal.lab.test</code></td><td><code>192.168.56.202</code></td><td>API internes</td></tr>
+<tr><td><code>rgw.lab.test</code></td><td><code>192.168.56.203</code></td><td>stockage objet Ceph</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<div class="note b"><b>Pourquoi deux VM et pas une :</b> Sunbeam a besoin d'un DNS qui résout les noms des API <b>avant</b> d'exister, d'une passerelle sur le réseau externe pour que les instances sortent, et le module 11 a besoin d'un fournisseur d'identité. Mettre ces trois services hors de la VM Sunbeam, c'est pouvoir la détruire et la reconstruire sans les perdre.</div>
+<div class="note g"><b>Tailles finales des OVA :</b> Lab-Sunbeam 23 675 Mo de RAM, 12 vCPU, disque système 160 Go + disque Ceph 100 Go ; Lab-Services 5 056 Mo, 5 vCPU. VT-x imbriqué activé sur Lab-Sunbeam.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+<header><span class="kick">2 · Le lab, de zéro</span><h2>Étape 1 · VirtualBox : réseaux et machines (Vagrant)</h2></header>
+<div class="body"><div class="cols w64">
+<div class="col">
+<pre class="xs"><span class="m"># lab-sunbeam/Vagrantfile (extraits)</span>
+config.vm.box = <span class="c">"bento/ubuntu-24.04"</span>
+
+config.vm.define <span class="c">"services"</span> do |s|
+  s.vm.network "private_network", ip: "192.168.56.20", mac: "080027560020", auto_config: false
+  s.vm.network "private_network", ip: "192.168.57.2",  mac: "080027570002", auto_config: false
+  s.vm.disk :disk, size: "40GB", primary: true
+  s.vm.provider "virtualbox" do |vb|  vb.memory = 3072; vb.cpus = 2  end
+  s.vm.provision "shell", path: "scripts/services.sh"
+end
+
+config.vm.define <span class="c">"sunbeam"</span> do |s|
+  s.vm.network "private_network", ip: "192.168.56.10", mac: "080027560010", auto_config: false
+  s.vm.network "private_network", ip: "192.168.57.10", mac: "080027570010", auto_config: false
+  s.vm.disk :disk, size: "100GB", name: <span class="k">"ceph-data"</span>
+  s.vm.provider "virtualbox" do |vb|
+    vb.memory = 20480; vb.cpus = 8
+    vb.customize ["modifyvm", :id, <span class="k">"--nested-hw-virt", "on"</span>]
+    vb.customize ["modifyvm", :id, <span class="k">"--nicpromisc2", "allow-all"</span>]
+    vb.customize ["modifyvm", :id, <span class="k">"--nicpromisc3", "allow-all"</span>]
+  end
+  s.vm.provision "file", source: "sunbeam.yaml", destination: "/home/vagrant/lab/sunbeam.yaml"
+  s.vm.provision "shell", path: "scripts/sunbeam-os.sh"
+end</pre>
+</div>
+<div class="col">
+<p><b>Les choix qui comptent</b></p>
+<ul class="pts sm">
+<li><b>MAC fixes</b> (<code>08:00:27:56:…</code>, <code>08:00:27:57:…</code>) : netplan nomme les cartes par leur MAC. C'est ce qui rend les OVA transportables.</li>
+<li><b><code>auto_config: false</code></b> : Vagrant ne touche pas aux adresses ; c'est netplan, dans le script, qui les fixe.</li>
+<li><b>Disque Ceph séparé</b>, 100 Go, vide : MicroCeph exige un disque entier, sans partition.</li>
+<li><b>VT-x imbriqué</b> : sans lui, pas de KVM dans la VM, donc pas d'instances.</li>
+<li><b>Promiscuité « Tout autoriser »</b> sur les cartes 2 et 3 : les VIP MetalLB et les instances répondent avec <b>d'autres MAC</b> que celle de la carte ; VirtualBox les filtrerait.</li>
+</ul>
+<div class="did"><b>Fait :</b> réseaux hôte <code>192.168.56.1/24</code> et <code>192.168.57.1/24</code> créés dans VirtualBox, DHCP désactivé. Hôte Linux : <code>/etc/vbox/networks.conf</code> doit autoriser ces plages.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+<header><span class="kick">2 · Le lab, de zéro</span><h2>Étape 2 · Lab-Services : adresses et DNS</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre class="s"><span class="m"># /etc/netplan/60-lab.yaml (scripts/services.sh)</span>
+network:
+  version: 2
+  ethernets:
+    mgmt0:
+      match: {macaddress: '08:00:27:56:00:20'}
+      set-name: mgmt0
+      addresses: [192.168.56.20/24]
+      dhcp4: false
+    provider0:
+      match: {macaddress: '08:00:27:57:00:02'}
+      set-name: provider0
+      addresses: [192.168.57.2/24]
+      dhcp4: false
+      <span class="k">mtu: 1442</span>   <span class="m"># ajouté le 15 octobre, voir plus loin</span></pre>
+<div class="note g"><code>sudo netplan apply</code>. La carte 1 (NAT, <code>enp0s3</code>, DHCP) donne Internet à la VM ; elle reste gérée par le netplan d'origine.</div>
+</div>
+<div class="col">
+<pre class="s"><span class="m"># /etc/dnsmasq.d/lab.conf</span>
+interface=mgmt0
+interface=provider0
+bind-dynamic
+no-resolv
+server=1.1.1.1
+server=9.9.9.9
+<span class="k">address=/sso.lab.test/192.168.56.20
+address=/cloud.lab.test/192.168.56.201
+address=/internal.lab.test/192.168.56.202
+address=/rgw.lab.test/192.168.56.203</span></pre>
+<ul class="pts sm">
+<li><b>Les trois noms des API existent avant OpenStack.</b> Le bootstrap les inscrit dans le catalogue Keystone ; les services les résolvent ici.</li>
+<li><code>no-resolv</code> + <code>server=</code> : dnsmasq ne lit pas <code>/etc/resolv.conf</code> ; il relaie tout le reste à 1.1.1.1 et 9.9.9.9.</li>
+<li>Il écoute sur les <b>deux</b> réseaux : les instances (réseau 57) et Lab-Sunbeam (réseau 56) l'utilisent.</li>
+</ul>
+<div class="did"><b>Fait :</b> <code>apt-get install dnsmasq iptables docker-ce …</code>, puis <code>systemctl restart dnsmasq</code>. Vérification depuis Lab-Sunbeam : <code>dig @192.168.56.20 sso.lab.test +short</code>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+<header><span class="kick">2 · Le lab, de zéro</span><h2>Étape 2 · Lab-Services : passerelle NAT et MTU</h2></header>
+<div class="body"><div class="cols w64">
+<div class="col">
+<pre class="xs"><span class="m"># /etc/sysctl.d/70-lab-router.conf</span>
+net.ipv4.ip_forward=1
+
+<span class="m"># scripts/router.sh, installé en /usr/local/sbin/lab-router,
+# relancé après Docker (drop-in docker.service.d/lab-router.conf : ExecStartPost=)</span>
+UPLINK=$(ip -4 route show default | awk 'NR==1 {print $5}')
+iptables -N DOCKER-USER 2>/dev/null || true
+iptables -C FORWARD -j DOCKER-USER 2>/dev/null || iptables -I FORWARD 1 -j DOCKER-USER
+for item in <span class="k">mgmt0:192.168.56.0/24 provider0:192.168.57.0/24</span>; do
+  LAN=${item%%:*}; CIDR=${item#*:}
+  <span class="m"># chaque règle : testée (-C), ajoutée seulement si absente</span>
+  iptables -t nat -C POSTROUTING -s "$CIDR" -o "$UPLINK" -j MASQUERADE 2>/dev/null \
+    || iptables -t nat -A POSTROUTING -s "$CIDR" -o "$UPLINK" <span class="k">-j MASQUERADE</span>
+  iptables -C DOCKER-USER -i "$LAN" -o "$UPLINK" -s "$CIDR" -j ACCEPT 2>/dev/null \
+    || iptables -I DOCKER-USER 1 -i "$LAN" -o "$UPLINK" -s "$CIDR" -j ACCEPT
+  iptables -C DOCKER-USER -i "$UPLINK" -o "$LAN" -d "$CIDR" \
+      -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT 2>/dev/null \
+    || iptables -I DOCKER-USER 1 -i "$UPLINK" -o "$LAN" -d "$CIDR" \
+      -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+done</pre>
+</div>
+<div class="col">
+<p><b>Ce que fait ce routeur</b></p>
+<ul class="pts sm">
+<li>Les instances Nova ont pour passerelle <code>192.168.57.2</code> : leurs paquets sortent par Lab-Services, masqués derrière la carte NAT.</li>
+<li>Docker réécrit la chaîne <code>FORWARD</code> au démarrage : d'où la chaîne <code>DOCKER-USER</code>, que Docker respecte, et le relancement après Docker.</li>
+<li>Chaque règle est testée (<code>-C</code>) avant d'être ajoutée : le script est <b>rejouable</b>.</li>
+</ul>
+<p><b>Le correctif MTU (15 octobre)</b></p>
+<ul class="pts sm">
+<li>Symptôme : depuis une instance, ping et DNS passent, <code>apt</code> et HTTPS <b>restent bloqués</b>.</li>
+<li>Cause : le réseau des projets est à 1442 (Geneve). Le NAT de VirtualBox renvoie des segments de 1480 octets, qu'OVN jette.</li>
+<li>Correctif : <code>mtu: 1442</code> sur <code>provider0</code>, puis <code>sudo netplan apply</code>. Contrôle : <code>ip link show provider0</code> doit afficher <code>mtu 1442</code>.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+<header><span class="kick">2 · Le lab, de zéro</span><h2>Étape 3 · Lab-Services : autorité de certification et Keycloak</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre class="xs"><span class="m"># scripts/init-keycloak.sh (extraits) — une fois, jamais rejoué</span>
+umask 077
+printf 'POSTGRES_PASSWORD=%s\nKEYCLOAK_ADMIN_PASSWORD=%s\n' \
+  "$(openssl rand -hex 24)" "$(openssl rand -hex 24)" >.env
+<span class="m"># 1. la CA du lab, 5 ans</span>
+openssl req -x509 -newkey rsa:3072 -nodes -days 1825 \
+  -keyout pki/ca.key -out pki/ca.crt -subj <span class="k">'/CN=Sunbeam Lab Root CA'</span> \
+  -addext 'basicConstraints=critical,CA:TRUE,pathlen:1' \
+  -addext 'keyUsage=critical,keyCertSign,cRLSign'
+<span class="m"># 2. le certificat de Keycloak, 1 an, signé par la CA</span>
+openssl req -new -newkey rsa:2048 -nodes -keyout tls/server.key \
+  -out pki/keycloak.csr -subj '/CN=sso.lab.test'
+cat >pki/server.ext &lt;&lt;'EOF'
+basicConstraints=critical,CA:FALSE
+keyUsage=critical,digitalSignature,keyEncipherment
+extendedKeyUsage=serverAuth
+<span class="k">subjectAltName=DNS:sso.lab.test,IP:192.168.56.20</span>
+EOF
+openssl x509 -req -in pki/keycloak.csr -CA pki/ca.crt -CAkey pki/ca.key \
+  -CAcreateserial -days 365 -sha256 -extfile pki/server.ext -out tls/server.crt
+<span class="m"># 3. la CA approuvée sur la VM, et exportée pour le PC</span>
+sudo install -m 644 pki/ca.crt /usr/local/share/ca-certificates/sunbeam-lab.crt
+sudo update-ca-certificates
+install -m 644 pki/ca.crt /home/vagrant/lab/ca.crt</pre>
+</div>
+<div class="col">
+<pre class="xs"><span class="m"># keycloak/compose.yaml (extraits)</span>
+services:
+  postgres:
+    image: postgres:17
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.0
+    command: [start, <span class="k">--import-realm</span>]
+    mem_limit: 1536m
+    environment:
+      KC_DB: postgres
+      KC_BOOTSTRAP_ADMIN_USERNAME: kcadmin
+      <span class="k">KC_HOSTNAME: https://sso.lab.test:8443</span>
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/tls/server.crt
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/tls/server.key
+      KC_HTTP_ENABLED: 'false'
+    ports: ['192.168.56.20:8443:8443']
+    volumes:
+      - ./tls:/opt/keycloak/conf/tls:ro
+      - ./realm.json:/opt/keycloak/data/import/lab-realm.json:ro</pre>
+<pre class="xs"><span class="m"># realm.json : le royaume « lab », HTTPS obligatoire</span>
+{ "realm": "lab", "enabled": true,
+  "displayName": "Laboratoire OpenStack", "sslRequired": "all",
+  "registrationAllowed": false, "resetPasswordAllowed": false }</pre>
+<div class="did"><b>Fait :</b> <code>bash ~/lab/scripts/init-keycloak.sh</code>, puis <code>cd ~/lab/keycloak &amp;&amp; docker compose up -d</code>. Le fichier <code>ca.crt</code> du dépôt est cette CA (valide du 9 oct. 2026 au 8 oct. 2031) ; <code>Configurer-Lab-Sunbeam.ps1</code> / <code>.sh</code> l'approuvent sur le PC.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+<header><span class="kick">2 · Le lab, de zéro</span><h2>Étape 4 · Lab-Sunbeam : le système avant Sunbeam</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre class="s"><span class="m"># /etc/netplan/60-lab.yaml (scripts/sunbeam-os.sh)</span>
+network:
+  version: 2
+  ethernets:
+    mgmt0:
+      match: {macaddress: '08:00:27:56:00:10'}
+      set-name: mgmt0
+      addresses: [192.168.56.10/24]
+      dhcp4: false
+      nameservers:
+        addresses: <span class="k">[192.168.56.20]</span>
+        search: [lab.test]
+    provider0:
+      match: {macaddress: '08:00:27:57:00:10'}
+      set-name: provider0
+      dhcp4: false
+      dhcp6: false
+      link-local: []
+      optional: true      <span class="m"># UP, sans adresse : à OVS</span></pre>
+<pre class="s"><span class="m"># /etc/systemd/resolved.conf.d/lab.conf</span>
+[Resolve]
+DNS=192.168.56.20
+Domains=~lab.test</pre>
+</div>
+<div class="col">
+<pre class="s"><span class="m"># /etc/hosts (ajout)</span>
+192.168.56.10 sunbeam
+192.168.56.20 sso.lab.test
+192.168.56.201 cloud.lab.test
+192.168.56.202 internal.lab.test
+192.168.56.203 rgw.lab.test</pre>
+<pre class="s"><span class="m"># Contrôles avant d'installer</span>
+grep -E -c '(vmx|svm)' /proc/cpuinfo   <span class="m"># &gt; 0</span>
+sudo kvm-ok                            <span class="m"># KVM acceleration can be used</span>
+ls -l /dev/kvm
+dig @192.168.56.20 sso.lab.test +short
+getent hosts cloud.lab.test
+lsblk                                  <span class="m"># sdb 100G, sans partition</span></pre>
+<ul class="pts sm">
+<li><code>apt-get install cpu-checker jq python3-venv python3-yaml openssl curl dnsutils</code> : les outils de contrôle, rien de plus. Sunbeam installe le reste.</li>
+<li>Le nom de machine est <code>sunbeam</code> ; sur un seul nœud, un nom court suffit. <b>En cluster, un FQDN est obligatoire.</b></li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+<header><span class="kick">2 · Le lab, de zéro</span><h2>Étape 5 · Installer le snap et préparer le nœud</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre class="s"><span class="c">sudo snap install openstack --channel=2024.1/stable</span>
+snap list openstack
+<span class="m"># openstack  2024.1-e69efaea  1101  2024.1/stable  canonical**  held</span>
+
+<span class="c">sunbeam prepare-node-script --bootstrap</span> &gt; ~/prepare-sunbeam.sh
+less ~/prepare-sunbeam.sh      <span class="m"># on lit avant d'exécuter</span>
+<span class="c">bash ~/prepare-sunbeam.sh</span>
+exit                           <span class="m"># nouvelle session : groupe snap_daemon</span>
+
+<span class="m"># Forme courte, documentée par Canonical :</span>
+sunbeam prepare-node-script | bash -x &amp;&amp; newgrp snap_daemon</pre>
+<div class="note g"><b><code>held</code> :</b> Sunbeam bloque la mise à jour automatique des snaps qu'il pilote (<code>openstack</code>, <code>k8s</code>, <code>microceph</code>, <code>openstack-hypervisor</code>, <code>cinder-volume</code>). Une mise à jour se fait par Sunbeam, pas par <code>snap refresh</code>.</div>
+</div>
+<div class="col">
+<p><b>Ce que fait <code>prepare-node-script</code></b></p>
+<ul class="pts sm">
+<li>Installe <code>openssh-server</code> et les dépendances système.</li>
+<li>Donne au compte courant <b><code>sudo</code> sans mot de passe</b> : Juju s'en servira pour installer les snaps de machine.</li>
+<li>Ajoute le compte au groupe <code>snap_daemon</code>, pour parler au démon de cluster.</li>
+<li>Vérifie la virtualisation, la mémoire, le disque libre.</li>
+<li>Avec <code>--bootstrap</code> : prépare aussi ce qu'il faut au premier nœud (LXD n'est plus requis en 2024.1 ; le contrôleur Juju va sur Kubernetes).</li>
+</ul>
+<div class="note b"><b>Pourquoi un script et pas un paquet :</b> ces réglages touchent au compte de l'exploitant et à <code>sudoers</code>. Les générer et les lire avant de les exécuter, c'est garder la main sur ce qui est changé sur la machine.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+<header><span class="kick">2 · Le lab, de zéro</span><h2>Étape 6 · Le manifeste du lab</h2></header>
+<div class="body"><div class="cols w46">
+<div class="col">
+<pre class="s"><span class="m"># lab-sunbeam/sunbeam.yaml — appliqué le 9 oct. 2026 à 10:19
+# (sunbeam manifest list : 95edf2b4…)</span>
+core:
+  config:
+    bootstrap:
+      <span class="k">management_cidr: 192.168.56.0/24</span>
+    database: <span class="k">single</span>
+    region: RegionOne
+    k8s-addons:
+      <span class="k">loadbalancer: 192.168.56.200-192.168.56.220</span>
+    endpoints:
+      ingress-public:
+        ip: 192.168.56.201
+        hostname: <span class="k">cloud.lab.test</span>
+      ingress-internal:
+        ip: 192.168.56.202
+        hostname: <span class="k">internal.lab.test</span>
+      ingress-rgw:
+        ip: 192.168.56.203
+        hostname: <span class="k">rgw.lab.test</span></pre>
+</div>
+<div class="col">
+<table class="tbl tight wrap">
+<thead><tr><th style="width:32%">Clé</th><th>Ce qu'elle fixe, et pourquoi c'est définitif</th></tr></thead>
+<tbody>
+<tr><td><code>management_cidr</code></td><td>le réseau que Juju, Kubernetes et les charms considèrent comme « le plan de contrôle » ; les nœuds qui rejoignent doivent y être</td></tr>
+<tr><td><code>database</code></td><td><code>single</code> : une seule base MySQL pour tous les services ; <code>multi</code> : une base par service, pour la production. <b>Ne se change pas après le bootstrap</b></td></tr>
+<tr><td><code>region</code></td><td>le nom de région dans le catalogue ; définitif aussi</td></tr>
+<tr><td><code>k8s-addons.loadbalancer</code></td><td>la plage dans laquelle MetalLB attribue les VIP : contrôleur Juju (<code>.200</code>), API, et plus tard l'observabilité (<code>.205</code>)</td></tr>
+<tr><td><code>endpoints</code></td><td>fixe, au lieu de les laisser tirer au hasard, les trois VIP et leurs noms ; ce sont ces noms qu'on a mis dans dnsmasq</td></tr>
+</tbody></table>
+<div class="note"><b>Ce que le manifeste du lab ne dit pas :</b> ni réseau externe, ni utilisateur de démonstration, ni disque Ceph. Ces réponses ont été données <b>à l'invite</b>, pendant le bootstrap et <code>configure</code>. En production, on les met dans le manifeste : rejouable, relisible, versionnable.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+<header><span class="kick">2 · Le lab, de zéro</span><h2>Étape 7 · Le bootstrap</h2></header>
+<div class="body"><div class="cols w46">
+<div class="col">
+<pre class="s"><span class="c">sunbeam cluster bootstrap</span> \
+  --role control,compute,storage \
+  --manifest ~/lab/sunbeam.yaml
+
+<span class="m"># Réponses données à l'invite :</span>
+Management network         192.168.56.0/24
+Proxy                      non
+Topology                   single
+Region                     RegionOne
+MetalLB range              192.168.56.200-192.168.56.220
+Disks to attach to MicroCeph  <span class="k">/dev/sdb</span>   <span class="m"># le seul disque vide</span></pre>
+<pre class="s"><span class="m"># Suivre, dans une autre session</span>
+watch -n 10 "juju status -m openstack"
+sunbeam cluster list</pre>
+<div class="note g">Durée sur le lab : de l'ordre de l'heure, dépendante du téléchargement des charms et des images. Le cloud n'est utilisable qu'une fois les 25 applications du modèle <code>openstack</code> en <code>active</code>.</div>
+</div>
+<div class="col">
+<p><b>Ce que le bootstrap fait, dans l'ordre</b></p>
+<ol class="steps" style="grid-template-columns:1fr">
+<li>Démarre le démon de cluster <b>sunbeamd</b> et crée le déploiement <code>star-heron</code>, type <code>local</code>.</li>
+<li>Installe le snap <b>k8s</b> et crée le cluster Kubernetes, avec MetalLB sur la plage donnée.</li>
+<li>Amorce le <b>contrôleur Juju</b> (<code>sunbeam-controller</code>) sur Kubernetes ; VIP <code>192.168.56.200:17070</code>.</li>
+<li>Ajoute la machine au modèle <code>admin/openstack-machines</code> (cloud <code>manual</code>) et y déploie <b>sunbeam-machine</b>, <b>microceph</b> (OSD sur <code>/dev/sdb</code>), <b>openstack-hypervisor</b>, <b>cinder-volume</b>.</li>
+<li>Déploie le plan <b>openstack-plan</b> (Terraform) : les 25 charms <code>*-k8s</code> dans le modèle <code>openstack</code>, trois Traefik sur les trois VIP.</li>
+<li>Relie tout (<code>juju integrate</code>) : base, files d'attente, certificats, identités de service, Ceph.</li>
+</ol>
+<div class="did"><b>Fait :</b> un nœud, trois rôles, une base <code>single</code>. <code>sunbeam cluster list</code> : <code>control: active · compute: active · storage: active</code>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+<header><span class="kick">2 · Le lab, de zéro</span><h2>Étape 8 · <code>sunbeam configure</code> : le réseau externe et le compte de démonstration</h2></header>
+<div class="body"><div class="cols w46">
+<div class="col">
+<pre class="s"><span class="c">sunbeam configure</span> --openrc ~/demo-openrc</pre>
+<table class="tbl tight wrap xs">
+<thead><tr><th style="width:56%">Question</th><th>Réponse du lab</th></tr></thead>
+<tbody>
+<tr><td>Local or remote access to VMs</td><td><code>remote</code></td></tr>
+<tr><td>External network's physical network name</td><td><code>physnet1</code></td></tr>
+<tr><td>External network / CIDR</td><td><code>192.168.57.0/24</code></td></tr>
+<tr><td>External network's gateway</td><td><code>192.168.57.2</code> (Lab-Services)</td></tr>
+<tr><td>External network's allocation range</td><td><code>192.168.57.100-192.168.57.199</code></td></tr>
+<tr><td>External network's type</td><td><code>flat</code></td></tr>
+<tr><td>External network's interface</td><td><code>provider0</code></td></tr>
+<tr><td>Populate demo</td><td><code>y</code></td></tr>
+<tr><td>Username / Password</td><td><code>demo</code> / choisi par le formateur</td></tr>
+<tr><td>Project network</td><td><code>10.20.0.0/24</code></td></tr>
+<tr><td>Project network's nameservers</td><td><code>192.168.57.2</code></td></tr>
+<tr><td>Enable ping and SSH</td><td><code>y</code></td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<p><b>Ce que ces réponses créent</b></p>
+<ul class="pts sm">
+<li><b><code>remote</code></b> : les instances doivent être joignables depuis un autre poste que le nœud. La carte <code>provider0</code> est prise par Open vSwitch comme port du <code>physnet1</code>.</li>
+<li><b><code>external-network</code></b> (plat, 192.168.57.0/24), avec sa plage d'IP flottantes et sa passerelle : c'est pour cela que les instances sortent par Lab-Services.</li>
+<li><b>Le domaine <code>users</code>, le projet <code>demo</code>, l'utilisateur <code>demo</code></b> (rôle <code>member</code>) : créés par le plan Terraform <code>demo-setup</code>. Ce domaine n'existe pas dans un OpenStack « nu » : c'est Sunbeam qui le crée pour les utilisateurs.</li>
+<li><b><code>demo-network</code></b> 10.20.0.0/24, <code>demo-router</code> vers l'externe, et les règles ping + SSH dans le groupe <code>default</code>.</li>
+<li><b><code>~/demo-openrc</code></b> : les identifiants de <code>demo</code>.</li>
+</ul>
+<div class="note"><b>DNS des projets = 192.168.57.2 :</b> les instances interrogent dnsmasq sur Lab-Services. Elles résolvent donc aussi <code>cloud.lab.test</code> : utile pour les scripts qui appellent les API depuis une VM.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+<header><span class="kick">2 · Le lab, de zéro</span><h2>Étape 9 · Identifiants, tableau de bord, premières vérifications</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre class="s"><span class="m"># Identifiants de l'administrateur</span>
+umask 077
+<span class="c">sunbeam openrc</span> &gt; ~/admin-openrc
+source ~/admin-openrc
+openstack token issue
+<span class="c">sunbeam dashboard url</span>
+<span class="m"># http://cloud.lab.test:80/openstack-horizon</span></pre>
+<pre class="s"><span class="m"># ~/admin-openrc (mot de passe masqué)</span>
+export OS_USERNAME=admin
+export OS_PASSWORD=********
+export OS_AUTH_URL=<span class="k">http://cloud.lab.test/openstack-keystone/v3</span>
+export OS_USER_DOMAIN_NAME=admin_domain
+export OS_PROJECT_DOMAIN_NAME=admin_domain
+export OS_PROJECT_NAME=admin
+export OS_AUTH_VERSION=3
+export OS_IDENTITY_API_VERSION=3
+export OS_REGION_NAME=RegionOne</pre>
+<div class="note g">Le client <code>openstack</code> a été installé dans un environnement Python : <code>python3 -m venv ~/venvs/openstack &amp;&amp; pip install python-openstackclient</code>. Le snap en fournit aussi un.</div>
+</div>
+<div class="col">
+<pre class="s"><span class="m"># Le cluster et Juju</span>
+sunbeam cluster list
+sunbeam utils juju-login
+juju models
+<span class="m"># admin/controller           kubernetes   2 units
+# openstack                  kubernetes  25 units
+# admin/openstack-machines   manual       7 units</span>
+juju status -m openstack | grep -vw active   <span class="m"># rien à signaler</span>
+
+<span class="m"># Ceph et le calcul</span>
+sudo ceph -s          <span class="m"># HEALTH_OK, 1 osds: 1 up, pgs active+clean</span>
+openstack compute service list
+openstack hypervisor list
+openstack network list   <span class="m"># demo-network, external-network</span>
+
+<span class="m"># La preuve : une instance joignable depuis le PC</span>
+sunbeam launch ubuntu --name lab-validation
+<span class="m"># … ssh -i ~/snap/openstack/1101/sunbeam ubuntu@192.168.57.1xx</span></pre>
+<div class="did"><b>Fait :</b> instance Nginx jointe en SSH et en HTTP depuis le PC (1-demo-openstack). Avant l'export des OVA : <code>sudo passwd vagrant</code>, nettoyage du cloud, arrêt propre de Sunbeam puis de Services.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 20 -->
+<section class="slide">
+<header><span class="kick">2 · Le lab, de zéro</span><h2>Ce qu'on obtient : la carte de Lab-Sunbeam</h2></header>
+<div class="body"><div class="cols w64">
+<div class="col">
+<table class="tbl tight wrap xs">
+<thead><tr><th style="width:24%">Où</th><th style="width:34%">Quoi</th><th>Détail</th></tr></thead>
+<tbody>
+<tr><td>Snaps de machine</td><td><code>openstack</code> 1101, <code>juju</code> 3.6.29, <code>k8s</code> 1.32.13, <code>microceph</code> 19.2.3, <code>openstack-hypervisor</code>, <code>cinder-volume</code></td><td>tous <code>held</code> ; pilotés par les charms du modèle <code>admin/openstack-machines</code></td></tr>
+<tr><td>Modèle <code>admin/openstack-machines</code></td><td>machine 0 = <code>manual:192.168.56.10</code></td><td>charms <code>sunbeam-machine</code>, <code>k8s</code>, <code>microceph</code>, <code>openstack-hypervisor</code>, <code>cinder-volume</code> (+ <code>cinder-volume-ceph</code>), <code>epa-orchestrator</code></td></tr>
+<tr><td>Modèle <code>openstack</code></td><td>25 applications sur Kubernetes</td><td>Keystone, Nova, Neutron, Glance, Cinder, Placement, Horizon, MySQL, RabbitMQ, OVN central, OVN relay, Traefik ×3, CA, routeurs MySQL…</td></tr>
+<tr><td>Modèle <code>admin/controller</code></td><td>le contrôleur Juju</td><td>VIP <code>192.168.56.200:17070</code>, TLS par la CA interne</td></tr>
+<tr><td>VIP MetalLB</td><td><code>.201</code> public · <code>.202</code> interne · <code>.203</code> objet</td><td>chacune un Traefik ; HTTP sur le port 80 (TLS non activé par défaut)</td></tr>
+<tr><td>Ceph</td><td>OSD 1 sur le disque 100 Go</td><td>pools de Glance, Cinder, Nova ; <code>sudo microceph disk list</code></td></tr>
+<tr><td>Keystone</td><td>4 domaines</td><td><code>Default</code> (charm), <code>admin_domain</code> (<code>admin</code>), <code>service_domain</code> (comptes <code>svc_*</code>), <code>users</code> (<code>demo</code>)</td></tr>
+<tr><td>Fonctionnalités</td><td>aucune activée dans les OVA</td><td><code>sunbeam list-features</code> : vault, tls, ldap, orchestration, observability, telemetry… toutes désactivées</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<pre class="xs"><span class="c">juju status -m admin/openstack-machines</span>
+<span class="m">App                   Status   Charm
+cinder-volume         active   cinder-volume
+cinder-volume-ceph    active   cinder-volume-ceph
+epa-orchestrator      active   epa-orchestrator
+k8s                   active   k8s
+microceph             active   microceph
+openstack-hypervisor  active   openstack-hypervisor
+sunbeam-machine       active   sunbeam-machine
+
+Machine  State    Address     Base
+0        started  10.0.2.15   ubuntu@24.04</span></pre>
+<div class="note b"><b>Lire <code>10.0.2.15</code> :</b> c'est l'adresse NAT de la carte 1, que Juju affiche comme adresse publique de la machine. L'adresse qui compte, <code>192.168.56.10</code>, est celle du cloud <code>manual</code>.</div>
+<div class="note g">Schéma complet des flux : <code>architecture-lab-sunbeam.html</code>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 21 -->
+<section class="slide">
+<header><span class="kick">2 · Le lab, de zéro</span><h2>Ce qu'il a fallu corriger après l'import des OVA</h2></header>
+<div class="body">
+<div class="cols c3">
+<div class="col">
+<div class="card ca"><h3>1 · Noyau des instances en panique</h3>Symptôme : instance <code>ACTIVE</code>, mais <code>Kernel panic</code>, <code>NULL pointer dereference</code> dans sa console. Cause : KVM imbriqué dans VirtualBox sur les Intel 12ᵉ à 14ᵉ génération corrompt la mémoire de l'invité avec EPT.</div>
+<pre class="xs">echo "options kvm_intel ept=0" | \
+  sudo tee /etc/modprobe.d/kvm-intel-ept.conf
+sudo modprobe -r kvm_intel &amp;&amp; sudo modprobe kvm_intel
+cat /sys/module/kvm_intel/parameters/ept   <span class="m"># N</span></pre>
+</div>
+<div class="col">
+<div class="card cv"><h3>2 · L'OSD Ceph ne démarre plus</h3>Symptôme : <code>0 osds up</code>, lancement d'instance en <code>ERROR</code>, <code>HTTP 502</code> Glance. Cause : à l'import, VirtualBox donne au disque un <b>nouvel identifiant</b> ; le lien <code>/dev/disk/by-id/…</code> de l'OSD est cassé.</div>
+<pre class="xs">OSD=/var/snap/microceph/common/data/osd/ceph-1
+sudo ls -l $OSD/block
+sudo ln -sfn \
+  <span class="k">/dev/disk/by-path/pci-0000:00:1f.2-ata-2</span> \
+  $OSD/block
+sudo systemctl reset-failed \
+  snap.microceph.osd.service
+sudo snap restart microceph.osd
+sudo ceph -s   <span class="m"># 1 osds: 1 up</span></pre>
+</div>
+<div class="col">
+<div class="card ct"><h3>3 · Charms figés, routeurs en erreur</h3>Après un démarrage, <code>microceph</code> et <code>cinder-volume</code> restent « timed out », les <code>*-mysql-router</code> en <code>error</code> (la base n'était pas prête).</div>
+<pre class="xs">juju exec -m admin/openstack-machines \
+  --unit microceph/0 -- \
+  "JUJU_DISPATCH_PATH=hooks/config-changed ./dispatch"
+<span class="m"># idem --unit cinder-volume/0</span>
+juju resolved -m openstack \
+  keystone-mysql-router/0
+<span class="m"># tous les routeurs en erreur :</span>
+juju status -m openstack --format json \
+ | jq -r '.applications[].units
+   | to_entries[]
+   | select(.value["workload-status"]
+            .current=="error") | .key' \
+ | xargs -r -n1 juju resolved -m openstack</pre>
+</div>
+</div>
+<div class="note"><b>Leçon pour la production :</b> aucun de ces trois problèmes n'existe sur du matériel physique. Ils viennent de la virtualisation imbriquée, de l'export OVA et d'un hôte trop juste en mémoire. En revanche, le <b>MTU</b> (étape 2) et le <b>DNS des noms d'API avant le bootstrap</b> sont de vrais sujets de production.</div>
+</div>
+</section>
+
+<!-- 22 -->
+<section class="slide">
+<header><span class="kick">2 · Le lab, de zéro</span><h2>Le lab n'est pas une production : ce qui le sépare</h2></header>
+<div class="body">
+<table class="tbl tight wrap">
+<thead><tr><th style="width:20%">Sujet</th><th style="width:36%">Le lab</th><th>Une production</th></tr></thead>
+<tbody>
+<tr><td>Nœuds</td><td>1 nœud, trois rôles, dans une VM imbriquée</td><td>3 nœuds de contrôle au moins, calcul et stockage séparés, matériel physique</td></tr>
+<tr><td>Base de données</td><td><code>database: single</code></td><td><code>database: multi</code> : une base par service, pannes isolées</td></tr>
+<tr><td>Stockage</td><td>1 OSD sur un disque virtuel ; aucune réplique</td><td>3 nœuds Ceph, plusieurs OSD par nœud, réplication 3, réseau de stockage dédié</td></tr>
+<tr><td>Réseaux</td><td>gestion et stockage confondus ; externe plat vers une VM passerelle</td><td>VLAN par usage, agrégats de liens, passerelle physique, MTU maîtrisée de bout en bout</td></tr>
+<tr><td>DNS</td><td>dnsmasq sur une VM du lab, noms <code>*.lab.test</code></td><td>DNS d'entreprise, FQDN de chaque nœud, noms des API dans la zone</td></tr>
+<tr><td>Chiffrement</td><td>API en HTTP ; seuls Juju et OVN sont en TLS</td><td><code>sunbeam enable tls</code> avec une CA d'entreprise ou Vault, dès la mise en service</td></tr>
+<tr><td>Identité</td><td>comptes locaux ; Keycloak disponible mais non fédéré</td><td>fédération (SAML/OIDC) ou LDAP, politique de mots de passe</td></tr>
+<tr><td>Exploitation</td><td>aucune supervision ; instantanés VirtualBox</td><td>observabilité (COS), sauvegardes de MySQL et des clés Fernet, procédure de mise à jour</td></tr>
+<tr><td>Réponses à l'installation</td><td>données à l'invite, non enregistrées</td><td>tout dans le manifeste, versionné</td></tr>
+</tbody></table>
+<div class="note b">La partie suivante construit, étape par étape, le déploiement de droite — en simulant six machines physiques.</div>
+</div>
+</section>
+
+<!-- 23 -->
+<section class="slide dark sec">
+<div class="num">03</div>
+<h2>Une production simulée : 3 + 2 + 1</h2>
+<p>Six machines physiques pour l'entreprise Acme : trois nœuds de contrôle, deux nœuds de calcul, un nœud de stockage. On déroule tout comme si c'était vrai : inventaire, adressage, netplan, manifeste, puis les commandes, dans l'ordre, avec ce qu'elles créent.</p>
+<ol><li>Inventaire et dimensionnement</li><li>Plan d'adressage et VLAN</li><li>Le réseau de chaque nœud</li><li>Prérequis communs</li><li>Le manifeste</li><li>Bootstrap et haute disponibilité</li><li>Calcul, stockage, configure</li><li>Durcir, et la voie MAAS</li></ol>
+</section>
+
+<!-- 24 -->
+<section class="slide">
+<header><span class="kick">3 · Production 3 + 2 + 1</span><h2>Inventaire : six machines, un domaine, des FQDN</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th style="width:17%">FQDN</th><th style="width:10%">Rôle</th><th style="width:10%">CPU</th><th style="width:9%">RAM</th><th style="width:26%">Disques</th><th>Cartes réseau</th></tr></thead>
+<tbody>
+<tr><td><code>ctl1.cloud.acme.lan</code></td><td>control</td><td>16 cœurs</td><td>64 GiB</td><td>2 × 960 GB SSD (RAID 1, système)</td><td>2 × 25 GbE agrégées (<code>bond0</code>)</td></tr>
+<tr><td><code>ctl2.cloud.acme.lan</code></td><td>control</td><td>16 cœurs</td><td>64 GiB</td><td>idem</td><td>idem</td></tr>
+<tr><td><code>ctl3.cloud.acme.lan</code></td><td>control</td><td>16 cœurs</td><td>64 GiB</td><td>idem</td><td>idem</td></tr>
+<tr><td><code>cmp1.cloud.acme.lan</code></td><td>compute</td><td>64 cœurs</td><td>512 GiB</td><td>2 × 960 GB SSD (système) ; les disques des VM sont dans Ceph</td><td>2 × 25 GbE agrégées</td></tr>
+<tr><td><code>cmp2.cloud.acme.lan</code></td><td>compute</td><td>64 cœurs</td><td>512 GiB</td><td>idem</td><td>idem</td></tr>
+<tr><td><code>sto1.cloud.acme.lan</code></td><td>storage</td><td>24 cœurs</td><td>128 GiB</td><td>2 × 480 GB SSD (système) + <b>6 × 3.84 TB NVMe</b> pour les OSD (<code>/dev/nvme0n1</code> … <code>nvme5n1</code>)</td><td>2 × 25 GbE agrégées</td></tr>
+</tbody></table>
+<div class="cols">
+<div class="col">
+<div class="note g"><b>Repères officiels (2024.1), par nœud multi-nœuds :</b> 16 cœurs amd64, 32 GiB, 500 GiB SSD système, 1 Gbps par réseau. Mémoire par rôle : Kubernetes 4 GiB + plan de contrôle 10 GiB (control) ; 1 GiB (compute, hors instances) ; 5 GiB par OSD + 2 GiB MON/MGR + 2 GiB RGW (storage). Nos tailles sont au-dessus : la marge sert aux pics et aux mises à jour.</div>
+</div>
+<div class="col">
+<div class="note"><b>Le point faible est connu dès l'inventaire :</b> un seul nœud de stockage. Ceph réplique par <b>hôte</b> ; avec un hôte, toute panne de <code>sto1</code> arrête les VM, Glance et Cinder. On le garde parce que c'est la commande, on le traite honnêtement à la diapositive « stockage », et on le note comme première évolution.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 25 -->
+<section class="slide">
+<header><span class="kick">3 · Production 3 + 2 + 1</span><h2>Plan d'adressage : un VLAN par usage</h2></header>
+<div class="body"><div class="cols w64">
+<div class="col">
+<table class="tbl tight wrap xs">
+<thead><tr><th style="width:8%">VLAN</th><th style="width:17%">Réseau</th><th style="width:16%">CIDR</th><th style="width:22%">Qui y est</th><th>Rôle</th></tr></thead>
+<tbody>
+<tr><td>10</td><td>gestion<br><small>management</small></td><td><code>10.10.0.0/24</code></td><td>les 6 nœuds, .11-.13 ctl, .21-.22 cmp, .31 sto</td><td>Juju, Kubernetes, sunbeamd, API entre services ; <b>VIP MetalLB .200-.220</b></td></tr>
+<tr><td>20</td><td>externe<br><small>provider</small></td><td><code>10.20.0.0/22</code></td><td>cmp1, cmp2 (carte <b>sans IP</b>) ; passerelle <code>10.20.0.1</code> (routeur d'entreprise)</td><td>IP flottantes <code>10.20.1.1 – 10.20.3.254</code>, type <code>vlan</code>, id 20</td></tr>
+<tr><td>30</td><td>stockage<br><small>storage</small></td><td><code>10.30.0.0/24</code></td><td>les 6 nœuds</td><td>trafic client Ceph : Nova, Cinder, Glance → OSD</td></tr>
+<tr><td>31</td><td>stockage interne<br><small>storage-cluster</small></td><td><code>10.31.0.0/24</code></td><td>sto1 (et les futurs sto2, sto3)</td><td>réplication et récupération entre OSD</td></tr>
+<tr><td>—</td><td>hors bande<br><small>BMC / IPMI</small></td><td><code>10.9.0.0/24</code></td><td>les 6 BMC</td><td>console, redémarrage, MAAS</td></tr>
+</tbody></table>
+<table class="tbl tight xs">
+<thead><tr><th>Nom DNS</th><th>Adresse</th><th>Rôle</th></tr></thead>
+<tbody>
+<tr><td><code>cloud.acme.lan</code></td><td><code>10.10.0.201</code></td><td>API publiques, Horizon (<code>ingress-public</code>)</td></tr>
+<tr><td><code>internal.cloud.acme.lan</code></td><td><code>10.10.0.202</code></td><td>API internes (<code>ingress-internal</code>)</td></tr>
+<tr><td><code>rgw.cloud.acme.lan</code></td><td><code>10.10.0.203</code></td><td>stockage objet (<code>ingress-rgw</code>)</td></tr>
+<tr><td><code>juju.cloud.acme.lan</code></td><td><code>10.10.0.200</code></td><td>contrôleur Juju (:17070)</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Les VIP sont sur le réseau de gestion</b> : c'est une contrainte de Sunbeam (« les IP doivent appartenir à <code>management_cidr</code> »). Exposer <code>cloud.acme.lan</code> aux utilisateurs se fait par le routeur ou un équilibreur en amont, pas en déplaçant la VIP.</li>
+<li><b>Le réseau externe est en VLAN 20</b> et non plat : les cartes des nœuds de calcul portent plusieurs VLAN sur un même agrégat. Le manifeste le dira : <code>network_type: vlan</code>, <code>segmentation_id: 20</code>.</li>
+<li><b>/22 pour les flottantes</b> : 1 022 adresses. Une IP flottante par VM exposée ; on ne redimensionne pas un réseau externe sans douleur.</li>
+<li><b>Deux réseaux Ceph</b> : le trafic de réplication (31) ne doit jamais ralentir les lectures des VM (30). Avec un seul nœud, le 31 est vide aujourd'hui ; il est prêt pour <code>sto2</code> et <code>sto3</code>.</li>
+<li><b>MTU 9000</b> sur les VLAN 10, 30 et 31 (gestion et stockage) ; <b>1500</b> sur le VLAN 20, qui va vers l'extérieur. Les commutateurs doivent accepter le jumbo sur les ports concernés.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 26 -->
+<section class="slide">
+<header><span class="kick">3 · Production 3 + 2 + 1</span><h2>Schéma : six nœuds, quatre VLAN, trois VIP</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 440">
+<g class="tc">
+<!-- switches -->
+<rect x="20" y="20" width="1110" height="54" rx="10" class="b-dark"/><text x="575" y="42" class="tb tw">Deux commutateurs 25 GbE (MLAG) · VLAN 10 gestion · 20 externe · 30 stockage · 31 stockage interne</text><text x="575" y="62" class="ts" style="fill:#cbd5e1">routeur d'entreprise : passerelle 10.20.0.1 du VLAN 20 · route vers 10.10.0.0/24 pour atteindre les VIP</text>
+<!-- control -->
+<rect x="20" y="120" width="340" height="190" rx="12" class="zone"/><text x="190" y="142" class="tb">Contrôle · VLAN 10 · 30</text>
+<rect x="35" y="155" width="100" height="70" rx="8" class="b-blue"/><text x="85" y="180" class="tb">ctl1</text><text x="85" y="198" class="ts tm">10.10.0.11</text><text x="85" y="214" class="ts">k8s · juju</text>
+<rect x="140" y="155" width="100" height="70" rx="8" class="b-blue"/><text x="190" y="180" class="tb">ctl2</text><text x="190" y="198" class="ts tm">10.10.0.12</text><text x="190" y="214" class="ts">k8s · juju</text>
+<rect x="245" y="155" width="100" height="70" rx="8" class="b-blue"/><text x="295" y="180" class="tb">ctl3</text><text x="295" y="198" class="ts tm">10.10.0.13</text><text x="295" y="214" class="ts">k8s · juju</text>
+<rect x="35" y="238" width="310" height="58" rx="8" class="b-red"/><text x="190" y="258" class="tb tr">VIP MetalLB · 10.10.0.200-.220</text><text x="190" y="278" class="ts tm">.200 juju · .201 cloud · .202 internal · .203 rgw</text>
+<!-- compute -->
+<rect x="400" y="120" width="360" height="190" rx="12" class="zone"/><text x="580" y="142" class="tb">Calcul · VLAN 10 · 20 · 30</text>
+<rect x="420" y="155" width="150" height="80" rx="8" class="b-teal"/><text x="495" y="180" class="tb">cmp1</text><text x="495" y="198" class="ts tm">10.10.0.21 · 10.30.0.21</text><text x="495" y="216" class="ts">openstack-hypervisor</text>
+<rect x="590" y="155" width="150" height="80" rx="8" class="b-teal"/><text x="665" y="180" class="tb">cmp2</text><text x="665" y="198" class="ts tm">10.10.0.22 · 10.30.0.22</text><text x="665" y="216" class="ts">openstack-hypervisor</text>
+<rect x="420" y="246" width="320" height="50" rx="8" class="b-amber"/><text x="580" y="266" class="tb">bond0.20 sans adresse → Open vSwitch (physnet1)</text><text x="580" y="284" class="ts tm">IP flottantes 10.20.1.1 – 10.20.3.254</text>
+<!-- storage -->
+<rect x="800" y="120" width="330" height="190" rx="12" class="zone"/><text x="965" y="142" class="tb">Stockage · VLAN 10 · 30 · 31</text>
+<rect x="820" y="155" width="290" height="80" rx="8" class="b-violet"/><text x="965" y="180" class="tb">sto1</text><text x="965" y="198" class="ts tm">10.10.0.31 · 10.30.0.31 · 10.31.0.31</text><text x="965" y="216" class="ts">microceph : 6 OSD NVMe, MON, MGR, RGW</text>
+<rect x="820" y="246" width="290" height="50" rx="8" class="b-grey"/><text x="965" y="266" class="tb">sto2, sto3 : à prévoir</text><text x="965" y="284" class="ts">réplication 3 par hôte, VLAN 31 utile</text>
+<!-- links -->
+<path d="M190,120 L190,74" class="nl"/><path d="M580,120 L580,74" class="nl"/><path d="M965,120 L965,74" class="nl"/>
+<!-- bottom -->
+<rect x="20" y="340" width="540" height="80" rx="12" class="b-grey"/><text x="290" y="364" class="tb">Chaque nœud : bond0 = eno1 + eno2 (LACP 802.3ad)</text><text x="290" y="384" class="ts">bond0.10 gestion (MTU 9000) · bond0.30 stockage (9000)</text><text x="290" y="402" class="ts">cmp : + bond0.20 sans IP (1500) · sto : + bond0.31 (9000)</text>
+<rect x="590" y="340" width="540" height="80" rx="12" class="b-grey"/><text x="860" y="364" class="tb">DNS d'entreprise, zone cloud.acme.lan</text><text x="860" y="384" class="ts tm">ctl1..3, cmp1..2, sto1 → 10.10.0.x · juju → .200</text><text x="860" y="402" class="ts tm">cloud → .201 · internal.cloud → .202 · rgw.cloud → .203 · NTP commun</text>
+</g>
+</svg>
+</div></div>
+</section>
+
+<!-- 27 -->
+<section class="slide">
+<header><span class="kick">3 · Production 3 + 2 + 1</span><h2>Le réseau d'un nœud de contrôle et d'un nœud de calcul</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre class="xs"><span class="m"># ctl1 — /etc/netplan/50-cloud.yaml (ctl2, ctl3 : .12, .13)</span>
+network:
+  version: 2
+  ethernets:
+    eno1: {dhcp4: false, mtu: 9000}
+    eno2: {dhcp4: false, mtu: 9000}
+  bonds:
+    bond0:
+      interfaces: [eno1, eno2]
+      mtu: 9000
+      parameters: {mode: 802.3ad, lacp-rate: fast,
+                   mii-monitor-interval: 100,
+                   transmit-hash-policy: layer3+4}
+  vlans:
+    <span class="k">bond0.10:</span>                         <span class="m"># gestion</span>
+      id: 10
+      link: bond0
+      mtu: 9000
+      addresses: [<span class="k">10.10.0.11/24</span>]
+      routes: [{to: default, via: 10.10.0.1}]
+      nameservers:
+        addresses: [10.10.0.53, 10.10.0.54]
+        search: [cloud.acme.lan]
+    bond0.30:                         <span class="m"># stockage (client Ceph)</span>
+      id: 30
+      link: bond0
+      mtu: 9000
+      addresses: [10.30.0.11/24]</pre>
+</div>
+<div class="col">
+<pre class="xs"><span class="m"># cmp1 — /etc/netplan/50-cloud.yaml (cmp2 : .22)
+# ethernets et bonds : identiques à ctl1</span>
+network:
+  version: 2
+  ethernets: {eno1: {dhcp4: false, mtu: 9000}, eno2: {dhcp4: false, mtu: 9000}}
+  bonds:
+    bond0: {interfaces: [eno1, eno2], mtu: 9000,
+            parameters: {mode: 802.3ad, lacp-rate: fast,
+                         mii-monitor-interval: 100, transmit-hash-policy: layer3+4}}
+  vlans:
+    bond0.10:
+      id: 10
+      link: bond0
+      mtu: 9000
+      addresses: [10.10.0.21/24]
+      routes: [{to: default, via: 10.10.0.1}]
+      nameservers: {addresses: [10.10.0.53, 10.10.0.54]}
+    <span class="k">bond0.20:</span>                         <span class="m"># externe : AUCUNE adresse</span>
+      id: 20
+      link: bond0
+      mtu: 1500
+      dhcp4: false
+      dhcp6: false
+      link-local: []
+      optional: true
+    bond0.30: {id: 30, link: bond0, mtu: 9000, addresses: [10.30.0.21/24]}</pre>
+<div class="note g"><code>sudo netplan apply</code>, puis <code>ip -br addr</code> et <code>ping -M do -s 8972 10.10.0.12</code> : le jumbo passe de bout en bout, ou il ne passe pas.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 28 -->
+<section class="slide">
+<header><span class="kick">3 · Production 3 + 2 + 1</span><h2>Le nœud de stockage, et les prérequis communs</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre class="xs"><span class="m"># sto1 — /etc/netplan/50-cloud.yaml</span>
+network:
+  version: 2
+  ethernets:
+    eno1: {dhcp4: false, mtu: 9000}
+    eno2: {dhcp4: false, mtu: 9000}
+  bonds:
+    bond0:
+      interfaces: [eno1, eno2]
+      mtu: 9000
+      parameters: {mode: 802.3ad, lacp-rate: fast,
+                   mii-monitor-interval: 100,
+                   transmit-hash-policy: layer3+4}
+  vlans:
+    bond0.10:
+      id: 10
+      link: bond0
+      mtu: 9000
+      addresses: [10.10.0.31/24]
+      routes: [{to: default, via: 10.10.0.1}]
+      nameservers: {addresses: [10.10.0.53, 10.10.0.54], search: [cloud.acme.lan]}
+    bond0.30:                         <span class="m"># stockage, côté clients</span>
+      id: 30
+      link: bond0
+      mtu: 9000
+      addresses: [10.30.0.31/24]
+    <span class="k">bond0.31:</span>                         <span class="m"># stockage interne, réplication</span>
+      id: 31
+      link: bond0
+      mtu: 9000
+      addresses: [10.31.0.31/24]</pre>
+</div>
+<div class="col">
+<pre class="xs"><span class="m"># Sur les SIX nœuds, Ubuntu Server 24.04 LTS fraîchement installé</span>
+hostnamectl set-hostname ctl1.cloud.acme.lan   <span class="m"># FQDN obligatoire</span>
+hostname -f                                     <span class="m"># ctl1.cloud.acme.lan</span>
+getent hosts ctl1.cloud.acme.lan                <span class="m"># 10.10.0.11 : le DNS répond</span>
+getent hosts cloud.acme.lan internal.cloud.acme.lan rgw.cloud.acme.lan
+timedatectl status | grep synchronized          <span class="m"># yes</span>
+grep -E -c '(vmx|svm)' /proc/cpuinfo            <span class="m"># cmp : &gt; 0</span>
+
+<span class="m"># sto1 : les disques OSD vides, sans partition ni système de fichiers</span>
+lsblk -o NAME,SIZE,TYPE,FSTYPE,MOUNTPOINT /dev/nvme[0-5]n1
+sudo wipefs -a /dev/nvme0n1   <span class="m"># … nvme5n1, si réemploi</span>
+
+<span class="m"># Même snap, même version, partout</span>
+sudo snap install openstack --channel 2024.1/stable
+sunbeam prepare-node-script | bash -x &amp;&amp; newgrp snap_daemon</pre>
+<ul class="pts sm">
+<li><b>FQDN</b> : « le clustering ne gère pas les noms courts ; les nœuds ne sont reconnus que par leur FQDN ». Le nom donné à <code>cluster add</code> doit être exactement celui de <code>hostname -f</code>.</li>
+<li><b>Les noms des API avant le bootstrap</b>, comme sur le lab : sans eux, les services ne valident pas les jetons.</li>
+<li><b>Horloge</b> : Ceph refuse les MON dont l'horloge dérive ; Keystone date les jetons.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 29 -->
+<section class="slide">
+<header><span class="kick">3 · Production 3 + 2 + 1</span><h2>Le manifeste de production : tout est écrit, rien n'est demandé à l'invite</h2></header>
+<div class="body"><div class="cols w46">
+<div class="col">
+<pre class="xs"><span class="m"># ~/prod.yaml — sur ctl1, versionné dans git</span>
+core:
+  config:
+    bootstrap:
+      management_cidr: <span class="k">10.10.0.0/24</span>
+    database: <span class="k">multi</span>
+    region: RegionOne
+    k8s-addons:
+      loadbalancer: 10.10.0.200-10.10.0.220
+    endpoints:
+      ingress-public:
+        {ip: 10.10.0.201, hostname: <span class="k">cloud.acme.lan</span>}
+      ingress-internal:
+        {ip: 10.10.0.202, hostname: internal.cloud.acme.lan}
+      ingress-rgw:
+        {ip: 10.10.0.203, hostname: rgw.cloud.acme.lan}
+    external_network:
+      cidr: 10.20.0.0/22
+      gateway: 10.20.0.1
+      range: 10.20.1.1-10.20.3.254
+      network_type: <span class="k">vlan</span>
+      segmentation_id: <span class="k">20</span>
+      nics:
+        cmp1.cloud.acme.lan: bond0.20
+        cmp2.cloud.acme.lan: bond0.20
+    microceph_config:
+      sto1.cloud.acme.lan:
+        osd_devices: <span class="k">/dev/nvme0n1,/dev/nvme1n1,/dev/nvme2n1,
+                     /dev/nvme3n1,/dev/nvme4n1,/dev/nvme5n1</span>
+    user: {run_demo_setup: false, remote_access_location: remote}</pre>
+</div>
+<div class="col">
+<table class="tbl tight wrap xs">
+<thead><tr><th style="width:30%">Clé</th><th>Choix de production, et pourquoi</th></tr></thead>
+<tbody>
+<tr><td><code>database: multi</code></td><td>une base MySQL par service : une table corrompue de Nova ne bloque pas Keystone. Définitif</td></tr>
+<tr><td><code>endpoints</code></td><td>les trois VIP et leurs noms, déjà dans le DNS d'entreprise</td></tr>
+<tr><td><code>external_network.nics</code></td><td><b>par nœud</b> : seuls les nœuds de calcul ont la carte externe ; ctl et sto n'en ont pas</td></tr>
+<tr><td><code>network_type: vlan</code></td><td>le réseau externe est le VLAN 20 de l'agrégat ; Neutron étiquette les trames</td></tr>
+<tr><td><code>microceph_config</code></td><td>les six NVMe de <code>sto1</code>, par nom de nœud. <code>dangerous_i_acknowledge_i_will_lose_data_wipe_disks: true</code> n'existe que pour réemployer des disques ; on ne le met pas</td></tr>
+<tr><td><code>run_demo_setup: false</code></td><td>pas de projet <code>demo</code> en production ; les projets viennent du TP identité</td></tr>
+</tbody></table>
+<div class="note"><b>Avant le bootstrap :</b> <code>sunbeam manifest validate --manifest ~/prod.yaml</code> n'existe pas en 2024.1 ; on relit le YAML (<code>python3 -c "import yaml,sys; yaml.safe_load(open('prod.yaml'))"</code>) et on vérifie que chaque FQDN cité est bien celui que <code>hostname -f</code> rend sur la machine.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 30 -->
+<section class="slide">
+<header><span class="kick">3 · Production 3 + 2 + 1</span><h2>Étape 1 · Bootstrap sur ctl1 : un nœud de contrôle, pas encore de cloud utile</h2></header>
+<div class="body"><div class="cols w46">
+<div class="col">
+<pre class="s"><span class="m"># sur ctl1.cloud.acme.lan</span>
+<span class="c">sunbeam cluster bootstrap</span> --role control \
+  --manifest ~/prod.yaml
+
+<span class="m"># suivre</span>
+sunbeam cluster list
+sunbeam utils juju-login
+juju status -m admin/controller
+juju status -m openstack
+juju status -m admin/openstack-machines</pre>
+<pre class="s"><span class="c">sunbeam cluster list</span>
+<span class="m">Node                  Status  Control  Compute  Storage
+ctl1.cloud.acme.lan   ONLINE  active   —        —</span></pre>
+<div class="note g"><b>Rôle <code>control</code> seul :</b> pas de <code>microceph</code>, pas d'<code>openstack-hypervisor</code> sur ctl1. Le plan de contrôle se déploie, mais Glance et Cinder attendent un stockage, Nova attend un hyperviseur : plusieurs applications restent <code>blocked</code> ou <code>waiting</code>. C'est <b>normal</b> jusqu'à l'arrivée de sto1 et des cmp.</div>
+</div>
+<div class="col">
+<p><b>Ce qui existe après cette étape</b></p>
+<ul class="pts sm">
+<li>Le démon de cluster <b>sunbeamd</b> sur ctl1, avec le déploiement et son manifeste enregistré.</li>
+<li>Un cluster <b>Kubernetes à un nœud</b>, MetalLB sur <code>10.10.0.200-.220</code>.</li>
+<li>Le <b>contrôleur Juju</b> sur Kubernetes, VIP <code>10.10.0.200</code>. Un seul : pas encore redondant.</li>
+<li>Les charms <code>*-k8s</code> du modèle <code>openstack</code>, avec <b>une base MySQL par service</b> (<code>database: multi</code>) ; trois Traefik sur <code>.201</code>, <code>.202</code>, <code>.203</code>.</li>
+<li>Le modèle <code>admin/openstack-machines</code> avec ctl1 comme machine 0, et seulement <code>sunbeam-machine</code> et <code>k8s</code> dessus.</li>
+</ul>
+<div class="note"><b>Le manifeste a été lu, pas appliqué entièrement :</b> <code>external_network</code> et <code>microceph_config</code> ne servent qu'au moment où un nœud de calcul ou de stockage rejoint, et à <code>configure</code>. Le bootstrap ne s'en sert pas.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 31 -->
+<section class="slide">
+<header><span class="kick">3 · Production 3 + 2 + 1</span><h2>Étape 2 · Joindre ctl2 et ctl3, puis <code>resize</code> : la haute disponibilité</h2></header>
+<div class="body"><div class="cols w46">
+<div class="col">
+<pre class="s"><span class="m"># sur ctl1 : un jeton par nœud, nommé par son FQDN exact</span>
+<span class="c">sunbeam cluster add</span> ctl2.cloud.acme.lan --output ctl2.asc
+<span class="c">sunbeam cluster add</span> ctl3.cloud.acme.lan --output ctl3.asc
+scp ctl2.asc ubuntu@ctl2.cloud.acme.lan:
+scp ctl3.asc ubuntu@ctl3.cloud.acme.lan:
+
+<span class="m"># sur ctl2 (snap installé, nœud préparé)</span>
+cat ctl2.asc | <span class="c">sunbeam cluster join</span> --role control -
+<span class="m"># Node joined cluster with roles: control</span>
+
+<span class="m"># sur ctl3</span>
+cat ctl3.asc | <span class="c">sunbeam cluster join</span> --role control -
+
+<span class="m"># sur ctl1, une fois les trois nœuds de contrôle présents</span>
+<span class="c">sunbeam cluster resize</span>
+<span class="m"># Resize complete.</span>
+sunbeam cluster list</pre>
+<div class="note g">Joindre d'abord <b>tous</b> les nœuds, puis un seul <code>resize</code> : « cela économise un temps de traitement important ». Le jeton n'est valable qu'une fois, pour ce FQDN.</div>
+</div>
+<div class="col">
+<p><b>Ce que <code>resize</code> change, et pourquoi 3</b></p>
+<table class="tbl tight wrap xs">
+<thead><tr><th style="width:30%">Composant</th><th>Avant</th><th>Après <code>resize</code></th></tr></thead>
+<tbody>
+<tr><td>Kubernetes</td><td>1 nœud</td><td>3 nœuds de plan de contrôle ; etcd/dqlite à 3 : tolère la perte d'un nœud</td></tr>
+<tr><td>Contrôleur Juju</td><td>1 unité</td><td>3 unités, VIP inchangée</td></tr>
+<tr><td>MySQL (par service)</td><td>1 unité</td><td>3 unités en groupe de réplication InnoDB ; les routeurs basculent seuls</td></tr>
+<tr><td>RabbitMQ, OVN central</td><td>1</td><td>3, quorum</td></tr>
+<tr><td>API (Keystone, Nova…)</td><td>1 pod</td><td>3 pods, derrière Traefik</td></tr>
+<tr><td>Traefik</td><td>1</td><td>3, MetalLB bascule la VIP</td></tr>
+</tbody></table>
+<div class="note"><b>Trois, pas deux :</b> tout ce qui est à quorum (etcd, MySQL, RabbitMQ, OVN, Juju) exige une majorité. À 2, la perte d'un nœud bloque l'écriture ; à 3, elle est absorbée. À 4, on ne gagne rien tant qu'on n'est pas à 5.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 32 -->
+<section class="slide">
+<header><span class="kick">3 · Production 3 + 2 + 1</span><h2>Étape 3 · Joindre cmp1 et cmp2 : le calcul</h2></header>
+<div class="body"><div class="cols w46">
+<div class="col">
+<pre class="s"><span class="m"># sur ctl1</span>
+sunbeam cluster add cmp1.cloud.acme.lan --output cmp1.asc
+sunbeam cluster add cmp2.cloud.acme.lan --output cmp2.asc
+<span class="m"># … scp vers chaque nœud</span>
+
+<span class="m"># sur cmp1, puis cmp2</span>
+cat cmp1.asc | <span class="c">sunbeam cluster join</span> --role compute -
+<span class="m"># Node joined cluster with roles: compute</span>
+
+<span class="m"># sur ctl1 : vérifier</span>
+sunbeam cluster list
+juju status -m admin/openstack-machines
+source ~/admin-openrc      <span class="m"># après sunbeam openrc</span>
+openstack compute service list
+openstack hypervisor list
+openstack network agent list   <span class="m"># un agent OVN par cmp</span></pre>
+<div class="note g">Pas de <code>resize</code> pour un nœud de calcul : seuls les nœuds <code>control</code> l'exigent.</div>
+</div>
+<div class="col">
+<p><b>Ce que le rôle <code>compute</code> installe sur le nœud</b></p>
+<ul class="pts sm">
+<li>Le nœud entre dans <code>admin/openstack-machines</code> (machines 3 et 4) ; Juju y déploie <b><code>sunbeam-machine</code></b> et <b><code>openstack-hypervisor</code></b>.</li>
+<li>Le snap <code>openstack-hypervisor</code> apporte <b>nova-compute</b>, <b>libvirt/KVM</b>, <b>Open vSwitch</b> et l'<b>agent OVN</b> (chassis) ; le nœud s'enregistre auprès de Nova et d'OVN central.</li>
+<li>La carte <code>bond0.20</code>, trouvée dans <code>external_network.nics</code>, devient un port du pont <code>br-ex</code> : c'est par là que sortent les IP flottantes des VM de ce nœud.</li>
+<li>Le nœud monte les pools Ceph (<code>nova</code>, <code>cinder</code>, <code>glance</code>) par le VLAN 30 : <b>sans sto1, aucune VM ne démarre</b>.</li>
+</ul>
+<div class="note b"><b>Deux nœuds de calcul, c'est le minimum utile :</b> on peut vider l'un (<code>openstack compute service set --disable</code>, migration à chaud) pour le mettre à jour. Avec un seul, chaque maintenance arrête les VM.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 33 -->
+<section class="slide">
+<header><span class="kick">3 · Production 3 + 2 + 1</span><h2>Étape 4 · Joindre sto1 : le stockage, et le piège du nœud unique</h2></header>
+<div class="body"><div class="cols w46">
+<div class="col">
+<pre class="s"><span class="m"># sur ctl1</span>
+sunbeam cluster add sto1.cloud.acme.lan --output sto1.asc
+
+<span class="m"># sur sto1</span>
+cat sto1.asc | <span class="c">sunbeam cluster join</span> --role storage -
+<span class="m"># les disques viennent du manifeste (microceph_config) ;
+# sans manifeste, l'invite demanderait :
+#   Disks to attach to MicroCeph (comma separated list) ():</span>
+
+<span class="m"># sur sto1 : l'état de Ceph</span>
+sudo microceph status
+sudo microceph disk list
+sudo ceph -s
+sudo ceph osd tree
+<span class="m"># 6 osds: 6 up, 6 in — mais HEALTH_WARN :
+# Degraded data redundancy … undersized</span></pre>
+</div>
+<div class="col">
+<p><b>Pourquoi <code>HEALTH_WARN</code> est honnête</b></p>
+<ul class="pts sm">
+<li>Ceph place 3 copies de chaque objet sur 3 <b>hôtes</b> différents (règle CRUSH par défaut). Avec un seul hôte, il ne peut en placer qu'une : les groupes de placement restent <code>undersized</code>, les écritures sont acceptées mais <b>rien n'est répliqué</b>.</li>
+<li>La vraie réponse est <b>sto2 et sto3</b> (même manifeste, <code>cluster add</code>, <code>join --role storage</code>) : Ceph rééquilibre seul.</li>
+</ul>
+<p><b>Si l'on doit vivre avec un seul nœud</b> (préproduction, démarrage) : changer le domaine de défaillance d'<i>hôte</i> à <i>OSD</i>. On garde 3 copies, sur 3 disques du même serveur : protège d'une panne de disque, pas d'une panne de serveur.</p>
+<pre class="xs"><span class="m"># sur sto1, avant de créer des volumes</span>
+sudo ceph config set global osd_crush_chooseleaf_type 0
+sudo ceph osd crush rule create-replicated replicated_osd default osd
+for p in $(sudo ceph osd pool ls); do
+  sudo ceph osd pool set "$p" crush_rule replicated_osd; done
+sudo ceph -s   <span class="m"># HEALTH_OK, pgs active+clean</span></pre>
+<div class="note"><b>À dire au client :</b> « 3 + 2 + 1 » est un cloud à haute disponibilité du plan de contrôle et du calcul, avec un <b>point unique de défaillance</b> sur les données. Le devis suivant, c'est sto2 et sto3.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 34 -->
+<section class="slide">
+<header><span class="kick">3 · Production 3 + 2 + 1</span><h2>Étape 5 · <code>configure</code>, puis prouver que le cloud marche</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre class="s"><span class="m"># sur ctl1 : le réseau externe et les réglages de projet,
+# depuis le manifeste, sans aucune question</span>
+<span class="c">sunbeam configure</span> --manifest ~/prod.yaml
+
+umask 077
+<span class="c">sunbeam openrc</span> &gt; ~/admin-openrc
+source ~/admin-openrc
+openstack token issue
+sunbeam dashboard url
+<span class="m"># http://cloud.acme.lan:80/openstack-horizon</span>
+
+<span class="m"># l'état attendu</span>
+sunbeam cluster list
+<span class="m">Node                  Status  Control  Compute  Storage
+ctl1.cloud.acme.lan   ONLINE  active   —        —
+ctl2.cloud.acme.lan   ONLINE  active   —        —
+ctl3.cloud.acme.lan   ONLINE  active   —        —
+cmp1.cloud.acme.lan   ONLINE  —        active   —
+cmp2.cloud.acme.lan   ONLINE  —        active   —
+sto1.cloud.acme.lan   ONLINE  —        —        active</span>
+juju status -m openstack | grep -vw active        <span class="m"># vide</span>
+juju status -m admin/openstack-machines | grep -vw active</pre>
+</div>
+<div class="col">
+<pre class="xs"><span class="m"># la preuve, comme sur le lab : une VM, une IP flottante, un accès</span>
+openstack network show external-network \
+  -c provider:network_type -c provider:segmentation_id   <span class="m"># vlan / 20</span>
+openstack image create jammy --disk-format qcow2 \
+  --file jammy-server-cloudimg-amd64.img
+openstack keypair create --public-key ~/.ssh/id_ed25519.pub ops
+openstack network create prod-test-net
+openstack subnet create prod-test-sub --network prod-test-net \
+  --subnet-range 10.100.0.0/24 --dns-nameserver 10.10.0.53
+openstack router create prod-test-r --external-gateway external-network
+openstack router add subnet prod-test-r prod-test-sub
+openstack server create --image jammy --flavor m1.small \
+  --network prod-test-net --key-name ops --wait t1
+FIP=$(openstack floating ip create external-network \
+  -f value -c floating_ip_address)
+openstack server add floating ip t1 "$FIP"
+ssh ubuntu@"$FIP" hostname   <span class="m"># depuis un poste du réseau d'entreprise</span>
+
+<span class="m"># et la résilience, puisqu'on l'a payée</span>
+openstack server migrate --live --host cmp2.cloud.acme.lan t1
+<span class="m"># éteindre ctl2 : les API répondent toujours, juju status montre 2/3</span></pre>
+<div class="did"><b>Critère de recette :</b> VM joignable, migration à chaud réussie, perte d'un nœud de contrôle sans interruption des API, <code>ceph -s</code> en <code>HEALTH_OK</code>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 35 -->
+<section class="slide">
+<header><span class="kick">3 · Production 3 + 2 + 1</span><h2>Étape 6 · Durcir avant d'ouvrir aux utilisateurs</h2></header>
+<div class="body">
+<table class="tbl tight wrap">
+<thead><tr><th style="width:18%">Sujet</th><th style="width:44%">Commande Sunbeam</th><th>Ce que ça change</th></tr></thead>
+<tbody>
+<tr><td>Chiffrement des API</td><td><code>sunbeam enable tls ca --endpoint public --endpoint internal</code>, avec une CA d'entreprise ; ou <code>sunbeam enable vault</code> puis <code>sunbeam enable tls vault</code></td><td>Keystone et toutes les API passent en <code>https://</code> ; <code>sunbeam openrc</code> à régénérer (<code>OS_CACERT</code>). Testé sur le lab avec <code>tls self-signed</code> (démo 7-securite/01)</td></tr>
+<tr><td>Identité</td><td><code>sunbeam enable ldap</code> + <code>sunbeam ldap add-domain</code>, ou fournisseur SAML/OIDC dans le manifeste (<code>identity.profiles</code>)</td><td>les comptes humains viennent de l'annuaire ; les comptes locaux restent pour les services et l'urgence</td></tr>
+<tr><td>Supervision</td><td><code>sunbeam enable observability embedded</code> (COS : Grafana, Loki, Prometheus, VIP <code>.205</code>) ou <code>observability external</code></td><td>journaux centralisés, tableaux de bord ; coûte ~ 6 GiB de RAM sur le contrôle (mesuré sur le lab : 75 min d'activation)</td></tr>
+<tr><td>Secrets</td><td><code>sunbeam enable vault</code>, <code>sunbeam enable secrets</code> (Barbican)</td><td>clés et certificats hors des charms ; chiffrement des volumes</td></tr>
+<tr><td>Images</td><td><code>sunbeam enable images-sync</code></td><td>images Ubuntu tenues à jour automatiquement</td></tr>
+<tr><td>Sauvegardes</td><td><code>juju run -m openstack keystone-mysql/leader create-backup</code> (par service) ; copie des clés Fernet (<code>/etc/keystone/fernet-keys</code>) ; <code>sunbeam manifest show</code> dans git</td><td>sans la base et les clés, pas de restauration ; sans le manifeste, pas de reconstruction</td></tr>
+<tr><td>Mises à jour</td><td><code>sunbeam cluster refresh</code> (charms et snaps, dans l'ordre), nœud par nœud pour le calcul après migration des VM</td><td>jamais <code>snap refresh</code> à la main : les snaps sont <code>held</code> pour cette raison</td></tr>
+</tbody></table>
+<div class="note b"><b>L'ordre compte :</b> TLS avant les utilisateurs (changer les URL après coup casse les scripts), observabilité avant les incidents, sauvegarde testée avant la première donnée importante.</div>
+</div>
+</section>
+
+<!-- 36 -->
+<section class="slide">
+<header><span class="kick">3 · Production 3 + 2 + 1</span><h2>La voie recommandée au-delà de six machines : MAAS</h2></header>
+<div class="body"><div class="cols w46">
+<div class="col">
+<pre class="s"><span class="m"># sur la machine « Sunbeam Client » (une VM d'administration)</span>
+sudo snap install openstack --channel 2024.1/stable
+sunbeam prepare-node-script --client | bash -x
+
+<span class="m"># déclarer MAAS comme fournisseur de machines</span>
+<span class="c">sunbeam deployment add maas</span> acme-prod $MAAS_TOKEN \
+  http://maas.acme.lan:5240/MAAS
+<span class="c">sunbeam deployment space map</span> mgmt-space:management
+sunbeam deployment space map internal-space:internal
+sunbeam deployment space map public-space:public
+sunbeam deployment space map data-space:data
+sunbeam deployment space map storage-space:storage
+sunbeam deployment space map sc-space:storage-cluster
+sunbeam deployment validate
+
+<span class="m"># MAAS installe et câble ; Sunbeam déploie par étiquettes</span>
+<span class="c">sunbeam cluster bootstrap</span> --manifest ~/prod.yaml
+<span class="c">sunbeam cluster deploy</span>
+sunbeam configure --manifest ~/prod.yaml</pre>
+</div>
+<div class="col">
+<p><b>Ce que MAAS apporte, que le mode manuel n'a pas</b></p>
+<ul class="pts sm">
+<li><b>Les réseaux par rôle</b> deviennent explicites : six espaces (<i>spaces</i>) — <code>management</code>, <code>internal</code>, <code>public</code>, <code>data</code>, <code>storage</code>, <code>storage-cluster</code> — et chaque étiquette de machine dit lesquels elle exige. En mode manuel, Ceph et les API partagent le réseau de gestion.</li>
+<li><b>Les machines par étiquette</b> : <code>control</code>, <code>compute</code>, <code>storage</code>, <code>network</code>, <code>juju-controller</code>, <code>sunbeam</code>, plus <code>openstack-acme-prod</code> pour les rattacher au déploiement. La carte externe se marque <code>neutron:physnet1</code>, sous-réseau <i>non configuré</i>.</li>
+<li><b>L'installation du système</b> et le netplan sont faits par MAAS, identiques sur toutes les machines : plus de fichier à recopier sur six nœuds.</li>
+<li><b>Le remplacement d'une machine</b> : on l'étiquette, <code>cluster deploy</code> la prend.</li>
+</ul>
+<table class="tbl tight xs">
+<thead><tr><th>Étiquette</th><th>Réseaux exigés</th></tr></thead>
+<tbody>
+<tr><td><code>control</code></td><td>data, internal, management, public, storage</td></tr>
+<tr><td><code>compute</code></td><td>data, internal, management, storage</td></tr>
+<tr><td><code>storage</code></td><td>internal, management, storage, storage-cluster</td></tr>
+<tr><td><code>juju-controller</code>, <code>sunbeam</code></td><td>management</td></tr>
+</tbody></table>
+</div>
+</div></div>
+</section>
+
+<!-- 37 -->
+<section class="slide">
+<header><span class="kick">Synthèse</span><h2>Ce qu'il faut retenir</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card cb"><h3>Avant d'installer</h3>
+<ul class="pts sm"><li>Dessiner les réseaux : gestion (VIP), externe (sans IP sur la carte), stockage.</li><li>Les trois noms des API dans le DNS <b>avant</b> le bootstrap.</li><li>FQDN sur chaque nœud, horloge synchronisée, disques Ceph vides.</li><li>Tout dans le manifeste ; <code>database</code> et <code>region</code> sont définitifs.</li></ul></div>
+<div class="card ct"><h3>Les commandes, dans l'ordre</h3>
+<ul class="pts sm"><li><code>snap install openstack --channel 2024.1/stable</code></li><li><code>sunbeam prepare-node-script | bash -x</code></li><li><code>cluster bootstrap --role … --manifest …</code></li><li><code>cluster add</code> → <code>cluster join --role …</code> → <code>cluster resize</code> (à 3 control)</li><li><code>configure --manifest …</code>, <code>openrc</code>, une VM de preuve.</li></ul></div>
+<div class="card cn"><h3>Lab contre production</h3>
+<ul class="pts sm"><li>Le lab : 1 nœud, base <code>single</code>, HTTP, DNS et passerelle dans une VM — fait pour être cassé et refait.</li><li>La production : 3 control pour le quorum, 2 compute pour la maintenance, <b>3</b> storage pour la réplication.</li><li>« 3 + 2 + 1 » marche, avec un point unique de défaillance sur les données : le dire, le chiffrer, le planifier.</li></ul></div>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:30%">Ce que le lab a appris</th><th>La règle de production qui en découle</th></tr></thead>
+<tbody>
+<tr><td>Lab-Services éteinte → <code>503</code> partout</td><td>le DNS des noms d'API est une dépendance de premier niveau : redondé, surveillé</td></tr>
+<tr><td>MTU 1442 sur la passerelle</td><td>la MTU se décide sur toute la chaîne, commutateurs compris, avant la première VM</td></tr>
+<tr><td>OSD perdu à l'import, EPT, charms figés</td><td>du matériel physique, et une recette écrite : <code>ceph -s</code>, <code>juju status</code>, une VM, une migration, une panne simulée</td></tr>
+<tr><td>Réponses données à l'invite, perdues</td><td>le manifeste dans git ; <code>sunbeam manifest show</code> fait foi</td></tr>
+</tbody></table>
+<div class="note g"><b>Sources :</b> documentation Canonical OpenStack 2024.1 (mise à l'échelle, manifeste, exigences matérielles, installation avec MAAS), fichiers du dépôt <code>lab-sunbeam/</code>, guides apprenants, et l'état réel de Lab-Sunbeam relevé le 19 octobre 2026.</div>
+</div>
+</section>
+
+</div>
+<div id="bar"></div>
+<div id="nav"><button id="bO" title="Vue d'ensemble (O)">▦</button><button id="bF" title="Plein écran (F)">⛶</button><button id="bP" title="Précédent (←)">←</button><button id="bN" title="Suivant (→)">→</button></div>
+<script>
+(function(){
+var stage=document.getElementById('stage'),bar=document.getElementById('bar'),body=document.body;
+var slides=Array.prototype.slice.call(document.querySelectorAll('.slide')),N=slides.length,cur=0;
+slides.forEach(function(s,i){
+  var f=document.createElement('div');f.className='foot';
+  f.innerHTML='<span>OpenStack Sunbeam — Mise en place : du lab à la production</span><span>'+(i+1)+' / '+N+'</span>';
+  s.appendChild(f);
+  s.addEventListener('click',function(){if(body.classList.contains('ov')){body.classList.remove('ov');go(i);fit();}});
+});
+function go(n){
+  cur=Math.max(0,Math.min(N-1,n));
+  slides.forEach(function(s,i){s.classList.toggle('active',i===cur);});
+  bar.style.width=((cur+1)/N*100)+'%';
+  try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+}
+function fit(){
+  if(body.classList.contains('ov')){
+    stage.style.transform='';
+    document.documentElement.style.setProperty('--z',Math.max(.1,(window.innerWidth-40-4*14-20)/5/1280));
+  }else{
+    stage.style.transform='scale('+Math.min(window.innerWidth/1280,window.innerHeight/720)+')';
+  }
+}
+function overview(){body.classList.toggle('ov');fit();if(body.classList.contains('ov')){slides[cur].scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}}
+function full(){if(document.fullscreenElement){document.exitFullscreen();}else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen();}}
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'||k===' '||k==='ArrowDown'){e.preventDefault();go(cur+1);}
+  else if(k==='ArrowLeft'||k==='PageUp'||k==='ArrowUp'){e.preventDefault();go(cur-1);}
+  else if(k==='Home'){go(0);}
+  else if(k==='End'){go(N-1);}
+  else if(k==='o'||k==='O'||k==='Escape'){if(k!=='Escape'||body.classList.contains('ov'))overview();}
+  else if(k==='f'||k==='F'){full();}
+});
+document.getElementById('bN').onclick=function(){go(cur+1);};
+document.getElementById('bP').onclick=function(){go(cur-1);};
+document.getElementById('bO').onclick=overview;
+document.getElementById('bF').onclick=full;
+var tx=null;
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){if(tx===null||body.classList.contains('ov'))return;var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1));tx=null;},{passive:true});
+window.addEventListener('resize',fit);
+window.addEventListener('hashchange',function(){var h=parseInt(location.hash.slice(1),10);if(h&&h-1!==cur)go(h-1);});
+var h=parseInt(location.hash.slice(1),10);
+go(h?h-1:0);fit();
+})();
+</script>
+</body>
+</html>

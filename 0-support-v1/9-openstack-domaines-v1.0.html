@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenStack — les domaines</title>
+<style>
+:root{--ink:#0f172a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;--navy:#101a33;--red:#e4002b;--red2:#b3122f;--blue:#2563eb;--teal:#0d9488;--amber:#d97706;--violet:#7c3aed;--green:#16a34a;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;--z:.2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#070b17;overflow:hidden;font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:#fff;color:var(--ink);padding:38px 64px 46px;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide>header{border-left:5px solid var(--red);padding:2px 0 2px 18px;margin-bottom:18px;flex:none}
+.kick{display:block;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+h2{font-size:32px;line-height:1.15;letter-spacing:-.012em;font-weight:750}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;font-size:17.5px;line-height:1.45;color:var(--ink2)}
+.body b,.body strong{color:var(--ink);font-weight:680}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;min-height:0}
+.cols.c3{grid-template-columns:repeat(3,1fr);gap:18px}
+.cols.c4{grid-template-columns:repeat(4,1fr);gap:14px}
+.cols.c5{grid-template-columns:repeat(5,1fr);gap:12px}
+.cols.w64{grid-template-columns:1.45fr 1fr}
+.cols.w46{grid-template-columns:1fr 1.35fr}
+.cols.nf{flex:none}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+ul.pts{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.pts li{padding-left:22px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.52em;width:8px;height:8px;border-radius:2px;background:var(--red)}
+ul.pts.sm{gap:5px;font-size:15px;line-height:1.38}
+ul.pts.sm li{padding-left:17px}
+ul.pts.sm li::before{width:6px;height:6px;top:.5em}
+.card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--c,var(--red));border-radius:10px;padding:13px 16px;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:15px;line-height:1.4;min-width:0}
+.card h3{font-size:16.5px;color:var(--ink);margin-bottom:5px;line-height:1.2}
+.card .os{display:block;margin-top:7px;font-size:13px;color:var(--mut)}
+.card .os b{color:var(--red2)}
+.cb{--c:var(--blue)}.ct{--c:var(--teal)}.ca{--c:var(--amber)}.cv{--c:var(--violet)}.cg{--c:var(--green)}.cn{--c:var(--navy)}
+.note{background:#fff5f6;border-left:4px solid var(--red);padding:9px 16px;border-radius:0 8px 8px 0;font-size:15.5px;color:var(--ink);flex:none}
+.note.b{background:#eff5ff;border-color:var(--blue)}
+.note.g{background:#f1f5f9;border-color:#64748b}
+table.tbl{width:100%;border-collapse:collapse;font-size:14.5px;line-height:1.35}
+.tbl th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-size:13px;letter-spacing:.03em;font-weight:650}
+.tbl td{padding:6.5px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:nth-child(even) td{background:#f8fafc}
+.tbl td:first-child{font-weight:680;color:var(--ink);white-space:nowrap}
+.tbl.os td:nth-child(2){color:var(--red2);font-weight:650}
+.tbl.tight td{padding:5px 12px;font-size:14px}
+table.resp{width:100%;border-collapse:separate;border-spacing:5px 4px;font-size:14.5px;text-align:center}
+.resp thead th{font-size:15px;color:var(--ink);padding:2px 4px 6px;line-height:1.2}
+.resp thead small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+.resp tbody th{text-align:right;padding-right:12px;font-weight:650;color:var(--ink);white-space:nowrap;width:210px}
+.resp td{padding:6px;border-radius:6px;font-weight:600}
+.resp .u{background:#e3edff;color:#1d4ed8}
+.resp .p{background:#fde8ec;color:var(--red2)}
+code{font-family:var(--mono);font-size:.87em;background:#f1f5f9;padding:1px 6px;border-radius:4px;color:var(--ink)}
+pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;font:13.5px/1.5 var(--mono);white-space:pre;overflow:hidden}
+pre .c{color:#7dd3fc}pre .k{color:#fda4af}pre .m{color:#94a3b8}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:#fde8ec;color:var(--red2);letter-spacing:.03em}
+.fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:100%}
+.foot{position:absolute;left:64px;right:64px;bottom:15px;display:flex;justify-content:space-between;font-size:11.5px;color:#94a3b8;letter-spacing:.02em}
+/* dark slides */
+.slide.dark{background:radial-gradient(1100px 600px at 85% 15%,#1c2a55 0%,var(--navy) 55%,#0b1226 100%);color:#fff;justify-content:center}
+.dark .foot{color:#64748b}
+.dark .kick{color:#ff6b84}
+h1{font-size:68px;line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:10px 0 14px}
+.sub{font-size:27px;color:#cbd5e1;font-weight:400}
+.chips{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin-top:34px}
+.chips li{border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:7px 16px;font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.04)}
+.ref{margin-top:36px;font-size:14px;color:#94a3b8}
+.deco{position:absolute;right:0;top:0;width:1280px;height:720px;pointer-events:none}
+.tt{position:relative;max-width:760px}
+.sec .num{font-size:150px;font-weight:800;line-height:.9;color:transparent;-webkit-text-stroke:2px #ff4d6a;letter-spacing:-.04em}
+.sec h2{font-size:50px;margin:16px 0 12px;letter-spacing:-.02em}
+.sec p{font-size:20px;color:#cbd5e1;max-width:820px;line-height:1.45}
+.sec ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:9px 40px;margin-top:30px;max-width:980px;font-size:16.5px;color:#e2e8f0}
+.sec ol li{padding-left:20px;position:relative}
+.sec ol li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:3px;background:#ff4d6a}
+/* svg */
+svg{display:block}
+svg{font-size:14px}
+svg text{font-family:inherit;fill:#0f172a}
+svg g.ts text{fill:#475569}svg g.tw text{fill:#fff}
+.big .card{font-size:17px;padding:18px 16px;display:flex;flex-direction:column;line-height:1.42}.big .card h3{font-size:19px;margin-bottom:12px}.big .card .os{font-size:14.5px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line);line-height:1.4}
+.dense .card{font-size:14px;padding:10px 14px;line-height:1.36}.dense .card h3{font-size:15.5px;margin-bottom:3px}
+.tc{text-anchor:middle}.te{text-anchor:end}
+svg .tb{font-weight:700}svg .ts{font-size:12px;fill:#475569}svg .tl{font-size:17px;font-weight:750}svg .tw{fill:#fff}svg .tr{fill:#b3122f}
+svg .tm{font-family:var(--mono);font-size:12px}
+.bx{fill:#fff;stroke:#94a3b8;stroke-width:1.5}
+.b-red{fill:#fde8ec;stroke:#e4002b;stroke-width:1.5}
+.b-blue{fill:#e3edff;stroke:#2563eb;stroke-width:1.5}
+.b-teal{fill:#d8f3ee;stroke:#0d9488;stroke-width:1.5}
+.b-amber{fill:#fdf0d5;stroke:#d97706;stroke-width:1.5}
+.b-violet{fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5}
+.b-green{fill:#dcf5e3;stroke:#16a34a;stroke-width:1.5}
+.b-grey{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5}
+.b-dark{fill:#101a33;stroke:#101a33}
+.f-red{fill:#e4002b}
+.zone{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 4}
+.ln{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar)}
+.ln2{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar);marker-start:url(#ar)}
+.lr{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr)}
+.lr2{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr);marker-start:url(#arr)}
+.ld{stroke-dasharray:5 4}
+.nl{stroke:#94a3b8;stroke-width:1.5;fill:none}
+/* ui */
+#bar{position:fixed;left:0;bottom:0;height:3px;background:var(--red);width:0;transition:width .2s;z-index:5}
+#nav{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;display:flex;gap:6px;z-index:6;opacity:.07;transition:opacity .2s}
+#nav:hover{opacity:1}
+#nav button{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;font:600 13px/1 inherit;padding:7px 10px;cursor:pointer}
+#nav button:hover{background:var(--red);border-color:var(--red)}
+body.ov{overflow:auto}
+body.ov #stage{position:static;margin:0;width:auto;height:auto;transform:none!important;display:flex;flex-wrap:wrap;gap:14px;padding:20px}
+body.ov .slide{display:flex;position:relative;inset:auto;flex:none;width:1280px;height:720px;zoom:var(--z);cursor:pointer;border-radius:8px}
+body.ov .slide.active{outline:14px solid var(--red)}
+@page{size:1280px 720px;margin:0}
+@media print{
+html,body{height:auto;overflow:visible;background:#fff}
+#stage{position:static;margin:0;width:1280px;height:auto;transform:none!important;display:block}
+.slide{display:flex!important;position:relative;inset:auto;width:1280px;height:720px;break-after:page;page-break-after:always;zoom:1!important}
+#bar,#nav{display:none}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.la{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA)}.la2{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA);marker-start:url(#arA)}
+.lt{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT)}.lt2{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT);marker-start:url(#arT)}
+.lb{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB)}.lb2{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB);marker-start:url(#arB)}
+svg text.fa,svg .fa{fill:#b45309}svg text.ft,svg .ft{fill:#0f766e}svg text.fb,svg .fb{fill:#1d4ed8}
+.tbl td.c,.tbl th.c{text-align:center}.tbl td.y{color:#16a34a;font-weight:800}.tbl td.n{color:#cbd5e1}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e4002b"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+<marker id="arT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker>
+<marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+</defs></svg>
+<div id="stage">
+
+<style>
+.tbl.xs td{font-size:12.8px;padding:5px 9px;line-height:1.32}
+.tbl.xs th{font-size:12.2px;padding:7px 9px}
+.tbl.xs td:first-child{white-space:normal}
+.body code{white-space:nowrap}
+.tbl.wrap td:first-child{white-space:normal}
+.tbl.wrap td:first-child code{white-space:normal}
+</style>
+
+<!-- 1 -->
+<section class="slide dark">
+<svg class="deco" viewBox="0 0 1280 720" aria-hidden="true"><g transform="translate(-60,0)">
+<g fill="none" stroke="#ff4d6a" stroke-width="2" opacity=".85">
+<path d="M900,470 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.16)"/>
+<path d="M900,400 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.24)"/>
+<path d="M900,330 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.34)"/>
+<path d="M900,260 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.5)"/>
+</g>
+<g font-weight="700" letter-spacing="2" style="font-size:12px"><text x="1210" y="264" style="fill:#cbd5e1">SYSTÈME</text><text x="1210" y="334" style="fill:#cbd5e1">DOMAINES</text><text x="1210" y="404" style="fill:#cbd5e1">PROJETS</text><text x="1210" y="474" style="fill:#cbd5e1">RESSOURCES</text></g>
+</g></svg>
+<div class="tt">
+<span class="kick">Support de formation</span>
+<h1>Les domaines dans OpenStack</h1>
+<p class="sub">Espaces d'identité indépendants, administration déléguée par domaine et administration globale — sur Canonical OpenStack (Sunbeam)</p>
+<ul class="chips"><li>Espace de noms</li><li>Source d'identité</li><li>Portée domaine</li><li>Rôle manager</li><li>Portée système</li></ul>
+<p class="ref">Références : OpenStack 2026.1 · Canonical OpenStack 2026.1 LTS · documentations consultées en octobre 2026</p>
+</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Objectif et déroulé</h2></header>
+<div class="body">
+<div class="note"><b>Objectif :</b> savoir découper un cloud en domaines, comprendre ce que ce découpage isole réellement, et répartir l'administration entre une équipe plateforme — globale — et des responsables de domaine — délégués — sans ouvrir de brèche.</div>
+<div class="cols">
+<div class="col">
+<p><b>À l'issue de ce module, vous saurez :</b></p>
+<ul class="pts">
+<li>Expliquer en quoi un domaine est un <b>espace d'identité indépendant</b>.</li>
+<li>Dire ce qui <b>appartient à un domaine</b> et ce qui reste <b>global</b>.</li>
+<li>Créer, raccorder, désactiver et supprimer un domaine sur Sunbeam.</li>
+<li>Distinguer <b>administrateur global</b>, <b>administrateur de domaine</b> et <b>gestionnaire de domaine</b>.</li>
+<li>Mettre en place une <b>délégation</b> et en vérifier les limites.</li>
+<li>Choisir un <b>découpage</b> adapté à une organisation.</li>
+</ul>
+</div>
+<div class="col dense">
+<div class="card"><h3>1 · Pourquoi des domaines</h3>Le problème d'un espace unique ; ce qu'un domaine est, et n'est pas.</div>
+<div class="card cb"><h3>2 · Des espaces d'identité indépendants</h3>Noms, appartenance, sources d'identité, cycle de vie, Sunbeam.</div>
+<div class="card cv"><h3>3 · L'administration globale</h3>Portée système, rôle admin, ce que la plateforme garde.</div>
+<div class="card ct"><h3>4 · L'administration déléguée</h3>Portée domaine, rôle manager, garde-fous, mise en place.</div>
+<div class="card ca"><h3>5 · Global ou délégué : répartir</h3>Comparaison, matrice des responsabilités, modèles de découpage.</div>
+<div class="card cn"><h3>6 · Exploitation</h3>Vérifier l'isolation, pannes typiques, bonnes pratiques.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 3 -->
+<section class="slide dark sec">
+<div class="num">01</div>
+<h2>Pourquoi des domaines</h2>
+<p>Tant que le cloud ne sert qu'une équipe, un seul espace suffit. Dès qu'il en sert plusieurs — filiales, clients, annuaires — il faut des cloisons dans l'identité elle-même.</p>
+<ol><li>Le problème d'un espace unique</li><li>Les trois fonctions d'un domaine</li><li>Domaine, projet, région : ne pas confondre</li><li>Ce qu'un domaine n'isole pas</li></ol>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+<header><span class="kick">1 · Pourquoi des domaines</span><h2>Le problème d'un espace unique</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 300">
+<rect x="20" y="10" width="540" height="280" rx="12" class="zone"/><text x="290" y="36" class="tc tl">Sans domaines : un seul espace</text>
+<g class="tc">
+<rect x="36" y="52" width="508" height="44" rx="8" class="b-red"/><text x="290" y="79" class="tb">une seule équipe d'administration, pour tout</text>
+<rect x="36" y="110" width="160" height="42" rx="7" class="b-blue"/><text x="116" y="136">alice (filiale Nord)</text>
+<rect x="210" y="110" width="160" height="42" rx="7" class="b-blue"/><text x="290" y="136">alice2 (filiale Sud)</text>
+<rect x="384" y="110" width="160" height="42" rx="7" class="b-blue"/><text x="464" y="136">ext-martin (client)</text>
+<rect x="36" y="166" width="160" height="42" rx="7" class="b-violet"/><text x="116" y="192">nord-web</text>
+<rect x="210" y="166" width="160" height="42" rx="7" class="b-violet"/><text x="290" y="192">sud-web</text>
+<rect x="384" y="166" width="160" height="42" rx="7" class="b-violet"/><text x="464" y="192">client42-web</text>
+<text x="290" y="238" class="ts">noms préfixés pour éviter les collisions ; chaque création de compte</text><text x="290" y="256" class="ts">ou de projet passe par l'équipe centrale ; un seul annuaire possible</text><text x="290" y="276" class="ts tb">l'équipe centrale devient un goulet d'étranglement</text>
+</g>
+<rect x="590" y="10" width="540" height="280" rx="12" class="zone"/><text x="860" y="36" class="tc tl">Avec des domaines : des espaces cloisonnés</text>
+<g class="tc">
+<rect x="606" y="52" width="508" height="36" rx="8" class="b-red"/><text x="860" y="75" class="tb">équipe plateforme : crée les domaines, garde le système</text>
+<rect x="606" y="100" width="160" height="150" rx="10" class="b-grey"/><text x="686" y="122" class="tb">domaine nord</text><rect x="620" y="134" width="132" height="30" rx="6" class="b-blue"/><text x="686" y="154" class="ts">alice</text><rect x="620" y="170" width="132" height="30" rx="6" class="b-violet"/><text x="686" y="190" class="ts">web</text><text x="686" y="222" class="ts">géré par</text><text x="686" y="238" class="ts tb">la filiale Nord</text>
+<rect x="780" y="100" width="160" height="150" rx="10" class="b-grey"/><text x="860" y="122" class="tb">domaine sud</text><rect x="794" y="134" width="132" height="30" rx="6" class="b-blue"/><text x="860" y="154" class="ts">alice</text><rect x="794" y="170" width="132" height="30" rx="6" class="b-violet"/><text x="860" y="190" class="ts">web</text><text x="860" y="222" class="ts">géré par</text><text x="860" y="238" class="ts tb">la filiale Sud</text>
+<rect x="954" y="100" width="160" height="150" rx="10" class="b-grey"/><text x="1034" y="122" class="tb">domaine client42</text><rect x="968" y="134" width="132" height="30" rx="6" class="b-blue"/><text x="1034" y="154" class="ts">martin</text><rect x="968" y="170" width="132" height="30" rx="6" class="b-violet"/><text x="1034" y="190" class="ts">web</text><text x="1034" y="222" class="ts">géré par</text><text x="1034" y="238" class="ts tb">le client</text>
+<text x="860" y="276" class="ts tb">mêmes noms, sans collision ; chacun gère son espace</text>
+</g>
+</svg>
+</div>
+<div class="cols c3 nf dense">
+<div class="card"><h3>Collision de noms</h3>Dans un espace unique, deux équipes ne peuvent pas avoir chacune un projet « web » ni un utilisateur « alice ».</div>
+<div class="card cb"><h3>Administration tout ou rien</h3>Pour créer un utilisateur, il faut être administrateur du cloud. Impossible de confier « seulement mon périmètre ».</div>
+<div class="card ct"><h3>Une seule source d'identité</h3>Tous les comptes viennent du même endroit : pas d'annuaire par filiale, pas de fournisseur d'identité par client.</div>
+</div>
+</div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+<header><span class="kick">1 · Pourquoi des domaines</span><h2>Les trois fonctions d'un domaine</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 270">
+<g class="tc">
+<rect x="20" y="10" width="350" height="250" rx="12" class="b-blue"/><text x="195" y="40" class="tl">① Espace de noms</text>
+<rect x="36" y="56" width="318" height="84" rx="8" class="bx"/><text x="195" y="80" class="ts">les noms d'utilisateur, de groupe et de projet</text><text x="195" y="98" class="ts">ne sont uniques qu'<tspan class="tb">à l'intérieur</tspan> du domaine</text><text x="195" y="124" class="tm tb" style="font-size:12px">alice@nord ≠ alice@sud</text>
+<text x="195" y="170" class="ts">Chaque organisation choisit ses noms</text><text x="195" y="188" class="ts">sans se soucier des voisines.</text><text x="195" y="224" class="ts tb">répond à : « comment éviter</text><text x="195" y="242" class="ts tb">les collisions ? »</text>
+<rect x="400" y="10" width="350" height="250" rx="12" class="b-violet"/><text x="575" y="40" class="tl">② Frontière d'administration</text>
+<rect x="416" y="56" width="318" height="84" rx="8" class="bx"/><text x="575" y="80" class="ts">un rôle détenu <tspan class="tb">sur le domaine</tspan> permet</text><text x="575" y="98" class="ts">de gérer ses utilisateurs, groupes, projets</text><text x="575" y="124" class="ts tb">et rien au-dehors</text>
+<text x="575" y="170" class="ts">La plateforme délègue la gestion courante</text><text x="575" y="188" class="ts">sans céder le contrôle du cloud.</text><text x="575" y="224" class="ts tb">répond à : « qui administre</text><text x="575" y="242" class="ts tb">quoi ? »</text>
+<rect x="780" y="10" width="350" height="250" rx="12" class="b-teal"/><text x="955" y="40" class="tl">③ Point de raccordement</text>
+<rect x="796" y="56" width="318" height="84" rx="8" class="bx"/><text x="955" y="80" class="ts">chaque domaine peut avoir sa propre</text><text x="955" y="98" class="ts">source d'identité</text><text x="955" y="124" class="ts tb">base locale · annuaire LDAP · fédération</text>
+<text x="955" y="170" class="ts">Les comptes de chaque organisation</text><text x="955" y="188" class="ts">restent dans son propre référentiel.</text><text x="955" y="224" class="ts tb">répond à : « d'où viennent</text><text x="955" y="242" class="ts tb">les utilisateurs ? »</text>
+</g>
+</svg>
+</div>
+<div class="cols nf">
+<div class="note g"><b>Définition à retenir :</b> un domaine est un conteneur d'utilisateurs, de groupes et de projets, qui délimite à la fois leurs noms, leur administration et leur origine.</div>
+<div class="note b"><b>Un peu d'histoire :</b> les domaines sont arrivés avec la version 3 de l'API d'identité. Avant, il n'existait que des « tenants », tous au même niveau ; le domaine <code>Default</code> a été créé pour les accueillir.</div>
+</div>
+</div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+<header><span class="kick">1 · Pourquoi des domaines</span><h2>Domaine, projet, région : ne pas confondre</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:13%">Notion</th><th style="width:26%">Ce qu'elle regroupe</th><th style="width:28%">Ce qu'elle isole</th><th>Qui la gère</th></tr></thead>
+<tbody>
+<tr><td>Domaine</td><td>utilisateurs, groupes, projets</td><td style="color:var(--ink);font-weight:400">les <b>identités</b> : noms, administration, source</td><td style="color:var(--ink);font-weight:400">créé par la plateforme ; contenu délégable</td></tr>
+<tr><td>Projet</td><td>instances, volumes, réseaux, images</td><td style="color:var(--ink);font-weight:400">les <b>ressources</b> : propriété, quotas, visibilité</td><td style="color:var(--ink);font-weight:400">créé par la plateforme ou par le gestionnaire du domaine</td></tr>
+<tr><td>Groupe</td><td>des utilisateurs d'un domaine</td><td style="color:var(--ink);font-weight:400">rien : simple raccourci d'attribution</td><td style="color:var(--ink);font-weight:400">gestionnaire du domaine, ou annuaire</td></tr>
+<tr><td>Région</td><td>un jeu complet de services et leurs adresses</td><td style="color:var(--ink);font-weight:400">les <b>infrastructures</b> : sites, pannes</td><td style="color:var(--ink);font-weight:400">la plateforme, exclusivement</td></tr>
+<tr><td>Zone de disponibilité</td><td>des hôtes d'une région</td><td style="color:var(--ink);font-weight:400">les domaines de panne</td><td style="color:var(--ink);font-weight:400">la plateforme</td></tr>
+<tr><td>Système</td><td>le cloud entier</td><td style="color:var(--ink);font-weight:400">rien : c'est la portée de ce qui est commun</td><td style="color:var(--ink);font-weight:400">la plateforme</td></tr>
+</tbody></table>
+<div class="fig" style="flex:none">
+<svg viewBox="0 0 1150 120">
+<g class="tc">
+<rect x="20" y="8" width="1110" height="104" rx="12" class="b-dark"/><text x="80" y="64" class="tb tw">système</text>
+<rect x="150" y="20" width="470" height="80" rx="10" class="b-violet"/><text x="210" y="64" class="tb">domaine</text>
+<rect x="280" y="30" width="160" height="60" rx="8" class="bx"/><text x="360" y="56" class="tb">projet</text><text x="360" y="74" class="ts">ressources</text>
+<rect x="450" y="30" width="160" height="60" rx="8" class="bx"/><text x="530" y="56" class="tb">projet</text><text x="530" y="74" class="ts">ressources</text>
+<rect x="640" y="20" width="470" height="80" rx="10" class="b-violet"/><text x="700" y="64" class="tb">domaine</text>
+<rect x="770" y="30" width="330" height="60" rx="8" class="bx"/><text x="935" y="56" class="tb">projet</text><text x="935" y="74" class="ts">ressources</text>
+</g>
+</svg>
+</div>
+<div class="note g"><b>Deux axes indépendants :</b> le domaine découpe <b>les personnes et l'organisation</b> ; la région découpe <b>le matériel</b>. Un même domaine existe dans toutes les régions d'un cloud qui partagent Keystone.</div>
+</div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+<header><span class="kick">1 · Pourquoi des domaines</span><h2>Ce qu'un domaine n'isole pas</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<div class="note"><b>Point le plus mal compris :</b> le domaine est une notion de <b>Keystone</b>. Nova, Neutron, Cinder et Glance ne raisonnent qu'en <b>projets</b> ; ils ignorent à quel domaine un projet appartient.</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:36%">Sujet</th><th>Réalité</th></tr></thead>
+<tbody>
+<tr><td>Isolation réseau</td><td>par projet, pas par domaine : deux projets d'un même domaine sont aussi étanches que deux projets de domaines différents</td></tr>
+<tr><td>Quotas</td><td>historiquement par projet ; pas de plafond « pour tout le domaine » dans les quotas classiques</td></tr>
+<tr><td>Images publiques, gabarits</td><td>visibles de tous les domaines</td></tr>
+<tr><td>Réseaux partagés, réseau externe</td><td>communs à tout le cloud</td></tr>
+<tr><td>Hyperviseurs, stockage</td><td>mutualisés : les instances de deux domaines cohabitent sur les mêmes hôtes</td></tr>
+<tr><td>Catalogue, régions</td><td>identiques pour tous</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<div class="fig" style="flex:none">
+<svg viewBox="0 0 560 250">
+<g class="tc">
+<rect x="10" y="6" width="540" height="96" rx="10" class="zone"/><text x="280" y="28" class="tb">Keystone connaît les domaines</text>
+<rect x="26" y="40" width="250" height="50" rx="8" class="b-violet"/><text x="151" y="62" class="tb">domaine nord</text><text x="151" y="80" class="ts">projet web → id 9a7e…</text>
+<rect x="284" y="40" width="250" height="50" rx="8" class="b-violet"/><text x="409" y="62" class="tb">domaine sud</text><text x="409" y="80" class="ts">projet web → id 41c2…</text>
+<rect x="10" y="146" width="540" height="96" rx="10" class="zone"/><text x="280" y="168" class="tb">Nova, Neutron, Cinder ne voient que des identifiants de projet</text>
+<rect x="26" y="180" width="250" height="50" rx="8" class="b-blue"/><text x="151" y="202" class="tb">instances du projet 9a7e…</text><text x="151" y="220" class="ts">domaine : inconnu</text>
+<rect x="284" y="180" width="250" height="50" rx="8" class="b-blue"/><text x="409" y="202" class="tb">instances du projet 41c2…</text><text x="409" y="220" class="ts">domaine : inconnu</text>
+</g>
+<path d="M151,102 V144" class="lr"/><path d="M409,102 V144" class="lr"/>
+<text x="280" y="128" class="tc ts tb" style="paint-order:stroke;stroke:#fff;stroke-width:5px">seul l'identifiant du projet voyage dans le jeton</text>
+</svg>
+</div>
+<ul class="pts sm">
+<li><b>Pour isoler du matériel</b> par organisation : agrégats d'hôtes, gabarits privés, zones de disponibilité — pas les domaines.</li>
+<li><b>Pour plafonner une organisation entière :</b> les limites unifiées de Keystone, ou une somme de quotas par projet gérée par la plateforme — module suivant.</li>
+<li><b>Pour restreindre le partage :</b> images et gabarits en accès par projet ; réseaux partagés par règles d'accès ciblées.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 8 -->
+<section class="slide dark sec">
+<div class="num">02</div>
+<h2>Des espaces d'identité indépendants</h2>
+<p>Ce qui fait d'un domaine un monde à part : ses noms, ses membres, sa source d'identité — et ce qui, malgré tout, le traverse.</p>
+<ol><li>Unicité des noms</li><li>Désigner une entité</li><li>Ce qui appartient à un domaine, ce qui est global</li><li>Le domaine, racine d'un arbre de projets</li><li>Une source d'identité par domaine</li><li>Configuration propre à un domaine</li><li>Affectations entre domaines</li><li>Cycle de vie</li><li>Les domaines sur Sunbeam</li><li>Commandes et Horizon</li></ol>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+<header><span class="kick">2 · Espaces d'identité</span><h2>Unicité des noms : ce qui est garanti, et où</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:20%">Entité</th><th style="width:27%">Le nom est unique…</th><th style="width:25%">L'identifiant est unique…</th><th>Conséquence</th></tr></thead>
+<tbody>
+<tr><td>Domaine</td><td>dans tout le cloud</td><td style="color:var(--ink);font-weight:400">dans tout le cloud</td><td style="color:var(--ink);font-weight:400">un nom de domaine suffit à le désigner</td></tr>
+<tr><td>Utilisateur</td><td>dans son domaine</td><td style="color:var(--ink);font-weight:400">dans tout le cloud</td><td style="color:var(--ink);font-weight:400">toujours préciser le domaine avec le nom</td></tr>
+<tr><td>Groupe</td><td>dans son domaine</td><td style="color:var(--ink);font-weight:400">dans tout le cloud</td><td style="color:var(--ink);font-weight:400">idem</td></tr>
+<tr><td>Projet</td><td>dans son domaine</td><td style="color:var(--ink);font-weight:400">dans tout le cloud</td><td style="color:var(--ink);font-weight:400">idem ; les autres services n'utilisent que l'identifiant</td></tr>
+<tr><td>Rôle global</td><td>dans tout le cloud</td><td style="color:var(--ink);font-weight:400">dans tout le cloud</td><td style="color:var(--ink);font-weight:400">« member » signifie la même chose partout</td></tr>
+<tr><td>Rôle propre à un domaine</td><td>dans son domaine</td><td style="color:var(--ink);font-weight:400">dans tout le cloud</td><td style="color:var(--ink);font-weight:400">alias local, à résoudre en rôles globaux</td></tr>
+</tbody></table>
+<div class="cols">
+<div class="col">
+<pre style="font-size:12.2px"><span class="m"># Deux « alice », deux « web » : aucun conflit</span>
+<span class="c">openstack user create</span> --domain nord --password-prompt alice
+<span class="c">openstack user create</span> --domain sud  --password-prompt alice
+<span class="c">openstack project create</span> --domain nord web
+<span class="c">openstack project create</span> --domain sud  web
+
+<span class="c">openstack user list</span> --domain nord
+<span class="c">openstack user list</span> --domain sud</pre>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Les deux « alice » sont deux personnes distinctes</b> pour le cloud : identifiants différents, mots de passe différents, droits différents.</li>
+<li><b>Les identifiants sont opaques</b> et attribués par Keystone ; ce sont eux que portent les jetons et les ressources.</li>
+<li><b>Renommer</b> un projet ou un utilisateur ne change pas son identifiant : ses ressources et ses droits le suivent.</li>
+</ul>
+<div class="note g">Dans un journal ou une facture, toujours conserver l'<b>identifiant</b> : c'est la seule référence qui ne soit jamais ambiguë.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+<header><span class="kick">2 · Espaces d'identité</span><h2>Désigner une entité : nom + domaine, ou identifiant</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Dans une demande de jeton : deux domaines à préciser</span>
+"identity": { "password": { "user": {
+    "name": "alice",
+    "<span class="k">domain</span>": { "name": "nord" },     <span class="m">← domaine de l'utilisateur</span>
+    "password": "••••••••" } } },
+"scope": { "project": {
+    "name": "web",
+    "<span class="k">domain</span>": { "name": "nord" } } }  <span class="m">← domaine du projet</span></pre>
+<table class="tbl tight">
+<thead><tr><th>Variable</th><th>Répond à</th></tr></thead>
+<tbody>
+<tr><td><code>OS_USER_DOMAIN_NAME</code></td><td>dans quel domaine chercher l'utilisateur ?</td></tr>
+<tr><td><code>OS_PROJECT_DOMAIN_NAME</code></td><td>dans quel domaine chercher le projet ?</td></tr>
+<tr><td><code>OS_DOMAIN_NAME</code></td><td>quel domaine viser, pour un jeton de portée domaine ?</td></tr>
+</tbody></table>
+<div class="note"><b>Les deux premiers peuvent différer :</b> un utilisateur du domaine « prestataires » peut travailler dans un projet du domaine « nord ».</div>
+</div>
+<div class="col">
+<pre style="font-size:12.2px"><span class="m"># Les options de la ligne de commande suivent la même logique</span>
+<span class="c">openstack role add</span> \
+  --user alice    <span class="k">--user-domain</span> nord \
+  --project web   <span class="k">--project-domain</span> nord \
+  member
+
+<span class="c">openstack group add user</span> \
+  <span class="k">--group-domain</span> nord <span class="k">--user-domain</span> nord \
+  developpeurs alice
+
+<span class="m"># Ou, sans ambiguïté possible, par identifiants</span>
+<span class="c">openstack role add</span> --user 3f1c… --project 9a7e… member</pre>
+<ul class="pts sm">
+<li><b>Oublier le domaine</b> est l'erreur la plus fréquente : la commande cherche alors dans le domaine du jeton courant, ou échoue par ambiguïté.</li>
+<li><b>Dans Horizon,</b> la page de connexion demande le domaine en plus du nom et du mot de passe.</li>
+<li><b>Dans les scripts,</b> préférer les identifiants : ils survivent aux renommages.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+<header><span class="kick">2 · Espaces d'identité</span><h2>Ce qui appartient à un domaine, ce qui est global</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 330">
+<rect x="20" y="10" width="1110" height="120" rx="12" class="b-dark"/><text x="40" y="38" class="tl tw" style="text-anchor:start">Global — commun à tous les domaines</text>
+<g class="tc">
+<rect x="40" y="54" width="170" height="60" rx="8" class="bx"/><text x="125" y="78" class="tb">rôles globaux</text><text x="125" y="98" class="ts">admin, member, reader…</text>
+<rect x="222" y="54" width="170" height="60" rx="8" class="bx"/><text x="307" y="78" class="tb">catalogue</text><text x="307" y="98" class="ts">services, points d'accès</text>
+<rect x="404" y="54" width="170" height="60" rx="8" class="bx"/><text x="489" y="78" class="tb">régions</text><text x="489" y="98" class="ts">et leurs services</text>
+<rect x="586" y="54" width="170" height="60" rx="8" class="bx"/><text x="671" y="78" class="tb">règles de politique</text><text x="671" y="98" class="ts">mêmes pour tous</text>
+<rect x="768" y="54" width="170" height="60" rx="8" class="bx"/><text x="853" y="78" class="tb">limites par défaut</text><text x="853" y="98" class="ts">enregistrées</text>
+<rect x="950" y="54" width="160" height="60" rx="8" class="bx"/><text x="1030" y="78" class="tb">les domaines</text><text x="1030" y="98" class="ts">eux-mêmes</text>
+</g>
+<rect x="20" y="150" width="545" height="170" rx="12" class="b-violet"/><text x="40" y="178" class="tl" style="text-anchor:start">Domaine « nord »</text>
+<rect x="585" y="150" width="545" height="170" rx="12" class="b-violet"/><text x="605" y="178" class="tl" style="text-anchor:start">Domaine « sud »</text>
+<g class="tc">
+<rect x="40" y="194" width="120" height="58" rx="8" class="bx"/><text x="100" y="218" class="tb" style="font-size:12.5px">utilisateurs</text><text x="100" y="238" class="ts">comptes</text>
+<rect x="170" y="194" width="120" height="58" rx="8" class="bx"/><text x="230" y="218" class="tb" style="font-size:12.5px">groupes</text><text x="230" y="238" class="ts">équipes</text>
+<rect x="300" y="194" width="120" height="58" rx="8" class="bx"/><text x="360" y="218" class="tb" style="font-size:12.5px">projets</text><text x="360" y="238" class="ts">et sous-projets</text>
+<rect x="430" y="194" width="120" height="58" rx="8" class="bx"/><text x="490" y="218" class="tb" style="font-size:12.5px">source d'identité</text><text x="490" y="238" class="ts">une seule</text>
+<text x="292" y="284" class="ts">noms uniques ici seulement ; appartenance exclusive et définitive</text><text x="292" y="304" class="ts tb">tout ce qui est ici disparaît de Keystone avec le domaine</text>
+<rect x="605" y="194" width="120" height="58" rx="8" class="bx"/><text x="665" y="218" class="tb" style="font-size:12.5px">utilisateurs</text><text x="665" y="238" class="ts">comptes</text>
+<rect x="735" y="194" width="120" height="58" rx="8" class="bx"/><text x="795" y="218" class="tb" style="font-size:12.5px">groupes</text><text x="795" y="238" class="ts">équipes</text>
+<rect x="865" y="194" width="120" height="58" rx="8" class="bx"/><text x="925" y="218" class="tb" style="font-size:12.5px">projets</text><text x="925" y="238" class="ts">et sous-projets</text>
+<rect x="995" y="194" width="120" height="58" rx="8" class="bx"/><text x="1055" y="218" class="tb" style="font-size:12.5px">source d'identité</text><text x="1055" y="238" class="ts">une seule</text>
+<text x="857" y="284" class="ts">noms uniques ici seulement ; appartenance exclusive et définitive</text><text x="857" y="304" class="ts tb">tout ce qui est ici disparaît de Keystone avec le domaine</text>
+</g>
+</svg>
+</div>
+<div class="cols nf">
+<div class="note g"><b>Appartenance exclusive :</b> un utilisateur, un groupe ou un projet appartient à <b>un seul</b> domaine, pour toujours. On ne « déplace » pas un utilisateur d'un domaine à l'autre : on en crée un nouveau.</div>
+<div class="note"><b>Les affectations de rôles n'appartiennent à aucun domaine :</b> elles relient un acteur et une cible, qui peuvent être de domaines différents. C'est ce qui permet le travail entre organisations.</div>
+</div>
+</div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+<header><span class="kick">2 · Espaces d'identité</span><h2>Le domaine, racine d'un arbre de projets</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 420">
+<g class="tc">
+<rect x="170" y="6" width="220" height="64" rx="10" class="b-violet"/><text x="280" y="30" class="tb">domaine « nord »</text><text x="280" y="48" class="ts">en interne : un projet marqué</text><text x="280" y="63" class="tm" style="font-size:10.5px">is_domain = true</text>
+<rect x="20" y="130" width="160" height="54" rx="9" class="bx"/><text x="100" y="153" class="tb">production</text><text x="100" y="171" class="ts">parent : nord</text>
+<rect x="200" y="130" width="160" height="54" rx="9" class="bx"/><text x="280" y="153" class="tb">recherche</text><text x="280" y="171" class="ts">parent : nord</text>
+<rect x="380" y="130" width="160" height="54" rx="9" class="bx"/><text x="460" y="153" class="tb">bac-a-sable</text><text x="460" y="171" class="ts">parent : nord</text>
+<rect x="10" y="240" width="110" height="50" rx="8" class="bx"/><text x="65" y="262" class="tb">web</text><text x="65" y="279" class="ts">parent : production</text>
+<rect x="130" y="240" width="110" height="50" rx="8" class="bx"/><text x="185" y="262" class="tb">bases</text><text x="185" y="279" class="ts">parent : production</text>
+<rect x="250" y="240" width="110" height="50" rx="8" class="bx"/><text x="305" y="262" class="tb">labo-ia</text><text x="305" y="279" class="ts">parent : recherche</text>
+<rect x="10" y="330" width="540" height="78" rx="10" class="b-amber"/><text x="280" y="354" class="tb">Rôle hérité, posé sur le domaine</text><text x="280" y="374" class="ts">« exploitants : reader, hérité, sur le domaine nord »</text><text x="280" y="392" class="ts">→ lecture sur tous les projets de l'arbre, présents et futurs</text>
+</g>
+<path d="M230,70 L110,128" class="ln"/><path d="M280,70 V128" class="ln"/><path d="M330,70 L450,128" class="ln"/>
+<path d="M80,184 L68,238" class="ln"/><path d="M120,184 L180,238" class="ln"/><path d="M290,184 L302,238" class="ln"/>
+</svg>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Tout projet a un domaine</b>, et un seul ; un sous-projet est dans le domaine de son parent.</li>
+<li><b>Le domaine est le sommet de l'arbre :</b> un projet de premier niveau a pour parent le domaine lui-même.</li>
+<li><b>Deux façons de poser un rôle sur un domaine :</b></li>
+</ul>
+<table class="tbl tight">
+<thead><tr><th>Affectation</th><th>Donne des droits sur</th></tr></thead>
+<tbody>
+<tr><td>sur le domaine, <b>directe</b></td><td>le domaine lui-même : gérer ses utilisateurs, groupes, projets</td></tr>
+<tr><td>sur le domaine, <b>héritée</b></td><td>tous les projets du domaine — mais <b>pas</b> le domaine lui-même</td></tr>
+</tbody></table>
+<pre style="font-size:12px"><span class="m"># Gérer le domaine</span>
+<span class="c">openstack role add</span> --user bob --user-domain nord \
+  --domain nord manager
+
+<span class="m"># Lire tous les projets du domaine</span>
+<span class="c">openstack role add</span> --group exploitants \
+  --group-domain nord --domain nord --inherited reader</pre>
+<div class="note g">Les deux se cumulent souvent : un responsable de domaine reçoit <code>manager</code> en direct, pour administrer, et <code>member</code> hérité, pour agir dans les projets.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+<header><span class="kick">2 · Espaces d'identité</span><h2>Une source d'identité par domaine</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 320">
+<rect x="20" y="10" width="1110" height="170" rx="12" class="zone"/><text x="36" y="36" class="tl">Keystone</text>
+<g class="tc">
+<rect x="36" y="50" width="250" height="114" rx="10" class="b-grey"/><text x="161" y="74" class="tb">domaines techniques</text><text x="161" y="94" class="ts">administration, services</text><text x="161" y="120" class="ts tb">pilote : sql</text><text x="161" y="146" class="ts">comptes créés par les charms</text>
+<rect x="306" y="50" width="250" height="114" rx="10" class="b-blue"/><text x="431" y="74" class="tb">domaine « siege »</text><text x="431" y="94" class="ts">employés du groupe</text><text x="431" y="120" class="ts tb">pilote : ldap</text><text x="431" y="146" class="ts">annuaire central</text>
+<rect x="576" y="50" width="250" height="114" rx="10" class="b-blue"/><text x="701" y="74" class="tb">domaine « filiale-sud »</text><text x="701" y="94" class="ts">employés de la filiale</text><text x="701" y="120" class="ts tb">pilote : ldap</text><text x="701" y="146" class="ts">son propre annuaire</text>
+<rect x="846" y="50" width="268" height="114" rx="10" class="b-violet"/><text x="980" y="74" class="tb">domaine « partenaires »</text><text x="980" y="94" class="ts">prestataires externes</text><text x="980" y="120" class="ts tb">fédération OpenID Connect</text><text x="980" y="146" class="ts">leur fournisseur d'identité</text>
+<rect x="36" y="232" width="250" height="70" rx="10" class="b-amber"/><text x="161" y="258" class="tb">base MySQL de Keystone</text><text x="161" y="280" class="ts">empreintes de mots de passe</text>
+<rect x="306" y="232" width="250" height="70" rx="10" class="b-blue"/><text x="431" y="258" class="tb">annuaire du siège</text><text x="431" y="280" class="tm" style="font-size:11px">ldaps://ldap.siege.exemple</text>
+<rect x="576" y="232" width="250" height="70" rx="10" class="b-blue"/><text x="701" y="258" class="tb">annuaire de la filiale</text><text x="701" y="280" class="tm" style="font-size:11px">ldaps://ad.sud.exemple</text>
+<rect x="846" y="232" width="268" height="70" rx="10" class="b-violet"/><text x="980" y="258" class="tb">fournisseur d'identité</text><text x="980" y="280" class="ts">Entra ID, Okta, Keycloak…</text>
+</g>
+<path d="M161,164 V230" class="la"/><path d="M431,164 V230" class="lb"/><path d="M701,164 V230" class="lb"/><path d="M980,230 V166" class="lr"/>
+<text x="575" y="206" class="tc ts" style="paint-order:stroke;stroke:#fff;stroke-width:5px">le nom de domaine fourni à la connexion décide de la source interrogée</text>
+</svg>
+</div>
+<div class="cols nf">
+<div class="col">
+<ul class="pts sm">
+<li><b>L'aiguillage se fait sur le domaine :</b> « alice » du domaine « siege » est cherchée dans l'annuaire du siège, et nulle part ailleurs.</li>
+<li><b>Les domaines ne se voient pas :</b> la panne de l'annuaire d'une filiale n'empêche pas les autres domaines de se connecter.</li>
+</ul>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Une seule source par domaine.</b> Deux annuaires, deux domaines.</li>
+<li><b>Projets et rôles restent dans Keystone</b>, quelle que soit la source : l'annuaire fournit des personnes et des groupes, jamais des droits.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+<header><span class="kick">2 · Espaces d'identité</span><h2>Configuration propre à un domaine</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Le mécanisme, dans Keystone</b></p>
+<pre style="font-size:12px"><span class="m"># keystone.conf — activer les réglages par domaine</span>
+[identity]
+<span class="k">domain_specific_drivers_enabled</span> = true
+<span class="k">domain_config_dir</span> = /etc/keystone/domains
+
+<span class="m"># /etc/keystone/domains/keystone.siege.conf</span>
+[identity]
+<span class="k">driver</span> = ldap
+[ldap]
+<span class="k">url</span> = ldaps://ldap.siege.exemple
+<span class="k">suffix</span> = dc=siege,dc=exemple
+<span class="k">user_tree_dn</span> = ou=personnes,dc=siege,dc=exemple</pre>
+<ul class="pts sm">
+<li><b>Un fichier par domaine</b>, nommé d'après lui ; il ne surcharge que les sections liées à l'identité.</li>
+<li><b>Variante :</b> les mêmes réglages stockés en base et gérés par l'API, plutôt que dans des fichiers.</li>
+<li><b>Un domaine sans réglage propre</b> utilise le pilote par défaut : la base locale.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Sur Sunbeam : on ne touche pas à ces fichiers</b></p>
+<div class="fig" style="flex:none">
+<svg viewBox="0 0 560 190">
+<g class="tc">
+<rect x="10" y="6" width="540" height="44" rx="8" class="b-grey"/><text x="280" y="33" class="tm tb" style="font-size:12px">sunbeam ldap add-domain … siege</text>
+<rect x="10" y="74" width="540" height="44" rx="8" class="b-violet"/><text x="280" y="93" class="tb">charm d'intégration LDAP</text><text x="280" y="110" class="ts">transmet la configuration à Keystone par une relation Juju</text>
+<rect x="10" y="142" width="540" height="44" rx="8" class="b-red"/><text x="280" y="161" class="tb">charm Keystone</text><text x="280" y="178" class="ts">crée le domaine, écrit son fichier de configuration dans chaque pod</text>
+</g>
+<path d="M280,50 V72" class="lr"/><path d="M280,118 V140" class="lr"/>
+</svg>
+</div>
+<pre style="font-size:12px"><span class="c">sunbeam enable</span> ldap
+<span class="c">sunbeam ldap add-domain</span> \
+  --domain-config-file ./siege.yaml \
+  --ca-cert-file ./ca-siege.pem siege
+<span class="c">sunbeam ldap list-domains</span></pre>
+<div class="note g"><b>Un appel par domaine raccordé.</b> Le fichier YAML porte les mêmes clés que la section <code>[ldap]</code> : <code>url</code>, <code>user</code>, <code>password</code>, <code>suffix</code> au minimum.</div>
+<div class="note">Noms des charms et emplacement des fichiers décrits d'après le fonctionnement général de Sunbeam : à confirmer avec <code>juju status</code>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+<header><span class="kick">2 · Espaces d'identité</span><h2>Affectations entre domaines</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 250">
+<rect x="20" y="10" width="500" height="230" rx="12" class="b-violet"/><text x="40" y="38" class="tl" style="text-anchor:start">Domaine « prestataires »</text>
+<rect x="630" y="10" width="500" height="230" rx="12" class="b-violet"/><text x="650" y="38" class="tl" style="text-anchor:start">Domaine « nord »</text>
+<g class="tc">
+<rect x="40" y="56" width="220" height="60" rx="8" class="bx"/><text x="150" y="80" class="tb">utilisateur carla</text><text x="150" y="100" class="ts">consultante externe</text>
+<rect x="40" y="150" width="220" height="60" rx="8" class="bx"/><text x="150" y="174" class="tb">groupe audit-externe</text><text x="150" y="194" class="ts">cabinet d'audit</text>
+<rect x="280" y="56" width="220" height="154" rx="8" class="bx" stroke-dasharray="5 4"/><text x="390" y="110" class="ts">leurs comptes restent</text><text x="390" y="128" class="ts">gérés dans leur domaine :</text><text x="390" y="146" class="ts">mot de passe, désactivation</text>
+<rect x="870" y="56" width="240" height="60" rx="8" class="bx"/><text x="990" y="80" class="tb">projet web</text><text x="990" y="100" class="ts">ressources de la filiale</text>
+<rect x="870" y="150" width="240" height="60" rx="8" class="bx"/><text x="990" y="174" class="tb">tous les projets du domaine</text><text x="990" y="194" class="ts">par rôle hérité</text>
+<rect x="650" y="56" width="200" height="154" rx="8" class="bx" stroke-dasharray="5 4"/><text x="750" y="110" class="ts">c'est l'administration</text><text x="750" y="128" class="ts">de « nord » qui accorde</text><text x="750" y="146" class="ts">ou retire l'accès</text>
+</g>
+<path d="M260,86 H868" class="lr"/><text x="565" y="78" class="tc tb tr" style="paint-order:stroke;stroke:#fff;stroke-width:5px">member</text>
+<path d="M260,180 H868" class="lr"/><text x="565" y="172" class="tc tb tr" style="paint-order:stroke;stroke:#fff;stroke-width:5px">reader, hérité</text>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<pre style="font-size:12px"><span class="c">openstack role add</span> \
+  --user carla --user-domain prestataires \
+  --project web --project-domain nord member
+
+<span class="c">openstack role add</span> \
+  --group audit-externe --group-domain prestataires \
+  --domain nord --inherited reader
+
+<span class="m"># Carla s'authentifie avec deux domaines différents</span>
+<span class="c">export</span> OS_USER_DOMAIN_NAME=prestataires
+<span class="c">export</span> OS_PROJECT_DOMAIN_NAME=nord</pre>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>L'indépendance porte sur l'identité, pas sur l'accès :</b> rien n'interdit de donner à un acteur d'un domaine un rôle sur une cible d'un autre.</li>
+<li><b>Usage type :</b> un domaine « prestataires » ou « exploitation », dont les membres interviennent chez plusieurs organisations.</li>
+<li><b>Qui peut créer une telle affectation ?</b> Il faut des droits sur la <b>cible</b> ; un gestionnaire de domaine peut, selon la politique en vigueur, être limité aux acteurs de son propre domaine — à tester avant de s'y fier.</li>
+<li><b>Revue :</b> ces affectations sont celles qui échappent le plus facilement aux contrôles ; les lister régulièrement.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+<header><span class="kick">2 · Espaces d'identité</span><h2>Cycle de vie d'un domaine</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 210">
+<g class="tc">
+<rect x="20" y="30" width="230" height="130" rx="12" class="b-green"/><text x="135" y="58" class="tl">① Créé, actif</text><text x="135" y="84" class="ts">utilisateurs, groupes et projets</text><text x="135" y="102" class="ts">peuvent y être ajoutés ;</text><text x="135" y="120" class="ts">authentification possible</text>
+<rect x="320" y="30" width="230" height="130" rx="12" class="b-amber"/><text x="435" y="58" class="tl">② Désactivé</text><text x="435" y="84" class="ts">plus aucune authentification ;</text><text x="435" y="102" class="ts">jetons invalidés ;</text><text x="435" y="120" class="ts">rien n'est supprimé</text><text x="435" y="146" class="ts tb">réversible</text>
+<rect x="620" y="30" width="230" height="130" rx="12" class="b-dark"/><text x="735" y="58" class="tl tw">③ Supprimé</text><text x="735" y="84" class="tw" style="font-size:12px">utilisateurs, groupes, projets</text><text x="735" y="102" class="tw" style="font-size:12px">et affectations effacés</text><text x="735" y="120" class="tw" style="font-size:12px">de Keystone</text><text x="735" y="146" class="tw tb" style="font-size:12px">irréversible</text>
+<rect x="920" y="30" width="210" height="130" rx="12" class="b-red"/><text x="1025" y="58" class="tl tr">Attention</text><text x="1025" y="84" class="ts">instances, volumes, réseaux</text><text x="1025" y="102" class="ts">des projets supprimés</text><text x="1025" y="120" class="ts tb">restent en place,</text><text x="1025" y="138" class="ts tb">orphelins</text>
+</g>
+<path d="M250,80 H318" class="lr"/><text x="284" y="72" class="tc ts">désactiver</text>
+<path d="M318,116 H252" class="ln ld"/><text x="284" y="134" class="tc ts">réactiver</text>
+<path d="M550,95 H618" class="lr"/><text x="584" y="87" class="tc ts">supprimer</text>
+<path d="M850,95 H918" class="la"/>
+<text x="575" y="194" class="tc ts">La suppression n'est acceptée que sur un domaine désactivé : c'est un verrou contre l'erreur de manipulation.</text>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<pre style="font-size:12px"><span class="m"># Créer</span>
+<span class="c">openstack domain create</span> --description "Filiale Nord" nord
+
+<span class="m"># Suspendre un locataire : effet immédiat</span>
+<span class="c">openstack domain set</span> --disable nord
+<span class="c">openstack domain set</span> --enable nord
+
+<span class="m"># Supprimer : nettoyer les ressources d'abord</span>
+<span class="c">openstack project list</span> --domain nord -f value -c ID
+<span class="c">openstack project purge</span> --project &lt;id&gt;   <span class="m"># par projet</span>
+<span class="c">openstack domain set</span> --disable nord
+<span class="c">openstack domain delete</span> nord</pre>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Keystone ne prévient pas les autres services :</b> il efface ses propres objets. Les ressources des projets disparus continuent de consommer capacité et adresses.</li>
+<li><b>Ordre de retrait d'un locataire :</b> désactiver le domaine, inventorier ses projets, purger leurs ressources, puis seulement supprimer.</li>
+<li><b><code>project purge</code></b> ne couvre pas tous les services : vérifier réseaux, répartiteurs, images et objets à la main.</li>
+</ul>
+<div class="note">Le domaine par défaut et les domaines techniques ne se suppriment pas : le cloud en dépend.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+<header><span class="kick">2 · Espaces d'identité</span><h2>Les domaines sur un cloud Sunbeam</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:18%">Domaine</th><th style="width:19%">Créé par</th><th style="width:30%">Contient</th><th>Usage</th></tr></thead>
+<tbody>
+<tr><td>d'administration</td><td>l'installation</td><td style="color:var(--ink);font-weight:400">l'utilisateur <code>admin</code>, le projet <code>admin</code></td><td style="color:var(--ink);font-weight:400">administration du cloud ; celui de <code>sunbeam openrc</code></td></tr>
+<tr><td>des services</td><td>les charms</td><td style="color:var(--ink);font-weight:400">un utilisateur par service, le projet <code>services</code></td><td style="color:var(--ink);font-weight:400">échanges entre services ; ne jamais y créer de compte humain</td></tr>
+<tr><td>des utilisateurs</td><td><code>sunbeam configure</code></td><td style="color:var(--ink);font-weight:400">l'utilisateur et le projet de démonstration</td><td style="color:var(--ink);font-weight:400">validation de l'installation</td></tr>
+<tr><td>par défaut</td><td>Keystone</td><td style="color:var(--ink);font-weight:400">généralement vide</td><td style="color:var(--ink);font-weight:400">héritage de l'API v2 ; identifiant <code>default</code></td></tr>
+<tr><td>raccordés à LDAP</td><td><code>sunbeam ldap add-domain</code></td><td style="color:var(--ink);font-weight:400">utilisateurs et groupes lus dans l'annuaire</td><td style="color:var(--ink);font-weight:400">employés</td></tr>
+<tr><td>fédérés</td><td>l'administrateur, avec <code>sunbeam identity provider add</code></td><td style="color:var(--ink);font-weight:400">utilisateurs créés à la connexion</td><td style="color:var(--ink);font-weight:400">connexion unique, partenaires</td></tr>
+<tr><td>de vos organisations</td><td>l'administrateur</td><td style="color:var(--ink);font-weight:400">ce que leurs gestionnaires y créent</td><td style="color:var(--ink);font-weight:400">filiales, clients, équipes</td></tr>
+</tbody></table>
+<div class="cols nf">
+<pre style="font-size:12px;align-self:start"><span class="m"># Relever l'existant — prérequis : source admin-openrc</span>
+<span class="c">openstack domain list</span>
+<span class="c">grep</span> DOMAIN admin-openrc demo-openrc
+<span class="c">openstack project list</span> --long
+<span class="c">openstack user list</span> --long</pre>
+<div class="col">
+<ul class="pts sm">
+<li><b>Les noms exacts</b> des trois premiers domaines dépendent de la version : les lire avec ces commandes plutôt que de les supposer.</li>
+<li><b>Règle de conduite :</b> ne rien ajouter dans les domaines techniques ; créer un domaine par organisation.</li>
+</ul>
+<div class="note g">Trois domaines existent donc avant même que vous n'en créiez un : Sunbeam applique déjà la séparation entre administration, services et utilisateurs.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+<header><span class="kick">2 · Espaces d'identité</span><h2>Les domaines dans Horizon</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 420">
+<rect x="10" y="6" width="250" height="230" rx="12" class="b-grey"/><text x="135" y="32" class="tc tl">Page de connexion</text>
+<g class="tc">
+<rect x="30" y="48" width="210" height="34" rx="6" class="bx"/><text x="135" y="70" class="ts">Domaine : <tspan class="tb">nord</tspan></text>
+<rect x="30" y="90" width="210" height="34" rx="6" class="bx"/><text x="135" y="112" class="ts">Nom d'utilisateur : <tspan class="tb">bob</tspan></text>
+<rect x="30" y="132" width="210" height="34" rx="6" class="bx"/><text x="135" y="154" class="ts">Mot de passe : ••••••••</text>
+<rect x="30" y="180" width="210" height="38" rx="6" class="b-red"/><text x="135" y="204" class="tb">Se connecter</text>
+</g>
+<rect x="300" y="6" width="250" height="230" rx="12" class="b-grey"/><text x="425" y="32" class="tc tl">Une fois connecté</text>
+<g class="tc">
+<rect x="320" y="48" width="210" height="34" rx="6" class="b-violet"/><text x="425" y="70" class="ts">domaine <tspan class="tb">nord</tspan> · projet <tspan class="tb">web</tspan> ▾</text>
+<rect x="320" y="94" width="210" height="60" rx="6" class="bx"/><text x="425" y="116" class="tb">Projet</text><text x="425" y="136" class="ts">instances, réseaux, volumes</text>
+<rect x="320" y="162" width="210" height="60" rx="6" class="bx"/><text x="425" y="184" class="tb">Identité</text><text x="425" y="204" class="ts">projets, utilisateurs, groupes, rôles</text>
+</g>
+<path d="M260,120 H298" class="lr"/>
+<rect x="10" y="262" width="540" height="146" rx="12" class="zone"/><text x="280" y="288" class="tc tb">Ce que montre le panneau « Identité », selon le profil</text>
+<g class="ts"><text x="30" y="314"><tspan class="tb">membre d'un projet :</tspan> ses projets, son compte</text><text x="30" y="338"><tspan class="tb">gestionnaire de domaine :</tspan> projets, utilisateurs, groupes et rôles de son domaine</text><text x="30" y="362"><tspan class="tb">administrateur du cloud :</tspan> tous les domaines ; il choisit le domaine sur lequel il agit</text><text x="30" y="390">Le sélecteur en haut de page change de projet — donc de jeton.</text></g>
+</svg>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Champ « Domaine » à la connexion :</b> présent dès que Horizon est configuré pour plusieurs domaines — c'est le cas à attendre sur un cloud qui en a plusieurs.</li>
+<li><b>Fournisseurs fédérés :</b> une liste de choix s'ajoute ; le domaine est alors déduit du fournisseur.</li>
+<li><b>Contexte de domaine :</b> un administrateur du cloud peut « se placer » dans un domaine pour y créer projets et utilisateurs.</li>
+<li><b>Limites de l'interface :</b> le panneau Identité s'appuie sur ses propres règles d'affichage ; il arrive qu'il masque une action que l'API autoriserait, ou l'inverse.</li>
+</ul>
+<pre style="font-size:12px"><span class="m"># Adresse du tableau de bord sur Sunbeam</span>
+<span class="c">sunbeam dashboard-url</span></pre>
+<div class="note"><b>En cas de doute, la ligne de commande fait foi :</b> c'est l'API de Keystone, et non l'interface, qui applique réellement les règles de délégation.</div>
+<div class="note g">Schéma de principe : la disposition exacte dépend de la version et du thème de Horizon.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 19 -->
+<section class="slide dark sec">
+<div class="num">03</div>
+<h2>L'administration globale</h2>
+<p>Ce qui ne peut être confié à aucun domaine, parce que cela concerne tous les domaines à la fois : l'infrastructure, les règles communes, et les domaines eux-mêmes.</p>
+<ol><li>Qui est l'administrateur global</li><li>Ce que la plateforme garde pour elle</li><li>Portée système ou projet d'administration</li><li>Le piège du rôle admin</li><li>Organiser l'équipe plateforme</li></ol>
+</section>
+
+<!-- 20 -->
+<section class="slide">
+<header><span class="kick">3 · Administration globale</span><h2>Qui est l'administrateur global</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 290">
+<g class="tc">
+<rect x="20" y="10" width="1110" height="270" rx="14" class="b-dark"/><text x="40" y="38" class="tl tw" style="text-anchor:start">Portée système — le cloud entier</text>
+<rect x="40" y="54" width="330" height="96" rx="10" class="b-red"/><text x="205" y="80" class="tl tr">Administrateur global</text><text x="205" y="104" class="ts">rôle <tspan class="tb">admin</tspan> sur le système</text><text x="205" y="122" class="ts">— ou, historiquement, sur le projet d'administration</text><text x="205" y="140" class="ts tb">équipe plateforme</text>
+<rect x="390" y="54" width="230" height="96" rx="10" class="b-green"/><text x="505" y="80" class="tl">Lecteur global</text><text x="505" y="104" class="ts">rôle <tspan class="tb">reader</tspan> sur le système</text><text x="505" y="122" class="ts">voit tout, ne modifie rien</text><text x="505" y="140" class="ts tb">audit, support, supervision</text>
+<rect x="640" y="54" width="470" height="96" rx="10" class="bx"/><text x="875" y="80" class="tb">Ressources sans propriétaire unique</text><text x="875" y="104" class="ts">catalogue, régions, rôles, domaines, hyperviseurs, agrégats,</text><text x="875" y="122" class="ts">réseaux fournisseurs, types de volumes, gabarits, images publiques</text><text x="875" y="140" class="ts tb">elles n'appartiennent à aucun projet</text>
+<rect x="40" y="170" width="340" height="94" rx="10" class="b-violet"/><text x="210" y="196" class="tb">domaine nord</text><text x="210" y="218" class="ts">ses propres administrateurs délégués</text><text x="210" y="244" class="ts">l'administrateur global y garde tous les droits</text>
+<rect x="400" y="170" width="340" height="94" rx="10" class="b-violet"/><text x="570" y="196" class="tb">domaine sud</text><text x="570" y="218" class="ts">ses propres administrateurs délégués</text><text x="570" y="244" class="ts">l'administrateur global y garde tous les droits</text>
+<rect x="760" y="170" width="350" height="94" rx="10" class="b-violet"/><text x="935" y="196" class="tb">domaine client42</text><text x="935" y="218" class="ts">ses propres administrateurs délégués</text><text x="935" y="244" class="ts">l'administrateur global y garde tous les droits</text>
+</g>
+<path d="M205,150 V160 H935 V168" class="lr" style="fill:none"/><path d="M210,160 V168" class="lr"/><path d="M570,160 V168" class="lr"/>
+</svg>
+</div>
+<div class="cols nf">
+<div class="col">
+<ul class="pts sm">
+<li><b>Il est au-dessus des domaines, pas dans l'un d'eux :</b> son compte vit dans un domaine technique, mais ses droits portent sur le système.</li>
+<li><b>Il peut tout faire dans tous les domaines</b> — y compris ce qu'il a délégué. Déléguer n'est pas renoncer.</li>
+</ul>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Sur Sunbeam :</b> c'est le compte fourni par <code>sunbeam openrc</code>. Il s'ajoute à lui l'accès à Juju et aux nœuds, qui est un pouvoir d'un autre ordre encore.</li>
+<li><b>Lecteur global :</b> le profil à donner au support et aux outils de supervision, plutôt qu'un accès d'administration.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 21 -->
+<section class="slide">
+<header><span class="kick">3 · Administration globale</span><h2>Ce que la plateforme garde pour elle</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:20%">Domaine d'action</th><th style="width:40%">Opérations réservées</th><th>Pourquoi ce n'est pas délégable</th></tr></thead>
+<tbody>
+<tr><td>Les domaines</td><td>créer, désactiver, supprimer un domaine ; y nommer les premiers responsables</td><td style="color:var(--ink);font-weight:400">c'est l'acte qui fonde la délégation</td></tr>
+<tr><td>Les sources d'identité</td><td>raccorder un annuaire, déclarer un fournisseur d'identité, écrire les règles de correspondance</td><td style="color:var(--ink);font-weight:400">touche à la configuration de Keystone et à la confiance accordée à un tiers</td></tr>
+<tr><td>Les rôles</td><td>créer des rôles, définir les rôles impliqués, attribuer <code>admin</code></td><td style="color:var(--ink);font-weight:400">un rôle a le même sens pour tous les domaines</td></tr>
+<tr><td>Le catalogue</td><td>services, points d'accès, régions</td><td style="color:var(--ink);font-weight:400">commun à tout le cloud ; géré par les charms</td></tr>
+<tr><td>Les politiques</td><td>règles d'accès des services</td><td style="color:var(--ink);font-weight:400">une règle s'applique à tous</td></tr>
+<tr><td>Les plafonds</td><td>quotas des projets, limites par défaut, limites d'un domaine</td><td style="color:var(--ink);font-weight:400">arbitrage de la capacité entre organisations</td></tr>
+<tr><td>Les ressources partagées</td><td>gabarits, images publiques, réseaux externes et fournisseurs, types de volumes</td><td style="color:var(--ink);font-weight:400">elles sont offertes à tous les domaines</td></tr>
+<tr><td>L'infrastructure</td><td>hyperviseurs, agrégats, zones, migration, évacuation, stockage</td><td style="color:var(--ink);font-weight:400">mutualisée ; relève de l'exploitation</td></tr>
+<tr><td>Le cloud lui-même</td><td>fonctionnalités Sunbeam, mises à jour, TLS, sauvegardes</td><td style="color:var(--ink);font-weight:400">hors d'OpenStack : Juju, Kubernetes, nœuds</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Critère simple :</b> si l'opération a un effet sur plus d'un domaine, ou sur du matériel, elle est globale.</div>
+<div class="note"><b>Les plafonds sont le vrai levier de la plateforme :</b> un gestionnaire de domaine crée autant de projets qu'il veut, mais ne peut pas s'accorder plus de capacité.</div>
+</div>
+</div>
+</section>
+
+<!-- 22 -->
+<section class="slide">
+<header><span class="kick">3 · Administration globale</span><h2>Portée système ou projet d'administration</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:26%"></th><th style="width:37%">Jeton de portée système</th><th>Jeton du projet d'administration</th></tr></thead>
+<tbody>
+<tr><td>Principe</td><td>rôle <code>admin</code> sur « le système »</td><td style="color:var(--ink);font-weight:400">rôle <code>admin</code> sur un projet particulier</td></tr>
+<tr><td>Origine</td><td>modèle récent, à portées explicites</td><td style="color:var(--ink);font-weight:400">modèle historique</td></tr>
+<tr><td>Contient un projet</td><td>non</td><td style="color:var(--ink);font-weight:400">oui</td></tr>
+<tr><td>Dans Keystone</td><td>toutes les opérations</td><td style="color:var(--ink);font-weight:400">toutes les opérations également</td></tr>
+<tr><td>Dans les autres services</td><td>selon l'avancement de chaque service</td><td style="color:var(--ink);font-weight:400">le plus largement accepté</td></tr>
+<tr><td>Créer une instance</td><td>impossible : pas de projet</td><td style="color:var(--ink);font-weight:400">possible, dans ce projet</td></tr>
+</tbody></table>
+<div class="note g"><b>En pratique sur Sunbeam :</b> le fichier produit par <code>sunbeam openrc</code> vise le projet d'administration. C'est ce jeton qui sert au quotidien ; la portée système s'obtient à la demande.</div>
+</div>
+<div class="col">
+<pre style="font-size:12px"><span class="m"># Jeton du projet d'administration — ce que donne admin-openrc</span>
+<span class="c">source</span> admin-openrc
+<span class="c">openstack token issue</span> -c project_id -c user_id
+
+<span class="m"># Jeton de portée système : retirer le projet, demander « all »</span>
+<span class="c">unset</span> OS_PROJECT_NAME OS_PROJECT_DOMAIN_NAME
+<span class="c">export</span> OS_SYSTEM_SCOPE=all
+<span class="c">openstack token issue</span> -c system
+<span class="c">openstack domain list</span>
+
+<span class="m"># Prérequis : détenir un rôle sur le système</span>
+<span class="c">openstack role assignment list</span> --system all --names
+<span class="c">openstack role add</span> --user admin \
+  --user-domain &lt;domaine d'administration&gt; \
+  --system all admin</pre>
+<ul class="pts sm">
+<li><b>Les deux portées s'excluent :</b> un jeton vise le système <b>ou</b> un projet, jamais les deux.</li>
+<li><b>Si une commande d'administration renvoie 403</b> avec l'un, essayer l'autre : c'est le signe d'une règle qui déclare ses portées.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 23 -->
+<section class="slide">
+<header><span class="kick">3 · Administration globale</span><h2>Le piège du rôle admin</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 250">
+<g class="tc">
+<rect x="20" y="20" width="330" height="100" rx="12" class="b-grey"/><text x="185" y="48" class="tl">Ce que l'on croit faire</text><text x="185" y="74" class="ts">« je donne à bob le rôle admin</text><text x="185" y="92" class="ts">sur le domaine nord, pour qu'il</text><text x="185" y="110" class="ts">administre sa filiale »</text>
+<rect x="410" y="20" width="330" height="100" rx="12" class="b-amber"/><text x="575" y="48" class="tl">Ce que dit la règle</text><text x="575" y="76" class="tm" style="font-size:12px">"admin_required": "role:admin or is_admin:1"</text><text x="575" y="100" class="ts tb">le rôle admin, sans condition de portée</text>
+<rect x="800" y="20" width="330" height="100" rx="12" class="b-dark"/><text x="965" y="48" class="tl tw">Ce que l'on obtient</text><text x="965" y="74" class="tw" style="font-size:12px">là où la règle se limite à « admin_required »,</text><text x="965" y="92" class="tw" style="font-size:12px">bob passe, quel que soit le domaine visé</text><text x="965" y="110" class="tw tb" style="font-size:12px">au-delà de sa filiale</text>
+<rect x="20" y="160" width="1110" height="74" rx="12" class="b-green"/><text x="575" y="188" class="tl">La bonne délégation : le rôle manager sur le domaine</text><text x="575" y="212" class="ts">les règles qui l'acceptent vérifient toutes que la cible appartient au domaine du jeton — et il ne peut pas attribuer admin</text>
+</g>
+<path d="M350,70 H408" class="lr"/><path d="M740,70 H798" class="lr"/>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<ul class="pts sm">
+<li><b>Héritage historique :</b> pendant des années, « admin quelque part » a signifié « admin partout ». Les règles récentes corrigent cela opération par opération, mais pas encore partout ni dans tous les services.</li>
+<li><b>Conséquence :</b> considérer toute attribution du rôle <code>admin</code> — sur un projet, sur un domaine — comme une attribution potentiellement <b>globale</b>.</li>
+<li><b>Le rôle <code>manager</code></b> a été introduit précisément pour offrir une délégation sans ce risque.</li>
+</ul>
+</div>
+<div class="col">
+<pre style="font-size:12px"><span class="m"># Inventaire : qui détient admin, et sur quoi ?</span>
+<span class="c">openstack role assignment list</span> --names --role admin
+
+<span class="m"># Tester ce qu'un « admin de domaine » peut réellement faire</span>
+<span class="m"># (avec un jeton de bob, portée domaine nord)</span>
+<span class="c">openstack user list</span> --domain sud      <span class="m"># doit échouer</span>
+<span class="c">openstack domain create</span> essai         <span class="m"># doit échouer</span></pre>
+<div class="note"><b>Ne pas supposer, tester :</b> le comportement dépend de la version de Keystone et des options de politique. Les deux commandes ci-dessus tranchent en une minute sur votre cloud.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 24 -->
+<section class="slide">
+<header><span class="kick">3 · Administration globale</span><h2>Organiser l'équipe plateforme</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:21%">Profil</th><th style="width:27%">Affectation</th><th style="width:26%">Pour qui</th><th>Précautions</th></tr></thead>
+<tbody>
+<tr><td>Administrateur de la plateforme</td><td><code>admin</code> sur le projet d'administration et sur le système</td><td style="color:var(--ink);font-weight:400">quelques personnes nommées</td><td style="color:var(--ink);font-weight:400">comptes nominatifs ; second facteur ; jamais de compte partagé</td></tr>
+<tr><td>Lecteur de la plateforme</td><td><code>reader</code> sur le système</td><td style="color:var(--ink);font-weight:400">support, audit, astreinte de premier niveau</td><td style="color:var(--ink);font-weight:400">voit les données de tous les domaines : accès à encadrer</td></tr>
+<tr><td>Automatisation de la plateforme</td><td><code>admin</code>, par identifiant d'application restreint</td><td style="color:var(--ink);font-weight:400">création de domaines, pose des quotas</td><td style="color:var(--ink);font-weight:400">règles d'accès limitant les appels permis</td></tr>
+<tr><td>Compte de secours</td><td>le compte <code>admin</code> initial</td><td style="color:var(--ink);font-weight:400">personne au quotidien</td><td style="color:var(--ink);font-weight:400">mot de passe au coffre ; usage journalisé</td></tr>
+<tr><td>Opérateur Sunbeam</td><td>accès à Juju et aux nœuds</td><td style="color:var(--ink);font-weight:400">exploitation du cloud lui-même</td><td style="color:var(--ink);font-weight:400">hors d'OpenStack : peut tout, y compris lire les clés</td></tr>
+</tbody></table>
+<div class="cols nf">
+<pre style="font-size:12px"><span class="m"># Un groupe pour la plateforme, dans le domaine d'administration</span>
+<span class="c">openstack group create</span> --domain &lt;domaine d'administration&gt; plateforme
+<span class="c">openstack role add</span> --group plateforme \
+  --group-domain &lt;domaine d'administration&gt; --system all admin
+
+<span class="m"># Un groupe pour le support, en lecture seule</span>
+<span class="c">openstack group create</span> --domain &lt;domaine d'administration&gt; support
+<span class="c">openstack role add</span> --group support \
+  --group-domain &lt;domaine d'administration&gt; --system all reader</pre>
+<div class="col">
+<ul class="pts sm">
+<li><b>Le nom du domaine d'administration</b> se lit dans <code>admin-openrc</code> (<code>OS_USER_DOMAIN_NAME</code>).</li>
+<li><b>Deux niveaux à ne pas confondre :</b> administrer OpenStack par ses API, et administrer le déploiement par Juju. Le second inclut le premier.</li>
+</ul>
+<div class="note g">Moins il y a d'administrateurs globaux, plus la délégation par domaine doit être soignée : c'est elle qui absorbe les demandes courantes.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 25 -->
+<section class="slide dark sec">
+<div class="num">04</div>
+<h2>L'administration déléguée</h2>
+<p>Confier à chaque organisation la gestion de ses propres utilisateurs, groupes et projets — et la garantie qu'elle ne pourra ni voir ni toucher ceux des autres.</p>
+<ol><li>Le principe</li><li>Les profils de domaine</li><li>Le gestionnaire de domaine en détail</li><li>Obtenir un jeton de portée domaine</li><li>Une journée de gestionnaire</li><li>Ce qu'il voit, ce qu'il ne voit pas</li><li>Les garde-fous</li><li>Délégation et sources externes</li><li>Mettre en place la délégation</li><li>La vérifier</li></ol>
+</section>
+
+<!-- 26 -->
+<section class="slide">
+<header><span class="kick">4 · Administration déléguée</span><h2>Le principe : trois étages</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 330">
+<g class="tc">
+<rect x="20" y="10" width="1110" height="74" rx="12" class="b-red"/><text x="575" y="38" class="tl tr">Équipe plateforme — administration globale</text><text x="575" y="62" class="ts">crée le domaine, y raccorde éventuellement une source d'identité, fixe les plafonds, nomme le gestionnaire</text>
+<rect x="20" y="126" width="540" height="74" rx="12" class="b-violet"/><text x="290" y="154" class="tl">Gestionnaire du domaine « nord »</text><text x="290" y="178" class="ts">crée projets, groupes, utilisateurs ; attribue les rôles — dans son domaine</text>
+<rect x="590" y="126" width="540" height="74" rx="12" class="b-violet"/><text x="860" y="154" class="tl">Gestionnaire du domaine « sud »</text><text x="860" y="178" class="ts">crée projets, groupes, utilisateurs ; attribue les rôles — dans son domaine</text>
+<rect x="20" y="242" width="170" height="74" rx="10" class="b-blue"/><text x="105" y="270" class="tb">projet web</text><text x="105" y="292" class="ts">membres, lecteurs</text>
+<rect x="205" y="242" width="170" height="74" rx="10" class="b-blue"/><text x="290" y="270" class="tb">projet bases</text><text x="290" y="292" class="ts">membres, lecteurs</text>
+<rect x="390" y="242" width="170" height="74" rx="10" class="b-blue"/><text x="475" y="270" class="tb">projet labo</text><text x="475" y="292" class="ts">membres, lecteurs</text>
+<rect x="590" y="242" width="260" height="74" rx="10" class="b-blue"/><text x="720" y="270" class="tb">projet web</text><text x="720" y="292" class="ts">membres, lecteurs</text>
+<rect x="870" y="242" width="260" height="74" rx="10" class="b-blue"/><text x="1000" y="270" class="tb">projet data</text><text x="1000" y="292" class="ts">membres, lecteurs</text>
+</g>
+<path d="M290,84 V124" class="lr"/><path d="M860,84 V124" class="lr"/>
+<text x="302" y="110" class="ts tb">délègue</text><text x="872" y="110" class="ts tb">délègue</text>
+<path d="M105,200 V240 M290,200 V240 M475,200 V240 M720,200 V240 M1000,200 V240" class="nl" style="stroke:#475569"/>
+<path d="M560,163 H588" class="nl" style="stroke:#e4002b;stroke-width:3"/><text x="575" y="222" class="tc ts tb tr">cloison</text>
+</svg>
+</div>
+<div class="cols c3 nf dense">
+<div class="card"><h3>La plateforme décide du cadre</h3>Combien de domaines, quelle source d'identité, quelle capacité. Elle n'intervient plus dans le quotidien d'un domaine.</div>
+<div class="card cv"><h3>Le gestionnaire organise son domaine</h3>Il découpe en projets, compose les équipes, attribue les droits. Il répond aux demandes de ses propres utilisateurs.</div>
+<div class="card cb"><h3>Les membres consomment</h3>Ils créent leurs instances, réseaux et volumes dans les projets où ils ont un rôle, sans connaître l'étage du dessus.</div>
+</div>
+</div>
+</section>
+
+<!-- 27 -->
+<section class="slide">
+<header><span class="kick">4 · Administration déléguée</span><h2>Les profils de domaine</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:17%">Profil</th><th style="width:18%">Affectation</th><th style="width:36%">Ce qu'il peut faire</th><th>À qui le donner</th></tr></thead>
+<tbody>
+<tr><td>Gestionnaire de domaine</td><td><code>manager</code> sur le domaine</td><td style="color:var(--ink);font-weight:400">gérer utilisateurs, groupes, projets et affectations du domaine ; attribuer <code>manager</code>, <code>member</code>, <code>reader</code> — pas <code>admin</code> ; ne modifie pas le domaine lui-même</td><td style="color:var(--ink);font-weight:400"><b>le profil de délégation par défaut</b></td></tr>
+<tr><td>Administrateur de domaine</td><td><code>admin</code> sur le domaine</td><td style="color:var(--ink);font-weight:400">tout ce que fait le gestionnaire, plus la plupart des réglages du domaine ; inclut le piège du rôle <code>admin</code></td><td style="color:var(--ink);font-weight:400">à éviter ; réserver à la plateforme</td></tr>
+<tr><td>Lecteur de domaine</td><td><code>reader</code> ou <code>member</code> sur le domaine</td><td style="color:var(--ink);font-weight:400">consulter utilisateurs, groupes, projets et affectations du domaine</td><td style="color:var(--ink);font-weight:400">audit interne, responsable sécurité de l'organisation</td></tr>
+<tr><td>Intervenant sur tous les projets</td><td><code>member</code> ou <code>reader</code> <b>hérité</b> sur le domaine</td><td style="color:var(--ink);font-weight:400">agir, ou lire, dans chaque projet du domaine ; aucun droit sur les identités</td><td style="color:var(--ink);font-weight:400">exploitants de l'organisation, supervision</td></tr>
+</tbody></table>
+<div class="cols nf">
+<pre style="font-size:12px;align-self:start"><span class="m"># Gestionnaire</span>
+<span class="c">openstack role add</span> --user bob --user-domain nord \
+  --domain nord manager
+
+<span class="m"># Lecteur de domaine</span>
+<span class="c">openstack role add</span> --group audit --group-domain nord \
+  --domain nord reader
+
+<span class="m"># Exploitants : member sur tous les projets, présents et futurs</span>
+<span class="c">openstack role add</span> --group exploitants --group-domain nord \
+  --domain nord --inherited member</pre>
+<div class="col">
+<ul class="pts sm">
+<li><b><code>manager</code> implique <code>member</code>, qui implique <code>reader</code> :</b> le gestionnaire est donc aussi lecteur de son domaine.</li>
+<li><b>Gérer n'est pas utiliser :</b> le rôle <code>manager</code> sur le domaine ne donne <b>aucun</b> accès aux instances des projets. Pour cela, il lui faut aussi un rôle dans les projets — direct ou hérité.</li>
+<li><b>Le rôle <code>manager</code> existe depuis la version 2023.2</b> ; son usage pour la gestion de domaine a été complété dans les versions suivantes.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 28 -->
+<section class="slide">
+<header><span class="kick">4 · Administration déléguée</span><h2>Le gestionnaire de domaine en détail</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Ce qu'il peut faire — dans son domaine uniquement</b></p>
+<table class="tbl tight">
+<thead><tr><th>Objet</th><th>Opérations</th></tr></thead>
+<tbody>
+<tr><td>Projets</td><td>créer, modifier, désactiver, supprimer ; créer des sous-projets ; poser des étiquettes</td></tr>
+<tr><td>Utilisateurs</td><td>créer, modifier, désactiver, supprimer ; réinitialiser un mot de passe</td></tr>
+<tr><td>Groupes</td><td>créer, supprimer ; ajouter et retirer des membres</td></tr>
+<tr><td>Affectations</td><td>attribuer et retirer <code>manager</code>, <code>member</code>, <code>reader</code> sur le domaine et ses projets ; directes ou héritées</td></tr>
+<tr><td>Consultation</td><td>lister tout ce qui précède ; voir les affectations effectives</td></tr>
+</tbody></table>
+<div class="note g"><b>Il peut nommer d'autres gestionnaires :</b> la délégation se transmet, sans que la plateforme ait à intervenir.</div>
+</div>
+<div class="col">
+<p><b>Ce qu'il ne peut pas faire</b></p>
+<table class="tbl tight os">
+<thead><tr><th style="width:52%">Opération</th><th>Raison</th></tr></thead>
+<tbody>
+<tr><td>attribuer ou retirer <code>admin</code></td><td>empêche l'escalade de privilèges</td></tr>
+<tr><td>modifier, désactiver, supprimer son domaine</td><td>le domaine appartient à la plateforme</td></tr>
+<tr><td>voir un autre domaine</td><td>cloison entre organisations</td></tr>
+<tr><td>créer un rôle</td><td>les rôles sont globaux</td></tr>
+<tr><td>modifier les quotas de ses projets</td><td>arbitrage de capacité : global</td></tr>
+<tr><td>raccorder un annuaire</td><td>configuration de Keystone</td></tr>
+<tr><td>créer un gabarit, une image publique</td><td>ressources partagées</td></tr>
+<tr><td>agir sur les instances de ses projets</td><td>il faut un rôle <b>dans</b> le projet</td></tr>
+</tbody></table>
+<div class="note">Liste établie d'après la description des profils par défaut de Keystone. Le détail, opération par opération, se lit dans les règles effectives et se vérifie par un test.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 29 -->
+<section class="slide">
+<header><span class="kick">4 · Administration déléguée</span><h2>Obtenir un jeton de portée domaine</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># POST /v3/auth/tokens — la portée est un domaine, pas un projet</span>
+{ "auth": {
+    "identity": { "methods": ["password"],
+      "password": { "user": {
+        "name": "bob", "domain": { "name": "nord" },
+        "password": "••••••••" } } },
+    "<span class="k">scope</span>": { "<span class="k">domain</span>": { "name": "nord" } }
+} }</pre>
+<pre style="font-size:11.8px"><span class="m"># Réponse — extrait</span>
+{ "token": {
+    "user":   { "name": "bob", "domain": { "name": "nord" } },
+    "<span class="k">domain</span>": { "id": "c8f2…", "name": "nord" },
+    "roles":  [ { "name": "manager" }, { "name": "member" },
+                { "name": "reader" } ],
+    "expires_at": "2026-10-09T15:00:00Z"
+} }</pre>
+<div class="note g"><b>À remarquer :</b> le jeton contient un bloc <code>domain</code> et pas de bloc <code>project</code>. Les rôles sont ceux détenus <b>sur le domaine</b>, rôles impliqués compris.</div>
+</div>
+<div class="col">
+<pre style="font-size:12px"><span class="m"># bob-domaine-openrc — fichier du gestionnaire</span>
+<span class="c">export</span> OS_AUTH_URL=https://cloud.exemple.fr/openstack-keystone/v3
+<span class="c">export</span> OS_IDENTITY_API_VERSION=3
+<span class="c">export</span> OS_USERNAME=bob
+<span class="c">export</span> OS_USER_DOMAIN_NAME=nord
+<span class="c">export</span> <span class="k">OS_DOMAIN_NAME</span>=nord          <span class="m"># ← portée domaine</span>
+<span class="m"># surtout PAS de OS_PROJECT_NAME dans ce fichier</span>
+<span class="c">read</span> -s OS_PASSWORD &amp;&amp; <span class="c">export</span> OS_PASSWORD
+
+<span class="c">source</span> bob-domaine-openrc
+<span class="c">openstack token issue</span>
+<span class="c">openstack project list</span></pre>
+<ul class="pts sm">
+<li><b>Une portée à la fois :</b> si <code>OS_PROJECT_NAME</code> est défini, le client demande un jeton de projet et les opérations de gestion du domaine échouent en 403.</li>
+<li><b>Deux fichiers, deux usages :</b> un pour gérer le domaine, un autre — avec un projet — pour travailler dans les projets.</li>
+<li><b>Avec <code>clouds.yaml</code> :</b> deux entrées, l'une avec <code>domain_name</code> dans <code>auth</code>, l'autre avec <code>project_name</code>.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 30 -->
+<section class="slide">
+<header><span class="kick">4 · Administration déléguée</span><h2>Une journée de gestionnaire de domaine</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># 0 · Prérequis : jeton de portée domaine</span>
+<span class="c">source</span> bob-domaine-openrc
+
+<span class="m"># 1 · Une nouvelle équipe arrive : un projet</span>
+<span class="c">openstack project create</span> --domain nord \
+  --description "Site vitrine" vitrine
+
+<span class="m"># 2 · Deux groupes pour ce projet</span>
+<span class="c">openstack group create</span> --domain nord vitrine-dev
+<span class="c">openstack group create</span> --domain nord vitrine-lecture
+
+<span class="m"># 3 · Les droits, sur les groupes</span>
+<span class="c">openstack role add</span> --group vitrine-dev --group-domain nord \
+  --project vitrine --project-domain nord member
+<span class="c">openstack role add</span> --group vitrine-lecture \
+  --group-domain nord --project vitrine \
+  --project-domain nord reader
+
+<span class="m"># 4 · Les personnes</span>
+<span class="c">openstack user create</span> --domain nord --password-prompt \
+  --email dana@nord.exemple dana
+<span class="c">openstack group add user</span> --group-domain nord \
+  --user-domain nord vitrine-dev dana</pre>
+</div>
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># 5 · Un départ : couper l'accès, sans rien détruire</span>
+<span class="c">openstack user set</span> --disable --domain nord erik
+
+<span class="m"># 6 · Un mot de passe oublié</span>
+<span class="c">openstack user set</span> --domain nord --password-prompt dana
+
+<span class="m"># 7 · Un adjoint pour la gestion du domaine</span>
+<span class="c">openstack role add</span> --user chloe --user-domain nord \
+  --domain nord manager
+
+<span class="m"># 8 · Revue : qui a quoi dans mon domaine ?</span>
+<span class="c">openstack role assignment list</span> --names \
+  --domain nord
+<span class="c">openstack role assignment list</span> --names \
+  --project vitrine --project-domain nord --effective</pre>
+<table class="tbl tight">
+<thead><tr><th>Ce que bob n'a pas eu à demander</th><th>Ce qu'il doit encore demander</th></tr></thead>
+<tbody>
+<tr><td>création du projet, des groupes, des comptes</td><td>le quota du nouveau projet</td></tr>
+<tr><td>attribution des rôles</td><td>un réseau fournisseur, un gabarit particulier</td></tr>
+<tr><td>nomination d'un adjoint</td><td>le raccordement d'un annuaire</td></tr>
+</tbody></table>
+</div>
+</div></div>
+</section>
+
+<!-- 31 -->
+<section class="slide">
+<header><span class="kick">4 · Administration déléguée</span><h2>Ce qu'il voit, ce qu'il ne voit pas</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 330">
+<rect x="20" y="6" width="1110" height="44" rx="10" class="b-violet"/><text x="575" y="33" class="tc tb">Bob — rôle manager sur le domaine « nord », jeton de portée domaine</text>
+<rect x="20" y="70" width="360" height="254" rx="12" class="zone"/><text x="200.0" y="96" class="tc tl">Son domaine — il voit et il gère</text>
+<rect x="34" y="110" width="332" height="34" rx="7" class="b-green"/><text x="200.0" y="132" class="tc" style="font-size:12.5px">utilisateurs du domaine nord</text>
+<rect x="34" y="151" width="332" height="34" rx="7" class="b-green"/><text x="200.0" y="173" class="tc" style="font-size:12.5px">groupes du domaine nord</text>
+<rect x="34" y="192" width="332" height="34" rx="7" class="b-green"/><text x="200.0" y="214" class="tc" style="font-size:12.5px">projets et sous-projets</text>
+<rect x="34" y="233" width="332" height="34" rx="7" class="b-green"/><text x="200.0" y="255" class="tc" style="font-size:12.5px">affectations de rôles du domaine</text>
+<rect x="34" y="274" width="332" height="34" rx="7" class="b-green"/><text x="200.0" y="296" class="tc" style="font-size:12.5px">rôles hérités sur le domaine</text>
+<rect x="400" y="70" width="350" height="254" rx="12" class="zone"/><text x="575.0" y="96" class="tc tl">Commun — il voit, sans gérer</text>
+<rect x="414" y="110" width="322" height="34" rx="7" class="b-grey"/><text x="575.0" y="132" class="tc" style="font-size:12.5px">rôles globaux, pour les attribuer</text>
+<rect x="414" y="151" width="322" height="34" rx="7" class="b-grey"/><text x="575.0" y="173" class="tc" style="font-size:12.5px">catalogue de services</text>
+<rect x="414" y="192" width="322" height="34" rx="7" class="b-grey"/><text x="575.0" y="214" class="tc" style="font-size:12.5px">images publiques, gabarits</text>
+<rect x="414" y="233" width="322" height="34" rx="7" class="b-grey"/><text x="575.0" y="255" class="tc" style="font-size:12.5px">réseaux partagés et externes</text>
+<rect x="414" y="274" width="322" height="34" rx="7" class="b-grey"/><text x="575.0" y="296" class="tc" style="font-size:12.5px">limites de ses propres projets</text>
+<rect x="770" y="70" width="360" height="254" rx="12" class="zone"/><text x="950.0" y="96" class="tc tl">Hors de portée — il ne voit pas</text>
+<rect x="784" y="110" width="332" height="34" rx="7" class="b-dark"/><text x="950.0" y="132" class="tc tw" style="font-size:12.5px">l'existence des autres domaines</text>
+<rect x="784" y="151" width="332" height="34" rx="7" class="b-dark"/><text x="950.0" y="173" class="tc tw" style="font-size:12.5px">leurs utilisateurs, groupes, projets</text>
+<rect x="784" y="192" width="332" height="34" rx="7" class="b-dark"/><text x="950.0" y="214" class="tc tw" style="font-size:12.5px">leurs affectations de rôles</text>
+<rect x="784" y="233" width="332" height="34" rx="7" class="b-dark"/><text x="950.0" y="255" class="tc tw" style="font-size:12.5px">hyperviseurs, agrégats, stockage</text>
+<rect x="784" y="274" width="332" height="34" rx="7" class="b-dark"/><text x="950.0" y="296" class="tc tw" style="font-size:12.5px">configuration des sources d'identité</text>
+<path d="M200,50 V68" class="lr"/><path d="M575,50 V68" class="ln"/><path d="M950,50 V68" class="nl" stroke-dasharray="4 5"/>
+</svg></div>
+<div class="cols nf">
+<div class="note g"><b>Une cloison, pas un voile :</b> ce n'est pas seulement que bob ne peut pas modifier le domaine « sud » — il ne peut pas en lister les utilisateurs ni même en connaître les projets.</div>
+<div class="note"><b>Fuites possibles par les ressources partagées :</b> le nom d'une image publique, d'un gabarit ou d'un réseau partagé est visible de tous les domaines. Ne pas y mettre le nom d'un client.</div>
+</div>
+</div>
+</section>
+
+<!-- 32 -->
+<section class="slide">
+<header><span class="kick">4 · Administration déléguée</span><h2>Les garde-fous de la délégation</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:24%">Risque</th><th style="width:38%">Garde-fou intégré</th><th>Ce que la plateforme doit ajouter</th></tr></thead>
+<tbody>
+<tr><td>Escalade : le gestionnaire se nomme administrateur</td><td>la liste des rôles qu'un gestionnaire peut attribuer exclut <code>admin</code></td><td style="color:var(--ink);font-weight:400">ne jamais donner <code>admin</code> sur un domaine ou un projet à un délégué</td></tr>
+<tr><td>Débordement : agir sur un autre domaine</td><td>chaque règle compare le domaine du jeton à celui de la cible</td><td style="color:var(--ink);font-weight:400">tester la cloison après chaque montée de version</td></tr>
+<tr><td>Accaparement de capacité</td><td>aucun : créer des projets est libre</td><td style="color:var(--ink);font-weight:400">quotas par projet, plafond par domaine ; quota par défaut bas</td></tr>
+<tr><td>Prolifération de comptes</td><td>aucun dans la base locale</td><td style="color:var(--ink);font-weight:400">source d'identité externe ; revue périodique</td></tr>
+<tr><td>Comptes dormants</td><td>désactivation après inactivité, si configurée</td><td style="color:var(--ink);font-weight:400">politique de sécurité des mots de passe</td></tr>
+<tr><td>Perte de traçabilité</td><td>événements d'audit de Keystone</td><td style="color:var(--ink);font-weight:400">les collecter ; comptes nominatifs pour les gestionnaires</td></tr>
+<tr><td>Gestionnaire unique indisponible</td><td>il peut nommer des adjoints</td><td style="color:var(--ink);font-weight:400">exiger au moins deux gestionnaires par domaine</td></tr>
+<tr><td>Départ du gestionnaire</td><td>la plateforme garde tous les droits</td><td style="color:var(--ink);font-weight:400">procédure de reprise : retirer son rôle, nommer le suivant</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Le garde-fou qui manque le plus souvent :</b> la capacité. Un gestionnaire ne peut pas augmenter un quota, mais il peut créer cent projets qui auront chacun le quota par défaut.</div>
+<div class="note g"><b>Rôles attribuables par un gestionnaire :</b> <code>manager</code>, <code>member</code> et <code>reader</code> par défaut ; la liste est une règle de politique de Keystone, donc ajustable par la plateforme.</div>
+</div>
+</div>
+</section>
+
+<!-- 33 -->
+<section class="slide">
+<header><span class="kick">4 · Administration déléguée</span><h2>Délégation et sources d'identité externes</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:20%">Le gestionnaire peut-il…</th><th style="width:25%">Domaine local</th><th style="width:27%">Domaine LDAP</th><th>Domaine fédéré</th></tr></thead>
+<tbody>
+<tr><td>créer un utilisateur</td><td>oui</td><td style="color:var(--ink);font-weight:400">non : les comptes viennent de l'annuaire</td><td style="color:var(--ink);font-weight:400">non : ils apparaissent à la première connexion</td></tr>
+<tr><td>créer un groupe</td><td>oui</td><td style="color:var(--ink);font-weight:400">non : groupes de l'annuaire</td><td style="color:var(--ink);font-weight:400">oui : groupes locaux, cibles des règles de correspondance</td></tr>
+<tr><td>créer un projet</td><td>oui</td><td style="color:var(--ink);font-weight:400">oui</td><td style="color:var(--ink);font-weight:400">oui</td></tr>
+<tr><td>attribuer un rôle</td><td>oui</td><td style="color:var(--ink);font-weight:400">oui, à un utilisateur ou un groupe de l'annuaire</td><td style="color:var(--ink);font-weight:400">oui, aux groupes locaux</td></tr>
+<tr><td>désactiver un compte</td><td>oui</td><td style="color:var(--ink);font-weight:400">dans l'annuaire seulement</td><td style="color:var(--ink);font-weight:400">chez le fournisseur ; l'utilisateur local peut être désactivé</td></tr>
+</tbody></table>
+<div class="cols">
+<div class="col">
+<ul class="pts sm">
+<li><b>Avec une source externe, la délégation se déplace :</b> le gestionnaire du domaine ne gère plus des <b>personnes</b>, mais des <b>projets</b> et des <b>droits accordés à des groupes</b>.</li>
+<li><b>Répartition la plus saine :</b> l'annuaire dit qui appartient à quelle équipe ; le gestionnaire dit quelle équipe a accès à quel projet.</li>
+</ul>
+</div>
+<div class="col">
+<pre style="font-size:12px;flex:none"><span class="m"># Gestionnaire d'un domaine LDAP : son travail type</span>
+<span class="c">openstack group list</span> --domain siege
+<span class="c">openstack project create</span> --domain siege portail
+<span class="c">openstack role add</span> --group equipe-portail \
+  --group-domain siege --project portail \
+  --project-domain siege member</pre>
+<div class="note"><b>Qui est gestionnaire d'un domaine LDAP ?</b> Un utilisateur de l'annuaire, à qui la plateforme attribue <code>manager</code> sur le domaine. Garder en plus un compte local de secours, au cas où l'annuaire serait indisponible.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 34 -->
+<section class="slide">
+<header><span class="kick">4 · Administration déléguée</span><h2>Mettre en place la délégation : côté plateforme</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># 0 · Prérequis : identifiants de l'administrateur global</span>
+<span class="c">source</span> admin-openrc
+
+<span class="m"># 1 · Le domaine</span>
+<span class="c">openstack domain create</span> --description "Filiale Nord" nord
+
+<span class="m"># 2 · Source d'identité, si ce n'est pas la base locale</span>
+<span class="m">#     (sinon, passer à l'étape 3)</span>
+<span class="c">sunbeam ldap add-domain</span> \
+  --domain-config-file ./nord.yaml nord
+
+<span class="m"># 3 · Deux gestionnaires, jamais un seul</span>
+<span class="c">openstack user create</span> --domain nord --password-prompt bob
+<span class="c">openstack user create</span> --domain nord --password-prompt chloe
+<span class="c">openstack group create</span> --domain nord gestionnaires
+<span class="c">openstack group add user</span> --group-domain nord \
+  --user-domain nord gestionnaires bob chloe
+<span class="c">openstack role add</span> --group gestionnaires \
+  --group-domain nord --domain nord manager</pre>
+</div>
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># 4 · Leur donner de quoi agir dans leurs projets</span>
+<span class="c">openstack role add</span> --group gestionnaires \
+  --group-domain nord --domain nord --inherited member
+
+<span class="m"># 5 · Un premier projet, avec son quota</span>
+<span class="c">openstack project create</span> --domain nord socle
+<span class="c">openstack quota set</span> --instances 20 --cores 64 \
+  --ram 131072 --volumes 40 --gigabytes 2000 \
+  $(openstack project show socle --domain nord -f value -c id)
+
+<span class="m"># 6 · Accès de la plateforme en lecture, pour le support</span>
+<span class="c">openstack role add</span> --group support \
+  --group-domain &lt;domaine d'administration&gt; \
+  --domain nord --inherited reader</pre>
+<table class="tbl tight">
+<thead><tr><th>À remettre aux gestionnaires</th></tr></thead>
+<tbody>
+<tr><td>l'adresse de Keystone et de Horizon, le nom du domaine</td></tr>
+<tr><td>leurs identifiants, à changer à la première connexion</td></tr>
+<tr><td>ce qu'ils peuvent faire seuls, ce qui se demande à la plateforme</td></tr>
+<tr><td>la capacité allouée et la procédure pour en demander davantage</td></tr>
+</tbody></table>
+</div>
+</div></div>
+</section>
+
+<!-- 35 -->
+<section class="slide">
+<header><span class="kick">4 · Administration déléguée</span><h2>Vérifier la délégation : dix tests</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th style="width:4%">#</th><th style="width:44%">Commande, avec le jeton de portée domaine de bob</th><th style="width:14%" class="c">Attendu</th><th>Ce que le test prouve</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>openstack project create --domain nord essai</code></td><td class="c y">réussit</td><td>la délégation fonctionne</td></tr>
+<tr><td>2</td><td><code>openstack user create --domain nord essai-u</code></td><td class="c y">réussit</td><td>gestion des comptes du domaine</td></tr>
+<tr><td>3</td><td><code>openstack role add … --project essai member</code></td><td class="c y">réussit</td><td>attribution des rôles courants</td></tr>
+<tr><td>4</td><td><code>openstack role add … --project essai admin</code></td><td class="c" style="color:#b91c1c;font-weight:700">403</td><td>pas d'escalade vers <code>admin</code></td></tr>
+<tr><td>5</td><td><code>openstack user list --domain sud</code></td><td class="c" style="color:#b91c1c;font-weight:700">403</td><td>cloison en lecture</td></tr>
+<tr><td>6</td><td><code>openstack project create --domain sud intrus</code></td><td class="c" style="color:#b91c1c;font-weight:700">403</td><td>cloison en écriture</td></tr>
+<tr><td>7</td><td><code>openstack domain list</code></td><td class="c">son domaine seul, ou 403</td><td>pas de vue sur les autres domaines</td></tr>
+<tr><td>8</td><td><code>openstack domain set --disable nord</code></td><td class="c" style="color:#b91c1c;font-weight:700">403</td><td>le domaine reste à la plateforme</td></tr>
+<tr><td>9</td><td><code>openstack role create mon-role</code></td><td class="c" style="color:#b91c1c;font-weight:700">403</td><td>les rôles restent globaux</td></tr>
+<tr><td>10</td><td><code>openstack quota set --instances 999 &lt;projet&gt;</code></td><td class="c" style="color:#b91c1c;font-weight:700">403</td><td>la capacité reste à la plateforme</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>À rejouer après chaque montée de version</b> et après toute modification des politiques : c'est la seule preuve que la cloison tient. Les dix commandes tiennent dans un script.</div>
+<div class="note"><b>Un test qui « réussit » alors qu'il devrait échouer</b> est une faille de délégation : chercher une attribution du rôle <code>admin</code>, ou une règle surchargée trop large.</div>
+</div>
+</div>
+</section>
+
+<!-- 36 -->
+<section class="slide">
+<header><span class="kick">4 · Administration déléguée</span><h2>Sans le rôle manager : les alternatives</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:23%">Approche</th><th style="width:34%">Principe</th><th style="width:20%">Avantage</th><th>Inconvénient</th></tr></thead>
+<tbody>
+<tr><td>Gestionnaire de domaine</td><td>rôle <code>manager</code> sur le domaine, règles par défaut récentes</td><td style="color:var(--ink);font-weight:400">natif, sans surcharge</td><td style="color:var(--ink);font-weight:400">exige une version récente de Keystone</td></tr>
+<tr><td>Administrateur de domaine</td><td>rôle <code>admin</code> sur le domaine</td><td style="color:var(--ink);font-weight:400">fonctionne sur les versions anciennes</td><td style="color:var(--ink);font-weight:400">risque de débordement global</td></tr>
+<tr><td>Politique surchargée</td><td>règles réécrites pour reconnaître un rôle maison</td><td style="color:var(--ink);font-weight:400">sur mesure</td><td style="color:var(--ink);font-weight:400">à maintenir à chaque version ; peu praticable quand les charms écrivent la configuration</td></tr>
+<tr><td>Guichet de la plateforme</td><td>les demandes passent par un outil qui agit avec un compte d'administration</td><td style="color:var(--ink);font-weight:400">contrôle total, validation possible</td><td style="color:var(--ink);font-weight:400">la plateforme redevient un goulet</td></tr>
+<tr><td>Annuaire seul</td><td>pas de gestionnaire : les droits découlent des groupes de l'annuaire, attribués une fois</td><td style="color:var(--ink);font-weight:400">rien à gérer dans OpenStack</td><td style="color:var(--ink);font-weight:400">la création de projets reste centrale</td></tr>
+<tr><td>Automatisation</td><td>domaines, projets et droits décrits en Terraform, appliqués par un pipeline</td><td style="color:var(--ink);font-weight:400">revue, historique, reproductibilité</td><td style="color:var(--ink);font-weight:400">délai ; compétences à avoir</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Sur un cloud Sunbeam récent,</b> la première ligne est la voie naturelle. Les deux dernières la complètent bien : l'annuaire pour les personnes, Terraform pour ce que la plateforme pose elle-même.</div>
+<div class="note"><b>La deuxième ligne se rencontre encore partout</b> dans la documentation et les habitudes : savoir la reconnaître, et la remplacer.</div>
+</div>
+</div>
+</section>
+
+<!-- 37 -->
+<section class="slide dark sec">
+<div class="num">05</div>
+<h2>Global ou délégué : répartir</h2>
+<p>Ni tout centraliser, ni tout déléguer. La question est de savoir où passe la ligne, et combien de domaines il faut pour la tracer.</p>
+<ol><li>Les deux administrations face à face</li><li>Matrice des responsabilités</li><li>Quatre modèles de découpage</li><li>Scénario : un hébergeur</li><li>Scénario : un groupe et ses filiales</li><li>Les limites du modèle</li><li>Combien de domaines ?</li></ol>
+</section>
+
+<!-- 38 -->
+<section class="slide">
+<header><span class="kick">5 · Global ou délégué</span><h2>Les deux administrations face à face</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:20%"></th><th style="width:39%">Administration globale</th><th>Administration déléguée par domaine</th></tr></thead>
+<tbody>
+<tr><td>Qui</td><td>l'équipe plateforme</td><td style="color:var(--ink);font-weight:400">un ou plusieurs responsables dans chaque organisation</td></tr>
+<tr><td>Rôle et portée</td><td><code>admin</code> sur le système ou le projet d'administration</td><td style="color:var(--ink);font-weight:400"><code>manager</code> sur un domaine</td></tr>
+<tr><td>Périmètre</td><td>tous les domaines, et tout ce qui est hors domaine</td><td style="color:var(--ink);font-weight:400">un domaine, et lui seul</td></tr>
+<tr><td>Objets gérés</td><td>domaines, sources d'identité, rôles, catalogue, quotas, ressources partagées, infrastructure</td><td style="color:var(--ink);font-weight:400">utilisateurs, groupes, projets, affectations de rôles</td></tr>
+<tr><td>Voit</td><td>tout</td><td style="color:var(--ink);font-weight:400">son domaine</td></tr>
+<tr><td>Peut attribuer</td><td>tous les rôles</td><td style="color:var(--ink);font-weight:400"><code>manager</code>, <code>member</code>, <code>reader</code></td></tr>
+<tr><td>Nombre de personnes</td><td>très peu</td><td style="color:var(--ink);font-weight:400">autant que d'organisations, au moins deux par domaine</td></tr>
+<tr><td>Outils</td><td>API d'OpenStack, Sunbeam, Juju</td><td style="color:var(--ink);font-weight:400">API d'OpenStack et Horizon seulement</td></tr>
+<tr><td>Risque si le compte est compromis</td><td>le cloud entier</td><td style="color:var(--ink);font-weight:400">les identités et les projets d'un domaine</td></tr>
+<tr><td>Demandes traitées</td><td>rares, structurantes : nouveau domaine, capacité, raccordement</td><td style="color:var(--ink);font-weight:400">fréquentes, courantes : comptes, projets, droits</td></tr>
+</tbody></table>
+<div class="note g"><b>Les deux se complètent :</b> la délégation n'est possible que parce que la plateforme a créé le cadre ; la plateforme ne tient à l'échelle que parce que le quotidien est délégué.</div>
+</div>
+</section>
+
+<!-- 39 -->
+<section class="slide">
+<header><span class="kick">5 · Global ou délégué</span><h2>Matrice des responsabilités</h2></header>
+<div class="body">
+<table class="resp">
+<thead><tr><th></th><th>Équipe plateforme<small>administration globale</small></th><th>Gestionnaire de domaine<small>administration déléguée</small></th><th>Membre d'un projet<small>utilisateur</small></th></tr></thead>
+<tbody>
+<tr><th>Créer, suspendre, supprimer un domaine</th><td class="p">décide et réalise</td><td class="u">demande</td><td class="u">—</td></tr>
+<tr><th>Raccorder un annuaire, un fournisseur d'identité</th><td class="p">réalise</td><td class="u">fournit les paramètres</td><td class="u">—</td></tr>
+<tr><th>Capacité : quotas, limites</th><td class="p">décide et réalise</td><td class="u">demande, répartit entre ses projets à la demande</td><td class="u">consomme</td></tr>
+<tr><th>Créer un projet</th><td class="u">possible, rarement</td><td class="p">décide et réalise</td><td class="u">demande</td></tr>
+<tr><th>Créer un compte, un groupe</th><td class="u">possible, rarement</td><td class="p">décide et réalise</td><td class="u">demande</td></tr>
+<tr><th>Attribuer member, reader</th><td class="u">possible, rarement</td><td class="p">décide et réalise</td><td class="u">—</td></tr>
+<tr><th>Attribuer admin</th><td class="p">exclusivement</td><td class="u">—</td><td class="u">—</td></tr>
+<tr><th>Gabarits, images publiques, réseaux externes</th><td class="p">réalise</td><td class="u">demande</td><td class="u">utilise</td></tr>
+<tr><th>Instances, réseaux, volumes d'un projet</th><td class="u">en dernier recours</td><td class="u">seulement avec un rôle dans le projet</td><td class="p">crée et gère</td></tr>
+<tr><th>Revue des droits du domaine</th><td class="u">contrôle par sondage</td><td class="p">réalise, périodiquement</td><td class="u">—</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Lecture :</b> en bleu, celui qui porte la responsabilité. La colonne du milieu est celle qui n'existe pas sans domaines : tout ce qui y est bleu retomberait sinon sur la plateforme.</div>
+<div class="note"><b>À formaliser par écrit</b> avec chaque organisation : c'est ce tableau, adapté, qui évite les « je croyais que c'était vous ».</div>
+</div>
+</div>
+</section>
+
+<!-- 40 -->
+<section class="slide">
+<header><span class="kick">5 · Global ou délégué</span><h2>Quatre modèles de découpage</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 170">
+<rect x="20" y="6" width="264" height="158" rx="12" class="zone"/><text x="152" y="32" class="tc tl">① Domaine unique</text>
+<rect x="38" y="48" width="228" height="62" rx="8" class="b-violet"/><text x="152.0" y="76" class="tc tb" style="font-size:12px">entreprise</text>
+<rect x="44.0" y="88" width="40.0" height="14" rx="3" class="bx"/>
+<rect x="88.0" y="88" width="40.0" height="14" rx="3" class="bx"/>
+<rect x="132.0" y="88" width="40.0" height="14" rx="3" class="bx"/>
+<rect x="176.0" y="88" width="40.0" height="14" rx="3" class="bx"/>
+<rect x="220.0" y="88" width="40.0" height="14" rx="3" class="bx"/>
+<text x="152" y="134" class="tc ts">tout le monde, tous les projets</text><text x="152" y="152" class="tc ts" style="font-size:10.5px">petits rectangles : projets</text>
+<rect x="302" y="6" width="264" height="158" rx="12" class="zone"/><text x="434" y="32" class="tc tl">② Par organisation</text>
+<rect x="320" y="48" width="70" height="62" rx="8" class="b-violet"/><text x="355.0" y="76" class="tc tb" style="font-size:12px">nord</text>
+<rect x="326.0" y="88" width="27.0" height="14" rx="3" class="bx"/>
+<rect x="357.0" y="88" width="27.0" height="14" rx="3" class="bx"/>
+<rect x="399" y="48" width="70" height="62" rx="8" class="b-violet"/><text x="434.0" y="76" class="tc tb" style="font-size:12px">sud</text>
+<rect x="405.0" y="88" width="27.0" height="14" rx="3" class="bx"/>
+<rect x="436.0" y="88" width="27.0" height="14" rx="3" class="bx"/>
+<rect x="478" y="48" width="70" height="62" rx="8" class="b-violet"/><text x="513.0" y="76" class="tc tb" style="font-size:12px">est</text>
+<rect x="484.0" y="88" width="27.0" height="14" rx="3" class="bx"/>
+<rect x="515.0" y="88" width="27.0" height="14" rx="3" class="bx"/>
+<text x="434" y="134" class="tc ts">un gestionnaire par domaine</text><text x="434" y="152" class="tc ts" style="font-size:10.5px">petits rectangles : projets</text>
+<rect x="584" y="6" width="264" height="158" rx="12" class="zone"/><text x="716" y="32" class="tc tl">③ Par source d'identité</text>
+<rect x="602" y="48" width="70" height="62" rx="8" class="b-grey"/><text x="637.0" y="76" class="tc tb" style="font-size:12px">local</text>
+<rect x="608.0" y="88" width="27.0" height="14" rx="3" class="bx"/>
+<rect x="639.0" y="88" width="27.0" height="14" rx="3" class="bx"/>
+<rect x="681" y="48" width="70" height="62" rx="8" class="b-blue"/><text x="716.0" y="76" class="tc tb" style="font-size:12px">LDAP</text>
+<rect x="687.0" y="88" width="27.0" height="14" rx="3" class="bx"/>
+<rect x="718.0" y="88" width="27.0" height="14" rx="3" class="bx"/>
+<rect x="760" y="48" width="70" height="62" rx="8" class="b-teal"/><text x="795.0" y="76" class="tc tb" style="font-size:12px">fédéré</text>
+<rect x="766.0" y="88" width="27.0" height="14" rx="3" class="bx"/>
+<rect x="797.0" y="88" width="27.0" height="14" rx="3" class="bx"/>
+<text x="716" y="134" class="tc ts">la source décide du domaine</text><text x="716" y="152" class="tc ts" style="font-size:10.5px">petits rectangles : projets</text>
+<rect x="866" y="6" width="264" height="158" rx="12" class="zone"/><text x="998" y="32" class="tc tl">④ Mixte</text>
+<rect x="884" y="48" width="109" height="62" rx="8" class="b-blue"/><text x="938.5" y="76" class="tc tb" style="font-size:12px">nord · LDAP</text>
+<rect x="890.0" y="88" width="46.5" height="14" rx="3" class="bx"/>
+<rect x="940.5" y="88" width="46.5" height="14" rx="3" class="bx"/>
+<rect x="1002" y="48" width="109" height="62" rx="8" class="b-teal"/><text x="1056.5" y="76" class="tc tb" style="font-size:12px">client · fédéré</text>
+<rect x="1008.0" y="88" width="46.5" height="14" rx="3" class="bx"/>
+<rect x="1058.5" y="88" width="46.5" height="14" rx="3" class="bx"/>
+<text x="998" y="134" class="tc ts">organisation et source à la fois</text><text x="998" y="152" class="tc ts" style="font-size:10.5px">petits rectangles : projets</text>
+</svg></div>
+<table class="tbl tight os">
+<thead><tr><th style="width:21%">Modèle</th><th style="width:27%">Convient à</th><th style="width:26%">Avantage</th><th>Limite</th></tr></thead>
+<tbody>
+<tr><td>① Domaine unique</td><td>une équipe, un petit cloud</td><td style="color:var(--ink);font-weight:400">rien à expliquer</td><td style="color:var(--ink);font-weight:400">pas de délégation ; noms à préfixer</td></tr>
+<tr><td>② Un domaine par organisation</td><td>filiales, clients, directions</td><td style="color:var(--ink);font-weight:400">délégation complète, noms libres</td><td style="color:var(--ink);font-weight:400">un domaine à créer par arrivée</td></tr>
+<tr><td>③ Un domaine par source d'identité</td><td>un annuaire commun, plus des comptes externes</td><td style="color:var(--ink);font-weight:400">suit l'existant de l'entreprise</td><td style="color:var(--ink);font-weight:400">la délégation se fait par projets, pas par domaine</td></tr>
+<tr><td>④ Mixte</td><td>grands groupes, hébergeurs avec clients fédérés</td><td style="color:var(--ink);font-weight:400">chaque organisation a son domaine <b>et</b> sa source</td><td style="color:var(--ink);font-weight:400">plus de raccordements à maintenir</td></tr>
+</tbody></table>
+<div class="note g"><b>Sur Sunbeam, on part toujours de ③ au minimum :</b> les domaines techniques existent déjà. La question est de savoir combien de domaines « métier » ajouter.</div>
+</div>
+</section>
+
+<!-- 41 -->
+<section class="slide">
+<header><span class="kick">5 · Global ou délégué</span><h2>Scénario : un hébergeur et ses clients</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 420">
+<g class="tc">
+<rect x="10" y="6" width="540" height="70" rx="10" class="b-red"/><text x="280" y="30" class="tb tr">Hébergeur — administration globale</text><text x="280" y="50" class="ts">ouvre un domaine par contrat, fixe la capacité achetée,</text><text x="280" y="66" class="ts">facture d'après la consommation des projets du domaine</text>
+<rect x="10" y="110" width="170" height="190" rx="10" class="b-violet"/><text x="95" y="134" class="tb">domaine client-a</text><text x="95" y="156" class="ts">base locale</text><rect x="24" y="170" width="142" height="34" rx="6" class="bx"/><text x="95" y="192" class="ts">2 gestionnaires</text><rect x="24" y="212" width="142" height="34" rx="6" class="bx"/><text x="95" y="234" class="ts">6 projets</text><text x="95" y="272" class="ts">plafond : 200 cœurs</text>
+<rect x="195" y="110" width="170" height="190" rx="10" class="b-violet"/><text x="280" y="134" class="tb">domaine client-b</text><text x="280" y="156" class="ts">fédéré : son Entra ID</text><rect x="209" y="170" width="142" height="34" rx="6" class="bx"/><text x="280" y="192" class="ts">2 gestionnaires</text><rect x="209" y="212" width="142" height="34" rx="6" class="bx"/><text x="280" y="234" class="ts">15 projets</text><text x="280" y="272" class="ts">plafond : 800 cœurs</text>
+<rect x="380" y="110" width="170" height="190" rx="10" class="b-violet"/><text x="465" y="134" class="tb">domaine client-c</text><text x="465" y="156" class="ts">base locale</text><rect x="394" y="170" width="142" height="34" rx="6" class="bx"/><text x="465" y="192" class="ts">2 gestionnaires</text><rect x="394" y="212" width="142" height="34" rx="6" class="bx"/><text x="465" y="234" class="ts">2 projets</text><text x="465" y="272" class="ts">plafond : 40 cœurs</text>
+<rect x="10" y="334" width="540" height="74" rx="10" class="b-grey"/><text x="280" y="358" class="tb">Commun à tous</text><text x="280" y="378" class="ts">images de systèmes, gabarits, réseau externe, adresses publiques ;</text><text x="280" y="396" class="ts">domaine « support » de l'hébergeur, en lecture héritée sur chaque client</text>
+</g>
+<path d="M95,76 V108 M280,76 V108 M465,76 V108" class="lr"/><path d="M95,300 V332 M280,300 V332 M465,300 V332" class="nl"/>
+</svg>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:35%">Besoin</th><th>Réponse</th></tr></thead>
+<tbody>
+<tr><td>Étanchéité entre clients</td><td>un domaine par client ; aucun rôle croisé</td></tr>
+<tr><td>Autonomie du client</td><td>deux gestionnaires, rôle <code>manager</code></td></tr>
+<tr><td>Capacité vendue</td><td>plafond par domaine, ou somme des quotas de ses projets</td></tr>
+<tr><td>Facturation</td><td>regrouper la consommation des projets par domaine</td></tr>
+<tr><td>Impayé, fin de contrat</td><td>désactiver le domaine, puis purger et supprimer</td></tr>
+<tr><td>Support</td><td>groupe de l'hébergeur, <code>reader</code> hérité sur le domaine, avec l'accord du client</td></tr>
+<tr><td>Client avec son annuaire</td><td>domaine fédéré ; correspondance limitée à un groupe dédié</td></tr>
+</tbody></table>
+<pre style="font-size:11.8px"><span class="m"># Rattacher une consommation à un domaine</span>
+<span class="c">openstack project list</span> --domain client-a -f value -c ID \
+  | <span class="c">xargs</span> -I{} openstack server list --project {} \
+      --all-projects -f value -c ID -c Flavor</pre>
+<div class="note g">Chiffres et noms illustratifs. La facturation elle-même relève d'un outil externe : OpenStack fournit les données, pas les factures.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 42 -->
+<section class="slide">
+<header><span class="kick">5 · Global ou délégué</span><h2>Scénario : un groupe et ses filiales</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 420">
+<g class="tc">
+<rect x="10" y="6" width="540" height="56" rx="10" class="b-red"/><text x="280" y="30" class="tb tr">DSI du groupe — administration globale</text><text x="280" y="48" class="ts">cloud unique, capacité répartie par direction générale</text>
+<rect x="10" y="94" width="262" height="150" rx="10" class="b-blue"/><text x="141" y="118" class="tb">domaine « groupe »</text><text x="141" y="138" class="ts">annuaire central, LDAP</text>
+<rect x="24" y="152" width="112" height="76" rx="7" class="bx"/><text x="80" y="176" class="tb" style="font-size:12px">projets RH</text><text x="80" y="196" class="ts">droits au groupe</text><text x="80" y="212" class="ts">« dsi-rh »</text>
+<rect x="146" y="152" width="112" height="76" rx="7" class="bx"/><text x="202" y="176" class="tb" style="font-size:12px">projets finance</text><text x="202" y="196" class="ts">droits au groupe</text><text x="202" y="212" class="ts">« dsi-finance »</text>
+<rect x="288" y="94" width="262" height="150" rx="10" class="b-violet"/><text x="419" y="118" class="tb">domaine « filiale-sud »</text><text x="419" y="138" class="ts">son propre annuaire</text>
+<rect x="302" y="152" width="234" height="76" rx="7" class="bx"/><text x="419" y="176" class="tb" style="font-size:12px">ses projets</text><text x="419" y="196" class="ts">gestionnaires locaux,</text><text x="419" y="212" class="ts">rôle manager</text>
+<rect x="10" y="276" width="262" height="130" rx="10" class="b-teal"/><text x="141" y="300" class="tb">domaine « prestataires »</text><text x="141" y="320" class="ts">fédéré, ou base locale</text><text x="141" y="346" class="ts">comptes des intégrateurs,</text><text x="141" y="362" class="ts">rôles sur des projets des deux</text><text x="141" y="378" class="ts">autres domaines</text>
+<rect x="288" y="276" width="262" height="130" rx="10" class="b-grey"/><text x="419" y="300" class="tb">domaine « exploitation »</text><text x="419" y="320" class="ts">équipe d'astreinte du groupe</text><text x="419" y="346" class="ts">reader hérité sur « groupe »</text><text x="419" y="362" class="ts">et « filiale-sud »</text>
+</g>
+<path d="M141,62 V92 M419,62 V92" class="lr"/>
+<path d="M141,276 V246" class="lt"/><path d="M419,276 V246" class="ln ld"/>
+<text x="280" y="264" class="tc ts" style="paint-order:stroke;stroke:#fff;stroke-width:5px">rôles accordés sur les deux domaines du haut</text>
+</svg>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:36%">Choix</th><th>Raison</th></tr></thead>
+<tbody>
+<tr><td>Un domaine pour le siège, pas un par direction</td><td>même annuaire, mêmes règles ; la séparation se fait par projets et par groupes de l'annuaire</td></tr>
+<tr><td>Un domaine pour la filiale</td><td>annuaire distinct, équipe informatique autonome : délégation utile</td></tr>
+<tr><td>Un domaine « prestataires »</td><td>comptes à durée limitée, hors annuaire du groupe ; retrait en bloc possible</td></tr>
+<tr><td>Un domaine « exploitation »</td><td>les astreintes voient tout sans être administrateurs</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Dans le domaine « groupe »,</b> il n'y a pas de gestionnaire par direction : la DSI crée les projets, et les droits suivent les groupes de l'annuaire.</li>
+<li><b>Dans « filiale-sud »,</b> la délégation est complète : c'est le modèle hébergeur, en interne.</li>
+<li><b>Les affectations croisées</b> — prestataires, exploitation — sont posées par la plateforme et revues régulièrement.</li>
+</ul>
+<div class="note g">Même entreprise, deux modes de délégation : le domaine n'est utile que là où une <b>équipe distincte</b> doit gérer ses identités.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 43 -->
+<section class="slide">
+<header><span class="kick">5 · Global ou délégué</span><h2>Les limites du modèle</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:24%">Limite</th><th style="width:38%">Ce qui se passe</th><th>Comment la contourner</th></tr></thead>
+<tbody>
+<tr><td>Les services ignorent les domaines</td><td>ni Nova ni Neutron ne filtrent « par domaine » ; tout se ramène à des projets</td><td style="color:var(--ink);font-weight:400">raisonner par listes de projets ; étiqueter les projets</td></tr>
+<tr><td>Capacité par domaine</td><td>les quotas classiques sont par projet</td><td style="color:var(--ink);font-weight:400">limites unifiées de Keystone, là où les services les appliquent ; sinon contrôle par la plateforme</td></tr>
+<tr><td>Ressources partagées</td><td>images publiques, gabarits, réseaux externes sont visibles de tous</td><td style="color:var(--ink);font-weight:400">accès par projet pour les gabarits et images ; partage ciblé des réseaux</td></tr>
+<tr><td>Matériel mutualisé</td><td>les instances de deux domaines cohabitent sur un même hôte</td><td style="color:var(--ink);font-weight:400">agrégats d'hôtes réservés, par gabarits privés</td></tr>
+<tr><td>Domaine immuable</td><td>un projet ou un utilisateur ne change pas de domaine</td><td style="color:var(--ink);font-weight:400">bien choisir le découpage au départ ; sinon recréer et migrer</td></tr>
+<tr><td>Suppression non propagée</td><td>supprimer un domaine laisse les ressources des projets en place</td><td style="color:var(--ink);font-weight:400">procédure de purge avant suppression</td></tr>
+<tr><td>Rôle admin non cloisonné</td><td>attribué sur un domaine, il déborde</td><td style="color:var(--ink);font-weight:400">rôle <code>manager</code> ; tests de cloison</td></tr>
+<tr><td>Interface</td><td>Horizon ne reflète pas toujours exactement les droits de l'API</td><td style="color:var(--ink);font-weight:400">ligne de commande pour la gestion de domaine</td></tr>
+<tr><td>Un seul niveau</td><td>pas de « sous-domaine » : la hiérarchie se fait par projets</td><td style="color:var(--ink);font-weight:400">projets imbriqués et rôles hérités</td></tr>
+</tbody></table>
+<div class="note"><b>À dire clairement aux clients et aux filiales :</b> le domaine garantit l'indépendance des <b>identités et de leur administration</b>. L'isolation des données et du réseau est assurée par les projets ; celle du matériel, par des mécanismes distincts.</div>
+</div>
+</section>
+
+<!-- 44 -->
+<section class="slide">
+<header><span class="kick">5 · Global ou délégué</span><h2>Combien de domaines ? Arbre de décision</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 430">
+<g class="tc">
+<rect x="20" y="10" width="380" height="62" rx="10" class="b-dark"/><text x="210" y="36" class="tw tb">Cette population a-t-elle sa propre source</text><text x="210" y="55" class="tw tb">d'identité — annuaire, fournisseur ?</text>
+<rect x="20" y="118" width="380" height="62" rx="10" class="b-dark"/><text x="210" y="144" class="tw tb">Une équipe distincte doit-elle gérer</text><text x="210" y="163" class="tw tb">elle-même ses comptes et ses projets ?</text>
+<rect x="20" y="226" width="380" height="62" rx="10" class="b-dark"/><text x="210" y="252" class="tw tb">Faut-il pouvoir la suspendre ou la retirer</text><text x="210" y="271" class="tw tb">en bloc — client, prestataire ?</text>
+<rect x="20" y="334" width="380" height="62" rx="10" class="b-dark"/><text x="210" y="360" class="tw tb">Ses noms risquent-ils d'entrer en collision</text><text x="210" y="379" class="tw tb">avec ceux des autres ?</text>
+<rect x="640" y="150" width="490" height="76" rx="12" class="b-violet"/><text x="885" y="180" class="tl">Un domaine à part</text><text x="885" y="204" class="ts">une seule réponse « oui » suffit</text>
+<rect x="640" y="334" width="490" height="62" rx="12" class="b-green"/><text x="885" y="360" class="tl">Pas de domaine : des projets</text><text x="885" y="382" class="ts">dans un domaine existant, avec des groupes</text>
+</g>
+<g class="ts tb">
+<path d="M400,41 H540 V170 H638" class="lr" style="fill:none"/><text x="460" y="33" class="tc">oui</text>
+<path d="M210,72 V116" class="ln"/><text x="222" y="100">non</text>
+<path d="M400,149 H500 V182 H638" class="lr" style="fill:none"/><text x="460" y="141" class="tc">oui</text>
+<path d="M210,180 V224" class="ln"/><text x="222" y="208">non</text>
+<path d="M400,257 H500 V196 H638" class="lr" style="fill:none"/><text x="460" y="249" class="tc">oui</text>
+<path d="M210,288 V332" class="ln"/><text x="222" y="316">non</text>
+<path d="M400,355 H540 V210 H638" class="lr" style="fill:none"/><text x="460" y="347" class="tc">oui</text>
+<path d="M400,380 H638" class="ln"/><text x="460" y="398" class="tc">non</text>
+</g>
+</svg>
+</div>
+<div class="cols nf">
+<div class="note g"><b>Règle de sobriété :</b> un domaine se justifie par une frontière d'<b>administration</b> ou de <b>source d'identité</b>. Pour séparer des ressources, des budgets ou des environnements, les projets suffisent.</div>
+<div class="note"><b>Erreur fréquente :</b> un domaine par environnement — production, recette, développement. Ce sont les mêmes personnes et le même annuaire : trois projets, ou trois arbres de projets, dans un seul domaine.</div>
+</div>
+</div>
+</section>
+
+<!-- 45 -->
+<section class="slide dark sec">
+<div class="num">06</div>
+<h2>Exploiter des domaines sur Sunbeam</h2>
+<p>Inventorier, automatiser, dépanner — et garder dans la durée la cloison que l'on a construite.</p>
+<ol><li>Inventaire et revue</li><li>Automatiser la création d'un domaine</li><li>Pannes typiques</li><li>Bonnes pratiques</li><li>Synthèse</li></ol>
+</section>
+
+<!-- 46 -->
+<section class="slide">
+<header><span class="kick">6 · Exploitation</span><h2>Inventaire et revue</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Prérequis : identifiants de l'administrateur global</span>
+<span class="c">source</span> admin-openrc
+
+<span class="m"># 1 · Les domaines, et leur état</span>
+<span class="c">openstack domain list</span>
+
+<span class="m"># 2 · Par domaine : volumes d'objets</span>
+<span class="c">for</span> d in $(openstack domain list -f value -c Name); <span class="c">do</span>
+  echo "$d :" \
+    $(openstack user list --domain $d -f value | wc -l) "utilisateurs," \
+    $(openstack project list --domain $d -f value | wc -l) "projets"
+<span class="c">done</span>
+
+<span class="m"># 3 · Qui gère chaque domaine ?</span>
+<span class="c">openstack role assignment list</span> --names --role manager
+<span class="c">openstack role assignment list</span> --names --role admin
+
+<span class="m"># 4 · Qui a des droits au niveau du système ?</span>
+<span class="c">openstack role assignment list</span> --names --system all</pre>
+</div>
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># 5 · Affectations d'un domaine, héritées comprises</span>
+<span class="c">openstack role assignment list</span> --names --domain nord
+<span class="c">openstack role assignment list</span> --names --domain nord \
+  --inherited
+
+<span class="m"># 6 · Domaines raccordés à un annuaire, fournisseurs fédérés</span>
+<span class="c">sunbeam ldap list-domains</span>
+<span class="c">sunbeam identity provider list</span>
+<span class="c">openstack identity provider list</span></pre>
+<table class="tbl tight os">
+<thead><tr><th style="width:40%">À contrôler à chaque revue</th><th>Signal d'alerte</th></tr></thead>
+<tbody>
+<tr><td>rôle <code>admin</code></td><td>détenu ailleurs que par la plateforme</td></tr>
+<tr><td>gestionnaires par domaine</td><td>un seul, ou aucun</td></tr>
+<tr><td>affectations entre domaines</td><td>acteur d'un domaine, cible d'un autre, sans justification</td></tr>
+<tr><td>affectations directes à des personnes</td><td>plutôt que par groupes</td></tr>
+<tr><td>domaines désactivés</td><td>depuis longtemps, avec des ressources encore actives</td></tr>
+<tr><td>projets sans quota explicite</td><td>au quota par défaut, dans un domaine délégué</td></tr>
+</tbody></table>
+</div>
+</div></div>
+</section>
+
+<!-- 47 -->
+<section class="slide">
+<header><span class="kick">6 · Exploitation</span><h2>Automatiser la création d'un domaine</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.4px"><span class="m"># domaine.tf — fournisseur Terraform « openstack »</span>
+<span class="k">variable</span> "nom"            { type = string }
+<span class="k">variable</span> "gestionnaires"  { type = list(string) }
+
+<span class="k">resource</span> "openstack_identity_project_v3" "domaine" {
+  name        = var.nom
+  description = "Domaine ${var.nom}"
+  is_domain   = true
+}
+
+<span class="k">resource</span> "openstack_identity_group_v3" "gestionnaires" {
+  name      = "gestionnaires"
+  domain_id = openstack_identity_project_v3.domaine.id
+}
+
+<span class="k">data</span> "openstack_identity_role_v3" "manager" { name = "manager" }
+<span class="k">data</span> "openstack_identity_role_v3" "member"  { name = "member" }
+
+<span class="k">resource</span> "openstack_identity_role_assignment_v3" "gestion" {
+  group_id  = openstack_identity_group_v3.gestionnaires.id
+  domain_id = openstack_identity_project_v3.domaine.id
+  role_id   = data.openstack_identity_role_v3.manager.id
+}
+
+<span class="k">resource</span> "openstack_identity_project_v3" "socle" {
+  name      = "socle"
+  domain_id = openstack_identity_project_v3.domaine.id
+}</pre>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Un module par domaine :</b> domaine, groupe des gestionnaires, rôle <code>manager</code>, premier projet et son quota — toujours les mêmes étapes, donc à décrire une fois.</li>
+<li><b>Le domaine est créé comme un projet</b> marqué <code>is_domain</code> : c'est ce qu'il est, en interne.</li>
+<li><b>Ce que la plateforme y gagne :</b> revue par un pair avant application, historique, et un état de référence auquel comparer la réalité.</li>
+<li><b>Ce qu'il ne faut pas y mettre :</b> les comptes des personnes et les projets du quotidien — ils relèvent du gestionnaire, pas du code de la plateforme.</li>
+</ul>
+<pre style="font-size:11.8px"><span class="m"># Prérequis : identifiants d'administration chargés</span>
+<span class="c">source</span> admin-openrc
+<span class="c">terraform init</span>
+<span class="c">terraform plan</span>  -var nom=nord -var 'gestionnaires=["bob","chloe"]'
+<span class="c">terraform apply</span> -var nom=nord -var 'gestionnaires=["bob","chloe"]'</pre>
+<div class="note"><b>Extrait de principe, non exécuté :</b> les noms de ressources et d'attributs sont à confronter à la documentation de la version du fournisseur utilisée. Quota et ajout des membres au groupe se déclarent de la même façon.</div>
+<div class="note g">Frontière nette : Terraform pour ce que pose la plateforme ; API et Horizon pour ce que gère le domaine.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 48 -->
+<section class="slide">
+<header><span class="kick">6 · Exploitation</span><h2>Pannes typiques</h2></header>
+<div class="body">
+<table class="tbl os wrap">
+<thead><tr><th style="width:27%">Symptôme</th><th style="width:36%">Cause probable</th><th>Vérification</th></tr></thead>
+<tbody>
+<tr><td>401 alors que le mot de passe est bon</td><td>domaine de l'utilisateur absent ou erroné ; domaine désactivé</td><td style="color:var(--ink);font-weight:400"><code>OS_USER_DOMAIN_NAME</code> ; <code>openstack domain show</code></td></tr>
+<tr><td>« project not found » sur un projet qui existe</td><td>domaine du projet absent ou erroné</td><td style="color:var(--ink);font-weight:400"><code>OS_PROJECT_DOMAIN_NAME</code></td></tr>
+<tr><td>« multiple matches found »</td><td>même nom dans plusieurs domaines, sans précision</td><td style="color:var(--ink);font-weight:400">ajouter <code>--domain</code>, ou utiliser l'identifiant</td></tr>
+<tr><td>403 pour le gestionnaire sur son propre domaine</td><td>jeton de portée projet au lieu de domaine</td><td style="color:var(--ink);font-weight:400"><code>OS_PROJECT_NAME</code> encore défini ; <code>openstack token issue</code></td></tr>
+<tr><td>le gestionnaire ne voit pas les instances</td><td>normal : <code>manager</code> sur le domaine ne donne rien dans les projets</td><td style="color:var(--ink);font-weight:400">lui attribuer <code>member</code> hérité</td></tr>
+<tr><td>liste d'utilisateurs vide dans un domaine LDAP</td><td>filtre ou branche de recherche erronés ; annuaire injoignable</td><td style="color:var(--ink);font-weight:400">journaux de Keystone ; <code>sunbeam ldap list-domains</code></td></tr>
+<tr><td>impossible de créer un utilisateur</td><td>domaine raccordé à une source externe : lecture seule</td><td style="color:var(--ink);font-weight:400">le créer dans l'annuaire</td></tr>
+<tr><td>ressources sans propriétaire connu</td><td>domaine ou projet supprimé sans purge</td><td style="color:var(--ink);font-weight:400">lister les ressources dont le projet n'existe plus</td></tr>
+<tr><td>Horizon refuse la connexion, la ligne de commande fonctionne</td><td>champ « Domaine » mal renseigné ; aucun projet attribué</td><td style="color:var(--ink);font-weight:400">affectations effectives de l'utilisateur</td></tr>
+</tbody></table>
+<div class="note g"><b>Dans huit cas sur dix, c'est un domaine oublié ou mal nommé.</b> Premier réflexe : afficher les variables <code>OS_*DOMAIN*</code> et obtenir un jeton avec <code>openstack token issue</code>.</div>
+</div>
+</section>
+
+<!-- 49 -->
+<section class="slide">
+<header><span class="kick">6 · Exploitation</span><h2>Bonnes pratiques</h2></header>
+<div class="body">
+<div class="cols c4 nf dense">
+<div class="card"><h3>Peu de domaines, bien justifiés</h3>Un domaine par frontière d'administration ou de source d'identité. Le reste se règle par projets.</div>
+<div class="card"><h3>Ne rien mettre dans les domaines techniques</h3>Administration et services restent tels que Sunbeam les a créés.</div>
+<div class="card"><h3>manager, jamais admin</h3>Le rôle <code>admin</code> ne se délègue pas, ni sur un domaine, ni sur un projet.</div>
+<div class="card"><h3>Deux gestionnaires au moins</h3>Par domaine, nominatifs, attribués à un groupe plutôt qu'à des personnes.</div>
+</div>
+<div class="cols c4 nf dense">
+<div class="card cb"><h3>La capacité avant la délégation</h3>Quota par défaut bas, quotas explicites par projet, plafond par domaine quand c'est possible.</div>
+<div class="card cb"><h3>Tester la cloison</h3>Les dix tests, après chaque montée de version et chaque changement de politique.</div>
+<div class="card cb"><h3>Purger avant de supprimer</h3>Désactiver, inventorier, nettoyer les ressources, puis seulement supprimer le domaine.</div>
+<div class="card cb"><h3>Revoir les affectations croisées</h3>Tout rôle accordé à un acteur d'un autre domaine a une raison écrite et une échéance.</div>
+</div>
+<div class="cols">
+<div class="col">
+<p><b>Convention de nommage utile</b></p>
+<table class="tbl tight">
+<thead><tr><th>Objet</th><th>Convention</th><th>Exemple</th></tr></thead>
+<tbody>
+<tr><td>Domaine</td><td>nom court de l'organisation, minuscules</td><td><code>nord</code></td></tr>
+<tr><td>Groupe de gestion</td><td>identique dans chaque domaine</td><td><code>gestionnaires</code></td></tr>
+<tr><td>Groupes de projet</td><td>projet + niveau d'accès</td><td><code>web-dev</code>, <code>web-lecture</code></td></tr>
+<tr><td>Projet</td><td>libre : le domaine évite les collisions</td><td><code>web</code></td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<p><b>Document à tenir par domaine</b></p>
+<ul class="pts sm">
+<li>Organisation, contact, gestionnaires nommés.</li>
+<li>Source d'identité, et qui la gère.</li>
+<li>Capacité allouée ; date de la dernière revue des droits.</li>
+<li>Affectations croisées accordées, avec leur justification.</li>
+<li>Procédure de retrait : qui décide, dans quel ordre.</li>
+</ul>
+<div class="note g">Ce document tient en une page, et vit dans le même dépôt que le code Terraform du domaine.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 50 -->
+<section class="slide">
+<header><span class="kick">Synthèse</span><h2>Ce qu'il faut retenir</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card cb"><h3>Le domaine</h3>
+<ul class="pts sm"><li>Espace de noms, frontière d'administration, point de raccordement d'une source d'identité.</li><li>Contient utilisateurs, groupes, projets — exclusivement.</li><li>Isole les identités, pas les ressources ni le matériel.</li><li>Désactiver suspend ; supprimer n'efface pas les ressources.</li></ul></div>
+<div class="card cv"><h3>L'administration globale</h3>
+<ul class="pts sm"><li>Portée système ou projet d'administration, rôle <code>admin</code>.</li><li>Garde les domaines, les sources d'identité, les rôles, la capacité, le partagé, l'infrastructure.</li><li>Très peu de personnes.</li><li><code>admin</code> ne se cantonne pas : ne pas le déléguer.</li></ul></div>
+<div class="card ct"><h3>L'administration déléguée</h3>
+<ul class="pts sm"><li>Rôle <code>manager</code> sur le domaine, jeton de portée domaine.</li><li>Gère utilisateurs, groupes, projets, rôles courants.</li><li>Ne voit ni ne touche les autres domaines.</li><li>Ne peut pas attribuer <code>admin</code> ni changer les quotas.</li></ul></div>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:30%">Question</th><th>Réponse courte</th></tr></thead>
+<tbody>
+<tr><td>Quand créer un domaine ?</td><td>quand une population a sa propre source d'identité, sa propre équipe de gestion, ou doit pouvoir être retirée en bloc</td></tr>
+<tr><td>Comment déléguer sans risque ?</td><td style="color:var(--ink);font-weight:400"><code>manager</code> sur le domaine à un groupe de deux personnes au moins ; quotas posés par la plateforme ; cloison testée</td></tr>
+<tr><td>Que garde la plateforme ?</td><td style="color:var(--ink);font-weight:400">tout ce qui touche plus d'un domaine, ou du matériel</td></tr>
+<tr><td>Sur Sunbeam ?</td><td style="color:var(--ink);font-weight:400">domaines techniques déjà en place ; <code>sunbeam ldap add-domain</code> et <code>sunbeam identity provider add</code> pour les sources externes ; le reste par l'API</td></tr>
+</tbody></table>
+<div class="note g"><b>Sources :</b> documentation de Keystone (protection des API et profils par défaut, jetons, politiques), documentation de Canonical OpenStack 2026.1 (intégration LDAP, fournisseurs d'identité) — consultées en octobre 2026.</div>
+</div>
+</section>
+
+</div>
+<div id="bar"></div>
+<div id="nav"><button id="bO" title="Vue d'ensemble (O)">▦</button><button id="bF" title="Plein écran (F)">⛶</button><button id="bP" title="Précédent (←)">←</button><button id="bN" title="Suivant (→)">→</button></div>
+<script>
+(function(){
+var stage=document.getElementById('stage'),bar=document.getElementById('bar'),body=document.body;
+var slides=Array.prototype.slice.call(document.querySelectorAll('.slide')),N=slides.length,cur=0;
+slides.forEach(function(s,i){
+  var f=document.createElement('div');f.className='foot';
+  f.innerHTML='<span>OpenStack — les domaines</span><span>'+(i+1)+' / '+N+'</span>';
+  s.appendChild(f);
+  s.addEventListener('click',function(){if(body.classList.contains('ov')){body.classList.remove('ov');go(i);fit();}});
+});
+function go(n){
+  cur=Math.max(0,Math.min(N-1,n));
+  slides.forEach(function(s,i){s.classList.toggle('active',i===cur);});
+  bar.style.width=((cur+1)/N*100)+'%';
+  try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+}
+function fit(){
+  if(body.classList.contains('ov')){
+    stage.style.transform='';
+    document.documentElement.style.setProperty('--z',Math.max(.1,(window.innerWidth-40-4*14-20)/5/1280));
+  }else{
+    stage.style.transform='scale('+Math.min(window.innerWidth/1280,window.innerHeight/720)+')';
+  }
+}
+function overview(){body.classList.toggle('ov');fit();if(body.classList.contains('ov')){slides[cur].scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}}
+function full(){if(document.fullscreenElement){document.exitFullscreen();}else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen();}}
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'||k===' '||k==='ArrowDown'){e.preventDefault();go(cur+1);}
+  else if(k==='ArrowLeft'||k==='PageUp'||k==='ArrowUp'){e.preventDefault();go(cur-1);}
+  else if(k==='Home'){go(0);}
+  else if(k==='End'){go(N-1);}
+  else if(k==='o'||k==='O'||k==='Escape'){if(k!=='Escape'||body.classList.contains('ov'))overview();}
+  else if(k==='f'||k==='F'){full();}
+});
+document.getElementById('bN').onclick=function(){go(cur+1);};
+document.getElementById('bP').onclick=function(){go(cur-1);};
+document.getElementById('bO').onclick=overview;
+document.getElementById('bF').onclick=full;
+var tx=null;
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){if(tx===null||body.classList.contains('ov'))return;var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1));tx=null;},{passive:true});
+window.addEventListener('resize',fit);
+window.addEventListener('hashchange',function(){var h=parseInt(location.hash.slice(1),10);if(h&&h-1!==cur)go(h-1);});
+var h=parseInt(location.hash.slice(1),10);
+go(h?h-1:0);fit();
+})();
+</script>
+</body>
+</html>

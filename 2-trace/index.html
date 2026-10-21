@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Traceur OpenStack</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #1d2330; --muted: #667085; --line: #d8dde6;
+  --node: #ffffff; --node-ink: #1d2330; --zone: #eef1f6; --zone-ink: #7a8599;
+  --api: #2563eb; --rpc: #ea7a0c; --db: #8b3fd9; --ovn: #16a34a; --compute: #0d9488;
+  --libvirt: #dc2626; --ceph: #a16207; --mark: #475467;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151c; --panel: #181d26; --ink: #e6e9ef; --muted: #98a2b3; --line: #2b3240;
+    --node: #1f2531; --node-ink: #e6e9ef; --zone: #1a202a; --zone-ink: #7d879a;
+    --api: #60a5fa; --rpc: #fb923c; --db: #c084fc; --ovn: #4ade80; --compute: #2dd4bf;
+    --libvirt: #f87171; --ceph: #fbbf24; --mark: #98a2b3;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151c; --panel: #181d26; --ink: #e6e9ef; --muted: #98a2b3; --line: #2b3240;
+  --node: #1f2531; --node-ink: #e6e9ef; --zone: #1a202a; --zone-ink: #7d879a;
+  --api: #60a5fa; --rpc: #fb923c; --db: #c084fc; --ovn: #4ade80; --compute: #2dd4bf;
+  --libvirt: #f87171; --ceph: #fbbf24; --mark: #98a2b3;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 10px 16px;
+  border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 2; }
+header h1 { font-size: 16px; margin: 0 8px 0 0; }
+#status { font-size: 12px; color: var(--muted); }
+#status.ok::before { content: "● "; color: var(--ovn); }
+#status.ko::before { content: "● "; color: var(--libvirt); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: transparent; color: var(--ink); border-radius: 999px;
+  padding: 3px 10px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.chip i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.chip.off { opacity: .35; }
+.tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-left: auto; }
+button, input[type=text] { font: inherit; font-size: 13px; color: var(--ink); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 6px; padding: 4px 10px; }
+button { cursor: pointer; }
+button.primary { background: var(--api); border-color: var(--api); color: #fff; }
+label.check { font-size: 13px; display: inline-flex; gap: 5px; align-items: center; }
+main { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(320px, 1fr); gap: 12px; padding: 12px 16px; }
+@media (max-width: 1000px) { main { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+  margin: 0; padding: 10px 12px; border-bottom: 1px solid var(--line); display: flex; gap: 8px; align-items: center; }
+.panel h2 span { margin-left: auto; text-transform: none; letter-spacing: 0; font-size: 12px; }
+svg { display: block; width: 100%; height: auto; }
+.zone rect { fill: var(--zone); }
+.zone text { fill: var(--zone-ink); font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+.node { cursor: pointer; transition: opacity .25s; }
+.node rect { fill: var(--node); stroke: var(--line); stroke-width: 1; transition: stroke .3s, stroke-width .3s; }
+.node text { fill: var(--node-ink); font-size: 12px; text-anchor: middle; pointer-events: none; }
+.node text.count { fill: var(--muted); font-size: 9.5px; }
+.node.idle { opacity: .45; }
+.node.flash rect { stroke: var(--ink); stroke-width: 1.8; }
+.node.selected rect { stroke: var(--api); stroke-width: 2.2; }
+.edge { fill: none; stroke-linecap: round; opacity: .22; transition: opacity 2.4s ease-out; }
+.edge.hot { opacity: 1; transition: opacity .12s; }
+.hit { fill: none; stroke: transparent; stroke-width: 10; pointer-events: stroke; cursor: help; }
+#map.focus .edge { opacity: .04; transition: opacity .2s; }
+#map.focus .edge.lit { opacity: .95; }
+#map.focus .node:not(.lit) { opacity: .25; }
+#map.focus .node.lit { opacity: 1; }
+.dot { stroke: var(--panel); stroke-width: 1.2; pointer-events: none; }
+#timeline { height: calc(100vh - 150px); min-height: 420px; overflow-y: auto; font-size: 12.5px; }
+.ev { display: grid; grid-template-columns: 84px 64px minmax(0, 1fr); gap: 8px; padding: 5px 12px;
+  border-bottom: 1px solid var(--line); align-items: start; }
+.ev:hover { background: var(--zone); }
+.ev time { color: var(--muted); font-variant-numeric: tabular-nums; }
+.badge { font-size: 10.5px; font-weight: 600; text-transform: uppercase; border-radius: 4px; padding: 1px 6px;
+  color: #fff; text-align: center; }
+.ev .who { font-weight: 600; }
+.ev .what { overflow-wrap: anywhere; }
+.ev .req { font-family: ui-monospace, Consolas, monospace; font-size: 11px; border-radius: 4px; padding: 0 5px;
+  cursor: pointer; margin-left: 6px; color: #fff; }
+.ev details { color: var(--muted); font-size: 11.5px; }
+.ev.mark { display: block; background: var(--zone); font-weight: 600; color: var(--mark);
+  border-left: 4px solid var(--mark); }
+#filterbar { font-size: 12px; color: var(--muted); padding: 6px 12px; border-bottom: 1px solid var(--line); display: none; }
+#filterbar button { font-size: 11px; padding: 1px 6px; margin-left: 6px; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; padding: 8px 12px; font-size: 12px; color: var(--muted);
+  border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Traceur OpenStack</h1>
+  <span id="status" class="ko">connexion…</span>
+  <div class="chips" id="chips"></div>
+  <div class="tools">
+    <label class="check"><input type="checkbox" id="noise" checked> Masquer le bruit de fond</label>
+    <input type="text" id="markText" placeholder="Étape, ex. Création du réseau" size="26">
+    <button class="primary" id="markBtn">Marquer l’étape</button>
+    <button id="pauseBtn">Pause</button>
+    <button id="clearBtn">Effacer</button>
+    <button id="themeBtn" title="Thème clair ou sombre">◐</button>
+  </div>
+</header>
+<main>
+  <section class="panel">
+    <h2>Architecture et échanges <span id="edgeInfo"></span></h2>
+    <svg id="map" viewBox="0 0 1060 670" role="img" aria-label="Schéma des composants OpenStack et de leurs échanges"></svg>
+    <div class="legend">
+      Chaque lien s’allume à l’échange puis s’estompe. Survole un composant pour isoler ses liens,
+      clique dessus pour filtrer le fil. Survole un lien pour voir son volume.
+    </div>
+  </section>
+  <section class="panel">
+    <h2>Fil des échanges <span id="counter">0 événement</span></h2>
+    <div id="filterbar"></div>
+    <div id="timeline"></div>
+  </section>
+</main>
+<script>
+try { const t = localStorage.getItem("trace-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+const KINDS = {
+  api: "API REST", rpc: "RPC (RabbitMQ)", db: "SQL (MySQL)", ovn: "OVN",
+  compute: "Services Nova", libvirt: "libvirt / KVM", ceph: "Ceph"
+};
+const KIND_ORDER = Object.keys(KINDS);
+const NODES = {
+  client:           { x: 80,  y: 260, label: "Client (CLI, Horizon)" },
+  horizon:          { x: 80,  y: 360, label: "Horizon" },
+  "nova-api":       { x: 290, y: 110, label: "Nova API" },
+  placement:        { x: 290, y: 190, label: "Placement" },
+  neutron:          { x: 290, y: 270, label: "Neutron" },
+  glance:           { x: 290, y: 350, label: "Glance" },
+  cinder:           { x: 290, y: 430, label: "Cinder" },
+  keystone:         { x: 510, y: 110, label: "Keystone" },
+  rabbitmq:         { x: 510, y: 230, label: "RabbitMQ" },
+  mysql:            { x: 510, y: 350, label: "MySQL" },
+  "ovn-nb":         { x: 510, y: 470, label: "OVN Northbound" },
+  "ovn-northd":     { x: 510, y: 540, label: "ovn-northd" },
+  "ovn-sb":         { x: 510, y: 610, label: "OVN Southbound" },
+  "nova-scheduler": { x: 740, y: 110, label: "Nova Scheduler" },
+  "nova-conductor": { x: 740, y: 190, label: "Nova Conductor" },
+  "nova-compute":   { x: 740, y: 300, label: "nova-compute" },
+  libvirt:          { x: 740, y: 380, label: "libvirt / KVM" },
+  "ovn-controller": { x: 740, y: 540, label: "ovn-controller" },
+  metadata:         { x: 740, y: 610, label: "Agent metadata" },
+  notifications:    { x: 960, y: 110, label: "Notifications" },
+  "reponse RPC":    { x: 960, y: 190, label: "Réponses RPC" },
+  ceph:             { x: 960, y: 380, label: "Ceph" },
+  "cinder-volume":  { x: 960, y: 460, label: "cinder-volume" }
+};
+const ZONES = [
+  { x: 10,  y: 40,  w: 140, h: 610, label: "Clients" },
+  { x: 205, y: 40,  w: 170, h: 440, label: "API (pods)" },
+  { x: 425, y: 40,  w: 170, h: 360, label: "Services partagés" },
+  { x: 425, y: 420, w: 170, h: 230, label: "Réseau OVN" },
+  { x: 655, y: 40,  w: 170, h: 190, label: "Contrôle Nova" },
+  { x: 655, y: 250, w: 170, h: 400, label: "Hyperviseur (hôte Sunbeam)" },
+  { x: 875, y: 40,  w: 170, h: 610, label: "Autres" }
+];
+const EXTRA_SLOTS = [[960, 530], [960, 570], [960, 610], [80, 460], [80, 500], [80, 540], [80, 580], [80, 620]];
+let extraIdx = 0;
+const NODE_W = 150, NODE_H = 34;
+const svg = document.getElementById("map");
+const NS = "http://www.w3.org/2000/svg";
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const color = kind => css("--" + kind) || css("--mark");
+const edges = {}, nodeEls = {}, counts = {};
+const state = { kinds: new Set(KIND_ORDER), hideNoise: true, paused: false, req: null, node: null, hover: null };
+const events = [];
+const seen = new Set();
+const pending = [];
+
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const defs = el("defs", {}, svg);
+const gZones = el("g", {}, svg), gEdges = el("g", {}, svg), gHits = el("g", {}, svg),
+      gNodes = el("g", {}, svg), gDots = el("g", {}, svg);
+for (const z of ZONES) {
+  const g = el("g", { class: "zone" }, gZones);
+  el("rect", { x: z.x, y: z.y, width: z.w, height: z.h, rx: 10 }, g);
+  el("text", { x: z.x + 10, y: z.y + 16 }, g).textContent = z.label;
+}
+
+function label(id) { return (NODES[id] && NODES[id].label) || id; }
+function ensureNode(id) {
+  if (!id) return null;
+  if (!NODES[id]) {
+    const [x, y] = EXTRA_SLOTS[extraIdx % EXTRA_SLOTS.length];
+    extraIdx++;
+    NODES[id] = { x, y, label: id };
+  }
+  if (!nodeEls[id]) {
+    const n = NODES[id];
+    const g = el("g", { class: "node idle", transform: `translate(${n.x - NODE_W / 2},${n.y - NODE_H / 2})` }, gNodes);
+    el("rect", { width: NODE_W, height: NODE_H, rx: 7 }, g);
+    el("text", { x: NODE_W / 2, y: 15 }, g).textContent = n.label;
+    const c = el("text", { x: NODE_W / 2, y: 28, class: "count" }, g);
+    g.addEventListener("click", () => setNodeFilter(state.node === id ? null : id));
+    g.addEventListener("mouseenter", () => { state.hover = id; applyFocus(); });
+    g.addEventListener("mouseleave", () => { state.hover = null; applyFocus(); });
+    nodeEls[id] = { g, c };
+    counts[id] = 0;
+  }
+  return NODES[id];
+}
+Object.keys(NODES).forEach(ensureNode);
+
+function arrowFor(kind) {
+  const id = "arrow-" + kind;
+  if (!document.getElementById(id)) {
+    const m = el("marker", { id, viewBox: "0 0 10 10", refX: 10, refY: 5, markerWidth: 7, markerHeight: 7,
+      markerUnits: "userSpaceOnUse", orient: "auto-start-reverse" }, defs);
+    el("path", { d: "M0,1 L10,5 L0,9 z", fill: color(kind) }, m);
+  }
+  return `url(#${id})`;
+}
+
+/* Routage : liens horizontaux en S entre colonnes, arcs latéraux dans une même colonne,
+   points d'ancrage répartis sur la hauteur de chaque composant. */
+function sameColumn(e) { return Math.abs(NODES[e.a].x - NODES[e.b].x) < 20; }
+function sideSign(e) { return NODES[e.a].x > 900 ? -1 : 1; }
+function assignPorts() {
+  const buckets = {};
+  const push = (key, item) => (buckets[key] = buckets[key] || []).push(item);
+  for (const k in edges) {
+    const e = edges[k];
+    if (e.self) continue;
+    if (sameColumn(e)) {
+      const s = sideSign(e) > 0 ? "R" : "L";
+      push(e.a + s, { e, end: "pa", oy: NODES[e.b].y });
+      push(e.b + s, { e, end: "pb", oy: NODES[e.a].y });
+    } else {
+      push(e.a + "R", { e, end: "pa", oy: NODES[e.b].y });
+      push(e.b + "L", { e, end: "pb", oy: NODES[e.a].y });
+    }
+  }
+  for (const key in buckets) {
+    const list = buckets[key];
+    list.sort((p, q) => p.oy - q.oy || KIND_ORDER.indexOf(p.e.kind) - KIND_ORDER.indexOf(q.e.kind));
+    const n = list.length, span = NODE_H - 10;
+    list.forEach((p, i) => { p.e[p.end] = n === 1 ? 0 : (i / (n - 1) - 0.5) * span; });
+  }
+}
+function geometry(e) {
+  if (e.self) {
+    const n = NODES[e.a], x = n.x + NODE_W / 2 + 1, y = n.y;
+    return `M${x},${y - 7} C${x + 34},${y - 24} ${x + 34},${y + 24} ${x},${y + 7}`;
+  }
+  const a = NODES[e.a], b = NODES[e.b];
+  if (sameColumn(e)) {
+    const s = sideSign(e);
+    const x = a.x + s * (NODE_W / 2 + 2), y1 = a.y + e.pa, y2 = b.y + e.pb;
+    const bulge = s * Math.min(52, 20 + Math.abs(y2 - y1) * 0.14);
+    return `M${x},${y1} C${x + bulge},${y1} ${x + bulge},${y2} ${x},${y2}`;
+  }
+  const x1 = a.x + NODE_W / 2 + 2, y1 = a.y + e.pa, x2 = b.x - NODE_W / 2 - 2, y2 = b.y + e.pb;
+  const c = Math.max(30, (x2 - x1) * 0.5);
+  return `M${x1},${y1} C${x1 + c},${y1} ${x2 - c},${y2} ${x2},${y2}`;
+}
+function layout() {
+  assignPorts();
+  for (const k in edges) {
+    const d = geometry(edges[k]);
+    edges[k].path.setAttribute("d", d);
+    edges[k].hit.setAttribute("d", d);
+  }
+}
+function edgeHidden(e) { return !state.kinds.has(e.kind) || (state.hideNoise && e.nSignal === 0); }
+function applyEdgeVisibility(e) {
+  const v = edgeHidden(e) ? "none" : "";
+  e.path.style.display = v; e.hit.style.display = v;
+}
+function edgeInfo(e) {
+  const arrow = e.self ? "↻" : e.fwd && e.rev ? "↔" : "→";
+  const [p, q] = e.rev && !e.fwd ? [e.b, e.a] : [e.a, e.b];
+  const who = e.self ? label(e.a) + " " + arrow : `${label(p)} ${arrow} ${label(q)}`;
+  return `${who} · ${KINDS[e.kind] || e.kind} · ${e.n} échange${e.n > 1 ? "s" : ""}`;
+}
+function edgeFor(ev) {
+  let a = ev.src, b = ev.dst;
+  const na = ensureNode(a), nb = ensureNode(b);
+  if (nb.x < na.x || (nb.x === na.x && nb.y < na.y)) [a, b] = [b, a];
+  const key = a + "|" + b + "|" + ev.kind;
+  let e = edges[key];
+  if (!e) {
+    const path = el("path", { class: "edge", stroke: color(ev.kind), "stroke-width": 1.2 }, gEdges);
+    const hit = el("path", { class: "hit" }, gHits);
+    e = edges[key] = { key, a, b, kind: ev.kind, self: a === b, path, hit, n: 0, nSignal: 0,
+      fwd: false, rev: false, pa: 0, pb: 0, timer: null };
+    hit.addEventListener("mouseenter", () => {
+      document.getElementById("edgeInfo").textContent = edgeInfo(e);
+      e.path.classList.add("hot");
+    });
+    hit.addEventListener("mouseleave", () => {
+      document.getElementById("edgeInfo").textContent = "";
+      if (!e.timer) e.path.classList.remove("hot");
+    });
+    layout();
+    applyFocus();
+  }
+  const forward = ev.src === a;
+  if (!e.self) {
+    if (forward && !e.fwd) { e.fwd = true; e.path.setAttribute("marker-end", arrowFor(ev.kind)); }
+    if (!forward && !e.rev) { e.rev = true; e.path.setAttribute("marker-start", arrowFor(ev.kind)); }
+  }
+  return { e, forward };
+}
+function heat(e) {
+  e.path.classList.add("hot");
+  clearTimeout(e.timer);
+  e.timer = setTimeout(() => { e.timer = null; e.path.classList.remove("hot"); }, 1100);
+}
+let dots = 0;
+function animate(e, kind, forward) {
+  if (dots > 80) return;
+  dots++;
+  const dot = el("circle", { r: 3.6, class: "dot", fill: color(kind) }, gDots);
+  const len = e.path.getTotalLength();
+  const start = performance.now(), dur = 850;
+  function step(t) {
+    const k = Math.min(1, (t - start) / dur);
+    const ease = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+    const p = e.path.getPointAtLength(len * (forward ? ease : 1 - ease));
+    dot.setAttribute("cx", p.x); dot.setAttribute("cy", p.y);
+    if (k < 1) requestAnimationFrame(step); else { dot.remove(); dots--; }
+  }
+  requestAnimationFrame(step);
+}
+function count(id) {
+  const n = nodeEls[id];
+  if (!n) return;
+  counts[id]++;
+  n.c.textContent = counts[id] + " échange" + (counts[id] > 1 ? "s" : "");
+  n.g.classList.remove("idle");
+}
+function flash(id) {
+  const n = nodeEls[id];
+  if (!n) return;
+  n.g.classList.add("flash");
+  setTimeout(() => n.g.classList.remove("flash"), 400);
+}
+function applyFocus() {
+  const id = state.hover || state.node;
+  svg.classList.toggle("focus", !!id);
+  const lit = new Set(id ? [id] : []);
+  for (const k in edges) {
+    const e = edges[k];
+    const on = !!id && (e.a === id || e.b === id);
+    e.path.classList.toggle("lit", on);
+    if (on) { lit.add(e.a); lit.add(e.b); }
+  }
+  for (const k in nodeEls) nodeEls[k].g.classList.toggle("lit", lit.has(k));
+}
+
+const reqColors = {};
+function reqColor(req) {
+  if (!reqColors[req]) {
+    let h = 0;
+    for (const ch of req) h = (h * 31 + ch.charCodeAt(0)) % 360;
+    reqColors[req] = `hsl(${h} 60% 45%)`;
+  }
+  return reqColors[req];
+}
+const timeline = document.getElementById("timeline");
+function visible(ev) {
+  if (ev.kind === "mark") return true;
+  if (!state.kinds.has(ev.kind)) return false;
+  if (state.hideNoise && ev.noise) return false;
+  if (state.req && ev.req !== state.req) return false;
+  if (state.node && ev.src !== state.node && ev.dst !== state.node) return false;
+  return true;
+}
+function render(ev) {
+  const row = document.createElement("div");
+  if (ev.kind === "mark") {
+    row.className = "ev mark";
+    row.textContent = `▸ ${new Date(ev.ts * 1000).toLocaleTimeString("fr-FR")} — ${ev.label}`;
+    return row;
+  }
+  row.className = "ev";
+  const t = new Date(ev.ts * 1000);
+  const time = document.createElement("time");
+  time.textContent = t.toLocaleTimeString("fr-FR") + "." + String(t.getMilliseconds()).padStart(3, "0").slice(0, 1);
+  const badge = document.createElement("span");
+  badge.className = "badge";
+  badge.style.background = color(ev.kind);
+  badge.textContent = ev.kind;
+  const body = document.createElement("div");
+  const who = document.createElement("span");
+  who.className = "who";
+  who.textContent = ev.src === ev.dst ? label(ev.src) : `${label(ev.src)} → ${label(ev.dst)}`;
+  const what = document.createElement("div");
+  what.className = "what";
+  what.textContent = ev.label;
+  body.append(who);
+  if (ev.req) {
+    const r = document.createElement("span");
+    r.className = "req";
+    r.style.background = reqColor(ev.req);
+    r.textContent = ev.req.slice(4, 12);
+    r.title = "Filtrer sur la requête " + ev.req;
+    r.addEventListener("click", () => setReqFilter(state.req === ev.req ? null : ev.req));
+    body.append(r);
+  }
+  body.append(what);
+  if (ev.detail) {
+    const d = document.createElement("details");
+    const s = document.createElement("summary");
+    s.textContent = "détail";
+    d.append(s, document.createTextNode(ev.detail));
+    body.append(d);
+  }
+  row.append(time, badge, body);
+  return row;
+}
+function rebuild() {
+  timeline.textContent = "";
+  const frag = document.createDocumentFragment();
+  for (let i = events.length - 1; i >= 0 && frag.childNodes.length < 1500; i--)
+    if (visible(events[i])) frag.appendChild(render(events[i]));
+  timeline.appendChild(frag);
+  updateCounter();
+}
+function updateCounter() {
+  const n = events.filter(e => e.kind !== "mark").length;
+  document.getElementById("counter").textContent = n + " événement" + (n > 1 ? "s" : "");
+}
+function show(ev, live) {
+  if (seen.has(ev.id)) return;
+  seen.add(ev.id);
+  events.push(ev);
+  if (events.length > 8000) events.splice(0, 1000);
+  if (ev.kind !== "mark" && ev.src && ev.dst) {
+    const { e, forward } = edgeFor(ev);
+    e.n++;
+    if (!ev.noise) e.nSignal++;
+    e.path.setAttribute("stroke-width", (1.2 + Math.min(2.6, Math.log2(e.n + 1) * 0.45)).toFixed(2));
+    applyEdgeVisibility(e);
+    count(ev.src); if (ev.dst !== ev.src) count(ev.dst);
+    if (live && visible(ev)) {
+      heat(e); animate(e, ev.kind, forward);
+      flash(ev.src); if (ev.dst !== ev.src) flash(ev.dst);
+    }
+  }
+  if (visible(ev)) { timeline.prepend(render(ev)); if (timeline.childNodes.length > 1500) timeline.lastChild.remove(); }
+  updateCounter();
+}
+function setReqFilter(req) { state.req = req; if (req) setNodeFilter(null, true); updateFilterBar(); rebuild(); }
+function setNodeFilter(id, silent) {
+  state.node = id;
+  if (id) state.req = null;
+  for (const k in nodeEls) nodeEls[k].g.classList.toggle("selected", k === id);
+  applyFocus();
+  if (!silent) { updateFilterBar(); rebuild(); }
+}
+function updateFilterBar() {
+  const bar = document.getElementById("filterbar");
+  const what = state.req ? "requête " + state.req : state.node ? "composant " + label(state.node) : null;
+  bar.style.display = what ? "block" : "none";
+  bar.textContent = what ? "Filtre : " + what : "";
+  if (what) {
+    const b = document.createElement("button");
+    b.textContent = "Retirer le filtre";
+    b.addEventListener("click", () => { state.req = null; setNodeFilter(null); });
+    bar.append(b);
+  }
+}
+
+const chips = document.getElementById("chips");
+for (const [k, name] of Object.entries(KINDS)) {
+  const b = document.createElement("button");
+  b.className = "chip";
+  const dot = document.createElement("i");
+  dot.style.background = color(k);
+  b.append(dot, document.createTextNode(name));
+  b.addEventListener("click", () => {
+    state.kinds.has(k) ? state.kinds.delete(k) : state.kinds.add(k);
+    b.classList.toggle("off", !state.kinds.has(k));
+    for (const key in edges) applyEdgeVisibility(edges[key]);
+    rebuild();
+  });
+  chips.append(b);
+}
+document.getElementById("noise").addEventListener("change", e => {
+  state.hideNoise = e.target.checked;
+  for (const key in edges) applyEdgeVisibility(edges[key]);
+  rebuild();
+});
+document.getElementById("pauseBtn").addEventListener("click", e => {
+  state.paused = !state.paused;
+  e.target.textContent = state.paused ? "Reprendre" : "Pause";
+  if (!state.paused) { pending.splice(0).forEach(ev => show(ev, false)); }
+});
+document.getElementById("clearBtn").addEventListener("click", () => {
+  events.length = 0;
+  for (const k in edges) { clearTimeout(edges[k].timer); edges[k].path.remove(); edges[k].hit.remove(); delete edges[k]; }
+  for (const k in counts) { counts[k] = 0; nodeEls[k].c.textContent = ""; nodeEls[k].g.classList.add("idle"); }
+  document.getElementById("edgeInfo").textContent = "";
+  applyFocus();
+  fetch("clear", { method: "POST" });
+  rebuild();
+});
+function sendMark() {
+  const input = document.getElementById("markText");
+  const text = input.value.trim();
+  if (!text) return;
+  fetch("mark", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label: text }) });
+  input.value = "";
+}
+document.getElementById("markBtn").addEventListener("click", sendMark);
+document.getElementById("markText").addEventListener("keydown", e => { if (e.key === "Enter") sendMark(); });
+document.getElementById("themeBtn").addEventListener("click", () => {
+  const root = document.documentElement;
+  const dark = root.dataset.theme ? root.dataset.theme === "dark"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("trace-theme", root.dataset.theme); } catch (e) {}
+  location.reload();
+});
+
+function connect() {
+  const status = document.getElementById("status");
+  const es = new EventSource("events");
+  es.onopen = () => { status.className = "ok"; status.textContent = "en direct"; };
+  es.onerror = () => { status.className = "ko"; status.textContent = "reconnexion…"; };
+  es.onmessage = m => {
+    const ev = JSON.parse(m.data);
+    if (state.paused) pending.push(ev); else show(ev, true);
+  };
+}
+fetch("history").then(r => r.json()).then(list => { list.forEach(ev => show(ev, false)); connect(); })
+  .catch(connect);
+</script>
+</body>
+</html>

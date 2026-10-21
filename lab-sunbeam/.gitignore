@@ -1,0 +1,9 @@
+.vagrant/
+*.vdi
+*.vmdk
+*.pem
+*.key
+.env
+keycloak/pki/
+keycloak/tls/
+*-openrc

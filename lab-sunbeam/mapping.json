@@ -1,0 +1,22 @@
+[
+  {
+    "local": [
+      {
+        "user": {
+          "name": "{0}"
+        },
+        "group": {
+          "domain": {
+            "name": "keycloak"
+          },
+          "name": "lab_members"
+        }
+      }
+    ],
+    "remote": [
+      {
+        "type": "REMOTE_USER"
+      }
+    ]
+  }
+]

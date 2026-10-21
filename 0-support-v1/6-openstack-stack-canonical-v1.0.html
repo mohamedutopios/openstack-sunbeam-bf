@@ -1,0 +1,2296 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenStack — la stack Canonical</title>
+<style>
+:root{--ink:#0f172a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;--navy:#101a33;--red:#e4002b;--red2:#b3122f;--blue:#2563eb;--teal:#0d9488;--amber:#d97706;--violet:#7c3aed;--green:#16a34a;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;--z:.2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#070b17;overflow:hidden;font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:#fff;color:var(--ink);padding:38px 64px 46px;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide>header{border-left:5px solid var(--red);padding:2px 0 2px 18px;margin-bottom:18px;flex:none}
+.kick{display:block;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+h2{font-size:32px;line-height:1.15;letter-spacing:-.012em;font-weight:750}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;font-size:17.5px;line-height:1.45;color:var(--ink2)}
+.body b,.body strong{color:var(--ink);font-weight:680}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;min-height:0}
+.cols.c3{grid-template-columns:repeat(3,1fr);gap:18px}
+.cols.c4{grid-template-columns:repeat(4,1fr);gap:14px}
+.cols.c5{grid-template-columns:repeat(5,1fr);gap:12px}
+.cols.w64{grid-template-columns:1.45fr 1fr}
+.cols.w46{grid-template-columns:1fr 1.35fr}
+.cols.nf{flex:none}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+ul.pts{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.pts li{padding-left:22px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.52em;width:8px;height:8px;border-radius:2px;background:var(--red)}
+ul.pts.sm{gap:5px;font-size:15px;line-height:1.38}
+ul.pts.sm li{padding-left:17px}
+ul.pts.sm li::before{width:6px;height:6px;top:.5em}
+.card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--c,var(--red));border-radius:10px;padding:13px 16px;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:15px;line-height:1.4;min-width:0}
+.card h3{font-size:16.5px;color:var(--ink);margin-bottom:5px;line-height:1.2}
+.card .os{display:block;margin-top:7px;font-size:13px;color:var(--mut)}
+.card .os b{color:var(--red2)}
+.cb{--c:var(--blue)}.ct{--c:var(--teal)}.ca{--c:var(--amber)}.cv{--c:var(--violet)}.cg{--c:var(--green)}.cn{--c:var(--navy)}
+.note{background:#fff5f6;border-left:4px solid var(--red);padding:9px 16px;border-radius:0 8px 8px 0;font-size:15.5px;color:var(--ink);flex:none}
+.note.b{background:#eff5ff;border-color:var(--blue)}
+.note.g{background:#f1f5f9;border-color:#64748b}
+table.tbl{width:100%;border-collapse:collapse;font-size:14.5px;line-height:1.35}
+.tbl th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-size:13px;letter-spacing:.03em;font-weight:650}
+.tbl td{padding:6.5px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:nth-child(even) td{background:#f8fafc}
+.tbl td:first-child{font-weight:680;color:var(--ink);white-space:nowrap}
+.tbl.os td:nth-child(2){color:var(--red2);font-weight:650}
+.tbl.tight td{padding:5px 12px;font-size:14px}
+table.resp{width:100%;border-collapse:separate;border-spacing:5px 4px;font-size:14.5px;text-align:center}
+.resp thead th{font-size:15px;color:var(--ink);padding:2px 4px 6px;line-height:1.2}
+.resp thead small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+.resp tbody th{text-align:right;padding-right:12px;font-weight:650;color:var(--ink);white-space:nowrap;width:210px}
+.resp td{padding:6px;border-radius:6px;font-weight:600}
+.resp .u{background:#e3edff;color:#1d4ed8}
+.resp .p{background:#fde8ec;color:var(--red2)}
+code{font-family:var(--mono);font-size:.87em;background:#f1f5f9;padding:1px 6px;border-radius:4px;color:var(--ink)}
+pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;font:13.5px/1.5 var(--mono);white-space:pre;overflow:hidden}
+pre .c{color:#7dd3fc}pre .k{color:#fda4af}pre .m{color:#94a3b8}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:#fde8ec;color:var(--red2);letter-spacing:.03em}
+.fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:100%}
+.foot{position:absolute;left:64px;right:64px;bottom:15px;display:flex;justify-content:space-between;font-size:11.5px;color:#94a3b8;letter-spacing:.02em}
+/* dark slides */
+.slide.dark{background:radial-gradient(1100px 600px at 85% 15%,#1c2a55 0%,var(--navy) 55%,#0b1226 100%);color:#fff;justify-content:center}
+.dark .foot{color:#64748b}
+.dark .kick{color:#ff6b84}
+h1{font-size:68px;line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:10px 0 14px}
+.sub{font-size:27px;color:#cbd5e1;font-weight:400}
+.chips{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin-top:34px}
+.chips li{border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:7px 16px;font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.04)}
+.ref{margin-top:36px;font-size:14px;color:#94a3b8}
+.deco{position:absolute;right:0;top:0;width:1280px;height:720px;pointer-events:none}
+.tt{position:relative;max-width:760px}
+.sec .num{font-size:150px;font-weight:800;line-height:.9;color:transparent;-webkit-text-stroke:2px #ff4d6a;letter-spacing:-.04em}
+.sec h2{font-size:50px;margin:16px 0 12px;letter-spacing:-.02em}
+.sec p{font-size:20px;color:#cbd5e1;max-width:820px;line-height:1.45}
+.sec ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:9px 40px;margin-top:30px;max-width:980px;font-size:16.5px;color:#e2e8f0}
+.sec ol li{padding-left:20px;position:relative}
+.sec ol li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:3px;background:#ff4d6a}
+/* svg */
+svg{display:block}
+svg{font-size:14px}
+svg text{font-family:inherit;fill:#0f172a}
+svg g.ts text{fill:#475569}svg g.tw text{fill:#fff}
+.big .card{font-size:17px;padding:18px 16px;display:flex;flex-direction:column;line-height:1.42}.big .card h3{font-size:19px;margin-bottom:12px}.big .card .os{font-size:14.5px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line);line-height:1.4}
+.dense .card{font-size:14px;padding:10px 14px;line-height:1.36}.dense .card h3{font-size:15.5px;margin-bottom:3px}
+.tc{text-anchor:middle}.te{text-anchor:end}
+svg .tb{font-weight:700}svg .ts{font-size:12px;fill:#475569}svg .tl{font-size:17px;font-weight:750}svg .tw{fill:#fff}svg .tr{fill:#b3122f}
+svg .tm{font-family:var(--mono);font-size:12px}
+.bx{fill:#fff;stroke:#94a3b8;stroke-width:1.5}
+.b-red{fill:#fde8ec;stroke:#e4002b;stroke-width:1.5}
+.b-blue{fill:#e3edff;stroke:#2563eb;stroke-width:1.5}
+.b-teal{fill:#d8f3ee;stroke:#0d9488;stroke-width:1.5}
+.b-amber{fill:#fdf0d5;stroke:#d97706;stroke-width:1.5}
+.b-violet{fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5}
+.b-green{fill:#dcf5e3;stroke:#16a34a;stroke-width:1.5}
+.b-grey{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5}
+.b-dark{fill:#101a33;stroke:#101a33}
+.f-red{fill:#e4002b}
+.zone{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 4}
+.ln{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar)}
+.ln2{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar);marker-start:url(#ar)}
+.lr{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr)}
+.lr2{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr);marker-start:url(#arr)}
+.ld{stroke-dasharray:5 4}
+.nl{stroke:#94a3b8;stroke-width:1.5;fill:none}
+/* ui */
+#bar{position:fixed;left:0;bottom:0;height:3px;background:var(--red);width:0;transition:width .2s;z-index:5}
+#nav{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;display:flex;gap:6px;z-index:6;opacity:.07;transition:opacity .2s}
+#nav:hover{opacity:1}
+#nav button{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;font:600 13px/1 inherit;padding:7px 10px;cursor:pointer}
+#nav button:hover{background:var(--red);border-color:var(--red)}
+body.ov{overflow:auto}
+body.ov #stage{position:static;margin:0;width:auto;height:auto;transform:none!important;display:flex;flex-wrap:wrap;gap:14px;padding:20px}
+body.ov .slide{display:flex;position:relative;inset:auto;flex:none;width:1280px;height:720px;zoom:var(--z);cursor:pointer;border-radius:8px}
+body.ov .slide.active{outline:14px solid var(--red)}
+@page{size:1280px 720px;margin:0}
+@media print{
+html,body{height:auto;overflow:visible;background:#fff}
+#stage{position:static;margin:0;width:1280px;height:auto;transform:none!important;display:block}
+.slide{display:flex!important;position:relative;inset:auto;width:1280px;height:720px;break-after:page;page-break-after:always;zoom:1!important}
+#bar,#nav{display:none}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.la{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA)}.la2{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA);marker-start:url(#arA)}
+.lt{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT)}.lt2{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT);marker-start:url(#arT)}
+.lb{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB)}.lb2{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB);marker-start:url(#arB)}
+svg text.fa,svg .fa{fill:#b45309}svg text.ft,svg .ft{fill:#0f766e}svg text.fb,svg .fb{fill:#1d4ed8}
+.tbl td.c,.tbl th.c{text-align:center}.tbl td.y{color:#16a34a;font-weight:800}.tbl td.n{color:#cbd5e1}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e4002b"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+<marker id="arT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker>
+<marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+</defs></svg>
+<div id="stage">
+
+<style>
+.tbl.xs td{font-size:12.8px;padding:5px 9px;line-height:1.32}
+.tbl.xs th{font-size:12.2px;padding:7px 9px}
+.tbl.xs td:first-child{white-space:normal}
+.tbl.xs code{white-space:nowrap}
+.body code{white-space:nowrap}
+</style>
+
+<!-- 1 -->
+<section class="slide dark">
+<svg class="deco" viewBox="0 0 1280 720" aria-hidden="true"><g transform="translate(-60,0)">
+<g fill="none" stroke="#ff4d6a" stroke-width="2" opacity=".85">
+<path d="M900,470 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.16)"/>
+<path d="M900,400 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.24)"/>
+<path d="M900,330 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.34)"/>
+<path d="M900,260 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.5)"/>
+</g>
+<g font-weight="700" letter-spacing="2" style="font-size:12px"><text x="1210" y="264" style="fill:#cbd5e1">OPENSTACK</text><text x="1210" y="334" style="fill:#cbd5e1">JUJU</text><text x="1210" y="404" style="fill:#cbd5e1">MAAS</text><text x="1210" y="474" style="fill:#cbd5e1">MATÉRIEL</text></g>
+</g></svg>
+<div class="tt">
+<span class="kick">Support de formation</span>
+<h1>La stack Canonical : MAAS, Juju, Canonical OpenStack</h1>
+<p class="sub">Du serveur nu au cloud privé — architecture, fonctionnalités, avantages, limites et modèle de support</p>
+<ul class="chips"><li>MAAS</li><li>Juju</li><li>Charms</li><li>Sunbeam</li><li>Canonical Kubernetes</li><li>Ubuntu Pro</li></ul>
+<p class="ref">État des produits vérifié en octobre 2026 · MAAS 3.7 · Juju 3.6 LTS et 4.0 · Canonical OpenStack 2026.1 LTS</p>
+</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Objectif et déroulé</h2></header>
+<div class="body">
+<div class="note"><b>Objectif :</b> comprendre comment les trois briques de Canonical s'empilent pour produire un cloud OpenStack, ce que chacune apporte seule, et ce qu'implique le choix de cette stack en exploitation et en support.</div>
+<div class="cols">
+<div class="col">
+<p><b>À l'issue de ce module, vous saurez :</b></p>
+<ul class="pts">
+<li>Situer <b>MAAS</b>, <b>Juju</b> et <b>Sunbeam</b> dans les couches d'un déploiement.</li>
+<li>Décrire l'architecture de MAAS et le <b>cycle de vie</b> d'une machine, de la découverte à la mise en service.</li>
+<li>Expliquer le modèle de Juju : contrôleur, modèles, applications, unités, <b>charms</b> et <b>relations</b>.</li>
+<li>Décrire l'architecture de <b>Canonical OpenStack</b> : rôles des machines, réseaux, composants.</li>
+<li>Dérouler une installation, avec ou sans MAAS.</li>
+<li>Énoncer les <b>avantages</b>, les <b>limites</b> et le <b>modèle de support</b> de la stack.</li>
+</ul>
+</div>
+<div class="col dense">
+<div class="card"><h3>1 · Vue d'ensemble</h3>Les couches, les formats de livraison, la philosophie « pilotée par un modèle ».</div>
+<div class="card cb"><h3>2 · MAAS</h3>Provisionnement des serveurs : architecture, cycle de vie, réseau, mise en œuvre.</div>
+<div class="card cv"><h3>3 · Juju</h3>Orchestration par charms : modèle, relations, Charmhub, commandes.</div>
+<div class="card ct"><h3>4 · Canonical OpenStack (Sunbeam)</h3>Architecture, rôles, réseaux, installation, fonctionnalités, exploitation.</div>
+<div class="card cn"><h3>5 · Avantages, limites, support</h3>Bilan, cycle de vie des versions, Ubuntu Pro, services, critères d'adoption.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 3 -->
+<section class="slide dark sec">
+<div class="num">01</div>
+<h2>Vue d'ensemble de la stack</h2>
+<p>Trois produits libres, conçus pour s'emboîter : l'un fournit des machines, le deuxième y installe et relie des applications, le troisième assemble un cloud.</p>
+<ol><li>La stack en une image</li><li>Qui fait quoi</li><li>Les formats de livraison de Canonical</li><li>Des opérations pilotées par un modèle</li><li>L'écosystème autour des trois briques</li></ol>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+<header><span class="kick">1 · Vue d'ensemble</span><h2>La stack en une image</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 450">
+<rect x="20" y="14" width="150" height="342" rx="10" class="b-red"/><text x="95" y="150" class="tc tl tr">Sunbeam</text><text x="95" y="176" class="tc ts">l'outil qui pilote</text><text x="95" y="192" class="tc ts">l'ensemble :</text><text x="95" y="216" class="tc ts">une commande,</text><text x="95" y="232" class="tc ts">un manifeste</text>
+<rect x="980" y="14" width="150" height="422" rx="10" class="b-blue"/><text x="1055" y="190" class="tc tl">Ubuntu Pro</text><text x="1055" y="216" class="tc ts">correctifs de sécurité</text><text x="1055" y="232" class="tc ts">et support, sur</text><text x="1055" y="248" class="tc ts">toutes les couches</text><text x="1055" y="278" class="tc ts tb">facultatif</text>
+
+<rect x="190" y="14" width="770" height="66" rx="10" class="b-red"/><text x="575" y="42" class="tc tl tr">Canonical OpenStack</text><text x="575" y="64" class="tc ts">ce que voient les utilisateurs : API Keystone, Nova, Neutron, Glance, Cinder, Horizon…</text>
+<path d="M575,80 V96" class="nl"/>
+<rect x="190" y="98" width="470" height="78" rx="10" class="b-teal"/><text x="425" y="124" class="tc tb">Canonical Kubernetes</text><text x="425" y="144" class="tc ts">héberge le plan de contrôle : un pod par service,</text><text x="425" y="160" class="tc ts">base de données, bus de messages, répartiteur</text>
+<rect x="680" y="98" width="280" height="78" rx="10" class="b-amber"/><text x="820" y="124" class="tc tb">Snaps sur l'hôte</text><text x="820" y="144" class="tc ts">hyperviseur, MicroCeph, MicroOVN :</text><text x="820" y="160" class="tc ts">ce qui touche au matériel</text>
+<path d="M425,176 V192 M820,176 V192" class="nl"/>
+<rect x="190" y="194" width="770" height="76" rx="10" class="b-violet"/><text x="575" y="222" class="tc tl">Juju</text><text x="575" y="244" class="tc ts">installe, configure, relie et met à jour chaque composant au moyen de charms (opérateurs)</text><text x="575" y="260" class="tc ts">— sur des machines comme sur Kubernetes</text>
+<path d="M575,270 V286" class="nl"/>
+<rect x="190" y="288" width="770" height="68" rx="10" class="b-grey"/><text x="575" y="316" class="tc tl">MAAS</text><text x="575" y="338" class="tc ts">transforme des serveurs nus en machines Ubuntu prêtes à l'emploi : découverte, inventaire, installation, réseau</text>
+<path d="M575,356 V372" class="nl"/>
+<rect x="20" y="374" width="940" height="62" rx="10" class="b-dark"/><text x="490" y="402" class="tc tw tb">Serveurs physiques, cartes de gestion, commutateurs</text><text x="490" y="422" class="tc tw" style="font-size:12px">Ubuntu Server LTS sur chaque machine · architecture amd64</text>
+<path d="M170,60 H188" class="lr"/><path d="M170,232 H188" class="lr"/><path d="M170,322 H188" class="lr"/>
+</svg>
+</div>
+<div class="note g"><b>Lecture :</b> chaque brique est utilisable seule — MAAS sans Juju, Juju sans MAAS ni OpenStack. Sunbeam les enchaîne pour vous ; sur un petit cloud, MAAS est facultatif et les machines sont installées à la main.</div>
+</div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+<header><span class="kick">1 · Vue d'ensemble</span><h2>Qui fait quoi</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:15%">Brique</th><th style="width:22%">En une phrase</th><th style="width:25%">Ce qu'elle prend en entrée</th><th style="width:22%">Ce qu'elle rend</th><th>Équivalents ailleurs</th></tr></thead>
+<tbody>
+<tr><td>MAAS</td><td>le « cloud » des serveurs physiques</td><td style="color:var(--ink);font-weight:400">des serveurs nus, câblés, avec carte de gestion</td><td>des machines Ubuntu installées, à la demande, par API</td><td>Ironic, Foreman, Metal3</td></tr>
+<tr><td>Juju</td><td>l'orchestrateur d'applications</td><td style="color:var(--ink);font-weight:400">des machines ou un cluster Kubernetes, et des charms</td><td>des applications installées, configurées et reliées entre elles</td><td>Ansible, Helm et opérateurs Kubernetes</td></tr>
+<tr><td>Charms</td><td>le savoir-faire d'exploitation, emballé</td><td style="color:var(--ink);font-weight:400">des événements envoyés par Juju</td><td>les actions à mener : installer, configurer, migrer, mettre à jour</td><td>rôles Ansible, charts Helm, opérateurs</td></tr>
+<tr><td>Canonical Kubernetes</td><td>le socle du plan de contrôle</td><td style="color:var(--ink);font-weight:400">les machines de contrôle</td><td>un cluster où tournent les services d'OpenStack</td><td>OpenShift, toute distribution Kubernetes</td></tr>
+<tr><td>Sunbeam</td><td>l'assembleur du cloud</td><td style="color:var(--ink);font-weight:400">des machines, quelques réponses ou un manifeste</td><td>un cloud OpenStack complet et ses mises à jour</td><td>Kolla-Ansible, RHOSO, MOSK</td></tr>
+<tr><td>Ubuntu Pro</td><td>l'abonnement</td><td style="color:var(--ink);font-weight:400">un jeton attaché à chaque machine</td><td>correctifs étendus, conformité, support en option</td><td>souscriptions Red Hat, Mirantis</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Tout est libre et gratuit à l'usage :</b> MAAS, Juju, les charms, Sunbeam et Ubuntu se téléchargent et s'utilisent en production sans contrat. L'abonnement ajoute des correctifs sur une durée plus longue et un interlocuteur.</div>
+<div class="note b"><b>« Canonical OpenStack »</b> désigne aujourd'hui la distribution fondée sur <b>Sunbeam</b>. L'ancienne génération, fondée sur les charms « machine », s'appelle <b>Charmed OpenStack</b> et reste maintenue pour les clouds existants.</div>
+</div>
+</div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+<header><span class="kick">1 · Vue d'ensemble</span><h2>Les formats de livraison de Canonical</h2></header>
+<div class="body">
+<div class="cols c4 nf">
+<div class="card ca"><h3>Paquet deb</h3>Le format historique d'Ubuntu. Dépendances partagées avec le système, mises à jour par <code>apt</code>. Les services OpenStack sont d'abord empaquetés ainsi dans l'archive Ubuntu.<span class="os"><b>Où :</b> à l'intérieur des rocks et des snaps</span></div>
+<div class="card cb"><h3>Snap</h3>Application confinée, livrée avec ses dépendances, mise à jour de façon transactionnelle par <b>canaux</b> avec retour arrière. Indépendante de la version du système.<span class="os"><b>Où :</b> MAAS, Juju, Sunbeam, hyperviseur, MicroCeph, MicroOVN, Kubernetes</span></div>
+<div class="card ct"><h3>Rock</h3>Image de conteneur au format OCI, construite par Canonical à partir de paquets Ubuntu, avec le gestionnaire de processus Pebble.<span class="os"><b>Où :</b> chaque service du plan de contrôle, dans un pod</span></div>
+<div class="card cv"><h3>Charm</h3>Un opérateur : du code Python qui sait installer, configurer, relier, mettre à l'échelle et mettre à jour une application. Publié sur Charmhub.<span class="os"><b>Où :</b> un charm par rock et par snap à piloter</span></div>
+</div>
+<div class="fig">
+<svg viewBox="0 0 1150 210">
+<g class="tc">
+<rect x="20" y="20" width="250" height="64" rx="10" class="b-amber"/><text x="145" y="46" class="tb">Paquets Ubuntu</text><text x="145" y="66" class="ts">nova, neutron, keystone, ceph, ovn…</text>
+<rect x="390" y="6" width="250" height="52" rx="10" class="b-teal"/><text x="515" y="28" class="tb">Rocks</text><text x="515" y="46" class="ts">images OCI du plan de contrôle</text>
+<rect x="390" y="72" width="250" height="52" rx="10" class="b-blue"/><text x="515" y="94" class="tb">Snaps</text><text x="515" y="112" class="ts">services liés à l'hôte</text>
+<rect x="760" y="20" width="370" height="64" rx="10" class="b-violet"/><text x="945" y="46" class="tb">Charms</text><text x="945" y="66" class="ts">déploient et relient rocks et snaps, sous les ordres de Juju</text>
+<rect x="390" y="150" width="740" height="46" rx="10" class="b-grey"/><text x="760" y="170" class="tb">Canaux de publication : &lt;piste&gt;/&lt;risque&gt; — par exemple 2026.1/stable</text><text x="760" y="187" class="ts">la piste fixe la version d'OpenStack ; le risque (stable, candidate, beta, edge) fixe la maturité</text>
+</g>
+<path d="M270,42 H388" class="ln"/><path d="M270,62 C330,62 330,98 388,98" class="ln"/>
+<path d="M640,32 H758" class="lr"/><path d="M640,98 C700,98 700,66 758,66" class="lr"/>
+<path d="M515,124 V148" class="nl"/><path d="M945,84 V148" class="nl"/>
+<text x="145" y="120" class="tc ts">une seule source de code,</text><text x="145" y="136" class="tc ts">donc un seul flux de correctifs de sécurité</text>
+</svg>
+</div>
+</div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+<header><span class="kick">1 · Vue d'ensemble</span><h2>Des opérations pilotées par un modèle</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p>Le point commun des trois briques : on ne décrit pas <b>les étapes</b> à exécuter, on décrit <b>l'état voulu</b>, et un contrôleur se charge d'y arriver puis de s'y maintenir.</p>
+<table class="tbl tight">
+<thead><tr><th>Brique</th><th>Ce que l'on déclare</th><th>Qui réalise</th></tr></thead>
+<tbody>
+<tr><td>MAAS</td><td>« cette machine doit être déployée en Ubuntu 24.04, avec ce partitionnement et ces interfaces »</td><td>les contrôleurs de région et de rack</td></tr>
+<tr><td>Juju</td><td>« le modèle contient Keystone en trois unités, relié à MySQL »</td><td>le contrôleur Juju et les charms</td></tr>
+<tr><td>Sunbeam</td><td>« ce cloud a ces nœuds, ces rôles, ces fonctionnalités »</td><td>Sunbeam, qui pilote Juju</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Ce que cela change :</b> pas de fichier de configuration édité à la main sur un serveur ; toute modification passe par le modèle.</li>
+<li><b>Ce que cela exige :</b> faire confiance aux choix intégrés dans les charms, et savoir lire l'état du modèle pour diagnostiquer.</li>
+</ul>
+</div>
+<div class="fig">
+<svg viewBox="0 0 560 430">
+<g class="tc">
+<rect x="150" y="10" width="260" height="62" rx="10" class="b-grey"/><text x="280" y="36" class="tb">État voulu</text><text x="280" y="56" class="ts">modèle Juju, manifeste Sunbeam</text>
+<rect x="150" y="150" width="260" height="76" rx="10" class="b-violet"/><text x="280" y="178" class="tb">Contrôleur</text><text x="280" y="198" class="ts">compare, calcule l'écart,</text><text x="280" y="214" class="ts">envoie des événements</text>
+<rect x="20" y="320" width="230" height="76" rx="10" class="b-red"/><text x="135" y="348" class="tb">Charms</text><text x="135" y="368" class="ts">exécutent le savoir-faire :</text><text x="135" y="384" class="ts">installer, configurer, relier</text>
+<rect x="310" y="320" width="230" height="76" rx="10" class="b-teal"/><text x="425" y="348" class="tb">État réel</text><text x="425" y="368" class="ts">services en marche, fichiers,</text><text x="425" y="384" class="ts">bases, points d'accès</text>
+</g>
+<path d="M280,72 V148" class="lr"/><text x="292" y="114" class="ts">lu en continu</text>
+<path d="M220,226 L150,318" class="lr"/><text x="96" y="276" class="ts">événements</text>
+<path d="M250,358 H308" class="lr"/><text x="279" y="350" class="tc ts">agit</text>
+<path d="M410,318 L345,228" class="ln ld"/><text x="392" y="276" class="ts">état remonté</text>
+<text x="280" y="420" class="tc ts">La boucle tourne en permanence, pas seulement à l'installation.</text>
+</svg>
+</div>
+</div></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+<header><span class="kick">1 · Vue d'ensemble</span><h2>L'écosystème autour des trois briques</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:18%">Composant</th><th style="width:30%">Rôle</th><th style="width:27%">Place dans Canonical OpenStack</th><th>Utilisable seul ?</th></tr></thead>
+<tbody>
+<tr><td>Ubuntu Server LTS</td><td>système de toutes les machines</td><td style="color:var(--ink);font-weight:400">24.04 ou 26.04 pour OpenStack 2026.1</td><td>oui</td></tr>
+<tr><td>LXD</td><td>conteneurs système et machines virtuelles</td><td style="color:var(--ink);font-weight:400">héberge les machines de gouvernance (MAAS, contrôleurs)</td><td>oui ; socle de MicroCloud</td></tr>
+<tr><td>Canonical Kubernetes</td><td>distribution Kubernetes en un snap</td><td style="color:var(--ink);font-weight:400">socle du plan de contrôle</td><td>oui</td></tr>
+<tr><td>MicroCeph</td><td>Ceph en un snap, mis en grappe simplement</td><td style="color:var(--ink);font-weight:400">stockage bloc, image et objet</td><td>oui</td></tr>
+<tr><td>MicroOVN</td><td>OVN en un snap</td><td style="color:var(--ink);font-weight:400">passerelles réseau des nœuds « network »</td><td>oui</td></tr>
+<tr><td>Observabilité Canonical (COS)</td><td>Prometheus, Loki, Grafana, Alertmanager, en charms</td><td style="color:var(--ink);font-weight:400">fonctionnalité optionnelle de supervision</td><td>oui</td></tr>
+<tr><td>Vault, en charm</td><td>coffre de secrets et autorité de certification</td><td style="color:var(--ink);font-weight:400">fonctionnalité optionnelle, TLS des points d'accès</td><td>oui</td></tr>
+<tr><td>Landscape</td><td>gestion de parc Ubuntu : correctifs, inventaire</td><td style="color:var(--ink);font-weight:400">inclus dans Ubuntu Pro</td><td>oui</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Une même logique partout :</b> un snap pour installer, une mise en grappe en quelques commandes, un charm pour l'intégrer. Apprendre une brique aide à comprendre les autres.</div>
+<div class="note"><b>Contrepartie :</b> la stack est très cohérente <b>à l'intérieur</b> de l'écosystème Canonical, et peu ouverte à des substitutions — autre système hôte, autre Kubernetes, autre réseau virtuel.</div>
+</div>
+</div>
+</section>
+
+<!-- 9 -->
+<section class="slide dark sec">
+<div class="num">02</div>
+<h2>MAAS — provisionner les serveurs</h2>
+<p>« Metal as a Service » : traiter un parc de serveurs physiques comme un cloud, où l'on demande une machine par API et où on la rend quand on n'en a plus besoin.</p>
+<ol><li>Rôle et principe</li><li>Architecture : région et rack</li><li>Cycle de vie d'une machine</li><li>Enrôlement et inventaire, pas à pas</li><li>Déploiement d'un système</li><li>Le modèle réseau</li><li>Inventaire, stockage, images</li><li>Mise en œuvre et commandes</li><li>Disponibilité, versions, bilan</li></ol>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+<header><span class="kick">2 · MAAS</span><h2>MAAS : rôle et principe</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Le problème résolu :</b> installer un système sur cent serveurs, à l'identique, sans clé USB ni console, et pouvoir recommencer à volonté.</p>
+<ul class="pts sm">
+<li><b>Découvre</b> les serveurs qui démarrent sur le réseau et dresse leur <b>inventaire matériel</b> : processeurs, mémoire, disques, cartes réseau, micrologiciels.</li>
+<li><b>Pilote l'alimentation</b> par la carte de gestion de chaque serveur (IPMI, Redfish).</li>
+<li><b>Installe</b> un système d'exploitation en quelques minutes : Ubuntu, mais aussi CentOS, RHEL, Oracle Linux, Windows, VMware ESXi.</li>
+<li><b>Configure</b> le stockage (partitions, LVM, RAID logiciel) et le réseau (agrégats, VLAN, ponts) <b>avant</b> l'installation.</li>
+<li><b>Fournit les services réseau</b> nécessaires : DHCP, DNS, NTP, amorçage, mandataire de paquets.</li>
+<li><b>Expose tout par API</b> : interface web, ligne de commande, Juju, Terraform.</li>
+</ul>
+<div class="note g"><b>Ce que MAAS n'est pas :</b> un outil de configuration d'applications. Il s'arrête au système installé et joignable en SSH.</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Dans un cloud public</th><th>Dans MAAS</th></tr></thead>
+<tbody>
+<tr><td>créer une instance</td><td>allouer puis déployer une machine</td></tr>
+<tr><td>type d'instance</td><td>contraintes : mémoire, cœurs, étiquettes</td></tr>
+<tr><td>image</td><td>image de système synchronisée</td></tr>
+<tr><td>zone de disponibilité</td><td>zone</td></tr>
+<tr><td>projet, quota</td><td>groupe de ressources</td></tr>
+<tr><td>données utilisateur</td><td>cloud-init</td></tr>
+<tr><td>supprimer l'instance</td><td>libérer la machine, effacer les disques</td></tr>
+</tbody></table>
+<div class="note b"><b>Pourquoi c'est la base de la stack :</b> Juju sait parler à MAAS comme à un cloud. Demander « trois machines étiquetées stockage » devient une ligne de commande, et le remplacement d'un nœud en panne une opération banale.</div>
+<div class="note"><b>Prérequis à vérifier avant tout :</b> un réseau où MAAS est le <b>seul</b> serveur DHCP, l'amorçage réseau activé dans chaque serveur, et un accès aux cartes de gestion.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+<header><span class="kick">2 · MAAS</span><h2>Architecture : contrôleur de région et contrôleurs de rack</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 430">
+<rect x="20" y="40" width="170" height="250" rx="12" class="b-grey"/><text x="105" y="66" class="tc tl">Utilisateurs</text>
+<g class="tc"><rect x="34" y="80" width="142" height="32" rx="6" class="bx"/><text x="105" y="101">interface web</text>
+<rect x="34" y="120" width="142" height="32" rx="6" class="bx"/><text x="105" y="141">commande maas</text>
+<rect x="34" y="160" width="142" height="32" rx="6" class="bx"/><text x="105" y="181">Juju</text>
+<rect x="34" y="200" width="142" height="32" rx="6" class="bx"/><text x="105" y="221">Terraform</text>
+<rect x="34" y="240" width="142" height="32" rx="6" class="bx"/><text x="105" y="261">Sunbeam</text></g>
+<path d="M190,165 H248" class="lr"/><text x="105" y="310" class="tc ts tb">API REST, port 5240</text>
+
+<rect x="250" y="14" width="330" height="302" rx="12" class="zone"/><text x="266" y="40" class="tl">Contrôleur de région</text>
+<text x="266" y="60" class="ts">le cerveau : un par centre de données ou par région</text>
+<g class="tc">
+<rect x="264" y="72" width="148" height="40" rx="7" class="b-red"/><text x="338" y="97" class="tb">API et interface</text>
+<rect x="418" y="72" width="148" height="40" rx="7" class="b-amber"/><text x="492" y="97" class="tb">PostgreSQL</text>
+<rect x="264" y="120" width="148" height="40" rx="7" class="bx"/><text x="338" y="145">DNS</text>
+<rect x="418" y="120" width="148" height="40" rx="7" class="bx"/><text x="492" y="145">mandataire HTTP</text>
+<rect x="264" y="168" width="148" height="40" rx="7" class="bx"/><text x="338" y="193">NTP</text>
+<rect x="418" y="168" width="148" height="40" rx="7" class="bx"/><text x="492" y="193">images de systèmes</text>
+<rect x="264" y="216" width="302" height="40" rx="7" class="b-violet"/><text x="415" y="234" class="tb">Temporal</text><text x="415" y="250" class="ts">moteur des enchaînements longs, depuis MAAS 3.5</text>
+<text x="415" y="284" class="ts">état de tout le parc : machines, réseaux,</text><text x="415" y="300" class="ts">utilisateurs, événements</text>
+</g>
+
+<rect x="640" y="14" width="250" height="302" rx="12" class="zone"/><text x="656" y="40" class="tl">Contrôleur de rack</text>
+<text x="656" y="60" class="ts">les bras : au plus près des serveurs</text>
+<g class="tc">
+<rect x="654" y="72" width="222" height="36" rx="7" class="b-teal"/><text x="765" y="95" class="tb">DHCP</text>
+<rect x="654" y="114" width="222" height="36" rx="7" class="b-teal"/><text x="765" y="137" class="tb">TFTP, HTTP : amorçage, images</text>
+<rect x="654" y="156" width="222" height="36" rx="7" class="b-dark"/><text x="765" y="179" class="tb tw">pilotage de l'alimentation</text>
+<rect x="654" y="198" width="222" height="36" rx="7" class="bx"/><text x="765" y="221">cache des images</text>
+<rect x="654" y="240" width="222" height="36" rx="7" class="bx"/><text x="765" y="263">relais DNS, NTP, mandataire</text>
+<text x="765" y="300" class="ts">agent MAAS, réécrit en Go depuis 3.5</text>
+</g>
+<path d="M580,165 H638" class="lr2"/><text x="609" y="155" class="tc ts tb">ordres</text><text x="609" y="183" class="tc ts">états</text>
+
+<rect x="950" y="14" width="180" height="302" rx="12" class="b-grey"/><text x="1040" y="40" class="tc tl">Serveurs</text>
+<g class="tc"><rect x="964" y="56" width="152" height="52" rx="7" class="b-dark"/><text x="1040" y="78" class="tw tb">cartes de gestion</text><text x="1040" y="96" class="tw" style="font-size:11.5px">IPMI, Redfish</text>
+<rect x="964" y="120" width="152" height="52" rx="7" class="bx"/><text x="1040" y="142" class="tb">carte réseau</text><text x="1040" y="160" class="ts">amorçage PXE</text>
+<rect x="964" y="184" width="152" height="52" rx="7" class="bx"/><text x="1040" y="206" class="tb">système installé</text><text x="1040" y="224" class="ts">cloud-init</text>
+<text x="1040" y="268" class="ts">tout le trafic des</text><text x="1040" y="284" class="ts">machines passe</text><text x="1040" y="300" class="ts">par le rack</text></g>
+<path d="M890,174 H948 M948,82 H920 V174" class="nl" style="stroke:#0f172a;stroke-width:1.8"/>
+<path d="M890,132 H962" class="lt2"/>
+
+<rect x="20" y="340" width="1110" height="76" rx="10" class="b-dark"/><text x="575" y="366" class="tc tw tb">Répartition selon la taille</text>
+<text x="575" y="388" class="tc tw" style="font-size:12.5px">Maquette ou petit site : région et rack sur la même machine (mode « region+rack »), base de test intégrée.</text>
+<text x="575" y="406" class="tc tw" style="font-size:12.5px">Production : plusieurs régions derrière une base PostgreSQL redondante, et deux contrôleurs de rack par réseau d'amorçage.</text>
+</svg>
+</div></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+<header><span class="kick">2 · MAAS</span><h2>Cycle de vie d'une machine</h2></header>
+<div class="body">
+<div class="fig"><svg viewBox="0 0 1150 250">
+<rect x="20" y="50" width="165" height="58" rx="10" class="b-grey"/><text x="102" y="75" class="tc tb">New</text><text x="102" y="94" class="tc" style="font-size:11.5px">découverte</text>
+<rect x="205" y="50" width="165" height="58" rx="10" class="b-amber"/><text x="287" y="75" class="tc tb">Commissioning</text><text x="287" y="94" class="tc" style="font-size:11.5px">inventaire, tests</text>
+<rect x="390" y="50" width="165" height="58" rx="10" class="b-green"/><text x="472" y="75" class="tc tb">Ready</text><text x="472" y="94" class="tc" style="font-size:11.5px">disponible</text>
+<rect x="575" y="50" width="165" height="58" rx="10" class="b-blue"/><text x="657" y="75" class="tc tb">Allocated</text><text x="657" y="94" class="tc" style="font-size:11.5px">réservée</text>
+<rect x="760" y="50" width="165" height="58" rx="10" class="b-blue"/><text x="842" y="75" class="tc tb">Deploying</text><text x="842" y="94" class="tc" style="font-size:11.5px">installation</text>
+<rect x="945" y="50" width="165" height="58" rx="10" class="b-red"/><text x="1027" y="75" class="tc tb">Deployed</text><text x="1027" y="94" class="tc" style="font-size:11.5px">en service</text>
+<rect x="205" y="170" width="165" height="58" rx="10" class="b-dark"/><text x="287" y="195" class="tc tb tw">Failed</text><text x="287" y="214" class="tc tw" style="font-size:11.5px">échec</text>
+<rect x="667" y="170" width="165" height="58" rx="10" class="b-amber"/><text x="749" y="195" class="tc tb">Releasing</text><text x="749" y="214" class="tc" style="font-size:11.5px">libération, effacement</text>
+<rect x="945" y="170" width="165" height="58" rx="10" class="b-violet"/><text x="1027" y="195" class="tc tb">Rescue mode</text><text x="1027" y="214" class="tc" style="font-size:11.5px">dépannage en mémoire</text>
+<rect x="20" y="170" width="165" height="58" rx="10" class="b-dark"/><text x="102" y="195" class="tc tb tw">Broken</text><text x="102" y="214" class="tc tw" style="font-size:11.5px">mise à l'écart</text>
+<path d="M185,79 H203" class="lr"/>
+<path d="M370,79 H388" class="lr"/>
+<path d="M555,79 H573" class="lr"/>
+<path d="M740,79 H758" class="lr"/>
+<path d="M925,79 H943" class="lr"/>
+<path d="M287,108 V168" class="ln ld"/><text x="297" y="142" class="ts">échec</text>
+<path d="M240,170 V110" class="ln"/><text x="232" y="142" class="te ts">nouvel essai</text>
+<path d="M1000,108 V140 H790 V168" class="la" style="fill:none"/><text x="895" y="134" class="tc ts fa">libérer</text>
+<path d="M700,170 V130 H472 V110" class="la" style="fill:none"/><text x="586" y="124" class="tc ts fa">retour au parc</text>
+<path d="M1055,108 V168" class="ln2"/><text x="1065" y="142" class="ts">dépanner</text>
+<path d="M102,170 V110" class="ln ld"/><text x="92" y="142" class="te ts">réparée</text>
+<text x="575" y="22" class="tc tb tr">chemin nominal : de la découverte à la mise en service</text>
+<text x="575" y="244" class="tc ts">Une machine en panne est marquée « Broken » par l'administrateur ; réparée, elle repasse par l'inventaire.</text>
+</svg></div>
+<div class="cols nf">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>État</th><th>Signification</th></tr></thead>
+<tbody>
+<tr><td>New</td><td>découverte, visible des administrateurs, pas encore de confiance</td></tr>
+<tr><td>Commissioning</td><td>inventaire matériel et tests sur un système temporaire en mémoire</td></tr>
+<tr><td>Ready</td><td>inventoriée, inactive, disponible</td></tr>
+<tr><td>Allocated</td><td>réservée par un utilisateur ; toujours éteinte ou inactive</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>État</th><th>Signification</th></tr></thead>
+<tbody>
+<tr><td>Deploying, Deployed</td><td>installation en cours, puis système en service</td></tr>
+<tr><td>Releasing</td><td>rendue au parc ; effacement des disques si demandé</td></tr>
+<tr><td>Failed</td><td>échec d'inventaire, de test ou d'installation : à reprendre</td></tr>
+<tr><td>Broken, Rescue mode</td><td>mise à l'écart pour panne ; démarrage de dépannage en mémoire</td></tr>
+</tbody></table>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+<header><span class="kick">2 · MAAS</span><h2>Enrôlement et inventaire, pas à pas</h2></header>
+<div class="body">
+<div class="fig"><svg viewBox="0 0 1150 353">
+<path d="M170,46 V349" class="nl" stroke-dasharray="4 5"/>
+<path d="M575,46 V349" class="nl" stroke-dasharray="4 5"/>
+<path d="M980,46 V349" class="nl" stroke-dasharray="4 5"/>
+<rect x="50" y="4" width="240" height="40" rx="8" class="b-dark"/><text x="170" y="29" class="tc tb tw">Serveur</text>
+<rect x="455" y="4" width="240" height="40" rx="8" class="b-teal"/><text x="575" y="29" class="tc tb">Contrôleur de rack</text>
+<rect x="860" y="4" width="240" height="40" rx="8" class="b-red"/><text x="980" y="29" class="tc tb">Contrôleur de région</text>
+<path d="M180,78 H572" class="lr"/>
+<text x="372.5" y="72" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">démarre sur le réseau : requête DHCP</text>
+<circle cx="170" cy="78" r="10" class="f-red"/><text x="170" y="82" class="tc tw tb" style="font-size:11px">1</text>
+<path d="M565,109 H173" class="lr"/>
+<text x="372.5" y="103" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">adresse de la plage dynamique, nom du fichier d'amorçage</text>
+<circle cx="575" cy="109" r="10" class="f-red"/><text x="575" y="113" class="tc tw tb" style="font-size:11px">2</text>
+<path d="M180,140 H572" class="lr"/>
+<text x="372.5" y="134" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">télécharge le chargeur, puis le noyau et un système temporaire</text>
+<circle cx="170" cy="140" r="10" class="f-red"/><text x="170" y="144" class="tc tw tb" style="font-size:11px">3</text>
+<path d="M180,171 H977" class="lr"/>
+<text x="575.0" y="165" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">se signale : adresse MAC, architecture — la machine apparaît à l'état « New »</text>
+<circle cx="170" cy="171" r="10" class="f-red"/><text x="170" y="175" class="tc tw tb" style="font-size:11px">4</text>
+<rect x="744" y="187" width="400" height="24" rx="6" class="b-grey"/><text x="956.0" y="204" class="tc" style="font-size:12px">l'administrateur lance l'inventaire : « Commissioning »</text>
+<circle cx="758" cy="202" r="10" class="f-red"/><text x="758" y="206" class="tc tw tb" style="font-size:11px">5</text>
+<path d="M970,233 H173" class="lr"/>
+<text x="575.0" y="227" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">redémarrage par la carte de gestion ; scripts d'inventaire et de test envoyés</text>
+<circle cx="980" cy="233" r="10" class="f-red"/><text x="980" y="237" class="tc tw tb" style="font-size:11px">6</text>
+<rect x="6" y="249" width="400" height="24" rx="6" class="b-grey"/><text x="218.0" y="266" class="tc" style="font-size:12px">recense processeurs, mémoire, disques, cartes réseau</text>
+<circle cx="20" cy="264" r="10" class="f-red"/><text x="20" y="268" class="tc tw tb" style="font-size:11px">7</text>
+<path d="M180,295 H977" class="ln ld"/>
+<text x="575.0" y="289" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">résultats remontés ; la machine s'éteint</text>
+<circle cx="170" cy="295" r="10" class="f-red"/><text x="170" y="299" class="tc tw tb" style="font-size:11px">8</text>
+<rect x="744" y="311" width="400" height="24" rx="6" class="b-grey"/><text x="956.0" y="328" class="tc" style="font-size:12px">inventaire enregistré : état « Ready »</text>
+<circle cx="758" cy="326" r="10" class="f-red"/><text x="758" y="330" class="tc tw tb" style="font-size:11px">9</text>
+</svg></div>
+<div class="cols nf">
+<div class="note g"><b>Deux façons d'enrôler :</b> laisser le serveur démarrer sur le réseau, MAAS le découvre seul ; ou le déclarer à la main avec l'adresse de sa carte de gestion, ce qui lance directement l'inventaire.</div>
+<div class="note"><b>Premier diagnostic quand rien ne se passe :</b> le serveur a-t-il reçu une adresse ? Un autre serveur DHCP répond-il sur ce VLAN ? L'amorçage réseau est-il en tête dans le micrologiciel ?</div>
+</div>
+</div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+<header><span class="kick">2 · MAAS</span><h2>Déploiement : de « Ready » à un système en service</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 660 440">
+<g class="tc">
+<rect x="20" y="8" width="620" height="50" rx="9" class="b-grey"/><text x="330" y="30" class="tb">① Allocation et paramètres</text><text x="330" y="47" class="ts">système et noyau, schéma de disques, interfaces, données cloud-init</text>
+<rect x="20" y="82" width="620" height="50" rx="9" class="b-dark"/><text x="330" y="104" class="tb tw">② Mise sous tension par la carte de gestion</text><text x="330" y="121" class="tw" style="font-size:12px">amorçage réseau forcé pour ce démarrage</text>
+<rect x="20" y="156" width="620" height="50" rx="9" class="b-teal"/><text x="330" y="178" class="tb">③ Système temporaire en mémoire</text><text x="330" y="195" class="ts">noyau et image servis par le contrôleur de rack</text>
+<rect x="20" y="230" width="620" height="62" rx="9" class="b-amber"/><text x="330" y="252" class="tb">④ Installation par curtin</text><text x="330" y="269" class="ts">partitionne, assemble RAID et LVM, copie l'image du système sur le disque,</text><text x="330" y="284" class="ts">écrit la configuration réseau, installe le chargeur d'amorçage</text>
+<rect x="20" y="316" width="620" height="50" rx="9" class="b-blue"/><text x="330" y="338" class="tb">⑤ Redémarrage sur le disque, cloud-init</text><text x="330" y="355" class="ts">nom de machine, clés SSH, paquets, scripts fournis par l'utilisateur</text>
+<rect x="20" y="390" width="620" height="42" rx="9" class="b-green"/><text x="330" y="416" class="tb">⑥ État « Deployed » — la machine signale à MAAS qu'elle est prête</text>
+</g>
+<path d="M330,58 V80" class="lr"/><path d="M330,132 V154" class="lr"/><path d="M330,206 V228" class="lr"/><path d="M330,292 V314" class="lr"/><path d="M330,366 V388" class="lr"/>
+</svg>
+</div>
+<div class="col">
+<p><b>Ce qu'il faut retenir</b></p>
+<ul class="pts sm">
+<li><b>Une copie d'image, pas une installation paquet par paquet :</b> c'est ce qui rend le déploiement rapide et identique d'une machine à l'autre.</li>
+<li><b>Le réseau et les disques se décident dans MAAS</b>, avant le déploiement ; le système arrive déjà configuré.</li>
+<li><b>cloud-init</b> est le point d'entrée de la personnalisation : c'est par lui que Juju installe son agent.</li>
+<li><b>Variantes :</b> déploiement en mémoire seule, sans toucher aux disques (depuis 3.5) ; enregistrement d'une machine déjà installée, sans la réinstaller.</li>
+</ul>
+<table class="tbl tight">
+<thead><tr><th>Script</th><th>Moment</th></tr></thead>
+<tbody>
+<tr><td>d'inventaire</td><td>pendant « Commissioning » : micrologiciel, RAID matériel</td></tr>
+<tr><td>de test</td><td>disques, mémoire, réseau</td></tr>
+<tr><td>de déploiement</td><td>avant ou après l'installation</td></tr>
+<tr><td>de libération</td><td>au retour dans le parc (depuis 3.5)</td></tr>
+</tbody></table>
+</div>
+</div></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+<header><span class="kick">2 · MAAS</span><h2>Le modèle réseau de MAAS</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 300">
+<rect x="20" y="10" width="540" height="200" rx="12" class="zone"/><text x="36" y="34" class="tl">Fabric « prod » — un ensemble de commutateurs reliés</text>
+<g class="tc">
+<rect x="36" y="48" width="160" height="150" rx="9" class="bx"/><text x="116" y="70" class="tb">VLAN non étiqueté</text><rect x="48" y="82" width="136" height="34" rx="6" class="b-grey"/><text x="116" y="104" class="tm" style="font-size:11.5px">10.10.0.0/24</text><rect x="62" y="150" width="108" height="26" rx="13" class="b-grey"/><text x="116" y="168" class="tb" style="font-size:11.5px">oam</text><text x="116" y="136" class="ts">amorçage, gestion</text>
+<rect x="210" y="48" width="160" height="150" rx="9" class="bx"/><text x="290" y="70" class="tb">VLAN 100</text><rect x="222" y="82" width="136" height="34" rx="6" class="b-red"/><text x="290" y="104" class="tm" style="font-size:11.5px">10.10.100.0/24</text><rect x="236" y="150" width="108" height="26" rx="13" class="b-red"/><text x="290" y="168" class="tb" style="font-size:11.5px">interne</text><text x="290" y="136" class="ts">API internes, base</text>
+<rect x="384" y="48" width="160" height="150" rx="9" class="bx"/><text x="464" y="70" class="tb">VLAN 200</text><rect x="396" y="82" width="136" height="34" rx="6" class="b-amber"/><text x="464" y="104" class="tm" style="font-size:11.5px">10.10.200.0/24</text><rect x="410" y="150" width="108" height="26" rx="13" class="b-amber"/><text x="464" y="168" class="tb" style="font-size:11.5px">stockage</text><text x="464" y="136" class="ts">accès à Ceph</text>
+</g>
+<rect x="590" y="10" width="250" height="200" rx="12" class="zone"/><text x="606" y="34" class="tl">Fabric « externe »</text>
+<g class="tc"><rect x="606" y="48" width="218" height="150" rx="9" class="bx"/><text x="715" y="70" class="tb">VLAN non étiqueté</text><rect x="646" y="82" width="138" height="34" rx="6" class="b-blue"/><text x="715" y="104" class="tm" style="font-size:11.5px">192.0.2.0/24</text><text x="715" y="136" class="ts">sortie vers l'extérieur</text><text x="715" y="168" class="ts tb">sous-réseau non géré par MAAS</text></g>
+<g>
+<rect x="870" y="10" width="260" height="200" rx="12" class="b-grey"/><text x="1000" y="34" class="tc tl">Vocabulaire</text>
+<text x="884" y="60" class="ts"><tspan class="tb">Fabric</tspan> : domaine de niveau 2</text>
+<text x="884" y="84" class="ts"><tspan class="tb">VLAN</tspan> : segment, avec ou sans DHCP</text>
+<text x="884" y="108" class="ts"><tspan class="tb">Sous-réseau</tspan> : plage IP d'un VLAN</text>
+<text x="884" y="132" class="ts"><tspan class="tb">Espace</tspan> : étiquette d'usage regroupant</text><text x="884" y="148" class="ts">des sous-réseaux, lue par Juju</text>
+<text x="884" y="172" class="ts"><tspan class="tb">Plage réservée</tspan> : adresses que</text><text x="884" y="188" class="ts">MAAS ne distribuera jamais</text>
+</g>
+<text x="20" y="240" class="tb">Découpage d'un sous-réseau géré</text>
+<rect x="20" y="252" width="200" height="34" rx="6" class="b-dark"/><text x="120" y="274" class="tc tw" style="font-size:12px">.1 – .9 passerelle, équipements</text>
+<rect x="220" y="252" width="280" height="34" rx="6" class="b-violet"/><text x="360" y="274" class="tc" style="font-size:12px">.10 – .49 plage réservée (adresses virtuelles)</text>
+<rect x="500" y="252" width="250" height="34" rx="6" class="b-teal"/><text x="625" y="274" class="tc" style="font-size:12px">.50 – .99 plage dynamique (DHCP)</text>
+<rect x="750" y="252" width="380" height="34" rx="6" class="bx"/><text x="940" y="274" class="tc" style="font-size:12px">.100 – .254 adresses fixes attribuées aux machines déployées</text>
+</svg>
+</div>
+<div class="cols nf">
+<div class="note g"><b>La plage dynamique</b> sert à l'enrôlement et à l'inventaire. Une machine déployée reçoit en général une adresse <b>fixe</b>, choisie par MAAS hors de cette plage et inscrite dans le DNS.</div>
+<div class="note b"><b>Les espaces sont la clé de l'intégration :</b> Juju et Sunbeam ne manipulent pas des VLAN mais des espaces. « Place ce service sur l'espace interne » fonctionne quel que soit l'adressage du site.</div>
+</div>
+</div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+<header><span class="kick">2 · MAAS</span><h2>Organiser le parc : étiquettes, zones, disques, images</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:17%">Notion</th><th style="width:34%">À quoi elle sert</th><th style="width:25%">Exemple</th><th>Usage par Juju et Sunbeam</th></tr></thead>
+<tbody>
+<tr><td>Étiquette de machine</td><td>marquer un rôle ou une caractéristique ; peut être calculée d'après l'inventaire</td><td style="color:var(--ink);font-weight:400"><code>compute</code>, <code>storage</code>, <code>gpu</code></td><td>contrainte <code>tags=</code> ; Sunbeam choisit les rôles d'après elles</td></tr>
+<tr><td>Étiquette de disque, de réseau</td><td>désigner un périphérique précis</td><td style="color:var(--ink);font-weight:400"><code>ceph</code> sur un disque</td><td>Sunbeam y place les disques de Ceph</td></tr>
+<tr><td>Zone</td><td>regrouper par domaine de panne : baie, salle</td><td style="color:var(--ink);font-weight:400"><code>baie-a</code>, <code>baie-b</code></td><td>répartition des unités entre zones</td></tr>
+<tr><td>Groupe de ressources</td><td>réserver des machines à une équipe, avec droits</td><td style="color:var(--ink);font-weight:400"><code>cloud-prod</code>, <code>labo</code></td><td>cloisonne plusieurs déploiements</td></tr>
+<tr><td>Schéma de stockage</td><td>partitionnement appliqué au déploiement</td><td style="color:var(--ink);font-weight:400">plat, LVM, bcache, RAID logiciel</td><td>disque système d'un côté, disques de données vierges de l'autre</td></tr>
+<tr><td>Images</td><td>systèmes proposés au déploiement, synchronisés depuis Canonical ou importés</td><td style="color:var(--ink);font-weight:400">Ubuntu 24.04 ; images maison construites avec Packer</td><td>Juju demande la base Ubuntu voulue par le charm</td></tr>
+<tr><td>Hôte de machines virtuelles</td><td>MAAS crée des machines virtuelles sur un hôte LXD et les gère comme des serveurs</td><td style="color:var(--ink);font-weight:400">contrôleurs, maquettes</td><td>machines de gouvernance du cloud</td></tr>
+</tbody></table>
+<div class="note g"><b>Bonne pratique :</b> décider des étiquettes, zones et espaces <b>avant</b> d'enrôler les machines. C'est le vocabulaire que tous les outils au-dessus de MAAS utiliseront pour placer les services.</div>
+</div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+<header><span class="kick">2 · MAAS</span><h2>MAAS en pratique : installation et commandes</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Prérequis :</b> une machine Ubuntu Server 24.04 dédiée, une interface sur le réseau d'amorçage, aucun autre serveur DHCP sur ce réseau.</p>
+<pre style="font-size:12.2px"><span class="m"># 1 · Installer (maquette : base de test intégrée)</span>
+<span class="c">sudo snap install</span> maas --channel=3.7/stable
+<span class="c">sudo snap install</span> maas-test-db
+<span class="c">sudo maas init</span> region+rack \
+  --database-uri maas-test-db:///
+<span class="c">sudo maas createadmin</span>
+
+<span class="m"># 2 · Ouvrir une session en ligne de commande</span>
+<span class="c">sudo maas apikey</span> --username admin &gt; cle.txt
+<span class="c">maas login</span> admin \
+  http://10.10.0.2:5240/MAAS/api/2.0/ $(cat cle.txt)
+
+<span class="m"># 3 · Dans l'interface web : importer les images,</span>
+<span class="m">#     activer le DHCP sur le VLAN d'amorçage,</span>
+<span class="m">#     définir la plage dynamique</span></pre>
+<div class="note"><b>En production</b>, la base de test est remplacée par un PostgreSQL externe : version 16 recommandée, la 14 étant le minimum, déjà dépréciée.</div>
+</div>
+<div class="col">
+<pre style="font-size:12.2px"><span class="m"># Inventaire</span>
+<span class="c">maas admin machines read</span> | jq '.[].hostname'
+
+<span class="m"># Étiqueter</span>
+<span class="c">maas admin tags create</span> name=compute
+<span class="c">maas admin tag update-nodes</span> compute add=$ID
+
+<span class="m"># Relancer l'inventaire d'une machine</span>
+<span class="c">maas admin machine commission</span> $ID
+
+<span class="m"># Réserver puis déployer</span>
+<span class="c">maas admin machines allocate</span> tags=compute
+<span class="c">maas admin machine deploy</span> $ID \
+  distro_series=noble
+
+<span class="m"># Rendre au parc en effaçant les disques</span>
+<span class="c">maas admin machine release</span> $ID erase=true</pre>
+<ul class="pts sm">
+<li><code>$ID</code> est l'identifiant système de la machine (<code>system_id</code>), visible dans l'inventaire.</li>
+<li>Tout ce que fait l'interface web passe par la même API : ce qui se clique se scripte.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+<header><span class="kick">2 · MAAS</span><h2>Haute disponibilité et versions</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 420">
+<g class="tc">
+<rect x="150" y="6" width="260" height="46" rx="8" class="b-grey"/><text x="280" y="26" class="tb">Adresse virtuelle de l'API</text><text x="280" y="43" class="ts">répartiteur devant les régions</text>
+<rect x="20" y="88" width="160" height="62" rx="8" class="b-red"/><text x="100" y="114" class="tb">Région 1</text><text x="100" y="134" class="ts">API, DNS, Temporal</text>
+<rect x="200" y="88" width="160" height="62" rx="8" class="b-red"/><text x="280" y="114" class="tb">Région 2</text><text x="280" y="134" class="ts">API, DNS, Temporal</text>
+<rect x="380" y="88" width="160" height="62" rx="8" class="b-red"/><text x="460" y="114" class="tb">Région 3</text><text x="460" y="134" class="ts">API, DNS, Temporal</text>
+<rect x="110" y="186" width="340" height="52" rx="8" class="b-amber"/><text x="280" y="208" class="tb">PostgreSQL redondant</text><text x="280" y="226" class="ts">un primaire, des répliques, bascule automatique</text>
+<rect x="20" y="284" width="250" height="62" rx="8" class="b-teal"/><text x="145" y="310" class="tb">Rack A — DHCP primaire</text><text x="145" y="330" class="ts">amorçage, alimentation</text>
+<rect x="290" y="284" width="250" height="62" rx="8" class="b-teal"/><text x="415" y="310" class="tb">Rack B — DHCP secondaire</text><text x="415" y="330" class="ts">prend le relais si A tombe</text>
+<rect x="20" y="376" width="520" height="36" rx="8" class="b-dark"/><text x="280" y="399" class="tw tb">VLAN d'amorçage des serveurs</text>
+</g>
+<path d="M230,52 L100,86" class="ln"/><path d="M280,52 V86" class="ln"/><path d="M330,52 L460,86" class="ln"/>
+<path d="M100,150 L220,184" class="la"/><path d="M280,150 V184" class="la"/><path d="M460,150 L340,184" class="la"/>
+<path d="M145,284 V262 H415 V284" class="nl"/><path d="M280,262 V240" class="nl"/>
+<path d="M145,346 V374" class="lt"/><path d="M415,346 V374" class="lt"/>
+</svg>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Version</th><th>Apports marquants</th></tr></thead>
+<tbody>
+<tr><td>3.5</td><td>Temporal pour les enchaînements, agent en Go, images stockées par la région, déploiement en mémoire, Oracle Linux</td></tr>
+<tr><td>3.6</td><td>première version native sur Ubuntu 24.04, adresses IP réservées, tableau de bord Grafana</td></tr>
+<tr><td>3.7</td><td>cartes NVIDIA BlueField-3, ligne de commande plus rapide, résolveur DNS côté rack</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Ce qui tombe si MAAS tombe :</b> on ne peut plus enrôler, déployer ni libérer. Les machines <b>déjà déployées continuent de tourner</b>.</li>
+<li><b>Attention au DNS et au DHCP :</b> si les machines déployées utilisent MAAS comme résolveur, sa disponibilité compte au quotidien.</li>
+<li><b>À sauvegarder :</b> la base PostgreSQL et les fichiers de configuration du snap. Sans la base, l'inventaire et les adresses attribuées sont perdus.</li>
+<li><b>Mise à jour :</b> changement de canal du snap, une région après l'autre.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+<header><span class="kick">2 · MAAS</span><h2>MAAS : avantages et limites</h2></header>
+<div class="body">
+<div class="cols">
+<div class="col">
+<p><b>Avantages</b></p>
+<ul class="pts sm">
+<li><b>Complet :</b> découverte, inventaire, tests, réseau, stockage et installation dans un seul outil, avec DHCP et DNS intégrés.</li>
+<li><b>Rapide :</b> une machine passe de « Ready » à « Deployed » en quelques minutes.</li>
+<li><b>Piloté par API</b>, donc par Juju, Terraform, Ansible ou vos scripts.</li>
+<li><b>Multi-systèmes :</b> Ubuntu d'abord, mais aussi d'autres Linux, Windows et ESXi.</li>
+<li><b>Indépendant du reste :</b> utile même sans OpenStack, pour un parc Kubernetes ou des serveurs de calcul.</li>
+<li><b>Libre</b>, sans limite de nombre de machines.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Limites</b></p>
+<ul class="pts sm">
+<li><b>Exige la maîtrise du réseau d'amorçage :</b> MAAS veut être le serveur DHCP ; cohabiter avec un DHCP d'entreprise demande un relais et de la rigueur.</li>
+<li><b>Dépend de la qualité des cartes de gestion :</b> micrologiciels anciens ou exotiques sont la première source d'échecs.</li>
+<li><b>Un service de plus à rendre redondant</b> et à sauvegarder, avec sa base PostgreSQL.</li>
+<li><b>Images non Ubuntu :</b> à construire soi-même ; certaines relèvent de l'abonnement.</li>
+<li><b>Ne configure pas les commutateurs :</b> VLAN et agrégats doivent exister côté réseau avant.</li>
+</ul>
+</div>
+</div>
+<div class="cols c3 nf dense">
+<div class="card cb"><h3>Quand l'utiliser</h3>Dès que le parc dépasse une dizaine de machines, ou que l'on veut pouvoir reconstruire un nœud sans intervention manuelle.</div>
+<div class="card ct"><h3>Quand s'en passer</h3>Maquette sur une à trois machines, ou parc déjà géré par un autre outil de provisionnement que l'on ne veut pas remplacer.</div>
+<div class="card cn"><h3>Choix irréversible dans Sunbeam</h3>Le fournisseur de machines — manuel ou MAAS — se décide à la conception : on ne peut pas en changer une fois le cloud déployé.</div>
+</div>
+</div>
+</section>
+
+<!-- 20 -->
+<section class="slide dark sec">
+<div class="num">03</div>
+<h2>Juju — orchestrer par charms</h2>
+<p>Un moteur qui déploie des applications et, surtout, les relie entre elles : le savoir-faire d'exploitation n'est plus dans la tête de l'administrateur mais dans du code réutilisable.</p>
+<ol><li>Rôle et principe</li><li>Architecture</li><li>Le vocabulaire du modèle</li><li>Anatomie d'un charm</li><li>Les relations</li><li>Charms machine et charms Kubernetes</li><li>Charmhub</li><li>Commandes essentielles</li><li>Juju au-dessus de MAAS</li><li>Fonctions avancées, versions, bilan</li></ol>
+</section>
+
+<!-- 21 -->
+<section class="slide">
+<header><span class="kick">3 · Juju</span><h2>Juju : rôle et principe</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Le problème résolu :</b> installer un logiciel est facile ; le <b>relier</b> aux autres, le faire évoluer et le maintenir pendant des années ne l'est pas.</p>
+<ul class="pts sm">
+<li><b>Un charm par application :</b> il contient tout ce qu'un spécialiste saurait faire — installer, configurer, initialiser la base, mettre à jour, sauvegarder.</li>
+<li><b>Des relations entre applications :</b> « Keystone a besoin d'une base » se dit en une commande ; les deux charms échangent adresses et identifiants sans intervention.</li>
+<li><b>Un modèle, plusieurs substrats :</b> la même commande déploie sur MAAS, sur LXD, sur un cloud public ou sur Kubernetes.</li>
+<li><b>Tout le cycle de vie :</b> mise à l'échelle, changement d'option, montée de version, actions ponctuelles.</li>
+</ul>
+<div class="note g"><b>Idée centrale :</b> Juju ne sait rien d'OpenStack ni de PostgreSQL. Il transmet des <b>événements</b> ; c'est le charm qui sait quoi faire.</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Question</th><th>Ansible</th><th>Helm</th><th>Juju</th></tr></thead>
+<tbody>
+<tr><td>Unité de réutilisation</td><td>rôle</td><td>chart</td><td>charm</td></tr>
+<tr><td>Nature</td><td>tâches exécutées à la demande</td><td>gabarits de manifestes</td><td>programme réagissant à des événements</td></tr>
+<tr><td>Agent permanent</td><td>non</td><td>non</td><td>oui, sur chaque unité</td></tr>
+<tr><td>Liaison entre applications</td><td>variables à tenir cohérentes</td><td>valeurs à tenir cohérentes</td><td>relations négociées par les charms</td></tr>
+<tr><td>Cibles</td><td>machines</td><td>Kubernetes</td><td>machines et Kubernetes</td></tr>
+<tr><td>État connu</td><td>non conservé</td><td>historique des versions</td><td>modèle tenu par le contrôleur</td></tr>
+</tbody></table>
+<div class="note"><b>Contrepartie :</b> on dépend de la <b>qualité du charm</b>. Ce qu'il ne prévoit pas ne se fait pas proprement ; le contourner à la main sera défait par le prochain événement.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 22 -->
+<section class="slide">
+<header><span class="kick">3 · Juju</span><h2>Architecture : client, contrôleur, agents</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 440">
+<rect x="20" y="96" width="190" height="200" rx="12" class="b-grey"/><text x="115" y="122" class="tc tl">Client</text>
+<g class="tc"><rect x="34" y="136" width="162" height="40" rx="7" class="bx"/><text x="115" y="161" class="tb">commande juju</text>
+<rect x="34" y="184" width="162" height="40" rx="7" class="bx"/><text x="115" y="202" class="ts">comptes, contrôleurs</text><text x="115" y="217" class="ts">connus, identifiants</text>
+<text x="115" y="254" class="ts">aussi : fournisseur</text><text x="115" y="270" class="ts">Terraform, API Python</text></g>
+<path d="M210,196 H288" class="lr"/><text x="249" y="186" class="tc ts tb">API chiffrée</text><text x="249" y="214" class="tc ts">port 17070</text>
+
+<rect x="430" y="6" width="250" height="52" rx="10" class="b-teal"/><text x="555" y="28" class="tc tb">Charmhub</text><text x="555" y="46" class="tc ts">dépôt public des charms</text>
+<path d="M480,58 V94" class="lt"/><text x="492" y="80" class="ts ft">téléchargement</text>
+
+<rect x="290" y="96" width="380" height="200" rx="12" class="zone"/><text x="306" y="122" class="tl">Contrôleur Juju</text><text x="654" y="122" class="te tb fa">× 1 ou × 3</text>
+<g class="tc">
+<rect x="304" y="136" width="172" height="44" rx="7" class="b-violet"/><text x="390" y="163" class="tb">serveur d'API</text>
+<rect x="484" y="136" width="172" height="44" rx="7" class="b-amber"/><text x="570" y="155" class="tb">base d'état</text><text x="570" y="171" class="ts">MongoDB (3.x), Dqlite (4.0)</text>
+<rect x="304" y="188" width="172" height="44" rx="7" class="bx"/><text x="390" y="207" class="tb">modèles</text><text x="390" y="223" class="ts">dont le modèle « controller »</text>
+<rect x="484" y="188" width="172" height="44" rx="7" class="bx"/><text x="570" y="207" class="tb">secrets, charms</text><text x="570" y="223" class="ts">copies locales</text>
+<text x="480" y="262" class="ts">une machine ou un pod dédié,</text><text x="480" y="278" class="ts">créé par « juju bootstrap »</text>
+</g>
+
+<rect x="760" y="6" width="370" height="52" rx="10" class="b-dark"/><text x="945" y="28" class="tc tw tb">API du substrat</text><text x="945" y="46" class="tc tw" style="font-size:12px">MAAS, LXD, OpenStack, cloud public, Kubernetes</text>
+<path d="M670,150 H716 V32 H758" class="lr" style="fill:none"/><text x="724" y="82" class="ts tb">« crée une machine »</text>
+
+<rect x="760" y="96" width="370" height="150" rx="12" class="zone"/><text x="776" y="120" class="tl">Machine</text>
+<g class="tc">
+<rect x="774" y="132" width="342" height="30" rx="6" class="b-violet"/><text x="945" y="152" class="tb">agent Juju de la machine</text>
+<rect x="774" y="168" width="168" height="66" rx="6" class="b-red"/><text x="858" y="190" class="tb">unité mysql/0</text><text x="858" y="208" class="ts">code du charm</text><text x="858" y="224" class="ts">+ service installé</text>
+<rect x="948" y="168" width="168" height="66" rx="6" class="b-red"/><text x="1032" y="190" class="tb">unité telegraf/0</text><text x="1032" y="208" class="ts">charm subordonné,</text><text x="1032" y="224" class="ts">greffé sur la machine</text>
+</g>
+<rect x="760" y="262" width="370" height="130" rx="12" class="zone"/><text x="776" y="286" class="tl">Pod Kubernetes</text>
+<g class="tc">
+<rect x="774" y="298" width="168" height="82" rx="6" class="b-violet"/><text x="858" y="322" class="tb">conteneur « charm »</text><text x="858" y="342" class="ts">agent d'unité</text><text x="858" y="358" class="ts">et code du charm</text>
+<rect x="948" y="298" width="168" height="82" rx="6" class="b-red"/><text x="1032" y="322" class="tb">conteneur du service</text><text x="1032" y="342" class="ts">image rock,</text><text x="1032" y="358" class="ts">piloté par Pebble</text>
+</g>
+<path d="M758,196 H672" class="lr2"/><path d="M758,330 H716 V214 H672" class="lr2" style="fill:none"/>
+<text x="716" y="408" class="tc ts">Les agents ouvrent la connexion vers le contrôleur :</text><text x="716" y="424" class="tc ts">ils reçoivent les événements, renvoient l'état.</text>
+
+<rect x="20" y="330" width="650" height="62" rx="10" class="b-dark"/><text x="345" y="356" class="tc tw tb">Le contrôleur est le point de passage obligé</text><text x="345" y="377" class="tc tw" style="font-size:12.5px">S'il est arrêté, les applications continuent de tourner, mais plus aucun changement n'est possible.</text>
+</svg>
+</div></div>
+</section>
+
+<!-- 23 -->
+<section class="slide">
+<header><span class="kick">3 · Juju</span><h2>Le vocabulaire du modèle</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 660 440">
+<rect x="10" y="8" width="640" height="424" rx="14" class="b-grey"/><text x="28" y="34" class="tl">Cloud — « maas-prod »</text><text x="632" y="34" class="te ts">+ identifiants d'accès</text>
+<rect x="26" y="48" width="608" height="372" rx="12" style="fill:#fff;stroke:#7c3aed;stroke-width:1.5"/><text x="42" y="72" class="tl">Contrôleur — « ctrl-prod »</text>
+<rect x="42" y="86" width="576" height="60" rx="10" class="b-violet"/><text x="58" y="110" class="tb">Modèle « controller »</text><text x="58" y="130" class="ts">l'application « controller » elle-même, sur ses propres machines</text>
+<rect x="42" y="158" width="576" height="250" rx="10" class="zone"/><text x="58" y="182" class="tb">Modèle « donnees » — un espace de travail, avec ses droits et ses réglages</text>
+<g class="tc">
+<rect x="58" y="196" width="250" height="140" rx="9" class="b-red"/><text x="183" y="218" class="tb">Application « postgresql »</text><text x="183" y="236" class="ts">charm postgresql, canal 14/stable</text>
+<rect x="72" y="248" width="70" height="40" rx="6" class="bx"/><text x="107" y="273" class="tm" style="font-size:11px">…/0</text>
+<rect x="148" y="248" width="70" height="40" rx="6" class="bx"/><text x="183" y="273" class="tm" style="font-size:11px">…/1</text>
+<rect x="224" y="248" width="70" height="40" rx="6" class="bx"/><text x="259" y="273" class="tm" style="font-size:11px">…/2</text>
+<text x="183" y="310" class="ts">trois unités, une par machine</text><text x="183" y="326" class="ts tb">l'une est « leader »</text>
+<rect x="368" y="196" width="234" height="140" rx="9" class="b-red"/><text x="485" y="218" class="tb">Application « data-integrator »</text><text x="485" y="236" class="ts">une unité</text>
+<rect x="450" y="248" width="70" height="40" rx="6" class="bx"/><text x="485" y="273" class="tm" style="font-size:11px">…/0</text>
+<rect x="58" y="352" width="544" height="44" rx="8" class="b-dark"/><text x="330" y="372" class="tw tb">Machines 0, 1, 2, 3</text><text x="330" y="389" class="tw" style="font-size:12px">fournies par le cloud à la demande de Juju</text>
+</g>
+<path d="M308,266 H366" class="lt2"/><text x="337" y="256" class="tc ts ft tb">relation</text>
+</svg>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Terme</th><th>Définition</th></tr></thead>
+<tbody>
+<tr><td>Cloud</td><td>un fournisseur de ressources : MAAS, LXD, Kubernetes…</td></tr>
+<tr><td>Contrôleur</td><td>le service qui tient l'état et pilote un ou plusieurs modèles</td></tr>
+<tr><td>Modèle</td><td>un ensemble d'applications gérées ensemble ; un espace de noms sur Kubernetes</td></tr>
+<tr><td>Application</td><td>un charm déployé, avec sa configuration</td></tr>
+<tr><td>Unité</td><td>une instance en marche de l'application</td></tr>
+<tr><td>Leader</td><td>l'unité élue pour les opérations à ne faire qu'une fois</td></tr>
+<tr><td>Machine</td><td>le serveur ou la machine virtuelle qui porte des unités</td></tr>
+<tr><td>Relation</td><td>un lien déclaré entre deux applications</td></tr>
+</tbody></table>
+<div class="note g"><b>Lire <code>juju status</code>, c'est lire ce schéma :</b> le modèle, ses applications, leurs unités, les machines, puis les relations.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 24 -->
+<section class="slide">
+<header><span class="kick">3 · Juju</span><h2>Anatomie d'un charm</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:12px"><span class="m"># charmcraft.yaml — la carte d'identité</span>
+<span class="k">name</span>: demo-api
+<span class="k">requires</span>:
+  database:
+    interface: postgresql_client
+<span class="k">provides</span>:
+  metrics-endpoint:
+    interface: prometheus_scrape
+<span class="k">config</span>:
+  options:
+    port: { type: int, default: 8080 }
+<span class="k">actions</span>:
+  rotate-token: { description: "Renouvelle le jeton" }</pre>
+<pre style="font-size:12px"><span class="m"># src/charm.py — le comportement</span>
+<span class="k">class</span> DemoCharm(ops.CharmBase):
+  <span class="k">def</span> __init__(self, framework):
+    super().__init__(framework)
+    framework.observe(self.on.config_changed,
+                      self._on_config_changed)
+
+  <span class="k">def</span> _on_config_changed(self, event):
+    self._write_config(self.config["port"])
+    self._restart_service()
+    self.unit.status = ops.ActiveStatus()</pre>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Événement reçu</th><th>Quand</th></tr></thead>
+<tbody>
+<tr><td><code>install</code></td><td>première arrivée de l'unité</td></tr>
+<tr><td><code>config-changed</code></td><td>une option a été modifiée</td></tr>
+<tr><td><code>start</code>, <code>stop</code></td><td>démarrage, arrêt de l'unité</td></tr>
+<tr><td><code>&lt;relation&gt;-changed</code></td><td>l'autre côté a publié des données</td></tr>
+<tr><td><code>leader-elected</code></td><td>cette unité devient leader</td></tr>
+<tr><td><code>upgrade-charm</code></td><td>nouvelle révision du charm</td></tr>
+<tr><td><code>update-status</code></td><td>à intervalle régulier</td></tr>
+</tbody></table>
+<table class="tbl tight">
+<thead><tr><th>État affiché</th><th>Signification</th></tr></thead>
+<tbody>
+<tr><td><code>active</code></td><td>le service rend son service</td></tr>
+<tr><td><code>waiting</code></td><td>attend une autre application</td></tr>
+<tr><td><code>blocked</code></td><td>attend <b>l'administrateur</b> : relation ou option manquante</td></tr>
+<tr><td><code>maintenance</code></td><td>opération en cours</td></tr>
+<tr><td><code>error</code></td><td>un traitement a échoué : lire le journal</td></tr>
+</tbody></table>
+<div class="note g">Un charm se développe avec la bibliothèque Python <b>ops</b> et se construit avec <b>charmcraft</b>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 25 -->
+<section class="slide">
+<header><span class="kick">3 · Juju</span><h2>Les relations : le cœur de Juju</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 250">
+<rect x="20" y="20" width="330" height="210" rx="12" class="b-red"/><text x="185" y="48" class="tc tl tr">keystone-k8s</text>
+<g class="tc"><rect x="36" y="64" width="298" height="52" rx="8" class="bx"/><text x="185" y="86" class="tb">point d'accroche « database »</text><text x="185" y="104" class="ts">côté demandeur · interface mysql_client</text>
+<rect x="36" y="128" width="298" height="86" rx="8" class="bx"/><text x="185" y="150" class="ts">④ reçoit « database-relation-changed »,</text><text x="185" y="168" class="ts">écrit la section [database] de keystone.conf,</text><text x="185" y="186" class="ts">migre le schéma, démarre le service</text><text x="185" y="204" class="ts tb">→ état « active »</text></g>
+<rect x="800" y="20" width="330" height="210" rx="12" class="b-amber"/><text x="965" y="48" class="tc tl">mysql-k8s</text>
+<g class="tc"><rect x="816" y="64" width="298" height="52" rx="8" class="bx"/><text x="965" y="86" class="tb">point d'accroche « database »</text><text x="965" y="104" class="ts">côté fournisseur · interface mysql_client</text>
+<rect x="816" y="128" width="298" height="86" rx="8" class="bx"/><text x="965" y="150" class="ts">③ crée la base et un compte dédié,</text><text x="965" y="168" class="ts">publie l'adresse, le nom de la base</text><text x="965" y="186" class="ts">et une référence vers un secret</text><text x="965" y="204" class="ts tb">(le mot de passe n'est pas en clair)</text></g>
+<rect x="420" y="64" width="310" height="52" rx="10" class="b-violet"/><text x="575" y="86" class="tc tb">Relation tenue par le contrôleur</text><text x="575" y="104" class="tc ts">un espace de données partagé par côté</text>
+<path d="M350,90 H418" class="lr2"/><path d="M730,90 H798" class="lr2"/>
+<text x="575" y="26" class="tc tm tb" style="font-size:12.5px">① juju integrate keystone mysql</text>
+<path d="M575,34 V62" class="lr"/>
+<text x="575" y="150" class="tc ts">② les deux charms reçoivent un événement</text><text x="575" y="168" class="tc ts">« relation créée », puis « relation modifiée »</text><text x="575" y="186" class="tc ts">à chaque publication de l'autre côté</text>
+</svg>
+</div>
+<div class="cols nf">
+<div class="col">
+<ul class="pts sm">
+<li><b>Une relation n'est possible qu'entre interfaces identiques :</b> un demandeur <code>mysql_client</code> ne se branche que sur un fournisseur <code>mysql_client</code>. C'est un contrat.</li>
+<li><b>Elle vit dans le temps :</b> si l'adresse de la base change ou si une unité s'ajoute, l'autre côté est prévenu et se reconfigure seul.</li>
+<li><b>La retirer</b> (<code>juju remove-relation</code>) déclenche le nettoyage : compte supprimé, service reconfiguré.</li>
+</ul>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Relation entre modèles :</b> une application peut être <b>offerte</b> à un autre modèle, voire à un autre contrôleur — la supervision ou un Vault partagé, par exemple.</li>
+<li><b>Relation « pair » :</b> entre les unités d'une même application, pour former une grappe.</li>
+<li><b>Dans Canonical OpenStack :</b> plusieurs dizaines de relations sont créées pour vous ; <code>juju status --relations</code> les montre toutes.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 26 -->
+<section class="slide">
+<header><span class="kick">3 · Juju</span><h2>Charms machine et charms Kubernetes</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 300">
+<rect x="20" y="10" width="540" height="280" rx="12" class="zone"/><text x="36" y="36" class="tl">Charm machine</text><text x="544" y="36" class="te ts">exemples : microceph, openstack-hypervisor</text>
+<rect x="36" y="50" width="508" height="226" rx="10" class="b-grey"/><text x="52" y="74" class="tb">Une machine Ubuntu (serveur ou machine virtuelle)</text>
+<g class="tc">
+<rect x="52" y="88" width="230" height="64" rx="8" class="b-violet"/><text x="167" y="112" class="tb">agent Juju + code du charm</text><text x="167" y="132" class="ts">exécuté à chaque événement</text>
+<rect x="298" y="88" width="230" height="64" rx="8" class="b-red"/><text x="413" y="112" class="tb">service</text><text x="413" y="132" class="ts">paquet deb ou snap, unité systemd</text>
+<rect x="52" y="172" width="476" height="46" rx="8" class="bx"/><text x="290" y="192" class="tb">le charm agit sur le système lui-même</text><text x="290" y="209" class="ts">apt, snap, systemctl, fichiers de configuration, disques, interfaces</text>
+<text x="290" y="250" class="ts">Convient à ce qui touche au matériel et au noyau.</text>
+</g>
+<path d="M282,120 H296" class="lr"/>
+
+<rect x="590" y="10" width="540" height="280" rx="12" class="zone"/><text x="606" y="36" class="tl">Charm Kubernetes</text><text x="1114" y="36" class="te ts">exemples : keystone-k8s, mysql-k8s</text>
+<rect x="606" y="50" width="508" height="226" rx="10" class="b-grey"/><text x="622" y="74" class="tb">Un pod, créé par Juju dans l'espace de noms du modèle</text>
+<g class="tc">
+<rect x="622" y="88" width="230" height="64" rx="8" class="b-violet"/><text x="737" y="112" class="tb">conteneur « charm »</text><text x="737" y="132" class="ts">agent d'unité + code du charm</text>
+<rect x="868" y="88" width="230" height="64" rx="8" class="b-red"/><text x="983" y="112" class="tb">conteneur du service</text><text x="983" y="132" class="ts">rock ; Pebble lance les processus</text>
+<rect x="622" y="172" width="476" height="46" rx="8" class="bx"/><text x="860" y="192" class="tb">le charm pilote son voisin par l'API de Pebble</text><text x="860" y="209" class="ts">pousser un fichier, démarrer ou redémarrer un processus, lire son état</text>
+<text x="860" y="250" class="ts">Kubernetes replanifie le pod ; le charm le reconfigure à son retour.</text>
+</g>
+<path d="M852,120 H866" class="lr"/>
+</svg>
+</div>
+<div class="cols nf">
+<table class="tbl tight">
+<thead><tr><th></th><th>Charm machine</th><th>Charm Kubernetes</th></tr></thead>
+<tbody>
+<tr><td>Ajouter une instance</td><td><code>juju add-unit</code> : une machine de plus</td><td><code>juju scale-application</code> : un pod de plus</td></tr>
+<tr><td>Livraison du service</td><td>deb ou snap installé par le charm</td><td>image OCI attachée au charm</td></tr>
+<tr><td>Stockage</td><td>disques de la machine</td><td>volumes persistants</td></tr>
+<tr><td>Exposition</td><td>adresse de la machine</td><td>service Kubernetes, entrée (Traefik)</td></tr>
+</tbody></table>
+<div class="note g"><b>Les deux se relient entre eux :</b> dans Canonical OpenStack, les charms du plan de contrôle (Kubernetes) et ceux de l'hyperviseur et de Ceph (machines) vivent dans deux modèles, reliés par des relations entre modèles.</div>
+</div>
+</div>
+</section>
+
+<!-- 27 -->
+<section class="slide">
+<header><span class="kick">3 · Juju</span><h2>Charmhub : pistes, canaux, révisions</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 400">
+<text x="280" y="20" class="tc tl">Le charm « keystone-k8s » sur Charmhub</text>
+<g class="tc">
+<text x="70" y="62" class="tb">piste</text><text x="70" y="78" class="tb">2024.1</text>
+<rect x="130" y="44" width="100" height="44" rx="7" class="b-green"/><text x="180" y="63" class="tb">stable</text><text x="180" y="79" class="ts">rév. 204</text>
+<rect x="236" y="44" width="100" height="44" rx="7" class="bx"/><text x="286" y="63" class="tb">candidate</text><text x="286" y="79" class="ts">rév. 211</text>
+<rect x="342" y="44" width="100" height="44" rx="7" class="bx"/><text x="392" y="63" class="tb">beta</text><text x="392" y="79" class="ts">rév. 215</text>
+<rect x="448" y="44" width="100" height="44" rx="7" class="b-amber"/><text x="498" y="63" class="tb">edge</text><text x="498" y="79" class="ts">rév. 219</text>
+<text x="70" y="132" class="tb">piste</text><text x="70" y="148" class="tb">2026.1</text>
+<rect x="130" y="114" width="100" height="44" rx="7" class="b-green"/><text x="180" y="133" class="tb">stable</text><text x="180" y="149" class="ts">rév. 388</text>
+<rect x="236" y="114" width="100" height="44" rx="7" class="bx"/><text x="286" y="133" class="tb">candidate</text><text x="286" y="149" class="ts">rév. 392</text>
+<rect x="342" y="114" width="100" height="44" rx="7" class="bx"/><text x="392" y="133" class="tb">beta</text><text x="392" y="149" class="ts">rév. 395</text>
+<rect x="448" y="114" width="100" height="44" rx="7" class="b-amber"/><text x="498" y="133" class="tb">edge</text><text x="498" y="149" class="ts">rév. 401</text>
+</g>
+<path d="M546,180 H132" class="ln"/><text x="340" y="198" class="tc ts">une révision est promue de droite à gauche à mesure qu'elle est validée</text>
+<g class="tc">
+<rect x="20" y="226" width="250" height="74" rx="9" class="b-violet"/><text x="145" y="250" class="tb">Révision</text><text x="145" y="270" class="ts">un numéro = un contenu figé du charm ;</text><text x="145" y="286" class="ts">ne change jamais</text>
+<rect x="290" y="226" width="250" height="74" rx="9" class="b-teal"/><text x="415" y="250" class="tb">Ressource</text><text x="415" y="270" class="ts">l'image OCI ou le fichier associé</text><text x="415" y="286" class="ts">à une révision donnée</text>
+<rect x="20" y="318" width="520" height="68" rx="9" class="b-grey"/><text x="280" y="342" class="tb">Suivre un canal ou épingler une révision</text><text x="280" y="362" class="ts">un canal avance tout seul quand l'éditeur publie ;</text><text x="280" y="378" class="ts">une révision épinglée ne bouge que si vous le décidez</text>
+</g>
+<text x="280" y="216" class="tc ts" style="font-style:italic">numéros de révision donnés à titre d'illustration</text>
+</svg>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Piste</b> (<i>track</i>) : une ligne de versions du logiciel. Pour les charms d'OpenStack, la piste porte le nom de la version : <code>2024.1</code>, <code>2026.1</code>.</li>
+<li><b>Risque :</b> <code>stable</code> pour la production, <code>candidate</code> et <code>beta</code> pour valider, <code>edge</code> pour le dernier état du développement.</li>
+<li><b>Canal</b> = piste + risque : <code>2026.1/stable</code>.</li>
+<li><b><code>juju refresh</code></b> fait passer une application à la dernière révision de son canal, ou vers un autre canal.</li>
+</ul>
+<table class="tbl tight">
+<thead><tr><th>Besoin</th><th>Commande</th></tr></thead>
+<tbody>
+<tr><td>Voir les canaux d'un charm</td><td><code>juju info keystone-k8s</code></td></tr>
+<tr><td>Déployer depuis un canal</td><td><code>juju deploy … --channel 2026.1/stable</code></td></tr>
+<tr><td>Mettre à jour</td><td><code>juju refresh keystone</code></td></tr>
+<tr><td>Changer de canal</td><td><code>juju refresh keystone --channel …</code></td></tr>
+</tbody></table>
+<div class="note"><b>Réseau isolé :</b> Charmhub est un service en ligne. Sans accès, il faut un mandataire filtrant ou un dépôt interne — à prévoir dès la conception.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 28 -->
+<section class="slide">
+<header><span class="kick">3 · Juju</span><h2>Juju en pratique : les commandes essentielles</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Prérequis :</b> un poste Ubuntu, un cloud joignable (ici MAAS) et sa clé d'API.</p>
+<pre style="font-size:12.2px"><span class="m"># maas-cloud.yaml</span>
+<span class="k">clouds</span>:
+  maas-prod:
+    type: maas
+    auth-types: [oauth1]
+    endpoint: http://10.10.0.2:5240/MAAS</pre>
+<pre style="font-size:12.2px"><span class="m"># 1 · Installer le client et déclarer le cloud</span>
+<span class="c">sudo snap install</span> juju
+<span class="c">juju add-cloud</span> --client maas-prod ./maas-cloud.yaml
+<span class="c">juju add-credential</span> maas-prod   <span class="m"># colle la clé d'API</span>
+
+<span class="m"># 2 · Créer le contrôleur sur une machine étiquetée</span>
+<span class="c">juju bootstrap</span> maas-prod ctrl-prod \
+  --constraints tags=juju-controller
+
+<span class="m"># 3 · Créer un modèle et déployer</span>
+<span class="c">juju add-model</span> donnees
+<span class="c">juju deploy</span> postgresql --channel 14/stable -n 3
+<span class="c">juju deploy</span> data-integrator --config database-name=demo
+<span class="c">juju integrate</span> data-integrator postgresql</pre>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Besoin</th><th>Commande</th></tr></thead>
+<tbody>
+<tr><td>État du modèle</td><td><code>juju status --relations</code></td></tr>
+<tr><td>Journal de tous les agents</td><td><code>juju debug-log</code></td></tr>
+<tr><td>Lire ou changer une option</td><td><code>juju config postgresql profile=production</code></td></tr>
+<tr><td>Ajouter des unités</td><td><code>juju add-unit postgresql -n 2</code></td></tr>
+<tr><td>Lancer une action</td><td><code>juju run postgresql/leader get-password</code></td></tr>
+<tr><td>Entrer sur une unité</td><td><code>juju ssh postgresql/0</code></td></tr>
+<tr><td>Mettre à jour le charm</td><td><code>juju refresh postgresql</code></td></tr>
+<tr><td>Changer de modèle</td><td><code>juju switch donnees</code></td></tr>
+<tr><td>Retirer une application</td><td><code>juju remove-application data-integrator</code></td></tr>
+</tbody></table>
+<div class="note g"><b>Réflexe de diagnostic :</b> <code>juju status</code> d'abord — une unité <code>blocked</code> dit ce qu'elle attend dans son message ; puis <code>juju debug-log --include &lt;unité&gt;</code> pour le détail.</div>
+<div class="note"><b>Ne jamais corriger à la main</b> un fichier géré par un charm : la valeur sera réécrite au prochain événement. La bonne voie est <code>juju config</code>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 29 -->
+<section class="slide">
+<header><span class="kick">3 · Juju</span><h2>Juju au-dessus de MAAS : ce que déclenche « juju deploy »</h2></header>
+<div class="body">
+<div class="fig"><svg viewBox="0 0 1150 364">
+<path d="M130,46 V360" class="nl" stroke-dasharray="4 5"/>
+<path d="M430,46 V360" class="nl" stroke-dasharray="4 5"/>
+<path d="M730,46 V360" class="nl" stroke-dasharray="4 5"/>
+<path d="M1030,46 V360" class="nl" stroke-dasharray="4 5"/>
+<rect x="10" y="4" width="240" height="40" rx="8" class="b-grey"/><text x="130" y="29" class="tc tb">Client juju</text>
+<rect x="310" y="4" width="240" height="40" rx="8" class="b-violet"/><text x="430" y="29" class="tc tb">Contrôleur Juju</text>
+<rect x="610" y="4" width="240" height="40" rx="8" class="b-teal"/><text x="730" y="29" class="tc tb">MAAS</text>
+<rect x="910" y="4" width="240" height="40" rx="8" class="b-dark"/><text x="1030" y="29" class="tc tb tw">Machine</text>
+<path d="M140,78 H427" class="lr"/>
+<text x="280.0" y="72" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">juju deploy … --constraints tags=storage</text>
+<circle cx="130" cy="78" r="10" class="f-red"/><text x="130" y="82" class="tc tw tb" style="font-size:11px">1</text>
+<rect x="230.0" y="92" width="400" height="24" rx="6" class="b-grey"/><text x="442.0" y="109" class="tc" style="font-size:12px">télécharge le charm depuis Charmhub</text>
+<circle cx="244.0" cy="107" r="10" class="f-red"/><text x="244.0" y="111" class="tc tw tb" style="font-size:11px">2</text>
+<path d="M440,136 H727" class="lr"/>
+<text x="580.0" y="130" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">alloue une machine : étiquette, mémoire, zone</text>
+<circle cx="430" cy="136" r="10" class="f-red"/><text x="430" y="140" class="tc tw tb" style="font-size:11px">3</text>
+<path d="M740,165 H1027" class="lr"/>
+<text x="880.0" y="159" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">mise sous tension, installation d'Ubuntu</text>
+<circle cx="730" cy="165" r="10" class="f-red"/><text x="730" y="169" class="tc tw tb" style="font-size:11px">4</text>
+<path d="M720,194 H433" class="ln ld"/>
+<text x="580.0" y="188" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">machine déployée, adresse attribuée</text>
+<circle cx="730" cy="194" r="10" class="f-red"/><text x="730" y="198" class="tc tw tb" style="font-size:11px">5</text>
+<path d="M1020,223 H433" class="lr"/>
+<text x="730.0" y="217" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">cloud-init installe l'agent Juju, qui se connecte au contrôleur</text>
+<circle cx="1030" cy="223" r="10" class="f-red"/><text x="1030" y="227" class="tc tw tb" style="font-size:11px">6</text>
+<path d="M440,252 H1027" class="lr"/>
+<text x="730.0" y="246" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">envoie le charm, puis les événements install, config-changed, start</text>
+<circle cx="430" cy="252" r="10" class="f-red"/><text x="430" y="256" class="tc tw tb" style="font-size:11px">7</text>
+<rect x="744" y="266" width="400" height="24" rx="6" class="b-grey"/><text x="956.0" y="283" class="tc" style="font-size:12px">le charm installe et configure le service</text>
+<circle cx="758" cy="281" r="10" class="f-red"/><text x="758" y="285" class="tc tw tb" style="font-size:11px">8</text>
+<path d="M1020,310 H433" class="ln ld"/>
+<text x="730.0" y="304" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">état de l'unité : « active »</text>
+<circle cx="1030" cy="310" r="10" class="f-red"/><text x="1030" y="314" class="tc tw tb" style="font-size:11px">9</text>
+<path d="M420,339 H133" class="ln ld"/>
+<text x="280.0" y="333" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">juju status : unité active</text>
+<circle cx="430" cy="339" r="10" class="f-red"/><text x="430" y="343" class="tc tw tb" style="font-size:11px">10</text>
+</svg></div>
+<div class="cols nf">
+<div class="note g"><b>Les contraintes font le lien :</b> <code>tags=</code>, <code>mem=</code>, <code>cores=</code>, <code>zones=</code>, <code>spaces=</code> sont traduites en critères de sélection dans l'inventaire de MAAS.</div>
+<div class="note b"><b>Retirer l'unité rend la machine :</b> <code>juju remove-unit</code> puis <code>juju remove-machine</code> la font repasser à l'état « Ready » dans MAAS, disques effacés si la politique le prévoit.</div>
+</div>
+</div>
+</section>
+
+<!-- 30 -->
+<section class="slide">
+<header><span class="kick">3 · Juju</span><h2>Fonctions avancées utiles en exploitation</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:17%">Fonction</th><th style="width:38%">À quoi elle sert</th><th>Exemple</th></tr></thead>
+<tbody>
+<tr><td>Contraintes</td><td>choisir le type de machine pour une application</td><td><code>juju deploy ceph-osd --constraints "tags=storage mem=64G"</code></td></tr>
+<tr><td>Espaces réseau</td><td>attacher chaque point d'accroche d'un charm au bon réseau</td><td><code>juju deploy mysql --bind "database=interne"</code></td></tr>
+<tr><td>Stockage</td><td>demander des volumes au substrat pour une unité</td><td><code>juju deploy postgresql --storage pgdata=100G</code></td></tr>
+<tr><td>Actions</td><td>opérations ponctuelles prévues par le charm : sauvegarde, rotation, bascule</td><td><code>juju run mysql/leader create-backup</code></td></tr>
+<tr><td>Secrets</td><td>mots de passe et clés gérés par le contrôleur, partagés par relation, renouvelables</td><td><code>juju add-secret</code>, <code>juju grant-secret</code></td></tr>
+<tr><td>Offres entre modèles</td><td>partager une application avec d'autres modèles ou contrôleurs</td><td><code>juju offer prometheus:metrics-endpoint</code></td></tr>
+<tr><td>Migration de modèle</td><td>déplacer un modèle vers un autre contrôleur, sans arrêter les applications</td><td><code>juju migrate donnees ctrl-neuf</code></td></tr>
+<tr><td>Contrôleur redondant</td><td>trois instances du contrôleur, avec réplication de la base d'état</td><td><code>juju enable-ha</code> en 3.x ; ajout d'unités au contrôleur en 4.0</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Automatisation :</b> le fournisseur Terraform pour Juju décrit modèles, applications et relations dans des fichiers versionnés. C'est ainsi que Sunbeam pilote Juju en interne.</div>
+<div class="note"><b>À sauvegarder :</b> le contrôleur (<code>juju create-backup</code> en 3.x) et les identifiants du client. Perdre le contrôleur sans sauvegarde, c'est perdre la main sur tout ce qu'il gère.</div>
+</div>
+</div>
+</section>
+
+<!-- 31 -->
+<section class="slide">
+<header><span class="kick">3 · Juju</span><h2>Juju 3.6 LTS et Juju 4.0 : où en est-on ?</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th></th><th>Juju 3.6</th><th>Juju 4.0</th></tr></thead>
+<tbody>
+<tr><td>Statut</td><td>version à long terme</td><td>version majeure, sortie le 14 novembre 2025</td></tr>
+<tr><td>Base d'état</td><td>MongoDB</td><td>Dqlite : SQLite répliqué par Raft</td></tr>
+<tr><td>Contrôleur redondant</td><td><code>juju enable-ha</code></td><td><code>juju add-unit</code> sur le modèle « controller »</td></tr>
+<tr><td>Lots de charms</td><td>encore gérés</td><td><code>export-bundle</code> retiré ; Terraform conseillé</td></tr>
+<tr><td>Fournisseur « manual »</td><td>« manual »</td><td>renommé « unmanaged »</td></tr>
+<tr><td>Clés SSH</td><td>ajoutées aux nouveaux modèles</td><td>plus ajoutées automatiquement</td></tr>
+</tbody></table>
+<p><b>Retiré en 4.0</b></p>
+<ul class="pts sm">
+<li>Les « séries » (remplacées par les bases), les charms Kubernetes d'ancienne génération, le fournisseur KVM.</li>
+<li><code>juju wait-for</code>, l'option <code>--watch</code> de <code>juju status</code>, les réglages de leader.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Politique de versions</b></p>
+<ul class="pts sm">
+<li>Une version mineure environ <b>tous les trois mois</b>, des correctifs mensuels.</li>
+<li>Une version mineure reçoit des correctifs pendant quatre mois, puis deux mois de correctifs de sécurité seulement.</li>
+<li>À chaque version majeure, la dernière mineure de la série précédente devient <b>version à long terme</b>, avec des correctifs de sécurité annoncés sur quinze ans.</li>
+</ul>
+<p><b>Passer de 3.6 à 4.0</b></p>
+<ul class="pts sm">
+<li>Pas de mise à jour en place du contrôleur : on <b>crée un contrôleur 4.0</b> et on y <b>migre les modèles</b>.</li>
+<li>La migration n'était pas disponible à la sortie de la 4.0.0 ; elle arrive dans les versions correctives. À vérifier dans les notes de version avant de planifier.</li>
+</ul>
+<div class="note"><b>Pour Canonical OpenStack :</b> la version de Juju est celle qu'installe Sunbeam. Ne pas la remplacer de sa propre initiative ; suivre la documentation de la version du cloud.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 32 -->
+<section class="slide">
+<header><span class="kick">3 · Juju</span><h2>Juju : avantages et limites</h2></header>
+<div class="body">
+<div class="cols">
+<div class="col">
+<p><b>Avantages</b></p>
+<ul class="pts sm">
+<li><b>Le savoir-faire est dans le charm :</b> une petite équipe exploite des logiciels complexes sans en maîtriser chaque détail.</li>
+<li><b>Les relations</b> suppriment toute une classe d'erreurs : adresses, comptes et secrets ne sont plus recopiés à la main.</li>
+<li><b>Un seul outil</b> pour les machines et pour Kubernetes, et pour tout le cycle de vie.</li>
+<li><b>État lisible :</b> <code>juju status</code> donne une vue complète et homogène, quelle que soit l'application.</li>
+<li><b>Catalogue</b> de charms maintenus par Canonical : bases de données, supervision, identité, stockage.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Limites</b></p>
+<ul class="pts sm">
+<li><b>Boîte noire relative :</b> comprendre pourquoi un charm est bloqué demande parfois de lire son code.</li>
+<li><b>Options limitées à ce que le charm expose :</b> un réglage non prévu ne se fait pas proprement.</li>
+<li><b>Compétence rare</b> sur le marché, comparée à Ansible ou Kubernetes.</li>
+<li><b>Le contrôleur est critique :</b> à rendre redondant, à sauvegarder, à mettre à jour avec soin.</li>
+<li><b>Écosystème centré sur Ubuntu :</b> peu de charms pour d'autres systèmes.</li>
+<li><b>Transition 3.x vers 4.0</b> à planifier : changement de base d'état, commandes retirées.</li>
+</ul>
+</div>
+</div>
+<div class="cols c3 nf dense">
+<div class="card cv"><h3>À retenir sur le modèle</h3>Contrôleur, modèle, application, unité, relation : cinq mots suffisent à lire n'importe quel déploiement.</div>
+<div class="card cb"><h3>À retenir sur les charms</h3>Un charm réagit à des événements. Son état — <code>active</code>, <code>waiting</code>, <code>blocked</code> — dit où regarder.</div>
+<div class="card cn"><h3>À retenir pour la suite</h3>Canonical OpenStack est un ensemble de charms. Savoir lire Juju, c'est savoir diagnostiquer le cloud.</div>
+</div>
+</div>
+</section>
+
+<!-- 33 -->
+<section class="slide dark sec">
+<div class="num">04</div>
+<h2>Canonical OpenStack (Sunbeam)</h2>
+<p>La distribution OpenStack de Canonical : un plan de contrôle en pods Kubernetes, des snaps sur les hôtes, le tout piloté par Juju derrière une seule commande.</p>
+<ol><li>Positionnement</li><li>Architecture et artefacts</li><li>Rôles des machines</li><li>Ce qui tourne où</li><li>Quatre architectures de référence</li><li>Réseaux</li><li>Installation manuelle, puis avec MAAS</li><li>Manifeste et fonctionnalités</li><li>Exploitation et dimensionnement</li><li>Sécurité, disponibilité, topologies</li></ol>
+</section>
+
+<!-- 34 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>De Charmed OpenStack à Sunbeam</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th></th><th>Canonical OpenStack (Sunbeam)</th><th>Charmed OpenStack</th></tr></thead>
+<tbody>
+<tr><td>Génération</td><td>actuelle, recommandée</td><td>précédente, maintenue</td></tr>
+<tr><td>Plan de contrôle</td><td>pods sur Canonical Kubernetes</td><td>conteneurs LXD sur des machines</td></tr>
+<tr><td>Charms</td><td>Kubernetes, plus quelques charms machine</td><td>charms machine</td></tr>
+<tr><td>Pilotage</td><td>commande <code>sunbeam</code></td><td>Juju directement, lots de charms</td></tr>
+<tr><td>Machines nues</td><td>manuel ou MAAS</td><td>MAAS</td></tr>
+<tr><td>Stockage</td><td>MicroCeph</td><td>Ceph par charms</td></tr>
+<tr><td>Réseau virtuel</td><td>OVN</td><td>OVN</td></tr>
+<tr><td>Taille minimale</td><td>une machine</td><td>plusieurs machines</td></tr>
+<tr><td>Dernière version</td><td>2026.1 LTS</td><td>2024.1, sur Ubuntu 22.04</td></tr>
+</tbody></table>
+<div class="note g"><b>Sunbeam</b> est aussi un projet officiel d'OpenStack, sous la gouvernance de l'Open Infrastructure Foundation : le code est ouvert et développé en amont.</div>
+</div>
+<div class="col">
+<p><b>Pourquoi Canonical a changé de génération</b></p>
+<ul class="pts sm">
+<li><b>Barrière d'entrée :</b> Charmed OpenStack exigeait de maîtriser MAAS, Juju et des dizaines de charms avant le premier résultat.</li>
+<li><b>Mises à jour :</b> un plan de contrôle en pods se met à jour progressivement, service par service.</li>
+<li><b>Isolement :</b> les services ne dépendent plus de la version du système hôte.</li>
+<li><b>Échelle basse :</b> pouvoir démarrer sur une seule machine, puis grandir sans réinstaller.</li>
+</ul>
+<p><b>Ce que fait la commande <code>sunbeam</code></b></p>
+<ul class="pts sm">
+<li>Prépare les machines et met le cluster en grappe.</li>
+<li>Installe Kubernetes, crée le contrôleur Juju et les modèles.</li>
+<li>Applique des plans Terraform qui déploient et relient les charms.</li>
+<li>Pose les questions de configuration, ou lit un <b>manifeste</b>.</li>
+<li>Active les fonctionnalités optionnelles, met à jour, ajoute et retire des nœuds.</li>
+</ul>
+<div class="note">On n'a pas à manipuler Juju pour installer — mais on s'en sert pour <b>observer et diagnostiquer</b>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 35 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>Architecture : quatre fonctions, trois types d'artefacts</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 440">
+<g class="tc">
+<rect x="20" y="10" width="264" height="300" rx="12" class="b-violet"/><text x="152" y="38" class="tl">Gouvernance</text><text x="152" y="58" class="ts">déployer, opérer, observer</text>
+<rect x="34" y="72" width="236" height="46" rx="7" class="bx"/><text x="152" y="92" class="tb">Sunbeam</text><text x="152" y="109" class="ts">client et service de grappe</text>
+<rect x="34" y="126" width="236" height="46" rx="7" class="bx"/><text x="152" y="146" class="tb">contrôleur Juju</text><text x="152" y="163" class="ts">modèles, charms, relations</text>
+<rect x="34" y="180" width="236" height="46" rx="7" class="bx"/><text x="152" y="200" class="tb">MAAS</text><text x="152" y="217" class="ts">si fournisseur MAAS</text>
+<rect x="34" y="234" width="236" height="46" rx="7" class="bx"/><text x="152" y="254" class="tb">supervision</text><text x="152" y="271" class="ts">optionnelle</text>
+
+<rect x="304" y="10" width="264" height="300" rx="12" class="b-red"/><text x="436" y="38" class="tl tr">Contrôle</text><text x="436" y="58" class="ts">API, ordonnanceurs, conducteurs</text>
+<rect x="318" y="72" width="236" height="46" rx="7" class="bx"/><text x="436" y="92" class="tb">services OpenStack</text><text x="436" y="109" class="ts">Keystone, Nova, Neutron, Glance…</text>
+<rect x="318" y="126" width="236" height="46" rx="7" class="bx"/><text x="436" y="146" class="tb">MySQL, RabbitMQ</text><text x="436" y="163" class="ts">état et messages</text>
+<rect x="318" y="180" width="236" height="46" rx="7" class="bx"/><text x="436" y="200" class="tb">Traefik</text><text x="436" y="217" class="ts">points d'accès publics et internes</text>
+<rect x="318" y="234" width="236" height="46" rx="7" class="bx"/><text x="436" y="254" class="tb">bases OVN</text><text x="436" y="271" class="ts">nord et sud</text>
+
+<rect x="588" y="10" width="264" height="300" rx="12" class="b-blue"/><text x="720" y="38" class="tl">Calcul et réseau</text><text x="720" y="58" class="ts">faire tourner les instances</text>
+<rect x="602" y="72" width="236" height="46" rx="7" class="bx"/><text x="720" y="92" class="tb">nova-compute</text><text x="720" y="109" class="ts">libvirt, QEMU, KVM</text>
+<rect x="602" y="126" width="236" height="46" rx="7" class="bx"/><text x="720" y="146" class="tb">OVN et Open vSwitch</text><text x="720" y="163" class="ts">réseau virtuel sur chaque hôte</text>
+<rect x="602" y="180" width="236" height="46" rx="7" class="bx"/><text x="720" y="200" class="tb">service de métadonnées</text><text x="720" y="217" class="ts">pour les instances</text>
+<rect x="602" y="234" width="236" height="46" rx="7" class="bx"/><text x="720" y="254" class="tb">passerelles OVN</text><text x="720" y="271" class="ts">nœuds « network » (MicroOVN)</text>
+
+<rect x="872" y="10" width="258" height="300" rx="12" class="b-amber"/><text x="1001" y="38" class="tl">Stockage</text><text x="1001" y="58" class="ts">conserver les données</text>
+<rect x="886" y="72" width="230" height="46" rx="7" class="bx"/><text x="1001" y="92" class="tb">MicroCeph</text><text x="1001" y="109" class="ts">moniteurs, gestionnaires, OSD</text>
+<rect x="886" y="126" width="230" height="46" rx="7" class="bx"/><text x="1001" y="146" class="tb">cinder-volume</text><text x="1001" y="163" class="ts">pilote les volumes</text>
+<rect x="886" y="180" width="230" height="46" rx="7" class="bx"/><text x="1001" y="200" class="tb">passerelle objet</text><text x="1001" y="217" class="ts">optionnelle</text>
+<text x="1001" y="258" class="ts">Ceph est aujourd'hui le seul</text><text x="1001" y="274" class="ts">stockage supporté</text>
+</g>
+<g class="tc">
+<rect x="20" y="334" width="350" height="92" rx="10" class="b-teal"/><text x="195" y="360" class="tb">Rocks</text><text x="195" y="380" class="ts">images OCI : services du plan de contrôle</text><text x="195" y="396" class="ts">et pile de supervision</text><text x="195" y="414" class="ts tb">→ fonction Contrôle</text>
+<rect x="400" y="334" width="350" height="92" rx="10" class="b-grey"/><text x="575" y="360" class="tb">Snaps</text><text x="575" y="380" class="ts">applications confinées : processus du plan</text><text x="575" y="396" class="ts">de données et beaucoup d'autres composants</text><text x="575" y="414" class="ts tb">→ Calcul, Réseau, Stockage, Gouvernance</text>
+<rect x="780" y="334" width="350" height="92" rx="10" class="b-violet"/><text x="955" y="360" class="tb">Charms</text><text x="955" y="380" class="ts">opérateurs qui déploient, configurent,</text><text x="955" y="396" class="ts">mettent à l'échelle et relient rocks et snaps</text><text x="955" y="414" class="ts tb">→ partout</text>
+</g>
+</svg>
+</div></div>
+</section>
+
+<!-- 36 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>Les rôles des machines</h2></header>
+<div class="body">
+<table class="tbl tight os">
+<thead><tr><th style="width:16%">Rôle</th><th style="width:38%">Ce que porte la machine</th><th style="width:16%">Étiquette MAAS</th><th>Remarques</th></tr></thead>
+<tbody>
+<tr><td>Control</td><td>Canonical Kubernetes et les charms du plan de contrôle : API, base, bus de messages</td><td><code>control</code></td><td style="color:var(--ink);font-weight:400">trois pour la haute disponibilité</td></tr>
+<tr><td>Compute</td><td>nova-compute, libvirt et QEMU, OVN et Open vSwitch, métadonnées</td><td><code>compute</code></td><td style="color:var(--ink);font-weight:400">matériel compatible KVM recommandé</td></tr>
+<tr><td>Network</td><td>MicroOVN : passerelles de niveau 3 d'OVN</td><td><code>network</code></td><td style="color:var(--ink);font-weight:400"><b>incompatible avec Compute</b> sur la même machine</td></tr>
+<tr><td>Storage</td><td>MicroCeph</td><td><code>storage</code></td><td style="color:var(--ink);font-weight:400">disques vierges, non partitionnés ; étiquette <code>ceph</code> sur chacun</td></tr>
+<tr><td>Cloud</td><td>cumul Control, Compute et Storage sur la même machine</td><td>les trois</td><td style="color:var(--ink);font-weight:400">le nœud type d'un petit cloud</td></tr>
+<tr><td>Sunbeam Controller</td><td>service de grappe de Sunbeam</td><td><code>sunbeam</code></td><td style="color:var(--ink);font-weight:400">avec MAAS : machine virtuelle dédiée</td></tr>
+<tr><td>Juju Controller</td><td>contrôleur Juju</td><td><code>juju-controller</code></td><td style="color:var(--ink);font-weight:400">hors des machines de charge en multi-nœud</td></tr>
+<tr><td>Sunbeam Client</td><td>le poste d'où l'on lance les commandes</td><td>—</td><td style="color:var(--ink);font-weight:400">une machine virtuelle suffit</td></tr>
+<tr><td>Governor</td><td>machine physique qui héberge MAAS, les contrôleurs et le client en machines virtuelles</td><td>—</td><td style="color:var(--ink);font-weight:400">installée à la main, hors MAAS</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Avec le fournisseur manuel</b>, les rôles se donnent à la commande : <code>--role control,compute,storage</code>. <b>Avec MAAS</b>, ils se lisent sur les étiquettes des machines, toutes marquées en plus <code>openstack-&lt;nom du déploiement&gt;</code>.</div>
+<div class="note"><b>Évolution annoncée :</b> les passerelles OVN tournent encore sur les nœuds de calcul ; la documentation prévoit qu'elles ne seront plus fournies, à terme, que par les nœuds « network ».</div>
+</div>
+</div>
+</section>
+
+<!-- 37 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>Ce qui tourne où : un cluster de trois nœuds « cloud »</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 440">
+<rect x="20" y="10" width="1110" height="150" rx="12" class="zone"/><text x="36" y="34" class="tl">Canonical Kubernetes — réparti sur les trois nœuds · modèle Juju « openstack »</text>
+<g class="tc tm" style="font-size:10.8px">
+<rect x="36" y="46" width="128" height="26" rx="5" class="b-red"/><text x="100" y="63">keystone-k8s</text>
+<rect x="170" y="46" width="128" height="26" rx="5" class="b-red"/><text x="234" y="63">glance-k8s</text>
+<rect x="304" y="46" width="128" height="26" rx="5" class="b-red"/><text x="368" y="63">placement-k8s</text>
+<rect x="438" y="46" width="128" height="26" rx="5" class="b-red"/><text x="502" y="63">nova-k8s</text>
+<rect x="572" y="46" width="128" height="26" rx="5" class="b-red"/><text x="636" y="63">neutron-k8s</text>
+<rect x="706" y="46" width="128" height="26" rx="5" class="b-red"/><text x="770" y="63">cinder-k8s</text>
+<rect x="840" y="46" width="128" height="26" rx="5" class="b-red"/><text x="904" y="63">horizon-k8s</text>
+<rect x="974" y="46" width="140" height="26" rx="5" class="b-teal"/><text x="1044" y="63">ovn-central-k8s</text>
+<rect x="36" y="80" width="262" height="26" rx="5" class="b-amber"/><text x="167" y="97">mysql-k8s + mysql-router-k8s</text>
+<rect x="304" y="80" width="262" height="26" rx="5" class="b-amber"/><text x="435" y="97">rabbitmq-k8s</text>
+<rect x="572" y="80" width="262" height="26" rx="5" class="b-grey"/><text x="703" y="97">traefik-k8s (public, interne, objet)</text>
+<rect x="840" y="80" width="274" height="26" rx="5" class="b-teal"/><text x="977" y="97">ovn-relay-k8s</text>
+</g>
+<text x="575" y="130" class="tc ts">Chaque application : un charm et son rock dans un pod, répliqué sur plusieurs nœuds. Les points d'accès sont publiés par Traefik</text><text x="575" y="146" class="tc ts">sur des adresses de service prises dans la plage réservée aux API.</text>
+
+<g>
+<rect x="20" y="184" width="356" height="196" rx="12" class="b-grey"/><text x="198" y="208" class="tc tl">Nœud 1</text>
+<rect x="397" y="184" width="356" height="196" rx="12" class="b-grey"/><text x="575" y="208" class="tc tl">Nœud 2</text>
+<rect x="774" y="184" width="356" height="196" rx="12" class="b-grey"/><text x="952" y="208" class="tc tl">Nœud 3</text>
+</g>
+<g class="tc tm" style="font-size:10.8px">
+<rect x="32" y="220" width="162" height="28" rx="5" class="b-dark"/><text x="113" y="238" class="tw">k8s</text>
+<rect x="202" y="220" width="162" height="28" rx="5" class="b-blue"/><text x="283" y="238">openstack-hypervisor</text>
+<rect x="32" y="254" width="162" height="28" rx="5" class="b-amber"/><text x="113" y="272">microceph</text>
+<rect x="202" y="254" width="162" height="28" rx="5" class="b-amber"/><text x="283" y="272">cinder-volume</text>
+<rect x="32" y="288" width="162" height="28" rx="5" class="b-grey"/><text x="113" y="306">openstack (sunbeam)</text>
+<rect x="202" y="288" width="162" height="28" rx="5" class="b-violet"/><text x="283" y="306">agents Juju</text>
+</g>
+<text x="198" y="342" class="tc ts">snaps sur l'hôte · instances QEMU/KVM · disques Ceph</text><text x="198" y="362" class="tc ts tb">Ubuntu Server LTS</text>
+<g class="tc tm" style="font-size:10.8px">
+<rect x="409" y="220" width="162" height="28" rx="5" class="b-dark"/><text x="490" y="238" class="tw">k8s</text>
+<rect x="579" y="220" width="162" height="28" rx="5" class="b-blue"/><text x="660" y="238">openstack-hypervisor</text>
+<rect x="409" y="254" width="162" height="28" rx="5" class="b-amber"/><text x="490" y="272">microceph</text>
+<rect x="579" y="254" width="162" height="28" rx="5" class="b-amber"/><text x="660" y="272">cinder-volume</text>
+<rect x="409" y="288" width="162" height="28" rx="5" class="b-grey"/><text x="490" y="306">openstack (sunbeam)</text>
+<rect x="579" y="288" width="162" height="28" rx="5" class="b-violet"/><text x="660" y="306">agents Juju</text>
+</g>
+<text x="575" y="342" class="tc ts">snaps sur l'hôte · instances QEMU/KVM · disques Ceph</text><text x="575" y="362" class="tc ts tb">Ubuntu Server LTS</text>
+<g class="tc tm" style="font-size:10.8px">
+<rect x="786" y="220" width="162" height="28" rx="5" class="b-dark"/><text x="867" y="238" class="tw">k8s</text>
+<rect x="956" y="220" width="162" height="28" rx="5" class="b-blue"/><text x="1037" y="238">openstack-hypervisor</text>
+<rect x="786" y="254" width="162" height="28" rx="5" class="b-amber"/><text x="867" y="272">microceph</text>
+<rect x="956" y="254" width="162" height="28" rx="5" class="b-amber"/><text x="1037" y="272">cinder-volume</text>
+<rect x="786" y="288" width="162" height="28" rx="5" class="b-grey"/><text x="867" y="306">openstack (sunbeam)</text>
+<rect x="956" y="288" width="162" height="28" rx="5" class="b-violet"/><text x="1037" y="306">agents Juju</text>
+</g>
+<text x="952" y="342" class="tc ts">snaps sur l'hôte · instances QEMU/KVM · disques Ceph</text><text x="952" y="362" class="tc ts tb">Ubuntu Server LTS</text>
+<rect x="20" y="394" width="1110" height="36" rx="8" class="b-violet"/><text x="575" y="417" class="tc tb">Contrôleur Juju : dans Kubernetes par défaut (fournisseur manuel, sans redondance), ou sur des machines dédiées</text>
+<path d="M198,160 V182 M575,160 V182 M952,160 V182" class="nl"/>
+</svg>
+</div>
+<div class="note g"><b>Deux modèles Juju à connaître :</b> « openstack » pour les charms Kubernetes du plan de contrôle, et un modèle de machines pour les charms qui pilotent les snaps des hôtes. <code>juju status -m openstack</code> est la première commande de diagnostic.</div>
+</div>
+</section>
+
+<!-- 38 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>Quatre architectures de référence</h2></header>
+<div class="body">
+<div class="fig"><svg viewBox="0 0 1150 300">
+<rect x="20" y="6" width="264" height="246" rx="12" class="zone"/><text x="152" y="32" class="tc tl">Hyperconvergée</text><text x="152" y="50" class="tc ts">tout sur chaque machine</text>
+<rect x="32" y="64" width="240" height="38" rx="7" class="bx"/><text x="42" y="88" style="font-size:12px;font-weight:650">« cloud »</text>
+<rect x="128" y="73" width="20" height="20" rx="4" style="fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5"/><text x="138" y="88" class="tc tb" style="font-size:11px">G</text>
+<rect x="150" y="73" width="20" height="20" rx="4" style="fill:#fde7ea;stroke:#e4002b;stroke-width:1.5"/><text x="160" y="88" class="tc tb" style="font-size:11px">C</text>
+<rect x="172" y="73" width="20" height="20" rx="4" style="fill:#e0eaff;stroke:#2563eb;stroke-width:1.5"/><text x="182" y="88" class="tc tb" style="font-size:11px">K</text>
+<rect x="194" y="73" width="20" height="20" rx="4" style="fill:#fff1d6;stroke:#d97706;stroke-width:1.5"/><text x="204" y="88" class="tc tb" style="font-size:11px">S</text>
+<text x="266" y="88" class="te ts">× 3</text>
+<rect x="302" y="6" width="264" height="246" rx="12" class="zone"/><text x="434" y="32" class="tc tl">Convergée</text><text x="434" y="50" class="tc ts">gouvernance à part</text>
+<rect x="314" y="64" width="240" height="38" rx="7" class="bx"/><text x="324" y="88" style="font-size:12px;font-weight:650">Governor</text>
+<rect x="476" y="73" width="20" height="20" rx="4" style="fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5"/><text x="486" y="88" class="tc tb" style="font-size:11px">G</text>
+<text x="548" y="88" class="te ts">× 1 à 3</text>
+<rect x="314" y="110" width="240" height="38" rx="7" class="bx"/><text x="324" y="134" style="font-size:12px;font-weight:650">nœuds « cloud »</text>
+<rect x="432" y="119" width="20" height="20" rx="4" style="fill:#fde7ea;stroke:#e4002b;stroke-width:1.5"/><text x="442" y="134" class="tc tb" style="font-size:11px">C</text>
+<rect x="454" y="119" width="20" height="20" rx="4" style="fill:#e0eaff;stroke:#2563eb;stroke-width:1.5"/><text x="464" y="134" class="tc tb" style="font-size:11px">K</text>
+<rect x="476" y="119" width="20" height="20" rx="4" style="fill:#fff1d6;stroke:#d97706;stroke-width:1.5"/><text x="486" y="134" class="tc tb" style="font-size:11px">S</text>
+<text x="548" y="134" class="te ts">× 3</text>
+<rect x="584" y="6" width="264" height="246" rx="12" class="zone"/><text x="716" y="32" class="tc tl">Désagrégée</text><text x="716" y="50" class="tc ts">certaines fonctions regroupées</text>
+<rect x="596" y="64" width="240" height="38" rx="7" class="bx"/><text x="606" y="88" style="font-size:12px;font-weight:650">Governor</text>
+<rect x="758" y="73" width="20" height="20" rx="4" style="fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5"/><text x="768" y="88" class="tc tb" style="font-size:11px">G</text>
+<text x="830" y="88" class="te ts">× 1 à 3</text>
+<rect x="596" y="110" width="240" height="38" rx="7" class="bx"/><text x="606" y="134" style="font-size:12px;font-weight:650">Control</text>
+<rect x="758" y="119" width="20" height="20" rx="4" style="fill:#fde7ea;stroke:#e4002b;stroke-width:1.5"/><text x="768" y="134" class="tc tb" style="font-size:11px">C</text>
+<text x="830" y="134" class="te ts">× 3</text>
+<rect x="596" y="156" width="240" height="38" rx="7" class="bx"/><text x="606" y="180" style="font-size:12px;font-weight:650">calcul + stockage</text>
+<rect x="736" y="165" width="20" height="20" rx="4" style="fill:#e0eaff;stroke:#2563eb;stroke-width:1.5"/><text x="746" y="180" class="tc tb" style="font-size:11px">K</text>
+<rect x="758" y="165" width="20" height="20" rx="4" style="fill:#fff1d6;stroke:#d97706;stroke-width:1.5"/><text x="768" y="180" class="tc tb" style="font-size:11px">S</text>
+<text x="830" y="180" class="te ts">× 3</text>
+<rect x="866" y="6" width="264" height="246" rx="12" class="zone"/><text x="998" y="32" class="tc tl">Totalement désagrégée</text><text x="998" y="50" class="tc ts">une fonction par machine</text>
+<rect x="878" y="64" width="240" height="38" rx="7" class="bx"/><text x="888" y="88" style="font-size:12px;font-weight:650">Governor</text>
+<rect x="1040" y="73" width="20" height="20" rx="4" style="fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5"/><text x="1050" y="88" class="tc tb" style="font-size:11px">G</text>
+<text x="1112" y="88" class="te ts">× 1 à 3</text>
+<rect x="878" y="110" width="240" height="38" rx="7" class="bx"/><text x="888" y="134" style="font-size:12px;font-weight:650">Control</text>
+<rect x="1040" y="119" width="20" height="20" rx="4" style="fill:#fde7ea;stroke:#e4002b;stroke-width:1.5"/><text x="1050" y="134" class="tc tb" style="font-size:11px">C</text>
+<text x="1112" y="134" class="te ts">× 3</text>
+<rect x="878" y="156" width="240" height="38" rx="7" class="bx"/><text x="888" y="180" style="font-size:12px;font-weight:650">Compute, Network</text>
+<rect x="1040" y="165" width="20" height="20" rx="4" style="fill:#e0eaff;stroke:#2563eb;stroke-width:1.5"/><text x="1050" y="180" class="tc tb" style="font-size:11px">K</text>
+<text x="1112" y="180" class="te ts">× 3</text>
+<rect x="878" y="202" width="240" height="38" rx="7" class="bx"/><text x="888" y="226" style="font-size:12px;font-weight:650">Storage</text>
+<rect x="1040" y="211" width="20" height="20" rx="4" style="fill:#fff1d6;stroke:#d97706;stroke-width:1.5"/><text x="1050" y="226" class="tc tb" style="font-size:11px">S</text>
+<text x="1112" y="226" class="te ts">× 3</text>
+<rect x="60" y="270" width="20" height="20" rx="4" style="fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5"/><text x="70" y="285" class="tc tb" style="font-size:11px">G</text><text x="88" y="285" class="ts">gouvernance : Sunbeam, Juju, MAAS</text>
+<rect x="400" y="270" width="20" height="20" rx="4" style="fill:#fde7ea;stroke:#e4002b;stroke-width:1.5"/><text x="410" y="285" class="tc tb" style="font-size:11px">C</text><text x="428" y="285" class="ts">contrôle : API, base, bus</text>
+<rect x="680" y="270" width="20" height="20" rx="4" style="fill:#e0eaff;stroke:#2563eb;stroke-width:1.5"/><text x="690" y="285" class="tc tb" style="font-size:11px">K</text><text x="708" y="285" class="ts">calcul et réseau</text>
+<rect x="900" y="270" width="20" height="20" rx="4" style="fill:#fff1d6;stroke:#d97706;stroke-width:1.5"/><text x="910" y="285" class="tc tb" style="font-size:11px">S</text><text x="928" y="285" class="ts">stockage</text>
+</svg></div>
+<div class="cols nf">
+<table class="tbl tight">
+<thead><tr><th>Taille</th><th>Réseau physique</th><th>Architecture</th><th>Machines nues</th></tr></thead>
+<tbody>
+<tr><td>1 à 9 machines</td><td>un seul niveau</td><td>hyperconvergée</td><td>fournisseur manuel</td></tr>
+<tr><td>10 machines et plus</td><td>deux niveaux, <i>spine-leaf</i></td><td>convergée, désagrégée ou totalement désagrégée</td><td>MAAS</td></tr>
+</tbody></table>
+<div class="note g"><b>Haute disponibilité :</b> facultative mais recommandée ; elle exige <b>au moins trois machines de chaque type</b>, quelle que soit l'architecture retenue. Recommandations issues de la documentation de conception de Canonical.</div>
+</div>
+</div>
+</section>
+
+<!-- 39 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>Réseaux : deux réseaux physiques, six réseaux « cloud »</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 660 430">
+<text x="110" y="18" class="tc tl">Dans MAAS</text><text x="330" y="18" class="tc tl">Espaces</text><text x="545" y="18" class="tc tl">Réseaux « cloud »</text>
+<g class="tc">
+<rect x="10" y="32" width="200" height="46" rx="8" class="bx"/><text x="110" y="52" class="tm" style="font-size:11.5px">10.10.0.0/24</text><text x="110" y="68" class="ts">VLAN d'amorçage</text>
+<rect x="10" y="98" width="200" height="46" rx="8" class="bx"/><text x="110" y="118" class="tm" style="font-size:11.5px">10.10.100.0/24</text><text x="110" y="134" class="ts">VLAN 100</text>
+<rect x="10" y="164" width="200" height="46" rx="8" class="bx"/><text x="110" y="184" class="tm" style="font-size:11.5px">10.10.110.0/24</text><text x="110" y="200" class="ts">VLAN 110</text>
+<rect x="10" y="230" width="200" height="46" rx="8" class="bx"/><text x="110" y="250" class="tm" style="font-size:11.5px">10.10.120.0/24</text><text x="110" y="266" class="ts">VLAN 120</text>
+<rect x="10" y="296" width="200" height="46" rx="8" class="bx"/><text x="110" y="316" class="tm" style="font-size:11.5px">10.10.200.0/24</text><text x="110" y="332" class="ts">VLAN 200</text>
+<rect x="10" y="362" width="200" height="46" rx="8" class="bx"/><text x="110" y="382" class="tm" style="font-size:11.5px">10.10.210.0/24</text><text x="110" y="398" class="ts">VLAN 210</text>
+
+<rect x="270" y="40" width="120" height="30" rx="15" class="b-grey"/><text x="330" y="60" class="tb" style="font-size:12px">gestion</text>
+<rect x="270" y="106" width="120" height="30" rx="15" class="b-red"/><text x="330" y="126" class="tb" style="font-size:12px">interne</text>
+<rect x="270" y="172" width="120" height="30" rx="15" class="b-blue"/><text x="330" y="192" class="tb" style="font-size:12px">public</text>
+<rect x="270" y="238" width="120" height="30" rx="15" class="b-teal"/><text x="330" y="258" class="tb" style="font-size:12px">tunnels</text>
+<rect x="270" y="304" width="120" height="30" rx="15" class="b-amber"/><text x="330" y="324" class="tb" style="font-size:12px">ceph-acces</text>
+<rect x="270" y="370" width="120" height="30" rx="15" class="b-amber"/><text x="330" y="390" class="tb" style="font-size:12px">ceph-replica</text>
+
+<rect x="450" y="32" width="200" height="46" rx="8" class="b-grey"/><text x="550" y="52" class="tm tb">management</text><text x="550" y="68" class="ts">gestion des machines</text>
+<rect x="450" y="98" width="200" height="46" rx="8" class="b-red"/><text x="550" y="118" class="tm tb">internal</text><text x="550" y="134" class="ts">de service à service</text>
+<rect x="450" y="164" width="200" height="46" rx="8" class="b-blue"/><text x="550" y="184" class="tm tb">public</text><text x="550" y="200" class="ts">des utilisateurs aux API</text>
+<rect x="450" y="230" width="200" height="46" rx="8" class="b-teal"/><text x="550" y="250" class="tm tb">data</text><text x="550" y="266" class="ts">entre hyperviseurs</text>
+<rect x="450" y="296" width="200" height="46" rx="8" class="b-amber"/><text x="550" y="316" class="tm tb">storage</text><text x="550" y="332" class="ts">hyperviseurs vers Ceph</text>
+<rect x="450" y="362" width="200" height="46" rx="8" class="b-amber"/><text x="550" y="382" class="tm tb">storage-cluster</text><text x="550" y="398" class="ts">réplication interne de Ceph</text>
+</g>
+<g class="nl" style="stroke:#475569"><path d="M210,55 H268 M210,121 H268 M210,187 H268 M210,253 H268 M210,319 H268 M210,385 H268"/><path d="M390,55 H448 M390,121 H448 M390,187 H448 M390,253 H448 M390,319 H448 M390,385 H448"/></g>
+<text x="330" y="424" class="tc ts">Adressage et noms d'espaces donnés en exemple.</text>
+</svg>
+</div>
+<div class="col">
+<p><b>Le minimum : deux réseaux physiques</b></p>
+<ul class="pts sm">
+<li><b>Générique :</b> provisionnement, gestion et accès aux API.</li>
+<li><b>Externe :</b> adresses flottantes et sortie des instances vers l'extérieur.</li>
+</ul>
+<p><b>Avec MAAS : une isolation plus fine</b></p>
+<ul class="pts sm">
+<li>Chaque sous-réseau est rangé dans un <b>espace</b> ; chaque espace est associé à un <b>réseau « cloud »</b> par <code>sunbeam deployment space map</code>.</li>
+<li>Un seul espace pour tout : aucune isolation. Six espaces : séparation complète.</li>
+<li><b>Plages d'adresses à réserver</b> dans MAAS, nommées <code>&lt;nom&gt;-internal-api</code> et <code>&lt;nom&gt;-public-api</code> : dix à vingt adresses chacune, pour les points d'accès.</li>
+</ul>
+<div class="note"><b>Réseau externe :</b> sur l'interface qui y est branchée, laisser le sous-réseau « non configuré » dans MAAS et poser l'étiquette réseau <code>neutron:physnet1</code>. C'est OVN qui s'en servira, pas le système hôte.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 40 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>Installation avec le fournisseur manuel</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Prérequis, avant toute commande</b></p>
+<ul class="pts sm">
+<li>Une machine physique dédiée, <b>Ubuntu Server 24.04 LTS</b> fraîchement installé, architecture amd64.</li>
+<li><b>Deux réseaux</b> physiques avec accès à Internet (ou un mandataire).</li>
+<li>Un nom de machine pleinement qualifié qui se résout.</li>
+<li>Pour le stockage : au moins un disque <b>vierge</b>, sans partition.</li>
+<li>Une plage d'adresses libre pour les points d'accès.</li>
+</ul>
+<pre style="font-size:12.2px"><span class="m"># Première machine</span>
+<span class="c">snap info</span> openstack                  <span class="m"># canaux disponibles</span>
+<span class="c">sudo snap install</span> openstack --channel 2026.1/stable
+<span class="c">sunbeam prepare-node-script</span> --bootstrap \
+  | bash -x &amp;&amp; newgrp snap_daemon
+<span class="c">sunbeam cluster bootstrap</span> \
+  --role control,compute,storage
+<span class="c">sunbeam configure</span> --openrc demo-openrc</pre>
+<div class="note g">Succès du <code>bootstrap</code> : le message « Node has been bootstrapped with roles: storage, compute, control ».</div>
+</div>
+<div class="col">
+<pre style="font-size:12.2px"><span class="m"># Ajouter une machine — sur la première :</span>
+<span class="c">sunbeam cluster add</span> cloud-2.exemple.lan \
+  --output cloud-2.asc
+<span class="m"># copier cloud-2.asc sur la nouvelle machine, puis, sur celle-ci :</span>
+<span class="c">sudo snap install</span> openstack --channel 2026.1/stable
+<span class="c">sunbeam prepare-node-script</span> | bash -x \
+  &amp;&amp; newgrp snap_daemon
+<span class="c">cat</span> cloud-2.asc | <span class="c">sunbeam cluster join</span> \
+  --role control,compute,storage -
+
+<span class="m"># Après l'ajout de nœuds « control » :</span>
+<span class="c">sunbeam cluster resize</span></pre>
+<table class="tbl tight">
+<thead><tr><th>Étape</th><th>Ce qu'elle fait</th></tr></thead>
+<tbody>
+<tr><td><code>prepare-node-script</code></td><td>dépendances, client Juju, groupe, répertoires</td></tr>
+<tr><td><code>cluster bootstrap</code></td><td>Kubernetes, contrôleur Juju, plan de contrôle, hyperviseur, Ceph</td></tr>
+<tr><td><code>configure</code></td><td>réseau externe, projet et utilisateur de démonstration</td></tr>
+<tr><td><code>cluster resize</code></td><td>étend le plan de contrôle aux nouveaux nœuds</td></tr>
+</tbody></table>
+<div class="note">Le contrôleur Juju par défaut, logé dans Kubernetes, <b>n'est pas redondant</b>. Pour un cloud qui doit l'être, fournir un contrôleur Juju externe et redondant <b>avant</b> le bootstrap.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 41 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>Installation avec MAAS : ce qu'il faut préparer</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Machines</b></p>
+<table class="tbl tight">
+<thead><tr><th>Élément</th><th>Nombre</th><th>Nature</th></tr></thead>
+<tbody>
+<tr><td>Governor</td><td>1, ou 3</td><td>physique, Ubuntu 24.04, installé à la main</td></tr>
+<tr><td>MAAS</td><td>1, ou 3</td><td>machine virtuelle sur un Governor</td></tr>
+<tr><td>Sunbeam Client</td><td>1</td><td>machine virtuelle sur un Governor</td></tr>
+<tr><td>Sunbeam Controller</td><td>1, ou 3</td><td>machine virtuelle, gérée par MAAS</td></tr>
+<tr><td>Juju Controller</td><td>1, ou 3</td><td>machine virtuelle, gérée par MAAS</td></tr>
+<tr><td>Nœuds du cloud</td><td>3 par rôle</td><td>physiques, gérés par MAAS</td></tr>
+</tbody></table>
+<div class="note g">« Ou 3 » : la valeur à retenir pour une haute disponibilité complète. Toutes les machines sauf les Governor et le client doivent être <b>enrôlées, inventoriées, configurées et étiquetées</b> dans MAAS.</div>
+</div>
+<div class="col">
+<p><b>Dans MAAS, pour un déploiement nommé « prod »</b></p>
+<table class="tbl tight">
+<thead><tr><th>Objet</th><th>Valeur attendue</th></tr></thead>
+<tbody>
+<tr><td>Étiquette commune</td><td><code>openstack-prod</code> sur toutes les machines du cloud et les contrôleurs</td></tr>
+<tr><td>Étiquettes de rôle</td><td><code>control</code>, <code>compute</code>, <code>storage</code>, <code>network</code>, <code>sunbeam</code>, <code>juju-controller</code></td></tr>
+<tr><td>Étiquette de disque</td><td><code>ceph</code> sur chaque disque destiné à Ceph</td></tr>
+<tr><td>Étiquette de réseau</td><td><code>neutron:physnet1</code> sur l'interface externe, sous-réseau non configuré</td></tr>
+<tr><td>Plages réservées</td><td><code>prod-internal-api</code>, <code>prod-public-api</code> : 10 à 20 adresses</td></tr>
+<tr><td>Espaces</td><td>un par usage, associés aux sous-réseaux</td></tr>
+<tr><td>Clé d'API</td><td>celle d'un compte MAAS, pour <code>sunbeam deployment add</code></td></tr>
+</tbody></table>
+<div class="note"><b>Les noms sont une convention stricte :</b> le suffixe de l'étiquette et le préfixe des plages doivent reprendre <b>exactement</b> le nom du déploiement donné à Sunbeam.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 42 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>Installation avec MAAS : l'enchaînement</h2></header>
+<div class="body">
+<div class="fig"><svg viewBox="0 0 1150 335">
+<path d="M130,46 V331" class="nl" stroke-dasharray="4 5"/>
+<path d="M430,46 V331" class="nl" stroke-dasharray="4 5"/>
+<path d="M730,46 V331" class="nl" stroke-dasharray="4 5"/>
+<path d="M1030,46 V331" class="nl" stroke-dasharray="4 5"/>
+<rect x="10" y="4" width="240" height="40" rx="8" class="b-grey"/><text x="130" y="29" class="tc tb">Sunbeam Client</text>
+<rect x="310" y="4" width="240" height="40" rx="8" class="b-teal"/><text x="430" y="29" class="tc tb">MAAS</text>
+<rect x="610" y="4" width="240" height="40" rx="8" class="b-violet"/><text x="730" y="29" class="tc tb">Juju</text>
+<rect x="910" y="4" width="240" height="40" rx="8" class="b-dark"/><text x="1030" y="29" class="tc tb tw">Machines du cloud</text>
+<path d="M140,78 H427" class="lr"/>
+<text x="280.0" y="72" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">deployment add, validate : lit l'inventaire</text>
+<circle cx="130" cy="78" r="10" class="f-red"/><text x="130" y="82" class="tc tw tb" style="font-size:11px">1</text>
+<path d="M140,107 H427" class="lr"/>
+<text x="280.0" y="101" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">bootstrap : machines des contrôleurs</text>
+<circle cx="130" cy="107" r="10" class="f-red"/><text x="130" y="111" class="tc tw tb" style="font-size:11px">2</text>
+<path d="M140,136 H727" class="lr"/>
+<text x="430.0" y="130" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">crée le contrôleur Juju et le service de grappe de Sunbeam</text>
+<circle cx="130" cy="136" r="10" class="f-red"/><text x="130" y="140" class="tc tw tb" style="font-size:11px">3</text>
+<path d="M140,165 H727" class="lr"/>
+<text x="430.0" y="159" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">cluster deploy : applique les plans Terraform, un par couche</text>
+<circle cx="130" cy="165" r="10" class="f-red"/><text x="130" y="169" class="tc tw tb" style="font-size:11px">4</text>
+<path d="M720,194 H433" class="lr"/>
+<text x="580.0" y="188" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">demande les machines par étiquette de rôle</text>
+<circle cx="730" cy="194" r="10" class="f-red"/><text x="730" y="198" class="tc tw tb" style="font-size:11px">5</text>
+<path d="M440,223 H1027" class="lr"/>
+<text x="730.0" y="217" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">installe Ubuntu sur chaque nœud</text>
+<circle cx="430" cy="223" r="10" class="f-red"/><text x="430" y="227" class="tc tw tb" style="font-size:11px">6</text>
+<path d="M740,252 H1027" class="lr"/>
+<text x="880.0" y="246" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">charms d'infrastructure, puis plan de contrôle</text>
+<circle cx="730" cy="252" r="10" class="f-red"/><text x="730" y="256" class="tc tw tb" style="font-size:11px">7</text>
+<path d="M1020,281 H733" class="ln ld"/>
+<text x="880.0" y="275" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">toutes les unités « active »</text>
+<circle cx="1030" cy="281" r="10" class="f-red"/><text x="1030" y="285" class="tc tw tb" style="font-size:11px">8</text>
+<path d="M140,310 H727" class="lr"/>
+<text x="430.0" y="304" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">configure : réseau externe, projet de démonstration</text>
+<circle cx="130" cy="310" r="10" class="f-red"/><text x="130" y="314" class="tc tw tb" style="font-size:11px">9</text>
+</svg></div>
+<div class="cols nf">
+<pre style="font-size:12px"><span class="m"># Depuis la machine « Sunbeam Client »</span>
+<span class="c">sudo snap install</span> openstack --channel 2026.1/stable
+<span class="c">sunbeam prepare-node-script</span> --client | bash -x
+<span class="c">sunbeam deployment add maas</span> prod $CLE_API http://10.10.0.2:5240/MAAS
+<span class="c">sunbeam deployment space map</span> interne:internal   <span class="m"># un par réseau</span>
+<span class="c">sunbeam deployment validate</span></pre>
+<pre style="font-size:12px"><span class="c">sunbeam cluster bootstrap</span>   <span class="m"># couche d'orchestration</span>
+<span class="c">sunbeam cluster deploy</span>      <span class="m"># le cloud lui-même</span>
+<span class="c">sunbeam configure</span> --openrc demo-openrc
+
+<span class="m"># Plus tard, après avoir étiqueté de nouvelles machines :</span>
+<span class="c">sunbeam cluster deploy</span></pre>
+</div>
+</div>
+</section>
+
+<!-- 43 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>Le manifeste : décrire le cloud dans un fichier</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.6px"><span class="k">core</span>:
+  <span class="k">config</span>:
+    bootstrap:
+      management_cidr: 10.10.0.0/24
+    database: single            <span class="m"># ou multi</span>
+    region: RegionOne
+    k8s-addons:
+      loadbalancer: 10.10.0.100-10.10.0.120
+    external-networks:
+      physnet1:
+        cidr: 192.0.2.0/24
+        gateway: 192.0.2.1
+        range: 192.0.2.10-192.0.2.50
+        network_type: flat
+    microceph_config:
+      cloud-1.exemple.lan:
+        osd_devices: /dev/sdb,/dev/sdc
+  <span class="k">software</span>:
+    charms:
+      keystone-k8s:
+        channel: 2026.1/stable
+<span class="k">features</span>:
+  loadbalancer:
+    config:
+      amphora_enabled: false</pre>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Section</th><th>Ce qu'elle porte</th></tr></thead>
+<tbody>
+<tr><td><code>core.config</code></td><td>les réponses aux questions de l'installation : réseaux, région, base, utilisateur de démonstration, disques de Ceph, noms des points d'accès, mandataire</td></tr>
+<tr><td><code>core.software</code></td><td>versions : arguments de Juju, canal ou révision et options de chaque charm, source des plans Terraform</td></tr>
+<tr><td><code>features</code></td><td>réglages des fonctionnalités optionnelles : supervision, équilibrage de charge, TLS</td></tr>
+<tr><td><code>storage</code></td><td>pilotes de stockage tiers, par type puis par instance</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Intérêt :</b> une installation <b>sans question</b>, reproductible, que l'on versionne dans git et que l'on relit.</li>
+<li><b>Usage :</b> le manifeste se passe aux commandes d'installation et de mise à jour par l'option <code>--manifest</code>.</li>
+<li><b>Point d'ajustement fin :</b> c'est ici que l'on épingle la révision d'un charm ou que l'on règle une option qu'aucune question ne propose.</li>
+</ul>
+<div class="note g">Extrait simplifié, à valeurs d'exemple : la liste complète des clés est dans la référence du manifeste de la documentation.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 44 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>Fonctionnalités : le socle et les options</h2></header>
+<div class="body"><div class="cols w46">
+<div class="col">
+<p><b>Installé d'office</b></p>
+<table class="tbl tight">
+<thead><tr><th>Fonction</th><th>Service</th></tr></thead>
+<tbody>
+<tr><td>Identité</td><td>Keystone</td></tr>
+<tr><td>Images</td><td>Glance</td></tr>
+<tr><td>Calcul</td><td>Nova, Placement</td></tr>
+<tr><td>Réseau</td><td>Neutron avec OVN</td></tr>
+<tr><td>Stockage bloc</td><td>Cinder sur Ceph</td></tr>
+<tr><td>Tableau de bord</td><td>Horizon</td></tr>
+</tbody></table>
+<pre style="font-size:12.2px"><span class="c">sunbeam enable</span> orchestration
+<span class="c">sunbeam enable</span> loadbalancer
+<span class="c">sunbeam enable</span> vault
+<span class="c">sunbeam disable</span> orchestration</pre>
+<div class="note g">Chaque option est un plan Terraform de plus : des charms déployés et reliés au socle, que l'on peut retirer.</div>
+</div>
+<div class="col">
+<p><b>À activer selon les besoins</b></p>
+<table class="tbl tight">
+<thead><tr><th>Fonctionnalité</th><th>Service sous-jacent</th></tr></thead>
+<tbody>
+<tr><td>Orchestration</td><td>Heat</td></tr>
+<tr><td>Équilibrage de charge</td><td>Octavia</td></tr>
+<tr><td>DNS</td><td>Designate</td></tr>
+<tr><td>Secrets</td><td>Barbican, avec Vault</td></tr>
+<tr><td>Conteneurs</td><td>Magnum</td></tr>
+<tr><td>Systèmes de fichiers partagés</td><td>Manila</td></tr>
+<tr><td>Stockage objet</td><td>passerelle objet de Ceph</td></tr>
+<tr><td>Serveurs nus</td><td>Ironic</td></tr>
+<tr><td>Télémétrie</td><td>Ceilometer, Gnocchi, Aodh</td></tr>
+<tr><td>Reprise d'instances</td><td>Masakari</td></tr>
+<tr><td>Optimisation des ressources</td><td>Watcher</td></tr>
+<tr><td>Supervision</td><td>pile d'observabilité Canonical</td></tr>
+<tr><td>Validation</td><td>Tempest</td></tr>
+<tr><td>TLS, LDAP, synchronisation d'images, Ubuntu Pro</td><td>intégrations</td></tr>
+</tbody></table>
+</div>
+</div></div>
+</section>
+
+<!-- 45 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>Exploitation : les opérations du quotidien</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Besoin</th><th>Commande</th></tr></thead>
+<tbody>
+<tr><td>État des nœuds</td><td><code>sunbeam cluster list</code></td></tr>
+<tr><td>État des services</td><td><code>juju status -m openstack</code></td></tr>
+<tr><td>Journal des charms</td><td><code>juju debug-log -m openstack</code></td></tr>
+<tr><td>Pods du plan de contrôle</td><td><code>sudo k8s kubectl get pods -n openstack</code></td></tr>
+<tr><td>Services d'un hôte</td><td><code>sudo snap logs openstack-hypervisor</code></td></tr>
+<tr><td>État de Ceph</td><td><code>sudo microceph status</code></td></tr>
+<tr><td>Identifiants d'administration</td><td><code>sunbeam openrc &gt; admin-openrc</code></td></tr>
+<tr><td>Adresse du tableau de bord</td><td><code>sunbeam dashboard-url</code></td></tr>
+<tr><td>Retirer un nœud</td><td><code>sunbeam cluster remove &lt;nom&gt;</code></td></tr>
+</tbody></table>
+<div class="note g"><b>Trois niveaux de lecture :</b> Sunbeam pour les nœuds, Juju pour les applications, Kubernetes ou snap pour les processus.</div>
+</div>
+<div class="col">
+<p><b>Mettre à jour, dans cet ordre</b></p>
+<pre style="font-size:12.2px"><span class="c">sudo snap refresh</span> openstack    <span class="m"># d'abord le snap</span>
+<span class="c">sunbeam cluster refresh</span> k8s    <span class="m"># 1 · Kubernetes</span>
+<span class="c">sunbeam cluster refresh</span> vault  <span class="m"># 2 · Vault, s'il est activé</span>
+<span class="c">sunbeam cluster refresh</span> mysql  <span class="m"># 3 · bases de données</span>
+<span class="c">sunbeam cluster refresh</span>        <span class="m"># 4 · le reste des charms</span></pre>
+<ul class="pts sm">
+<li>Rafraîchir le snap <b>ne met pas à jour</b> le cloud : ce sont les commandes <code>cluster refresh</code> qui le font.</li>
+<li>Fournisseur manuel : rafraîchir le snap sur <b>tous</b> les nœuds ; avec MAAS, sur le client seulement.</li>
+<li>Vault reste <b>scellé</b> après sa mise à jour : à desceller à la main.</li>
+</ul>
+<div class="note"><b>Limite actuelle, écrite dans la documentation :</b> le rafraîchissement <b>d'une piste à l'autre</b> — de 2024.1 à 2025.1, par exemple — n'est pas pris en charge par cette procédure, pas plus que le changement de version mineure de Kubernetes. On met à jour <b>à l'intérieur</b> d'une piste.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 46 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>Dimensionnement : les minimums documentés</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th></th><th>Nœud unique</th><th>Multi-nœud, par machine</th></tr></thead>
+<tbody>
+<tr><td>Nombre de machines</td><td>1</td><td>3 au minimum</td></tr>
+<tr><td>Processeur</td><td>4 cœurs, amd64</td><td>16 cœurs, amd64</td></tr>
+<tr><td>Mémoire</td><td>16 Gio</td><td>32 Gio</td></tr>
+<tr><td>Disque système</td><td>100 Gio libres, SSD</td><td>500 Gio libres, SSD</td></tr>
+<tr><td>Disque de stockage</td><td>un SSD de 100 Gio, facultatif</td><td>un SSD de 500 Gio, requis</td></tr>
+<tr><td>Réseau de contrôle</td><td>1 Gbit/s</td><td>1 Gbit/s, trafic est-ouest</td></tr>
+<tr><td>Réseau externe</td><td>1 Gbit/s, facultatif</td><td>1 Gbit/s, trafic nord-sud</td></tr>
+</tbody></table>
+<div class="note"><b>Nœud unique :</b> aucune tolérance aux pannes et des performances limitées. Parfait pour apprendre, inadapté à la production.</div>
+<div class="note g">Ce sont des <b>minimums pour démarrer</b>. Un cloud réel se dimensionne d'après les instances à héberger : cœurs, mémoire et capacité Ceph utile après réplication.</div>
+</div>
+<div class="col">
+<p><b>Mémoire à réserver par rôle, hors instances</b></p>
+<table class="tbl tight">
+<thead><tr><th>Rôle</th><th>Mémoire minimale</th></tr></thead>
+<tbody>
+<tr><td>Control</td><td>Kubernetes 4 Gio + plan de contrôle 10 Gio</td></tr>
+<tr><td>Compute</td><td>1 Gio pour les agents</td></tr>
+<tr><td>Storage</td><td>5 Gio par OSD + 2 Gio moniteur et gestionnaire + 2 Gio passerelle objet</td></tr>
+<tr><td>Cloud</td><td>la somme : 4 + 11 + Ceph</td></tr>
+<tr><td>Sunbeam Controller</td><td>4 Gio</td></tr>
+<tr><td>Juju Controller</td><td>4 Gio</td></tr>
+<tr><td>Sunbeam Client</td><td>1 Gio</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Exemple de calcul :</b> un nœud « cloud » avec deux disques Ceph réserve 4 + 11 + 2×5 + 2 + 2 = <b>29 Gio</b> avant la première instance.</li>
+<li><b>Disques NVMe :</b> prévoir davantage de mémoire et de cœurs par OSD.</li>
+<li><b>Architecture :</b> amd64 uniquement.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 47 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>Sécurité et intégrations d'entreprise</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:20%">Sujet</th><th style="width:40%">Ce que propose la distribution</th><th>Point d'attention</th></tr></thead>
+<tbody>
+<tr><td>Chiffrement des points d'accès</td><td>TLS par autorité tierce, par autorité interne ou par Vault</td><td>à décider avant d'ouvrir le cloud aux utilisateurs</td></tr>
+<tr><td>Annuaire d'entreprise</td><td>intégration LDAP : un domaine Keystone adossé à l'annuaire</td><td>les comptes de service restent dans le domaine local</td></tr>
+<tr><td>Secrets</td><td>Vault en charm, Barbican pour les utilisateurs</td><td>Vault se descelle à la main après chaque redémarrage</td></tr>
+<tr><td>Accès à Internet</td><td>déploiement derrière un mandataire, avec liste des adresses à autoriser</td><td>le fonctionnement <b>totalement hors ligne</b> est annoncé, pas encore disponible</td></tr>
+<tr><td>Traçabilité</td><td>journal d'audit des appels d'API</td><td>à envoyer vers l'outil de collecte de l'entreprise</td></tr>
+<tr><td>Durcissement</td><td>profils CIS et DISA-STIG, modules FIPS, par Ubuntu Pro</td><td>exige l'abonnement</td></tr>
+<tr><td>Correctifs du noyau</td><td>Livepatch : correctifs appliqués sans redémarrage, par Ubuntu Pro</td><td>ne dispense pas des redémarrages planifiés</td></tr>
+<tr><td>Isolation des instances</td><td>épinglage de processeurs, grandes pages, périphériques PCI, DPDK</td><td>à déclarer dans le manifeste, nœud par nœud</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Confinement par défaut :</b> les snaps sont strictement confinés et les services du plan de contrôle isolés dans leurs pods ; une faille dans un service n'ouvre pas le système hôte.</div>
+<div class="note"><b>Logiciels tiers :</b> ce qui parle aux <b>API</b> d'OpenStack s'intègre normalement. Ce qui exige un accès aux mécanismes internes relève d'une prestation de Canonical.</div>
+</div>
+</div>
+</section>
+
+<!-- 48 -->
+<section class="slide">
+<header><span class="kick">4 · Canonical OpenStack</span><h2>Disponibilité, zones, régions</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 250">
+<g class="tc">
+<rect x="20" y="10" width="350" height="230" rx="12" class="zone"/><text x="195" y="36" class="tl">Zones de disponibilité</text>
+<rect x="36" y="52" width="100" height="90" rx="8" class="b-blue"/><text x="86" y="84" class="tb">zone A</text><text x="86" y="104" class="ts">baie 1</text>
+<rect x="145" y="52" width="100" height="90" rx="8" class="b-blue"/><text x="195" y="84" class="tb">zone B</text><text x="195" y="104" class="ts">baie 2</text>
+<rect x="254" y="52" width="100" height="90" rx="8" class="b-blue"/><text x="304" y="84" class="tb">zone C</text><text x="304" y="104" class="ts">baie 3</text>
+<text x="195" y="168" class="ts">domaines de panne visibles des utilisateurs ;</text><text x="195" y="185" class="ts">une application répartie survit</text><text x="195" y="202" class="ts">à la perte d'une zone</text><text x="195" y="226" class="ts tb">un seul plan de contrôle</text>
+
+<rect x="400" y="10" width="350" height="230" rx="12" class="zone"/><text x="575" y="36" class="tl">Régions</text>
+<rect x="416" y="52" width="150" height="90" rx="8" class="b-red"/><text x="491" y="80" class="tb">région Nord</text><text x="491" y="100" class="ts">ses API,</text><text x="491" y="116" class="ts">ses ressources</text>
+<rect x="584" y="52" width="150" height="90" rx="8" class="b-red"/><text x="659" y="80" class="tb">région Sud</text><text x="659" y="100" class="ts">ses API,</text><text x="659" y="116" class="ts">ses ressources</text>
+<text x="575" y="168" class="ts">points d'accès et ressources séparés,</text><text x="575" y="185" class="ts">identité partagée ;</text><text x="575" y="202" class="ts">pour des sites éloignés</text><text x="575" y="226" class="ts tb">un contrôleur de région commun</text>
+
+<rect x="780" y="10" width="350" height="230" rx="12" class="zone"/><text x="955" y="36" class="tl">Base de données</text>
+<rect x="796" y="52" width="150" height="90" rx="8" class="b-amber"/><text x="871" y="80" class="tb">unique</text><text x="871" y="100" class="ts">un MySQL pour</text><text x="871" y="116" class="ts">tous les services</text>
+<rect x="964" y="52" width="150" height="90" rx="8" class="b-amber"/><text x="1039" y="80" class="tb">par service</text><text x="1039" y="100" class="ts">un MySQL pour</text><text x="1039" y="116" class="ts">chaque service</text>
+<text x="955" y="168" class="ts">unique : nœud seul et clouds moyens ;</text><text x="955" y="185" class="ts">par service : grands clouds multi-nœuds</text><text x="955" y="202" class="ts">chaque MySQL se réplique seul</text><text x="955" y="226" class="ts tb">choix fait à l'installation</text>
+</g>
+<path d="M566,97 H582" class="ln2"/>
+</svg>
+</div>
+<div class="cols nf">
+<div class="col">
+<p><b>Ce qui est redondé dans un cloud à trois nœuds de contrôle</b></p>
+<ul class="pts sm">
+<li><b>API :</b> plusieurs pods par service, derrière Traefik et une adresse de service.</li>
+<li><b>MySQL et RabbitMQ :</b> grappes de trois, réplication intégrée.</li>
+<li><b>Bases OVN :</b> grappe de trois.</li>
+<li><b>Ceph :</b> trois copies de chaque donnée, sur trois nœuds.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Ce qui demande une décision</b></p>
+<ul class="pts sm">
+<li><b>Contrôleur Juju et MAAS :</b> à rendre redondants séparément.</li>
+<li><b>Instances :</b> elles ne sont pas relancées ailleurs par défaut ; activer la <b>reprise d'instances</b> si c'est attendu.</li>
+<li><b>Très grande taille :</b> Canonical recommande <b>plusieurs petits clouds</b> gérés de façon centralisée plutôt qu'un seul très grand.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 49 -->
+<section class="slide dark sec">
+<div class="num">05</div>
+<h2>Avantages, limites, modèle de support</h2>
+<p>Ce que la stack fait bien, ce qu'elle ne fait pas encore, combien de temps une version est maintenue et ce que l'on peut acheter autour.</p>
+<ol><li>Avantages de la stack</li><li>Limites à connaître</li><li>Cycle de vie des versions</li><li>Niveaux de support et abonnement</li><li>Services proposés par Canonical</li><li>Comparaison avec les alternatives</li><li>Quand choisir cette stack</li><li>Monter une maquette</li></ol>
+</section>
+
+<!-- 50 -->
+<section class="slide">
+<header><span class="kick">5 · Avantages, limites, support</span><h2>Avantages de la stack Canonical</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card cb"><h3>Du serveur nu au cloud, un seul fournisseur</h3>MAAS, Juju, Kubernetes, Ceph, OVN, OpenStack et le système viennent du même éditeur, sont testés ensemble et suivent le même calendrier.</div>
+<div class="card ct"><h3>Démarrage très court</h3>Un cloud fonctionnel sur une machine en quelques commandes, puis extension par ajout de nœuds, sans réinstallation.</div>
+<div class="card cv"><h3>Le même outil à toutes les tailles</h3>De la maquette sur un poste au cloud de plusieurs baies : mêmes commandes, mêmes charms, mêmes procédures.</div>
+</div>
+<div class="cols c3 nf">
+<div class="card ca"><h3>Peu de décisions à prendre</h3>Hyperviseur, réseau virtuel, stockage, base, bus : les choix sont faits et intégrés. L'équipe se concentre sur l'usage du cloud.</div>
+<div class="card cn"><h3>Gratuit sans contrat, supportable ensuite</h3>Le logiciel est le même avec ou sans abonnement. On peut démarrer seul et souscrire plus tard, sans migration.</div>
+<div class="card"><h3>Versions à très long terme</h3>Une version LTS tous les deux ans, maintenue jusqu'à douze ans avec l'abonnement : peu de montées de version imposées.</div>
+</div>
+<div class="cols">
+<div class="col">
+<p><b>Avantages techniques</b></p>
+<ul class="pts sm">
+<li><b>Plan de contrôle en pods :</b> redémarrage, répartition et mises à jour progressives assurés par Kubernetes.</li>
+<li><b>Services découplés du système hôte :</b> rocks et snaps embarquent leurs dépendances.</li>
+<li><b>Mises à jour transactionnelles</b> des snaps, avec retour arrière.</li>
+<li><b>Relations Juju :</b> aucune adresse ni mot de passe recopié à la main entre services.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Avantages d'organisation</b></p>
+<ul class="pts sm">
+<li><b>Petite équipe possible :</b> le savoir-faire d'exploitation est dans les charms.</li>
+<li><b>Code ouvert et gouverné en amont :</b> Sunbeam est un projet officiel d'OpenStack.</li>
+<li><b>Tarification par nœud</b> pour l'abonnement, lisible et prévisible.</li>
+<li><b>Briques réutilisables</b> pour d'autres usages : MAAS et Juju servent aussi pour Kubernetes ou des bases de données.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 51 -->
+<section class="slide">
+<header><span class="kick">5 · Avantages, limites, support</span><h2>Limites à connaître avant de s'engager</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:21%">Limite</th><th style="width:40%">Détail</th><th>Conséquence pratique</th></tr></thead>
+<tbody>
+<tr><td>Choix techniques imposés</td><td>QEMU/KVM pour l'hyperviseur, OVN pour le réseau virtuel, Ceph pour le stockage : seules options supportées</td><td>une baie de stockage existante ou un autre réseau virtuel ne s'intègrent pas aujourd'hui ; pilotes tiers annoncés</td></tr>
+<tr><td>Écosystème fermé sur Ubuntu</td><td>hôtes Ubuntu, Kubernetes de Canonical, snaps</td><td>inadapté si la politique impose un autre système ou un Kubernetes existant</td></tr>
+<tr><td>Architecture amd64 seulement</td><td>pas d'autre architecture pour les nœuds</td><td>à vérifier avant tout achat de matériel</td></tr>
+<tr><td>Accès à Internet</td><td>déploiement possible derrière un mandataire ; hors ligne complet pas encore disponible</td><td>frein pour les réseaux strictement isolés</td></tr>
+<tr><td>Fournisseur de machines figé</td><td>manuel ou MAAS : choix à la conception, sans retour</td><td>démarrer en manuel puis passer à MAAS impose de redéployer</td></tr>
+<tr><td>Montées de version</td><td>la procédure de rafraîchissement ne franchit pas les pistes</td><td>vérifier le chemin de mise à niveau entre versions avant de choisir la version de départ</td></tr>
+<tr><td>Peu de réglages exposés</td><td>seules les options prévues par les charms et le manifeste</td><td>les besoins atypiques passent par une prestation ou une contribution</td></tr>
+<tr><td>Compétences Juju</td><td>moins répandues qu'Ansible ou Kubernetes</td><td>formation à prévoir ; recrutement plus difficile</td></tr>
+<tr><td>Produit jeune</td><td>première version LTS de Sunbeam : 2024.1 ; rôles et procédures évoluent encore</td><td>lire les notes de version et les limites connues à chaque mise à jour</td></tr>
+</tbody></table>
+<div class="note"><b>Plusieurs couches à diagnostiquer :</b> une API qui ne répond pas peut venir d'OpenStack, du charm, de Juju, de Kubernetes, de Traefik ou du snap sous-jacent. Savoir descendre les couches une à une est la compétence clé de l'exploitant.</div>
+</div>
+</section>
+
+<!-- 52 -->
+<section class="slide">
+<header><span class="kick">5 · Avantages, limites, support</span><h2>Cycle de vie des versions de Canonical OpenStack</h2></header>
+<div class="body">
+<div class="fig"><svg viewBox="0 0 1150 270">
+<path d="M200.0,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="200.0" y="18" class="tc" style="font-size:11px">2025</text>
+<path d="M265.7,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="265.7" y="18" class="tc" style="font-size:11px">2026</text>
+<path d="M331.4,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="331.4" y="18" class="tc" style="font-size:11px">2027</text>
+<path d="M397.1,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="397.1" y="18" class="tc" style="font-size:11px">2028</text>
+<path d="M462.9,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="462.9" y="18" class="tc" style="font-size:11px">2029</text>
+<path d="M528.6,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="528.6" y="18" class="tc" style="font-size:11px">2030</text>
+<path d="M594.3,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="594.3" y="18" class="tc" style="font-size:11px">2031</text>
+<path d="M660.0,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="660.0" y="18" class="tc" style="font-size:11px">2032</text>
+<path d="M725.7,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="725.7" y="18" class="tc" style="font-size:11px">2033</text>
+<path d="M791.4,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="791.4" y="18" class="tc" style="font-size:11px">2034</text>
+<path d="M857.1,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="857.1" y="18" class="tc" style="font-size:11px">2035</text>
+<path d="M922.9,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="922.9" y="18" class="tc" style="font-size:11px">2036</text>
+<path d="M988.6,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="988.6" y="18" class="tc" style="font-size:11px">2037</text>
+<path d="M1054.3,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="1054.3" y="18" class="tc" style="font-size:11px">2038</text>
+<path d="M1120.0,26 V214" class="nl" stroke-dasharray="3 5" style="stroke:#cbd5e1"/><text x="1120.0" y="18" class="tc" style="font-size:11px">2039</text>
+<text x="186" y="57" class="te tb">2024.1 LTS</text>
+<rect x="200.0" y="36" width="279.3" height="32" rx="5" class="b-red"/>
+<rect x="479.3" y="36" width="328.6" height="32" rx="5" class="b-blue"/>
+<rect x="807.9" y="36" width="131.4" height="32" rx="5" class="b-grey"/>
+<text x="186" y="101" class="te tb">2025.1</text>
+<rect x="216.4" y="80" width="49.3" height="32" rx="5" class="b-red"/>
+<rect x="265.7" y="80" width="147.9" height="32" rx="5" class="b-blue"/>
+<text x="186" y="145" class="te tb">2025.2</text>
+<rect x="249.3" y="124" width="49.3" height="32" rx="5" class="b-red"/>
+<text x="186" y="189" class="te tb">2026.1 LTS</text>
+<rect x="282.1" y="168" width="328.6" height="32" rx="5" class="b-red"/>
+<rect x="610.7" y="168" width="328.6" height="32" rx="5" class="b-blue"/>
+<rect x="939.3" y="168" width="131.4" height="32" rx="5" class="b-grey"/>
+<path d="M316.3,24 V218" style="stroke:#0f172a;stroke-width:2"/><text x="322.3" y="228" class="ts tb">octobre 2026</text>
+<text x="403.7" y="57" class="tc ts tb">standard → avr. 2029</text><text x="643.6" y="57" class="tc ts tb">Ubuntu Pro → avr. 2034</text><text x="873.6" y="57" class="tc ts" style="font-size:10.5px">Legacy → 2036</text>
+<text x="476.0" y="189" class="tc ts tb">standard → avr. 2031</text><text x="775.0" y="189" class="tc ts tb">Ubuntu Pro → avr. 2036</text><text x="1005.0" y="189" class="tc ts" style="font-size:10.5px">Legacy → 2038</text>
+<text x="423.4" y="101" class="ts">2025.1 : standard jusqu'en janv. 2026, Ubuntu Pro jusqu'en avr. 2028</text>
+<text x="305.1" y="145" class="ts">2025.2 : version intermédiaire, terminée en juillet 2026</text>
+<rect x="230" y="244" width="22" height="16" rx="3" class="b-red"/><text x="260" y="257" class="ts">maintenance standard, sans abonnement</text>
+<rect x="530" y="244" width="22" height="16" rx="3" class="b-blue"/><text x="560" y="257" class="ts">avec Ubuntu Pro</text>
+<rect x="830" y="244" width="22" height="16" rx="3" class="b-grey"/><text x="860" y="257" class="ts">Legacy Support, en supplément</text>
+</svg></div>
+<div class="cols nf">
+<div class="col">
+<ul class="pts sm">
+<li><b>Deux versions par an</b>, en général en avril et en octobre, alignées sur le calendrier d'OpenStack.</li>
+<li><b>Versions LTS de Sunbeam :</b> 2024.1 et 2026.1 ; les prochaines annoncées sont 2027.1 et 2028.1.</li>
+<li><b>Système hôte :</b> 2024.1 et 2025.1 sur Ubuntu 24.04 ; 2026.1 sur Ubuntu 24.04 ou 26.04.</li>
+</ul>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Maintenance standard :</b> cinq ans sur une LTS, sans abonnement.</li>
+<li><b>Ubuntu Pro :</b> cinq ans de plus ; <b>Legacy Support :</b> deux ans encore, soit douze au total.</li>
+<li><b>Versions intermédiaires :</b> quelques mois seulement. Une production se pose sur une LTS.</li>
+</ul>
+</div>
+</div>
+<div class="note g">Dates relevées dans la page « Release cycle and supported versions » de la documentation 2026.1 ; la page commerciale de Canonical évoque jusqu'à quinze ans de correctifs de sécurité. Vérifier la disponibilité d'un canal avec <code>snap info openstack</code>.</div>
+</div>
+</section>
+
+<!-- 53 -->
+<section class="slide">
+<header><span class="kick">5 · Avantages, limites, support</span><h2>Modèle de support : quatre niveaux d'engagement</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 300">
+<g class="tc">
+<rect x="20" y="210" width="265" height="80" rx="10" class="b-grey"/><text x="152" y="238" class="tl">Sans abonnement</text><text x="152" y="260" class="ts">logiciel complet, correctifs standard,</text><text x="152" y="276" class="ts">entraide communautaire</text>
+<rect x="305" y="150" width="265" height="140" rx="10" class="b-blue"/><text x="437" y="178" class="tl">Ubuntu Pro</text><text x="437" y="200" class="ts">correctifs de sécurité étendus,</text><text x="437" y="216" class="ts">Livepatch, Landscape,</text><text x="437" y="232" class="ts">profils de conformité, FIPS</text><text x="437" y="262" class="ts tb">par nœud, sans assistance</text>
+<rect x="590" y="80" width="265" height="210" rx="10" class="b-violet"/><text x="722" y="108" class="tl">Ubuntu Pro + Support</text><text x="722" y="130" class="ts">tout ce qui précède, plus :</text><text x="722" y="152" class="ts">tickets et téléphone, 24 h/24, 7 j/7,</text><text x="722" y="168" class="ts">prise en charge en une heure</text><text x="722" y="184" class="ts">pour la sévérité 1,</text><text x="722" y="200" class="ts">base de connaissances,</text><text x="722" y="216" class="ts">correction des anomalies</text><text x="722" y="262" class="ts tb">vous exploitez, Canonical assiste</text>
+<rect x="875" y="10" width="255" height="280" rx="10" class="b-red"/><text x="1002" y="38" class="tl tr">Cloud géré</text><text x="1002" y="60" class="ts">Canonical exploite le cloud</text><text x="1002" y="76" class="ts">sur votre matériel :</text><text x="1002" y="98" class="ts">supervision permanente,</text><text x="1002" y="114" class="ts">incidents et problèmes,</text><text x="1002" y="130" class="ts">capacité, mises à jour</text><text x="1002" y="262" class="ts tb">Canonical exploite, vous utilisez</text>
+</g>
+<path d="M20,196 H285 M305,136 H570 M590,66 H855" class="nl" stroke-dasharray="4 5"/>
+<text x="152" y="186" class="tc ts">responsabilité : entièrement la vôtre</text>
+<text x="437" y="126" class="tc ts">responsabilité : la vôtre</text>
+<text x="722" y="56" class="tc ts">responsabilité : partagée</text>
+<rect x="590" y="18" width="265" height="0" style="fill:none"/>
+</svg>
+</div>
+<div class="cols nf">
+<div class="col">
+<ul class="pts sm">
+<li><b>Deux périmètres d'abonnement :</b> « Infra-only », qui couvre le système et l'infrastructure, ou complet, qui ajoute les applications. Les deux ouvrent droit au support de Canonical OpenStack.</li>
+<li><b>Entre support et cloud géré :</b> une formule intermédiaire d'astreinte, où les ingénieurs de Canonical interviennent sur vos incidents critiques pendant que votre équipe exploite.</li>
+</ul>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Ce que l'abonnement ne remplace pas :</b> une équipe qui connaît le cloud. Le support traite les anomalies, pas l'exploitation courante.</li>
+<li><b>Hors support :</b> les paquets OpenStack installés à la main depuis les archives reçoivent des correctifs de sécurité, pas d'assistance complète.</li>
+</ul>
+<div class="note">Tarifs et contenu exact des formules : non reproduits ici, ils changent. Demander un devis ; la tarification se fait <b>par nœud</b>.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 54 -->
+<section class="slide">
+<header><span class="kick">5 · Avantages, limites, support</span><h2>Services proposés par Canonical autour du cloud</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 170">
+<g class="tc">
+<rect x="20" y="30" width="200" height="110" rx="10" class="b-grey"/><text x="120" y="58" class="tb">① Conception</text><text x="120" y="82" class="ts">architecture, réseau,</text><text x="120" y="98" class="ts">dimensionnement,</text><text x="120" y="114" class="ts">matériel certifié</text>
+<rect x="248" y="30" width="200" height="110" rx="10" class="b-red"/><text x="348" y="58" class="tb">② Construction</text><text x="348" y="82" class="ts">déploiement automatisé,</text><text x="348" y="98" class="ts">à prix forfaitaire</text>
+<rect x="476" y="30" width="200" height="110" rx="10" class="b-teal"/><text x="576" y="58" class="tb">③ Prise en main</text><text x="576" y="82" class="ts">intégrations d'entreprise,</text><text x="576" y="98" class="ts">démonstrations,</text><text x="576" y="114" class="ts">accompagnement des équipes</text>
+<rect x="704" y="30" width="200" height="110" rx="10" class="b-violet"/><text x="804" y="58" class="tb">④ Formation</text><text x="804" y="82" class="ts">plusieurs jours, pratique :</text><text x="804" y="98" class="ts">architecture, supervision,</text><text x="804" y="114" class="ts">dépannage, mises à jour</text>
+<rect x="932" y="30" width="198" height="110" rx="10" class="b-blue"/><text x="1031" y="58" class="tb">⑤ Exploitation</text><text x="1031" y="82" class="ts">par vous avec support,</text><text x="1031" y="98" class="ts">avec astreinte renforcée,</text><text x="1031" y="114" class="ts">ou par Canonical</text>
+</g>
+<path d="M220,85 H246" class="lr"/><path d="M448,85 H474" class="lr"/><path d="M676,85 H702" class="lr"/><path d="M904,85 H930" class="lr"/>
+<text x="575" y="162" class="tc ts">L'abonnement Ubuntu Pro est attaché aux nœuds en cours de projet ; chaque étape peut être achetée ou assurée en interne.</text>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Vous avez…</th><th>Formule adaptée</th></tr></thead>
+<tbody>
+<tr><td>une équipe expérimentée, un cloud non critique</td><td>sans abonnement, ou Ubuntu Pro seul</td></tr>
+<tr><td>une équipe compétente, un cloud de production</td><td>Ubuntu Pro + Support</td></tr>
+<tr><td>une équipe réduite, un cloud critique</td><td>support avec astreinte renforcée</td></tr>
+<tr><td>pas d'équipe d'exploitation</td><td>cloud géré</td></tr>
+<tr><td>un projet à lancer vite</td><td>conception et construction forfaitaires, puis reprise en interne</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<p><b>Questions à poser avant de signer</b></p>
+<ul class="pts sm">
+<li>Quel délai de <b>prise en charge</b> et quel délai de <b>résolution</b>, par sévérité ?</li>
+<li>Quelles <b>modifications</b> font sortir du support : charm épinglé, option non documentée, pilote tiers ?</li>
+<li>Qui fait les <b>montées de version</b>, et sont-elles incluses ?</li>
+<li>Quelle <b>réversibilité</b> en fin de contrat : le cloud continue-t-il de fonctionner et de recevoir des correctifs ?</li>
+</ul>
+<div class="note g">Sur le dernier point, la réponse est favorable : le logiciel reste utilisable sans contrat, avec la maintenance standard.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 55 -->
+<section class="slide">
+<header><span class="kick">5 · Avantages, limites, support</span><h2>La stack Canonical face aux alternatives</h2></header>
+<div class="body">
+<table class="tbl xs">
+<thead><tr><th style="width:14%"></th><th>Canonical OpenStack (Sunbeam)</th><th>Kolla-Ansible</th><th>Red Hat RHOSO</th><th>Mirantis MOSK</th></tr></thead>
+<tbody>
+<tr><td>Nature</td><td>distribution libre, support optionnel</td><td>outil communautaire</td><td>produit sous souscription</td><td>produit sous souscription</td></tr>
+<tr><td>Machines nues</td><td>MAAS, facultatif</td><td>Kayobe, projet frère</td><td>Metal3, dans OpenShift</td><td>inclus</td></tr>
+<tr><td>Orchestrateur</td><td>Juju, derrière <code>sunbeam</code></td><td>Ansible</td><td>opérateurs OpenShift, Ansible</td><td>opérateur, Helm</td></tr>
+<tr><td>Socle du plan de contrôle</td><td>Kubernetes de Canonical</td><td>Docker ou Podman</td><td>OpenShift</td><td>Kubernetes de Mirantis</td></tr>
+<tr><td>Système hôte</td><td>Ubuntu</td><td>CentOS Stream, Debian, Rocky, Ubuntu</td><td>RHEL</td><td>Ubuntu</td></tr>
+<tr><td>Stockage</td><td>Ceph (MicroCeph) seulement</td><td>Ceph externe, LVM, pilotes tiers</td><td>Red Hat Ceph, pilotes certifiés</td><td>Ceph (Rook), pilotes tiers</td></tr>
+<tr><td>Taille minimale</td><td>une machine</td><td>une machine</td><td>un cluster OpenShift et un nœud de calcul</td><td>cluster de gestion et cluster géré</td></tr>
+<tr><td>Utilisable sans contrat</td><td>oui, intégralement</td><td>oui</td><td>non</td><td>non</td></tr>
+<tr><td>Liberté de réglage</td><td>limitée aux options des charms</td><td>élevée</td><td>encadrée</td><td>encadrée</td></tr>
+<tr><td>Compétence clé</td><td>Juju, snaps, un peu de Kubernetes</td><td>Ansible, conteneurs</td><td>OpenShift</td><td>Kubernetes</td></tr>
+<tr><td>Durée d'une version</td><td>jusqu'à 12 ans sur LTS, avec abonnement</td><td>celle de l'amont, environ 18 mois</td><td>plusieurs années, selon contrat</td><td>selon contrat</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Ce qui distingue Canonical :</b> c'est la seule offre d'éditeur dont le produit complet s'utilise sans contrat, et qui démarre sur une seule machine.</div>
+<div class="note"><b>Ce qui la pénalise :</b> le moins de choix techniques et la technologie d'orchestration la moins répandue des quatre.</div>
+</div>
+</div>
+</section>
+
+<!-- 56 -->
+<section class="slide">
+<header><span class="kick">5 · Avantages, limites, support</span><h2>Quand choisir cette stack — et quand l'éviter</h2></header>
+<div class="body">
+<div class="cols">
+<div class="col">
+<p><b>Elle convient bien si…</b></p>
+<ul class="pts sm">
+<li>Vos serveurs tournent déjà sous <b>Ubuntu</b>, ou rien n'impose un autre système.</li>
+<li>Vous partez de <b>zéro</b> : pas de baie de stockage ni de réseau virtuel à réutiliser.</li>
+<li>L'équipe est <b>réduite</b> et veut un résultat rapide avec peu de décisions.</li>
+<li>Vous voulez <b>démarrer sans budget logiciel</b> et garder la possibilité de souscrire plus tard.</li>
+<li>Vous cherchez des versions <b>à très long terme</b>.</li>
+<li>Le cloud doit pouvoir <b>commencer petit</b> : trois nœuds, puis grandir.</li>
+<li>Vous exploitez déjà <b>MAAS ou Juju</b> pour autre chose.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Mieux vaut regarder ailleurs si…</b></p>
+<ul class="pts sm">
+<li>Une <b>baie de stockage</b> ou un <b>réseau virtuel</b> existant doit absolument être intégré aujourd'hui.</li>
+<li>La politique impose <b>RHEL</b>, <b>OpenShift</b> ou un Kubernetes déjà en place.</li>
+<li>Le réseau est <b>strictement isolé</b>, sans mandataire possible.</li>
+<li>Vous avez besoin de <b>régler finement</b> chaque service ou d'embarquer vos propres correctifs.</li>
+<li>L'équipe est <b>experte en Ansible</b> et veut garder la main sur chaque fichier.</li>
+<li>Le matériel n'est <b>pas en amd64</b>.</li>
+</ul>
+</div>
+</div>
+<div class="cols c3 nf dense">
+<div class="card cb"><h3>Maquette et formation</h3>Sunbeam sur une machine : le chemin le plus court vers un vrai cloud, fidèle à la production.</div>
+<div class="card ct"><h3>Petit cloud de production</h3>Trois nœuds hyperconvergés, fournisseur manuel, abonnement ajouté quand le cloud devient critique.</div>
+<div class="card cv"><h3>Cloud de plusieurs baies</h3>MAAS, rôles séparés, réseau à deux niveaux, contrôleurs redondants, manifeste versionné.</div>
+</div>
+<div class="note g"><b>Décision à ne pas reporter :</b> manuel ou MAAS, et la version LTS de départ. Ce sont les deux choix sur lesquels on ne revient pas sans redéployer.</div>
+</div>
+</section>
+
+<!-- 57 -->
+<section class="slide">
+<header><span class="kick">5 · Avantages, limites, support</span><h2>Monter une maquette de la stack</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th>Objectif</th><th>Maquette</th><th>Ressources</th></tr></thead>
+<tbody>
+<tr><td>Découvrir OpenStack</td><td>Sunbeam, nœud unique, fournisseur manuel</td><td style="color:var(--ink);font-weight:400">1 machine : 4 cœurs, 16 Gio, 100 Gio</td></tr>
+<tr><td>Comprendre MAAS</td><td>MAAS en machine virtuelle, deux ou trois machines virtuelles à amorcer par le réseau</td><td style="color:var(--ink);font-weight:400">8 à 16 Gio au total</td></tr>
+<tr><td>Comprendre Juju</td><td>Juju sur LXD local, puis sur MAAS</td><td style="color:var(--ink);font-weight:400">8 Gio</td></tr>
+<tr><td>Voir la haute disponibilité</td><td>Sunbeam à trois nœuds</td><td style="color:var(--ink);font-weight:400">3 machines de 16 cœurs, 32 Gio, 500 Gio</td></tr>
+<tr><td>La chaîne complète</td><td>MAAS, puis Sunbeam avec le fournisseur MAAS</td><td style="color:var(--ink);font-weight:400">un serveur de laboratoire dédié</td></tr>
+</tbody></table>
+<div class="note g"><b>Ordre conseillé :</b> Sunbeam à nœud unique d'abord, pour voir le résultat ; puis MAAS et Juju séparément, pour comprendre ce que Sunbeam fait à votre place.</div>
+</div>
+<div class="col">
+<p><b>Points d'attention sur un poste de travail</b></p>
+<ul class="pts sm">
+<li><b>Virtualisation imbriquée :</b> à activer sur l'hyperviseur du poste pour que les instances utilisent KVM ; sinon elles tournent en émulation, très lentement.</li>
+<li><b>Réseau d'amorçage pour MAAS :</b> un réseau interne <b>sans</b> le serveur DHCP de l'outil de virtualisation ; les machines virtuelles démarrent sur le réseau en premier.</li>
+<li><b>Pilotage de l'alimentation :</b> sans carte de gestion, déclarer le type « manuel » dans MAAS et démarrer les machines virtuelles à la main.</li>
+<li><b>Disques pour Ceph :</b> ajouter un second disque virtuel, vierge, à chaque nœud de stockage.</li>
+<li><b>Accès à Internet :</b> indispensable pendant l'installation — snaps, charms et images sont téléchargés.</li>
+<li><b>Nom de machine :</b> pleinement qualifié, résolu localement, fixé avant l'installation.</li>
+</ul>
+<div class="note"><b>Ne pas extrapoler :</b> une maquette prouve le fonctionnement et les procédures, pas les performances ni la tenue à la panne.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 58 -->
+<section class="slide">
+<header><span class="kick">Synthèse</span><h2>Ce qu'il faut retenir</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card cb"><h3>MAAS</h3>
+<ul class="pts sm"><li>Fait d'un parc de serveurs un cloud de machines nues.</li><li>Région pour l'état et l'API, rack pour l'amorçage et l'alimentation.</li><li>New → Commissioning → Ready → Deployed.</li><li>Étiquettes, zones et espaces : le vocabulaire des couches supérieures.</li></ul></div>
+<div class="card cv"><h3>Juju</h3>
+<ul class="pts sm"><li>Déploie et relie des applications par des charms.</li><li>Contrôleur, modèle, application, unité, relation.</li><li>Même outil sur machines et sur Kubernetes.</li><li><code>juju status</code> : le premier réflexe de diagnostic.</li></ul></div>
+<div class="card ct"><h3>Canonical OpenStack</h3>
+<ul class="pts sm"><li>Sunbeam : plan de contrôle en pods, snaps sur les hôtes.</li><li>Rôles control, compute, network, storage.</li><li>Fournisseur manuel ou MAAS, choisi à la conception.</li><li>KVM, OVN, Ceph : pas d'autre option aujourd'hui.</li></ul></div>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:20%">Question</th><th>Réponse courte</th></tr></thead>
+<tbody>
+<tr><td>Qu'apporte la stack ?</td><td>une chaîne complète et cohérente, du serveur nu au cloud, utilisable sans contrat et dès une machine</td></tr>
+<tr><td>Que coûte-t-elle en liberté ?</td><td style="color:var(--ink);font-weight:400">des choix techniques imposés et peu de réglages hors de ce que prévoient les charms</td></tr>
+<tr><td>Combien de temps dure une version ?</td><td style="color:var(--ink);font-weight:400">cinq ans en standard sur une LTS, jusqu'à douze avec Ubuntu Pro et le support étendu</td></tr>
+<tr><td>Quel support ?</td><td style="color:var(--ink);font-weight:400">aucun, abonnement seul, abonnement avec assistance permanente, ou cloud entièrement géré — par nœud</td></tr>
+<tr><td>Quelles décisions sont définitives ?</td><td style="color:var(--ink);font-weight:400">le fournisseur de machines et la version de départ</td></tr>
+</tbody></table>
+<div class="note g"><b>Sources :</b> documentation de Canonical OpenStack 2026.1 (architecture, conception, prérequis, installation, mises à jour, cycle de vie), documentation de MAAS 3.7, notes de version de Juju 4.0, page de support OpenStack de Canonical — consultées en octobre 2026.</div>
+</div>
+</section>
+
+</div>
+<div id="bar"></div>
+<div id="nav"><button id="bO" title="Vue d'ensemble (O)">▦</button><button id="bF" title="Plein écran (F)">⛶</button><button id="bP" title="Précédent (←)">←</button><button id="bN" title="Suivant (→)">→</button></div>
+<script>
+(function(){
+var stage=document.getElementById('stage'),bar=document.getElementById('bar'),body=document.body;
+var slides=Array.prototype.slice.call(document.querySelectorAll('.slide')),N=slides.length,cur=0;
+slides.forEach(function(s,i){
+  var f=document.createElement('div');f.className='foot';
+  f.innerHTML='<span>OpenStack — la stack Canonical</span><span>'+(i+1)+' / '+N+'</span>';
+  s.appendChild(f);
+  s.addEventListener('click',function(){if(body.classList.contains('ov')){body.classList.remove('ov');go(i);fit();}});
+});
+function go(n){
+  cur=Math.max(0,Math.min(N-1,n));
+  slides.forEach(function(s,i){s.classList.toggle('active',i===cur);});
+  bar.style.width=((cur+1)/N*100)+'%';
+  try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+}
+function fit(){
+  if(body.classList.contains('ov')){
+    stage.style.transform='';
+    document.documentElement.style.setProperty('--z',Math.max(.1,(window.innerWidth-40-4*14-20)/5/1280));
+  }else{
+    stage.style.transform='scale('+Math.min(window.innerWidth/1280,window.innerHeight/720)+')';
+  }
+}
+function overview(){body.classList.toggle('ov');fit();if(body.classList.contains('ov')){slides[cur].scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}}
+function full(){if(document.fullscreenElement){document.exitFullscreen();}else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen();}}
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'||k===' '||k==='ArrowDown'){e.preventDefault();go(cur+1);}
+  else if(k==='ArrowLeft'||k==='PageUp'||k==='ArrowUp'){e.preventDefault();go(cur-1);}
+  else if(k==='Home'){go(0);}
+  else if(k==='End'){go(N-1);}
+  else if(k==='o'||k==='O'||k==='Escape'){if(k!=='Escape'||body.classList.contains('ov'))overview();}
+  else if(k==='f'||k==='F'){full();}
+});
+document.getElementById('bN').onclick=function(){go(cur+1);};
+document.getElementById('bP').onclick=function(){go(cur-1);};
+document.getElementById('bO').onclick=overview;
+document.getElementById('bF').onclick=full;
+var tx=null;
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){if(tx===null||body.classList.contains('ov'))return;var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1));tx=null;},{passive:true});
+window.addEventListener('resize',fit);
+window.addEventListener('hashchange',function(){var h=parseInt(location.hash.slice(1),10);if(h&&h-1!==cur)go(h-1);});
+var h=parseInt(location.hash.slice(1),10);
+go(h?h-1:0);fit();
+})();
+</script>
+</body>
+</html>

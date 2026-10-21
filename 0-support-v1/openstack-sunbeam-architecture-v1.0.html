@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architecture OpenStack Sunbeam</title>
+<style>
+:root{--ink:#0f172a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;--navy:#101a33;--red:#e4002b;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#f1f5f9;color:var(--ink);font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+header.top{background:radial-gradient(900px 400px at 85% 0%,#1c2a55 0%,var(--navy) 60%,#0b1226 100%);color:#fff;padding:26px 32px 22px}
+.kick{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#ff6b84}
+h1{font-size:30px;letter-spacing:-.02em;margin:4px 0 6px;font-weight:800}
+header.top p{color:#cbd5e1;max-width:1050px}
+main{padding:18px 32px 40px;max-width:1800px;margin:0 auto}
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 3px rgba(15,23,42,.06);padding:16px 18px;margin-bottom:18px}
+h2{font-size:19px;letter-spacing:-.01em;margin-bottom:10px;padding-left:12px;border-left:4px solid var(--red)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.bar .sp{flex:1}
+button{font:600 13px/1 inherit;font-family:inherit;border:1px solid #cbd5e1;background:#fff;color:var(--ink);border-radius:99px;padding:8px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+button i{width:10px;height:10px;border-radius:50%;display:inline-block}
+button:hover{border-color:var(--ink)}
+button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.hint{font-size:13px;color:var(--mut)}
+#wrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+#dia{display:block;width:100%;height:auto;min-width:1100px}
+#wrap.real #dia{width:1720px;min-width:1720px}
+svg text{font-family:inherit;fill:var(--ink)}
+.tb{font-weight:700}.tl{fill:#475569}.tm{font-family:var(--mono);fill:#475569}.zt{font-weight:800}
+.bn{fill:#fff;font-size:10.5px;font-weight:800;pointer-events:none}
+.zone{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:7 5}
+.k8s{fill:#fff;stroke:#326ce5;stroke-width:1.8}
+.snapbox{fill:#fff;stroke:#64748b;stroke-width:1.3;stroke-dasharray:4 3}
+.bx{fill:#fff;stroke:#94a3b8;stroke-width:1.4}
+.opt{fill:#fff;stroke:#94a3b8;stroke-width:1.3;stroke-dasharray:5 4}
+.b-red{fill:#fde8ec;stroke:#e4002b;stroke-width:1.4}
+.b-blue{fill:#e3edff;stroke:#2563eb;stroke-width:1.4}
+.b-data{fill:#e3edff;stroke:#2563eb;stroke-width:1.4}
+.b-teal{fill:#d8f3ee;stroke:#0d9488;stroke-width:1.4}
+.b-amber{fill:#fdf0d5;stroke:#d97706;stroke-width:1.4}
+.b-violet{fill:#ece5fd;stroke:#7c3aed;stroke-width:1.4}
+.b-grey{fill:#eef2f6;stroke:#475569;stroke-width:1.4}
+.b-navy{fill:#e9ecf3;stroke:#101a33;stroke-width:1.4}
+.disk{fill:#fff;stroke:#7c3aed;stroke-width:1.2}
+.net{fill:#101a33;stroke:#101a33}
+.net ~ text{fill:#fff}
+.drop{stroke:#94a3b8;stroke-width:3}
+.fl{fill:none;stroke-width:2.2;stroke-linejoin:round}
+.c-mgmt .fl{stroke-dasharray:6 4}
+.hit{fill:none;stroke:transparent;stroke-width:14;cursor:pointer}
+.flow{transition:opacity .15s;cursor:pointer}
+svg.f .flow{opacity:.08}
+svg.f .flow.on{opacity:1}
+svg.f .flow.on .fl{stroke-width:3.4}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{background:var(--navy);color:#fff;text-align:left;padding:8px 10px;font-size:12.5px}
+td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:nth-child(even) td{background:#f8fafc}
+#ft tbody tr{cursor:pointer}
+#ft tbody tr.on td{background:#fff5d6}
+#ft tbody tr.dim{opacity:.35}
+.num{display:inline-block;min-width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;color:#fff;font-weight:800;font-size:12px}
+.cat{font-weight:700}
+.mono,code{font-family:var(--mono);font-size:.88em}
+code{background:#f1f5f9;padding:1px 5px;border-radius:4px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+ol.sc{list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:6px}
+ol.sc li{counter-increment:s;padding:8px 10px 8px 40px;position:relative;border:1px solid var(--line);border-radius:8px;cursor:pointer;font-size:14px}
+ol.sc li::before{content:counter(s);position:absolute;left:10px;top:8px;width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-weight:800;font-size:12px;text-align:center;line-height:22px}
+ol.sc li:hover,ol.sc li.on{border-color:var(--red);background:#fff5f6}
+ol.sc li small{color:var(--mut);font-weight:600}
+ul.n{padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;font:12.8px/1.55 var(--mono);overflow:auto}
+pre .c{color:#7dd3fc}pre .m{color:#94a3b8}
+.src{font-size:13px;color:var(--mut)}
+.src a{color:#1d4ed8}
+@media (max-width:1100px){.grid{grid-template-columns:1fr}main{padding:14px}}
+@media print{body{background:#fff}.bar button{display:none}#wrap{overflow:visible;border:0}.panel{box-shadow:none;break-inside:avoid}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<header class="top">
+<span class="kick">Schéma d'architecture</span>
+<h1>Canonical OpenStack (Sunbeam) — services, nœuds et flux</h1>
+<p>Déploiement multi-nœuds à haute disponibilité : trois nœuds par rôle. Le plan de contrôle tourne en pods sur Canonical Kubernetes, pilotés par des charms Juju ; le calcul et le stockage tournent en snaps directement sur les machines.</p>
+</header>
+<main>
+
+<section class="panel">
+<h2>Vue d'ensemble</h2>
+<div class="bar" id="filters"><button class="fb on" data-c="all">Tous les flux</button><button class="fb" data-c="rest"><i style="background:#e4002b"></i>REST</button><button class="fb" data-c="amqp"><i style="background:#d97706"></i>AMQP</button><button class="fb" data-c="sql"><i style="background:#475569"></i>SQL</button><button class="fb" data-c="ovsdb"><i style="background:#0d9488"></i>OVSDB</button><button class="fb" data-c="ceph"><i style="background:#7c3aed"></i>Stockage</button><button class="fb" data-c="data"><i style="background:#2563eb"></i>Données</button><button class="fb" data-c="mgmt"><i style="background:#101a33"></i>Gestion</button><span class="sp"></span><button id="zoom">Taille réelle</button></div>
+<p class="hint" style="margin-bottom:10px">Cliquez sur une famille de flux, sur une pastille numérotée du schéma ou sur une ligne du tableau pour isoler un flux. Chaque numéro renvoie au tableau des flux.</p>
+<div id="wrap">
+<svg id="dia" viewBox="0 0 1720 1000" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture Canonical OpenStack Sunbeam : nœuds control, compute et storage, services et flux">
+<defs><marker id="m-rest" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e4002b"/></marker>
+<marker id="m-amqp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+<marker id="m-sql" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="m-ovsdb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker>
+<marker id="m-ceph" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7c3aed"/></marker>
+<marker id="m-data" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+<marker id="m-mgmt" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#101a33"/></marker></defs>
+<g class="card">
+<rect x="40" y="10" width="290" height="70" rx="8" class="b-navy" />
+<text x="185.0" y="27" class="tb" text-anchor="middle" style="font-size:12.5px">Opérateur</text>
+<text x="185.0" y="43" class="tl" text-anchor="middle" style="font-size:10.5px">snap openstack : CLI sunbeam</text>
+<text x="185.0" y="56" class="tl" text-anchor="middle" style="font-size:10.5px">plans Terraform · client juju</text>
+</g>
+<g class="card">
+<rect x="420" y="10" width="280" height="70" rx="8" class="b-blue" />
+<text x="560.0" y="27" class="tb" text-anchor="middle" style="font-size:12.5px">Utilisateurs du cloud</text>
+<text x="560.0" y="43" class="tl" text-anchor="middle" style="font-size:10.5px">CLI openstack · Horizon · Terraform</text>
+<text x="560.0" y="56" class="tl" text-anchor="middle" style="font-size:10.5px">accès par les points d'accès publics</text>
+</g>
+<g class="card">
+<rect x="880" y="10" width="280" height="70" rx="8" class="b-navy" />
+<text x="1020.0" y="27" class="tb" text-anchor="middle" style="font-size:12.5px">Contrôleur Juju</text>
+<text x="1020.0" y="43" class="tl" text-anchor="middle" style="font-size:10.5px">modèle « controller » : charms machine</text>
+<text x="1020.0" y="56" class="tl" text-anchor="middle" style="font-size:10.5px">modèle « openstack » : charms Kubernetes</text>
+</g>
+<g class="card">
+<rect x="1230" y="20" width="460" height="50" rx="8" class="b-data" />
+<text x="1460.0" y="37" class="tb" text-anchor="middle" style="font-size:12.5px">Réseau externe (fournisseur)</text>
+<text x="1460.0" y="53" class="tl" text-anchor="middle" style="font-size:10.5px">IP flottantes · accès sortant des instances</text>
+</g>
+<rect x="40" y="190" width="920" height="705" rx="14" class="zone" />
+<text x="55" y="211" class="zt" text-anchor="start" style="font-size:13.5px">Rôle control · ×3 nœuds — sunbeam-ctl01 · ctl02 · ctl03</text>
+<rect x="60" y="225" width="880" height="553" rx="12" class="k8s" />
+<text x="75" y="244" class="tb" text-anchor="start" style="font-size:12px">Canonical Kubernetes (snap k8s) — modèle Juju « openstack » : un pod par unité, répartis sur les 3 nœuds</text>
+<g class="card" data-k="keystone">
+<rect x="75.0" y="272" width="165" height="98" rx="8" class="b-red" />
+<text x="157.5" y="289" class="tb" text-anchor="middle" style="font-size:12.5px">keystone</text>
+<text x="157.5" y="303" class="tm" text-anchor="middle" style="font-size:10px">keystone-k8s · ×3</text>
+<text x="157.5" y="319" class="tl" text-anchor="middle" style="font-size:10.5px">keystone (WSGI)</text>
+<text x="157.5" y="332" class="tl" text-anchor="middle" style="font-size:10.5px">jetons, catalogue, rôles</text>
+</g>
+<g class="card" data-k="glance">
+<rect x="248.33333333333334" y="272" width="165" height="98" rx="8" class="b-red" />
+<text x="330.83333333333337" y="289" class="tb" text-anchor="middle" style="font-size:12.5px">glance</text>
+<text x="330.83333333333337" y="303" class="tm" text-anchor="middle" style="font-size:10px">glance-k8s · ×3</text>
+<text x="330.83333333333337" y="319" class="tl" text-anchor="middle" style="font-size:10.5px">glance-api</text>
+<text x="330.83333333333337" y="332" class="tl" text-anchor="middle" style="font-size:10.5px">magasin : Ceph RBD</text>
+</g>
+<g class="card" data-k="placement">
+<rect x="421.6666666666667" y="272" width="165" height="98" rx="8" class="b-red" />
+<text x="504.1666666666667" y="289" class="tb" text-anchor="middle" style="font-size:12.5px">placement</text>
+<text x="504.1666666666667" y="303" class="tm" text-anchor="middle" style="font-size:10px">placement-k8s · ×3</text>
+<text x="504.1666666666667" y="319" class="tl" text-anchor="middle" style="font-size:10.5px">placement-api</text>
+<text x="504.1666666666667" y="332" class="tl" text-anchor="middle" style="font-size:10.5px">inventaires, allocations</text>
+</g>
+<g class="card" data-k="horizon">
+<rect x="595.0" y="272" width="165" height="98" rx="8" class="b-red" />
+<text x="677.5" y="289" class="tb" text-anchor="middle" style="font-size:12.5px">horizon</text>
+<text x="677.5" y="303" class="tm" text-anchor="middle" style="font-size:10px">horizon-k8s · ×3</text>
+<text x="677.5" y="319" class="tl" text-anchor="middle" style="font-size:10.5px">tableau de bord web</text>
+<text x="677.5" y="332" class="tl" text-anchor="middle" style="font-size:10.5px">client des API</text>
+</g>
+<g class="card" data-k="nova">
+<rect x="75.0" y="385" width="223" height="100" rx="8" class="b-red" />
+<text x="186.5" y="402" class="tb" text-anchor="middle" style="font-size:12.5px">nova</text>
+<text x="186.5" y="416" class="tm" text-anchor="middle" style="font-size:10px">nova-k8s · ×3</text>
+<text x="186.5" y="432" class="tl" text-anchor="middle" style="font-size:10.5px">nova-api · nova-scheduler</text>
+<text x="186.5" y="445" class="tl" text-anchor="middle" style="font-size:10.5px">nova-conductor · nova-spiceproxy</text>
+</g>
+<g class="card" data-k="neutron">
+<rect x="306.0" y="385" width="223" height="100" rx="8" class="b-red" />
+<text x="417.5" y="402" class="tb" text-anchor="middle" style="font-size:12.5px">neutron</text>
+<text x="417.5" y="416" class="tm" text-anchor="middle" style="font-size:10px">neutron-k8s · ×3</text>
+<text x="417.5" y="432" class="tl" text-anchor="middle" style="font-size:10.5px">neutron-server</text>
+<text x="417.5" y="445" class="tl" text-anchor="middle" style="font-size:10.5px">ML2 + pilote OVN</text>
+</g>
+<g class="card" data-k="cinder">
+<rect x="537.0" y="385" width="223" height="100" rx="8" class="b-red" />
+<text x="648.5" y="402" class="tb" text-anchor="middle" style="font-size:12.5px">cinder</text>
+<text x="648.5" y="416" class="tm" text-anchor="middle" style="font-size:10px">cinder-k8s · ×3</text>
+<text x="648.5" y="432" class="tl" text-anchor="middle" style="font-size:10.5px">cinder-api · cinder-scheduler</text>
+<text x="648.5" y="445" class="tl" text-anchor="middle" style="font-size:10.5px">backend : offre « cinder-volume »</text>
+</g>
+<g class="card" data-k="mysql">
+<rect x="75" y="510" width="310" height="100" rx="8" class="b-grey" />
+<text x="230.0" y="527" class="tb" text-anchor="middle" style="font-size:12.5px">mysql</text>
+<text x="230.0" y="541" class="tm" text-anchor="middle" style="font-size:10px">mysql-k8s · ×3 — InnoDB Cluster</text>
+<text x="230.0" y="557" class="tl" text-anchor="middle" style="font-size:10.5px">un mysql-router par service :</text>
+<text x="230.0" y="570" class="tl" text-anchor="middle" style="font-size:10.5px">keystone-mysql-router, nova-mysql-router…</text>
+<text x="230.0" y="583" class="tl" text-anchor="middle" style="font-size:10.5px">variante : une base par service</text>
+</g>
+<g class="card" data-k="ovn-central">
+<rect x="395" y="510" width="190" height="100" rx="8" class="b-teal" />
+<text x="490.0" y="527" class="tb" text-anchor="middle" style="font-size:12.5px">ovn-central</text>
+<text x="490.0" y="541" class="tm" text-anchor="middle" style="font-size:10px">ovn-central-k8s · ×3</text>
+<text x="490.0" y="557" class="tl" text-anchor="middle" style="font-size:10.5px">ovn-northd</text>
+<text x="490.0" y="570" class="tl" text-anchor="middle" style="font-size:10.5px">base NB 6641 · base SB 6642</text>
+</g>
+<g class="card" data-k="ca">
+<rect x="595" y="510" width="165" height="100" rx="8" class="bx" />
+<text x="677.5" y="527" class="tb" text-anchor="middle" style="font-size:12.5px">certificate-authority</text>
+<text x="677.5" y="541" class="tm" text-anchor="middle" style="font-size:10px">self-signed-certificates</text>
+<text x="677.5" y="557" class="tl" text-anchor="middle" style="font-size:10.5px">AC interne : TLS d'OVN,</text>
+<text x="677.5" y="570" class="tl" text-anchor="middle" style="font-size:10.5px">certificats de Traefik</text>
+</g>
+<rect x="75" y="640" width="685" height="46" rx="8" class="opt" />
+<text x="85" y="659" class="tb" text-anchor="start" style="font-size:10.5px">Fonctions optionnelles — « sunbeam enable … »</text>
+<text x="85" y="675" class="tl" text-anchor="start" style="font-size:10.2px">heat · octavia · designate + bind · barbican · vault · magnum · telemetry (aodh, gnocchi, ceilometer) · observability · validation</text>
+<rect x="75" y="700" width="850" height="64" rx="8" class="bx" />
+<text x="500" y="720" class="tb" text-anchor="middle" style="font-size:12px">Socle Kubernetes</text>
+<text x="500" y="737" class="tl" text-anchor="middle" style="font-size:10.5px">kube-apiserver 6443 · datastore du cluster · réseau des pods et service LoadBalancer (pool « OpenStack APIs IP ranges »)</text>
+<text x="500" y="752" class="tl" text-anchor="middle" style="font-size:10.5px">CoreDNS · stockage local des volumes persistants (MySQL, RabbitMQ, bases OVN)</text>
+<text x="867" y="668" class="tl" text-anchor="middle" style="font-size:9.5px">↑ exposés par LoadBalancer</text>
+<g class="card" data-k="traefik-public">
+<rect x="810" y="272" width="115" height="60" rx="8" class="b-red" />
+<text x="867.5" y="289" class="tb" text-anchor="middle" style="font-size:12px">traefik-public</text>
+<text x="867.5" y="303" class="tm" text-anchor="middle" style="font-size:10px">traefik-k8s · ×3</text>
+<text x="867.5" y="319" class="tl" text-anchor="middle" style="font-size:10.5px">VIP publique · 443</text>
+</g>
+<g class="card" data-k="traefik">
+<rect x="810" y="345" width="115" height="60" rx="8" class="b-red" />
+<text x="867.5" y="362" class="tb" text-anchor="middle" style="font-size:12px">traefik</text>
+<text x="867.5" y="376" class="tm" text-anchor="middle" style="font-size:10px">traefik-k8s · ×3</text>
+<text x="867.5" y="392" class="tl" text-anchor="middle" style="font-size:10.5px">VIP interne · 80/443</text>
+</g>
+<g class="card">
+<rect x="810" y="418" width="115" height="52" rx="8" class="opt" />
+<text x="867.5" y="435" class="tb" text-anchor="middle" style="font-size:12px">traefik-rgw</text>
+<text x="867.5" y="449" class="tm" text-anchor="middle" style="font-size:10px">traefik-k8s</text>
+<text x="867.5" y="465" class="tl" text-anchor="middle" style="font-size:10.5px">VIP objets (RGW)</text>
+</g>
+<g class="card" data-k="rabbitmq">
+<rect x="810" y="500" width="115" height="72" rx="8" class="b-amber" />
+<text x="867.5" y="517" class="tb" text-anchor="middle" style="font-size:12px">rabbitmq</text>
+<text x="867.5" y="531" class="tm" text-anchor="middle" style="font-size:10px">rabbitmq-k8s · ×3</text>
+<text x="867.5" y="547" class="tl" text-anchor="middle" style="font-size:10.5px">files à quorum</text>
+<text x="867.5" y="560" class="tl" text-anchor="middle" style="font-size:10.5px">VIP · AMQP 5672</text>
+</g>
+<g class="card" data-k="ovn-relay">
+<rect x="810" y="590" width="115" height="62" rx="8" class="b-teal" />
+<text x="867.5" y="607" class="tb" text-anchor="middle" style="font-size:12px">ovn-relay</text>
+<text x="867.5" y="621" class="tm" text-anchor="middle" style="font-size:10px">ovn-relay-k8s · ×3</text>
+<text x="867.5" y="637" class="tl" text-anchor="middle" style="font-size:10.5px">VIP · OVSDB 6642</text>
+</g>
+<text x="55" y="793" class="tl" text-anchor="start" style="font-size:9.5px">Sur chaque nœud (hors Kubernetes)</text>
+<g class="card">
+<rect x="60" y="800" width="285" height="80" rx="8" class="b-navy" />
+<text x="202.5" y="817" class="tb" text-anchor="middle" style="font-size:12.5px">snap openstack</text>
+<text x="202.5" y="833" class="tl" text-anchor="middle" style="font-size:10.5px">CLI sunbeam · clusterd (MicroCluster, dqlite)</text>
+<text x="202.5" y="846" class="tl" text-anchor="middle" style="font-size:10.5px">API clusterd : 7000</text>
+<text x="202.5" y="859" class="tl" text-anchor="middle" style="font-size:10.5px">service snap.openstack.clusterd</text>
+</g>
+<g class="card">
+<rect x="357" y="800" width="283" height="80" rx="8" class="b-navy" />
+<text x="498.5" y="817" class="tb" text-anchor="middle" style="font-size:12.5px">snap k8s</text>
+<text x="498.5" y="833" class="tl" text-anchor="middle" style="font-size:10.5px">charm « k8s » (modèle controller)</text>
+<text x="498.5" y="846" class="tl" text-anchor="middle" style="font-size:10.5px">kubelet · containerd · plan de contrôle K8s</text>
+</g>
+<g class="card">
+<rect x="652" y="800" width="288" height="80" rx="8" class="b-navy" />
+<text x="796.0" y="817" class="tb" text-anchor="middle" style="font-size:12.5px">Agent Juju de la machine</text>
+<text x="796.0" y="833" class="tl" text-anchor="middle" style="font-size:10.5px">charm « sunbeam-machine »</text>
+<text x="796.0" y="846" class="tl" text-anchor="middle" style="font-size:10.5px">préparation du système, proxy, paquets</text>
+</g>
+<rect x="1075" y="190" width="310" height="705" rx="14" class="zone" />
+<text x="1090" y="209" class="zt" text-anchor="start" style="font-size:13.5px">Rôle compute · ×3 nœuds</text>
+<text x="1090" y="224" class="tl" text-anchor="start" style="font-size:10.2px">sunbeam-cmp01 · 02 · 03 — et passerelle OVN</text>
+<g class="card">
+<rect x="1095" y="238" width="86" height="50" rx="8" class="b-blue" />
+<text x="1138.0" y="255" class="tb" text-anchor="middle" style="font-size:12px">VM</text>
+<text x="1138.0" y="271" class="tl" text-anchor="middle" style="font-size:10.5px">qemu-kvm</text>
+</g>
+<g class="card">
+<rect x="1187" y="238" width="86" height="50" rx="8" class="b-blue" />
+<text x="1230.0" y="255" class="tb" text-anchor="middle" style="font-size:12px">VM</text>
+<text x="1230.0" y="271" class="tl" text-anchor="middle" style="font-size:10.5px">qemu-kvm</text>
+</g>
+<g class="card">
+<rect x="1279" y="238" width="86" height="50" rx="8" class="b-blue" />
+<text x="1322.0" y="255" class="tb" text-anchor="middle" style="font-size:12px">VM</text>
+<text x="1322.0" y="271" class="tl" text-anchor="middle" style="font-size:10.5px">qemu-kvm</text>
+</g>
+<text x="1230" y="306" class="tl" text-anchor="middle" style="font-size:10px">instances des projets</text>
+<rect x="1087" y="326" width="286" height="460" rx="10" class="snapbox" />
+<text x="1097" y="342" class="tb" text-anchor="start" style="font-size:11px">snap openstack-hypervisor</text>
+<g class="card" data-k="nova-compute">
+<rect x="1095" y="350" width="120" height="220" rx="8" class="b-red" />
+<text x="1155.0" y="367" class="tb" text-anchor="middle" style="font-size:12.5px">nova-compute</text>
+<text x="1155.0" y="383" class="tl" text-anchor="middle" style="font-size:10.5px">pilote libvirt</text>
+<text x="1155.0" y="396" class="tl" text-anchor="middle" style="font-size:10.5px">os-vif · os-brick</text>
+<text x="1155.0" y="409" class="tl" text-anchor="middle" style="font-size:10.5px"></text>
+<text x="1155.0" y="422" class="tl" text-anchor="middle" style="font-size:10.5px">suivi des</text>
+<text x="1155.0" y="435" class="tl" text-anchor="middle" style="font-size:10.5px">ressources</text>
+<text x="1155.0" y="448" class="tl" text-anchor="middle" style="font-size:10.5px"></text>
+<text x="1155.0" y="461" class="tl" text-anchor="middle" style="font-size:10.5px">ordres reçus</text>
+<text x="1155.0" y="474" class="tl" text-anchor="middle" style="font-size:10.5px">par RPC</text>
+</g>
+<g class="card" data-k="metadata">
+<rect x="1227" y="350" width="138" height="84" rx="8" class="bx" />
+<text x="1296.0" y="367" class="tb" text-anchor="middle" style="font-size:12.5px">Métadonnées</text>
+<text x="1296.0" y="383" class="tl" text-anchor="middle" style="font-size:10.5px">nova-api-metadata</text>
+<text x="1296.0" y="396" class="tl" text-anchor="middle" style="font-size:10.5px">neutron-ovn-</text>
+<text x="1296.0" y="409" class="tl" text-anchor="middle" style="font-size:10.5px">metadata-agent</text>
+</g>
+<g class="card" data-k="libvirt">
+<rect x="1227" y="446" width="138" height="124" rx="8" class="b-amber" />
+<text x="1296.0" y="463" class="tb" text-anchor="middle" style="font-size:12.5px">libvirt · QEMU</text>
+<text x="1296.0" y="479" class="tl" text-anchor="middle" style="font-size:10.5px">libvirtd · virtlogd</text>
+<text x="1296.0" y="492" class="tl" text-anchor="middle" style="font-size:10.5px">KVM</text>
+<text x="1296.0" y="505" class="tl" text-anchor="middle" style="font-size:10.5px"></text>
+<text x="1296.0" y="518" class="tl" text-anchor="middle" style="font-size:10.5px">librbd :</text>
+<text x="1296.0" y="531" class="tl" text-anchor="middle" style="font-size:10.5px">volumes Ceph</text>
+</g>
+<g class="card" data-k="ovn-controller">
+<rect x="1095" y="590" width="270" height="60" rx="8" class="b-teal" />
+<text x="1230.0" y="607" class="tb" text-anchor="middle" style="font-size:12.5px">ovn-controller</text>
+<text x="1230.0" y="623" class="tl" text-anchor="middle" style="font-size:10.5px">traduit la base Southbound en flux OVS</text>
+<text x="1230.0" y="636" class="tl" text-anchor="middle" style="font-size:10.5px">rôle de passerelle (chassis gateway)</text>
+</g>
+<g class="card">
+<rect x="1095" y="665" width="130" height="60" rx="8" class="b-teal" />
+<text x="1160.0" y="682" class="tb" text-anchor="middle" style="font-size:12px">br-int</text>
+<text x="1160.0" y="698" class="tl" text-anchor="middle" style="font-size:10.5px">Open vSwitch</text>
+<text x="1160.0" y="711" class="tl" text-anchor="middle" style="font-size:10.5px">ports des instances</text>
+</g>
+<g class="card">
+<rect x="1235" y="665" width="130" height="60" rx="8" class="b-teal" />
+<text x="1300.0" y="682" class="tb" text-anchor="middle" style="font-size:12px">br-ex</text>
+<text x="1300.0" y="698" class="tl" text-anchor="middle" style="font-size:10.5px">Open vSwitch</text>
+<text x="1300.0" y="711" class="tl" text-anchor="middle" style="font-size:10.5px">réseau physique</text>
+</g>
+<rect x="1095" y="745" width="270" height="30" rx="6" class="bx" />
+<text x="1230" y="764" class="tl" text-anchor="middle" style="font-size:10.5px">↔ autres hyperviseurs : Geneve UDP 6081</text>
+<g class="card">
+<rect x="1095" y="800" width="270" height="80" rx="8" class="b-navy" />
+<text x="1230.0" y="817" class="tb" text-anchor="middle" style="font-size:12.5px">Hôte</text>
+<text x="1230.0" y="833" class="tl" text-anchor="middle" style="font-size:10.5px">charms « openstack-hypervisor »,</text>
+<text x="1230.0" y="846" class="tl" text-anchor="middle" style="font-size:10.5px">« sunbeam-machine » (modèle controller)</text>
+<text x="1230.0" y="859" class="tl" text-anchor="middle" style="font-size:10.5px">agent Juju · snap openstack (clusterd)</text>
+</g>
+<rect x="1445" y="190" width="245" height="705" rx="14" class="zone" />
+<text x="1458" y="209" class="zt" text-anchor="start" style="font-size:13.5px">Rôle storage · ×3 nœuds</text>
+<text x="1458" y="224" class="tl" text-anchor="start" style="font-size:10.2px">sunbeam-sto01 · 02 · 03</text>
+<rect x="1465" y="235" width="205" height="335" rx="10" class="snapbox" />
+<text x="1475" y="252" class="tb" text-anchor="start" style="font-size:11px">snap microceph</text>
+<g class="card" data-k="mon">
+<rect x="1473" y="260" width="189" height="70" rx="8" class="b-violet" />
+<text x="1567.5" y="277" class="tb" text-anchor="middle" style="font-size:12.5px">MON · MGR · MDS</text>
+<text x="1567.5" y="293" class="tl" text-anchor="middle" style="font-size:10.5px">carte du cluster, quorum à 3</text>
+<text x="1567.5" y="306" class="tl" text-anchor="middle" style="font-size:10.5px">3300, 6789</text>
+</g>
+<g class="card" data-k="osd">
+<rect x="1473" y="342" width="189" height="160" rx="8" class="b-violet" />
+<text x="1567.5" y="359" class="tb" text-anchor="middle" style="font-size:12.5px">OSD — un par disque</text>
+<text x="1567.5" y="375" class="tl" text-anchor="middle" style="font-size:10.5px">6800–7300</text>
+</g>
+<rect x="1487" y="395" width="34" height="30" rx="4" class="disk" />
+<rect x="1487" y="435" width="34" height="30" rx="4" class="disk" />
+<rect x="1529" y="395" width="34" height="30" rx="4" class="disk" />
+<rect x="1529" y="435" width="34" height="30" rx="4" class="disk" />
+<rect x="1571" y="395" width="34" height="30" rx="4" class="disk" />
+<rect x="1571" y="435" width="34" height="30" rx="4" class="disk" />
+<rect x="1613" y="395" width="34" height="30" rx="4" class="disk" />
+<rect x="1613" y="435" width="34" height="30" rx="4" class="disk" />
+<text x="1567" y="492" class="tl" text-anchor="middle" style="font-size:10px">réplication ×3 entre nœuds</text>
+<g class="card">
+<rect x="1473" y="512" width="189" height="50" rx="8" class="opt" />
+<text x="1567.5" y="529" class="tb" text-anchor="middle" style="font-size:12px">RGW (optionnel)</text>
+<text x="1567.5" y="545" class="tl" text-anchor="middle" style="font-size:10.5px">API objets S3 / Swift</text>
+</g>
+<rect x="1465" y="600" width="205" height="160" rx="10" class="snapbox" />
+<text x="1475" y="617" class="tb" text-anchor="start" style="font-size:11px">snap cinder-volume</text>
+<g class="card" data-k="cinder-volume">
+<rect x="1473" y="625" width="189" height="70" rx="8" class="b-red" />
+<text x="1567.5" y="642" class="tb" text-anchor="middle" style="font-size:12.5px">cinder-volume</text>
+<text x="1567.5" y="658" class="tl" text-anchor="middle" style="font-size:10.5px">pilote RBD</text>
+<text x="1567.5" y="671" class="tl" text-anchor="middle" style="font-size:10.5px">crée, étend, capture les volumes</text>
+</g>
+<text x="1567" y="714" class="tl" text-anchor="middle" style="font-size:10.2px">charms « cinder-volume »</text>
+<text x="1567" y="728" class="tl" text-anchor="middle" style="font-size:10.2px">et « cinder-volume-ceph »</text>
+<text x="1567" y="746" class="tl" text-anchor="middle" style="font-size:10.2px">(modèle controller)</text>
+<g class="card">
+<rect x="1465" y="800" width="205" height="80" rx="8" class="b-navy" />
+<text x="1567.5" y="817" class="tb" text-anchor="middle" style="font-size:12.5px">Hôte</text>
+<text x="1567.5" y="833" class="tl" text-anchor="middle" style="font-size:10.5px">charm « microceph »</text>
+<text x="1567.5" y="846" class="tl" text-anchor="middle" style="font-size:10.5px">(modèle controller)</text>
+<text x="1567.5" y="859" class="tl" text-anchor="middle" style="font-size:10.5px">agent Juju · clusterd</text>
+</g>
+<line x1="500" y1="895" x2="500" y2="945" class="drop"/>
+<line x1="1230" y1="895" x2="1230" y2="945" class="drop"/>
+<line x1="1567" y1="895" x2="1567" y2="945" class="drop"/>
+<rect x="40" y="945" width="1650" height="42" rx="8" class="net" />
+<text x="865" y="963" class="tb" text-anchor="middle" style="font-size:12.5px">Réseau de gestion — API internes, RPC, OVSDB, Juju, clusterd, Ceph, tunnels Geneve</text>
+<text x="865" y="979" class="tl" text-anchor="middle" style="font-size:10.5px">un seul réseau par défaut ; séparation possible par espaces réseau lorsque le déploiement est piloté par MAAS</text>
+<g class="flow c-rest" data-f="1" data-c="rest">
+<path d="M560,80 V140 H867 V270" class="fl" stroke="#e4002b" marker-end="url(#m-rest)"/>
+<path d="M560,80 V140 H867 V270" class="hit"/>
+<circle cx="700" cy="140" r="9.5" fill="#e4002b" stroke="#fff" stroke-width="1.5"/><text x="700" y="143.8" class="bn" text-anchor="middle">1</text></g>
+<g class="flow c-rest" data-f="2" data-c="rest">
+<path d="M810,300 H774" class="fl" stroke="#e4002b" marker-end="url(#m-rest)"/>
+<path d="M810,300 H774" class="hit"/>
+<path d="M772,277 V480" class="fl" stroke="#e4002b"/>
+<circle cx="793" cy="300" r="9.5" fill="#e4002b" stroke="#fff" stroke-width="1.5"/><text x="793" y="303.8" class="bn" text-anchor="middle">2</text></g>
+<g class="flow c-rest" data-f="3" data-c="rest">
+<path d="M810,375 H774" class="fl" stroke="#e4002b" marker-end="url(#m-rest)" marker-start="url(#m-rest)"/>
+<path d="M810,375 H774" class="hit"/>
+<circle cx="793" cy="375" r="9.5" fill="#e4002b" stroke="#fff" stroke-width="1.5"/><text x="793" y="378.8" class="bn" text-anchor="middle">3</text></g>
+<g class="flow c-rest" data-f="4" data-c="rest">
+<path d="M1095,365 H927" class="fl" stroke="#e4002b" marker-end="url(#m-rest)"/>
+<path d="M1095,365 H927" class="hit"/>
+<circle cx="1058" cy="365" r="9.5" fill="#e4002b" stroke="#fff" stroke-width="1.5"/><text x="1058" y="368.8" class="bn" text-anchor="middle">4</text></g>
+<g class="flow c-rest" data-f="5" data-c="rest">
+<path d="M1473,676 H1428 V915 H1006 V390 H927" class="fl" stroke="#e4002b" marker-end="url(#m-rest)"/>
+<path d="M1473,676 H1428 V915 H1006 V390 H927" class="hit"/>
+<circle cx="1250" cy="915" r="9.5" fill="#e4002b" stroke="#fff" stroke-width="1.5"/><text x="1250" y="918.8" class="bn" text-anchor="middle">5</text></g>
+<g class="flow c-amqp" data-f="6" data-c="amqp">
+<path d="M150,485 V497 H785 V540 H808" class="fl" stroke="#d97706" marker-end="url(#m-amqp)"/>
+<path d="M150,485 V497 H785 V540 H808" class="hit"/>
+<path d="M340,485 V497" class="fl" stroke="#d97706"/>
+<path d="M650,485 V497" class="fl" stroke="#d97706"/>
+<circle cx="700" cy="497" r="9.5" fill="#d97706" stroke="#fff" stroke-width="1.5"/><text x="700" y="500.8" class="bn" text-anchor="middle">6</text></g>
+<g class="flow c-amqp" data-f="7" data-c="amqp">
+<path d="M1095,520 H927" class="fl" stroke="#d97706" marker-end="url(#m-amqp)"/>
+<path d="M1095,520 H927" class="hit"/>
+<circle cx="1058" cy="520" r="9.5" fill="#d97706" stroke="#fff" stroke-width="1.5"/><text x="1058" y="523.8" class="bn" text-anchor="middle">7</text></g>
+<g class="flow c-amqp" data-f="8" data-c="amqp">
+<path d="M1473,650 H1415 V905 H990 V555 H927" class="fl" stroke="#d97706" marker-end="url(#m-amqp)"/>
+<path d="M1473,650 H1415 V905 H990 V555 H927" class="hit"/>
+<circle cx="1150" cy="905" r="9.5" fill="#d97706" stroke="#fff" stroke-width="1.5"/><text x="1150" y="908.8" class="bn" text-anchor="middle">8</text></g>
+<g class="flow c-sql" data-f="9" data-c="sql">
+<path d="M75,320 H66 V560 H73" class="fl" stroke="#475569" marker-end="url(#m-sql)"/>
+<path d="M75,320 H66 V560 H73" class="hit"/>
+<path d="M75,435 H66" class="fl" stroke="#475569"/>
+<circle cx="66" cy="480" r="9.5" fill="#475569" stroke="#fff" stroke-width="1.5"/><text x="66" y="483.8" class="bn" text-anchor="middle">9</text></g>
+<g class="flow c-ovsdb" data-f="10" data-c="ovsdb">
+<path d="M500,485 V508" class="fl" stroke="#0d9488" marker-end="url(#m-ovsdb)"/>
+<path d="M500,485 V508" class="hit"/>
+<circle cx="500" cy="497" r="9.5" fill="#0d9488" stroke="#fff" stroke-width="1.5"/><text x="500" y="500.8" class="bn" text-anchor="middle">10</text></g>
+<g class="flow c-ovsdb" data-f="11" data-c="ovsdb">
+<path d="M490,610 V622 H808" class="fl" stroke="#0d9488" marker-end="url(#m-ovsdb)"/>
+<path d="M490,610 V622 H808" class="hit"/>
+<circle cx="690" cy="622" r="9.5" fill="#0d9488" stroke="#fff" stroke-width="1.5"/><text x="690" y="625.8" class="bn" text-anchor="middle">11</text></g>
+<g class="flow c-ovsdb" data-f="12" data-c="ovsdb">
+<path d="M1095,620 H927" class="fl" stroke="#0d9488" marker-end="url(#m-ovsdb)"/>
+<path d="M1095,620 H927" class="hit"/>
+<circle cx="1058" cy="620" r="9.5" fill="#0d9488" stroke="#fff" stroke-width="1.5"/><text x="1058" y="623.8" class="bn" text-anchor="middle">12</text></g>
+<g class="flow c-ceph" data-f="13" data-c="ceph">
+<path d="M330,272 V261 H972 V165 H1655 V233" class="fl" stroke="#7c3aed" marker-end="url(#m-ceph)"/>
+<path d="M330,272 V261 H972 V165 H1655 V233" class="hit"/>
+<circle cx="1250" cy="165" r="9.5" fill="#7c3aed" stroke="#fff" stroke-width="1.5"/><text x="1250" y="168.8" class="bn" text-anchor="middle">13</text></g>
+<g class="flow c-ceph" data-f="14" data-c="ceph">
+<path d="M1365,480 H1463" class="fl" stroke="#7c3aed" marker-end="url(#m-ceph)"/>
+<path d="M1365,480 H1463" class="hit"/>
+<circle cx="1378" cy="480" r="9.5" fill="#7c3aed" stroke="#fff" stroke-width="1.5"/><text x="1378" y="483.8" class="bn" text-anchor="middle">14</text></g>
+<g class="flow c-ceph" data-f="15" data-c="ceph">
+<path d="M1640,625 V572" class="fl" stroke="#7c3aed" marker-end="url(#m-ceph)"/>
+<path d="M1640,625 V572" class="hit"/>
+<circle cx="1640" cy="598" r="9.5" fill="#7c3aed" stroke="#fff" stroke-width="1.5"/><text x="1640" y="601.8" class="bn" text-anchor="middle">15</text></g>
+<g class="flow c-data" data-f="16" data-c="data">
+<path d="M1365,695 H1400 V72" class="fl" stroke="#2563eb" marker-end="url(#m-data)"/>
+<path d="M1365,695 H1400 V72" class="hit"/>
+<circle cx="1400" cy="300" r="9.5" fill="#2563eb" stroke="#fff" stroke-width="1.5"/><text x="1400" y="303.8" class="bn" text-anchor="middle">16</text></g>
+<g class="flow c-data" data-f="17" data-c="data">
+<path d="M1170,726 V744" class="fl" stroke="#2563eb" marker-end="url(#m-data)" marker-start="url(#m-data)"/>
+<path d="M1170,726 V744" class="hit"/>
+<circle cx="1146" cy="735" r="9.5" fill="#2563eb" stroke="#fff" stroke-width="1.5"/><text x="1146" y="738.8" class="bn" text-anchor="middle">17</text></g>
+<g class="flow c-data" data-f="18" data-c="data">
+<path d="M1296,290 V348" class="fl" stroke="#2563eb" marker-end="url(#m-data)"/>
+<path d="M1296,290 V348" class="hit"/>
+<circle cx="1296" cy="318" r="9.5" fill="#2563eb" stroke="#fff" stroke-width="1.5"/><text x="1296" y="321.8" class="bn" text-anchor="middle">18</text></g>
+<g class="flow c-mgmt" data-f="19" data-c="mgmt">
+<path d="M40,45 H25 V840 H58" class="fl" stroke="#101a33" marker-end="url(#m-mgmt)"/>
+<path d="M40,45 H25 V840 H58" class="hit"/>
+<circle cx="25" cy="480" r="9.5" fill="#101a33" stroke="#fff" stroke-width="1.5"/><text x="25" y="483.8" class="bn" text-anchor="middle">19</text></g>
+<g class="flow c-mgmt" data-f="20" data-c="mgmt">
+<path d="M250,80 V100 H920 V82" class="fl" stroke="#101a33" marker-end="url(#m-mgmt)"/>
+<path d="M250,80 V100 H920 V82" class="hit"/>
+<circle cx="400" cy="100" r="9.5" fill="#101a33" stroke="#fff" stroke-width="1.5"/><text x="400" y="103.8" class="bn" text-anchor="middle">20</text></g>
+<g class="flow c-mgmt" data-f="21" data-c="mgmt">
+<path d="M1040,80 V928 H1567 V882" class="fl" stroke="#101a33" marker-end="url(#m-mgmt)"/>
+<path d="M1040,80 V928 H1567 V882" class="hit"/>
+<path d="M1040,730 H942" class="fl" stroke="#101a33" marker-end="url(#m-mgmt)"/>
+<path d="M1040,730 H942" class="hit"/>
+<path d="M1040,840 H942" class="fl" stroke="#101a33" marker-end="url(#m-mgmt)"/>
+<path d="M1040,840 H942" class="hit"/>
+<path d="M1040,840 H1093" class="fl" stroke="#101a33" marker-end="url(#m-mgmt)"/>
+<path d="M1040,840 H1093" class="hit"/>
+<circle cx="1040" cy="130" r="9.5" fill="#101a33" stroke="#fff" stroke-width="1.5"/><text x="1040" y="133.8" class="bn" text-anchor="middle">21</text></g>
+</svg>
+</div>
+<p class="hint" style="margin-top:10px"><b>Variante minimale :</b> trois machines seulement, chacune cumulant les rôles control, compute et storage (architecture hyperconvergée). Les composants et les flux sont identiques ; seules les frontières entre nœuds disparaissent.</p>
+</section>
+
+<section class="panel">
+<h2>Tableau des flux</h2>
+<table id="ft">
+<thead><tr><th>N°</th><th>Famille</th><th>Source</th><th>Destination</th><th>Protocole, port</th><th>Objet</th></tr></thead>
+<tbody>
+<tr data-f="1" data-c="rest"><td><span class="num" style="background:#e4002b">1</span></td><td><span class="cat" style="color:#e4002b">REST</span></td><td>Utilisateurs</td><td>traefik-public (VIP publique)</td><td class="mono">HTTPS 443</td><td>API publiques, Horizon, consoles</td></tr>
+<tr data-f="2" data-c="rest"><td><span class="num" style="background:#e4002b">2</span></td><td><span class="cat" style="color:#e4002b">REST</span></td><td>traefik-public</td><td>Services d&#x27;API (pods)</td><td class="mono">HTTP</td><td>Routage par chemin vers keystone, nova, glance, neutron, cinder, placement, horizon</td></tr>
+<tr data-f="3" data-c="rest"><td><span class="num" style="background:#e4002b">3</span></td><td><span class="cat" style="color:#e4002b">REST</span></td><td>Services d&#x27;API</td><td>traefik (VIP interne)</td><td class="mono">HTTP(S)</td><td>Appels entre services par les points d&#x27;accès internes du catalogue : Nova → Glance, Neutron, Cinder, Placement ; tous → Keystone</td></tr>
+<tr data-f="4" data-c="rest"><td><span class="num" style="background:#e4002b">4</span></td><td><span class="cat" style="color:#e4002b">REST</span></td><td>nova-compute (compute)</td><td>traefik (VIP interne)</td><td class="mono">HTTP(S)</td><td>Keystone, Placement, Glance, Neutron, Cinder</td></tr>
+<tr data-f="5" data-c="rest"><td><span class="num" style="background:#e4002b">5</span></td><td><span class="cat" style="color:#e4002b">REST</span></td><td>cinder-volume (storage)</td><td>traefik (VIP interne)</td><td class="mono">HTTP(S)</td><td>Keystone, Glance (volume créé depuis une image)</td></tr>
+<tr data-f="6" data-c="amqp"><td><span class="num" style="background:#d97706">6</span></td><td><span class="cat" style="color:#d97706">AMQP</span></td><td>nova, neutron, cinder</td><td>rabbitmq</td><td class="mono">AMQP 5672</td><td>RPC entre processus d&#x27;un même service, notifications</td></tr>
+<tr data-f="7" data-c="amqp"><td><span class="num" style="background:#d97706">7</span></td><td><span class="cat" style="color:#d97706">AMQP</span></td><td>nova-compute (compute)</td><td>rabbitmq (VIP)</td><td class="mono">AMQP 5672</td><td>Ordres reçus du conductor, comptes rendus</td></tr>
+<tr data-f="8" data-c="amqp"><td><span class="num" style="background:#d97706">8</span></td><td><span class="cat" style="color:#d97706">AMQP</span></td><td>cinder-volume (storage)</td><td>rabbitmq (VIP)</td><td class="mono">AMQP 5672</td><td>Ordres reçus de cinder-scheduler</td></tr>
+<tr data-f="9" data-c="sql"><td><span class="num" style="background:#475569">9</span></td><td><span class="cat" style="color:#475569">SQL</span></td><td>Chaque service d&#x27;API</td><td>mysql, via son mysql-router</td><td class="mono">MySQL 3306</td><td>État persistant ; cinder-volume y accède par « cinder-volume-mysql-router » (offre Juju)</td></tr>
+<tr data-f="10" data-c="ovsdb"><td><span class="num" style="background:#0d9488">10</span></td><td><span class="cat" style="color:#0d9488">OVSDB</span></td><td>neutron-server</td><td>ovn-central, base Northbound</td><td class="mono">OVSDB 6641</td><td>Écriture du réseau logique voulu</td></tr>
+<tr data-f="11" data-c="ovsdb"><td><span class="num" style="background:#0d9488">11</span></td><td><span class="cat" style="color:#0d9488">OVSDB</span></td><td>ovn-central, base Southbound</td><td>ovn-relay</td><td class="mono">OVSDB 6642</td><td>Réplication en lecture pour décharger la base</td></tr>
+<tr data-f="12" data-c="ovsdb"><td><span class="num" style="background:#0d9488">12</span></td><td><span class="cat" style="color:#0d9488">OVSDB</span></td><td>ovn-controller (compute)</td><td>ovn-relay (VIP)</td><td class="mono">OVSDB 6642</td><td>Abonnement aux flux logiques ; état des ports</td></tr>
+<tr data-f="13" data-c="ceph"><td><span class="num" style="background:#7c3aed">13</span></td><td><span class="cat" style="color:#7c3aed">Stockage</span></td><td>glance-api</td><td>MicroCeph</td><td class="mono">RBD : 3300, 6789, 6800–7300</td><td>Lecture et écriture des images</td></tr>
+<tr data-f="14" data-c="ceph"><td><span class="num" style="background:#7c3aed">14</span></td><td><span class="cat" style="color:#7c3aed">Stockage</span></td><td>libvirt / QEMU (compute)</td><td>MicroCeph</td><td class="mono">RBD (librbd)</td><td>E/S des volumes, sans passer par Cinder</td></tr>
+<tr data-f="15" data-c="ceph"><td><span class="num" style="background:#7c3aed">15</span></td><td><span class="cat" style="color:#7c3aed">Stockage</span></td><td>cinder-volume</td><td>MicroCeph</td><td class="mono">RBD</td><td>Création, extension, instantanés, suppression</td></tr>
+<tr data-f="16" data-c="data"><td><span class="num" style="background:#2563eb">16</span></td><td><span class="cat" style="color:#2563eb">Données</span></td><td>br-ex (compute)</td><td>Réseau externe</td><td class="mono">Ethernet (flat ou VLAN)</td><td>IP flottantes, traduction d&#x27;adresses sortante</td></tr>
+<tr data-f="17" data-c="data"><td><span class="num" style="background:#2563eb">17</span></td><td><span class="cat" style="color:#2563eb">Données</span></td><td>br-int</td><td>br-int des autres hyperviseurs</td><td class="mono">Geneve, UDP 6081</td><td>Trafic entre instances de nœuds différents</td></tr>
+<tr data-f="18" data-c="data"><td><span class="num" style="background:#2563eb">18</span></td><td><span class="cat" style="color:#2563eb">Données</span></td><td>Instance</td><td>Métadonnées</td><td class="mono">HTTP, 169.254.169.254</td><td>Clés, données de démarrage (cloud-init) ; traité sur l&#x27;hôte</td></tr>
+<tr data-f="19" data-c="mgmt"><td><span class="num" style="background:#101a33">19</span></td><td><span class="cat" style="color:#101a33">Gestion</span></td><td>Opérateur (CLI sunbeam)</td><td>clusterd</td><td class="mono">HTTPS 7000</td><td>État du cluster, adhésion des nœuds, configuration</td></tr>
+<tr data-f="20" data-c="mgmt"><td><span class="num" style="background:#101a33">20</span></td><td><span class="cat" style="color:#101a33">Gestion</span></td><td>sunbeam (Terraform)</td><td>Contrôleur Juju</td><td class="mono">API Juju 17070</td><td>Application des plans : modèles, applications, intégrations</td></tr>
+<tr data-f="21" data-c="mgmt"><td><span class="num" style="background:#101a33">21</span></td><td><span class="cat" style="color:#101a33">Gestion</span></td><td>Contrôleur Juju</td><td>Agents des machines · API Kubernetes</td><td class="mono">17070 · 6443</td><td>Pilotage des charms machine et des charms Kubernetes</td></tr>
+</tbody></table>
+</section>
+
+<div class="grid">
+<section class="panel">
+<h2>Scénario : créer une instance sur volume</h2>
+<p class="hint" style="margin-bottom:10px">Cliquez sur une étape pour allumer les flux qu'elle emprunte.</p>
+<ol class="sc" id="sc">
+<li data-f="1,2">L'utilisateur envoie <code>POST /servers</code> au point d'accès public. <small>flux 1, 2</small></li>
+<li data-f="3,9">nova-api valide le jeton auprès de Keystone, lit l'image dans Glance, vérifie réseaux et quotas, enregistre l'instance. <small>flux 3, 9</small></li>
+<li data-f="6,3">nova-conductor et nova-scheduler se coordonnent par RPC ; le scheduler interroge Placement et réserve un hôte. <small>flux 6, 3</small></li>
+<li data-f="8,5,15">cinder-scheduler confie la création du volume à cinder-volume, qui le crée dans Ceph à partir de l'image. <small>flux 8, 5, 15</small></li>
+<li data-f="7,4">L'ordre de construction arrive sur l'hyperviseur ; nova-compute demande le port à Neutron et la connexion du volume à Cinder. <small>flux 7, 4</small></li>
+<li data-f="10,11,12">Neutron inscrit le port dans OVN ; ovn-controller l'apprend par le relais et installe les flux Open vSwitch. <small>flux 10, 11, 12</small></li>
+<li data-f="14">libvirt démarre la machine ; QEMU ouvre le volume directement dans Ceph. <small>flux 14</small></li>
+<li data-f="18">Au premier démarrage, cloud-init lit ses métadonnées sur l'hôte. <small>flux 18</small></li>
+<li data-f="16,17">Une IP flottante est associée : le trafic entre et sort par br-ex ; entre hôtes, il passe par les tunnels Geneve. <small>flux 16, 17</small></li>
+</ol>
+</section>
+
+<section class="panel">
+<h2>Qui tourne où</h2>
+<table>
+<thead><tr><th>Rôle</th><th>Livré sous forme de</th><th>Piloté par</th><th>Processus</th></tr></thead>
+<tbody>
+<tr><td><b>control</b></td><td>Images OCI (rocks) en pods sur le snap <code>k8s</code></td><td>Charms Kubernetes, modèle <code>openstack</code></td><td>API, ordonnanceurs, conductors, MySQL, RabbitMQ, OVN central et relais, Traefik</td></tr>
+<tr><td><b>compute</b></td><td>Snap <code>openstack-hypervisor</code></td><td>Charm <code>openstack-hypervisor</code>, modèle <code>controller</code></td><td>nova-compute, libvirt, QEMU/KVM, ovn-controller, Open vSwitch, métadonnées</td></tr>
+<tr><td><b>storage</b></td><td>Snaps <code>microceph</code> et <code>cinder-volume</code></td><td>Charms <code>microceph</code>, <code>cinder-volume</code>, <code>cinder-volume-ceph</code>, modèle <code>controller</code></td><td>Ceph MON, MGR, OSD, RGW ; cinder-volume</td></tr>
+<tr><td><b>tous</b></td><td>Snap <code>openstack</code></td><td>—</td><td>CLI <code>sunbeam</code>, démon <code>clusterd</code> (base dqlite répliquée)</td></tr>
+<tr><td><b>gouvernance</b></td><td>Contrôleur Juju</td><td>Plans Terraform lancés par <code>sunbeam</code></td><td>Sur un nœud du cloud (fournisseur manuel) ou sur des machines dédiées (avec MAAS)</td></tr>
+</tbody></table>
+<h2 style="margin-top:16px">Vérifier sur un déploiement réel</h2>
+<pre><span class="c">sunbeam</span> cluster list                    <span class="m"># nœuds et rôles</span>
+<span class="c">juju</span> status -m admin/controller         <span class="m"># k8s, microceph, openstack-hypervisor…</span>
+<span class="c">juju</span> status -m openstack                <span class="m"># charms du plan de contrôle</span>
+<span class="c">sudo k8s</span> kubectl get pods,svc -n openstack   <span class="m"># pods et adresses LoadBalancer</span>
+<span class="c">sudo systemctl</span> status 'snap.openstack-hypervisor.*'
+<span class="c">sudo microceph</span> status ; <span class="c">sudo ceph</span> -s
+<span class="c">sunbeam</span> plans list                      <span class="m"># plans Terraform et verrous</span></pre>
+</section>
+</div>
+
+<section class="panel">
+<h2>Hypothèses et limites du schéma</h2>
+<ul class="n">
+<li><b>Topologie OVN :</b> le schéma montre OVN central et son relais dans Kubernetes, et le rôle compute comme passerelle vers l'extérieur. Les versions récentes ajoutent un rôle <code>network</code> (MicroOVN) qui reprend cette fonction de passerelle ; la branche de développement permet aussi de sortir OVN central du modèle <code>openstack</code>.</li>
+<li><b>Cinder :</b> cinder-volume est représenté en snap sur les nœuds de stockage. Les versions plus anciennes l'exécutaient dans Kubernetes (charm <code>cinder-ceph-k8s</code>).</li>
+<li><b>Noms de nœuds et nombre de nœuds</b> (<code>sunbeam-ctl01</code>…) : illustratifs. La haute disponibilité demande au moins trois nœuds ; au-delà, on ajoute surtout des nœuds compute et storage.</li>
+<li><b>Ports :</b> 5672, 3306, 6641, 6642, 6443, 17070, 6081 et les ports Ceph sont les valeurs par défaut des logiciels ; le port 7000 de clusterd et les ports exposés par Traefik (80 ou 443 selon l'activation de TLS) sont à confirmer sur votre version.</li>
+<li><b>Flux non dessinés :</b> console SPICE (navigateur → traefik-public → nova-spiceproxy → hyperviseur), accès objet (traefik-rgw → RGW), réplication interne de MySQL, RabbitMQ, OVN et Ceph, synchronisation entre démons clusterd.</li>
+<li><b>Métadonnées :</b> servies localement par le snap de l'hyperviseur ; selon la version, la requête peut être relayée vers nova dans Kubernetes.</li>
+</ul>
+<p class="src" style="margin-top:12px">Sources : <a href="https://canonical.com/openstack/docs/latest/explanation/architecture/">Architecture</a> · <a href="https://canonical.com/openstack/docs/latest/reference/underlying-projects-and-charms/">Projets et charms</a> · <a href="https://canonical.com/openstack/docs/latest/how-to/troubleshooting/inspecting-the-cluster/">Inspecter le cluster</a> · <a href="https://canonical.com/openstack/docs/latest/reference/interactive-configuration-prompts/">Questions de configuration</a> · <a href="https://github.com/canonical/sunbeam-terraform">sunbeam-terraform</a> (plan du modèle openstack) — documentation Canonical OpenStack, consultée le 9 octobre 2026.</p>
+</section>
+</main>
+<script>
+(function(){
+var svg=document.getElementById('dia'),flows=[].slice.call(svg.querySelectorAll('.flow')),rows=[].slice.call(document.querySelectorAll('#ft tbody tr')),btns=[].slice.call(document.querySelectorAll('.fb')),steps=[].slice.call(document.querySelectorAll('#sc li'));
+function show(ids,cat){
+  var all=!ids&&!cat;
+  svg.classList.toggle('f',!all);
+  flows.forEach(function(g){var on=!all&&((cat&&g.dataset.c===cat)||(ids&&ids.indexOf(g.dataset.f)>=0));g.classList.toggle('on',on);});
+  rows.forEach(function(r){var on=!all&&((cat&&r.dataset.c===cat)||(ids&&ids.indexOf(r.dataset.f)>=0));r.classList.toggle('on',on&&!!ids);r.classList.toggle('dim',!all&&!on);});
+  btns.forEach(function(b){b.classList.toggle('on',cat?b.dataset.c===cat:(all&&b.dataset.c==='all'));});
+  steps.forEach(function(s){s.classList.toggle('on',!!ids&&s.dataset.f===ids.join(','));});
+}
+var cur=null;
+function pick(key,ids,cat){if(cur===key){cur=null;show();}else{cur=key;show(ids,cat);}}
+btns.forEach(function(b){b.addEventListener('click',function(){var c=b.dataset.c;if(c==='all'){cur=null;show();}else pick('c'+c,null,c);});});
+flows.forEach(function(g){g.addEventListener('click',function(){pick('f'+g.dataset.f,[g.dataset.f]);});});
+rows.forEach(function(r){r.addEventListener('click',function(){pick('f'+r.dataset.f,[r.dataset.f]);});});
+steps.forEach(function(s){s.addEventListener('click',function(){pick('s'+s.dataset.f,s.dataset.f.split(','));document.getElementById('wrap').scrollIntoView({behavior:'smooth',block:'nearest'});});});
+var z=document.getElementById('zoom'),w=document.getElementById('wrap');
+z.addEventListener('click',function(){var r=w.classList.toggle('real');z.textContent=r?'Ajuster à la largeur':'Taille réelle';z.classList.toggle('on',r);});
+})();
+</script>
+</body>
+</html>

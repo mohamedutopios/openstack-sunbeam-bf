@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenStack — authentification externe et mots de passe</title>
+<style>
+:root{--ink:#0f172a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;--navy:#101a33;--red:#e4002b;--red2:#b3122f;--blue:#2563eb;--teal:#0d9488;--amber:#d97706;--violet:#7c3aed;--green:#16a34a;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;--z:.2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#070b17;overflow:hidden;font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:#fff;color:var(--ink);padding:38px 64px 46px;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide>header{border-left:5px solid var(--red);padding:2px 0 2px 18px;margin-bottom:18px;flex:none}
+.kick{display:block;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+h2{font-size:32px;line-height:1.15;letter-spacing:-.012em;font-weight:750}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;font-size:17.5px;line-height:1.45;color:var(--ink2)}
+.body b,.body strong{color:var(--ink);font-weight:680}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;min-height:0}
+.cols.c3{grid-template-columns:repeat(3,1fr);gap:18px}
+.cols.c4{grid-template-columns:repeat(4,1fr);gap:14px}
+.cols.c5{grid-template-columns:repeat(5,1fr);gap:12px}
+.cols.w64{grid-template-columns:1.45fr 1fr}
+.cols.w46{grid-template-columns:1fr 1.35fr}
+.cols.nf{flex:none}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+ul.pts{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.pts li{padding-left:22px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.52em;width:8px;height:8px;border-radius:2px;background:var(--red)}
+ul.pts.sm{gap:5px;font-size:15px;line-height:1.38}
+ul.pts.sm li{padding-left:17px}
+ul.pts.sm li::before{width:6px;height:6px;top:.5em}
+.card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--c,var(--red));border-radius:10px;padding:13px 16px;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:15px;line-height:1.4;min-width:0}
+.card h3{font-size:16.5px;color:var(--ink);margin-bottom:5px;line-height:1.2}
+.card .os{display:block;margin-top:7px;font-size:13px;color:var(--mut)}
+.card .os b{color:var(--red2)}
+.cb{--c:var(--blue)}.ct{--c:var(--teal)}.ca{--c:var(--amber)}.cv{--c:var(--violet)}.cg{--c:var(--green)}.cn{--c:var(--navy)}
+.note{background:#fff5f6;border-left:4px solid var(--red);padding:9px 16px;border-radius:0 8px 8px 0;font-size:15.5px;color:var(--ink);flex:none}
+.note.b{background:#eff5ff;border-color:var(--blue)}
+.note.g{background:#f1f5f9;border-color:#64748b}
+table.tbl{width:100%;border-collapse:collapse;font-size:14.5px;line-height:1.35}
+.tbl th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-size:13px;letter-spacing:.03em;font-weight:650}
+.tbl td{padding:6.5px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:nth-child(even) td{background:#f8fafc}
+.tbl td:first-child{font-weight:680;color:var(--ink);white-space:nowrap}
+.tbl.os td:nth-child(2){color:var(--red2);font-weight:650}
+.tbl.tight td{padding:5px 12px;font-size:14px}
+table.resp{width:100%;border-collapse:separate;border-spacing:5px 4px;font-size:14.5px;text-align:center}
+.resp thead th{font-size:15px;color:var(--ink);padding:2px 4px 6px;line-height:1.2}
+.resp thead small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+.resp tbody th{text-align:right;padding-right:12px;font-weight:650;color:var(--ink);white-space:nowrap;width:210px}
+.resp td{padding:6px;border-radius:6px;font-weight:600}
+.resp .u{background:#e3edff;color:#1d4ed8}
+.resp .p{background:#fde8ec;color:var(--red2)}
+code{font-family:var(--mono);font-size:.87em;background:#f1f5f9;padding:1px 6px;border-radius:4px;color:var(--ink)}
+pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;font:13.5px/1.5 var(--mono);white-space:pre;overflow:hidden}
+pre .c{color:#7dd3fc}pre .k{color:#fda4af}pre .m{color:#94a3b8}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:#fde8ec;color:var(--red2);letter-spacing:.03em}
+.fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:100%}
+.foot{position:absolute;left:64px;right:64px;bottom:15px;display:flex;justify-content:space-between;font-size:11.5px;color:#94a3b8;letter-spacing:.02em}
+/* dark slides */
+.slide.dark{background:radial-gradient(1100px 600px at 85% 15%,#1c2a55 0%,var(--navy) 55%,#0b1226 100%);color:#fff;justify-content:center}
+.dark .foot{color:#64748b}
+.dark .kick{color:#ff6b84}
+h1{font-size:68px;line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:10px 0 14px}
+.sub{font-size:27px;color:#cbd5e1;font-weight:400}
+.chips{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin-top:34px}
+.chips li{border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:7px 16px;font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.04)}
+.ref{margin-top:36px;font-size:14px;color:#94a3b8}
+.deco{position:absolute;right:0;top:0;width:1280px;height:720px;pointer-events:none}
+.tt{position:relative;max-width:760px}
+.sec .num{font-size:150px;font-weight:800;line-height:.9;color:transparent;-webkit-text-stroke:2px #ff4d6a;letter-spacing:-.04em}
+.sec h2{font-size:50px;margin:16px 0 12px;letter-spacing:-.02em}
+.sec p{font-size:20px;color:#cbd5e1;max-width:820px;line-height:1.45}
+.sec ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:9px 40px;margin-top:30px;max-width:980px;font-size:16.5px;color:#e2e8f0}
+.sec ol li{padding-left:20px;position:relative}
+.sec ol li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:3px;background:#ff4d6a}
+/* svg */
+svg{display:block}
+svg{font-size:14px}
+svg text{font-family:inherit;fill:#0f172a}
+svg g.ts text{fill:#475569}svg g.tw text{fill:#fff}
+.big .card{font-size:17px;padding:18px 16px;display:flex;flex-direction:column;line-height:1.42}.big .card h3{font-size:19px;margin-bottom:12px}.big .card .os{font-size:14.5px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line);line-height:1.4}
+.dense .card{font-size:14px;padding:10px 14px;line-height:1.36}.dense .card h3{font-size:15.5px;margin-bottom:3px}
+.tc{text-anchor:middle}.te{text-anchor:end}
+svg .tb{font-weight:700}svg .ts{font-size:12px;fill:#475569}svg .tl{font-size:17px;font-weight:750}svg .tw{fill:#fff}svg .tr{fill:#b3122f}
+svg .tm{font-family:var(--mono);font-size:12px}
+.bx{fill:#fff;stroke:#94a3b8;stroke-width:1.5}
+.b-red{fill:#fde8ec;stroke:#e4002b;stroke-width:1.5}
+.b-blue{fill:#e3edff;stroke:#2563eb;stroke-width:1.5}
+.b-teal{fill:#d8f3ee;stroke:#0d9488;stroke-width:1.5}
+.b-amber{fill:#fdf0d5;stroke:#d97706;stroke-width:1.5}
+.b-violet{fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5}
+.b-green{fill:#dcf5e3;stroke:#16a34a;stroke-width:1.5}
+.b-grey{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5}
+.b-dark{fill:#101a33;stroke:#101a33}
+.f-red{fill:#e4002b}
+.zone{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 4}
+.ln{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar)}
+.ln2{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar);marker-start:url(#ar)}
+.lr{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr)}
+.lr2{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr);marker-start:url(#arr)}
+.ld{stroke-dasharray:5 4}
+.nl{stroke:#94a3b8;stroke-width:1.5;fill:none}
+/* ui */
+#bar{position:fixed;left:0;bottom:0;height:3px;background:var(--red);width:0;transition:width .2s;z-index:5}
+#nav{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;display:flex;gap:6px;z-index:6;opacity:.07;transition:opacity .2s}
+#nav:hover{opacity:1}
+#nav button{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;font:600 13px/1 inherit;padding:7px 10px;cursor:pointer}
+#nav button:hover{background:var(--red);border-color:var(--red)}
+body.ov{overflow:auto}
+body.ov #stage{position:static;margin:0;width:auto;height:auto;transform:none!important;display:flex;flex-wrap:wrap;gap:14px;padding:20px}
+body.ov .slide{display:flex;position:relative;inset:auto;flex:none;width:1280px;height:720px;zoom:var(--z);cursor:pointer;border-radius:8px}
+body.ov .slide.active{outline:14px solid var(--red)}
+@page{size:1280px 720px;margin:0}
+@media print{
+html,body{height:auto;overflow:visible;background:#fff}
+#stage{position:static;margin:0;width:1280px;height:auto;transform:none!important;display:block}
+.slide{display:flex!important;position:relative;inset:auto;width:1280px;height:720px;break-after:page;page-break-after:always;zoom:1!important}
+#bar,#nav{display:none}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.la{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA)}.la2{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA);marker-start:url(#arA)}
+.lt{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT)}.lt2{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT);marker-start:url(#arT)}
+.lb{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB)}.lb2{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB);marker-start:url(#arB)}
+svg text.fa,svg .fa{fill:#b45309}svg text.ft,svg .ft{fill:#0f766e}svg text.fb,svg .fb{fill:#1d4ed8}
+.tbl td.c,.tbl th.c{text-align:center}.tbl td.y{color:#16a34a;font-weight:800}.tbl td.n{color:#cbd5e1}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e4002b"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+<marker id="arT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker>
+<marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+</defs></svg>
+<div id="stage">
+
+<style>
+.tbl.xs td{font-size:12.8px;padding:5px 9px;line-height:1.32}
+.tbl.xs th{font-size:12.2px;padding:7px 9px}
+.tbl.xs td:first-child{white-space:normal}
+.body code{white-space:nowrap}
+.tbl.wrap td:first-child{white-space:normal}
+.tbl.wrap td:first-child code{white-space:normal}
+.tbl td.n{color:#b91c1c;font-weight:600}
+</style>
+
+<!-- 1 -->
+<section class="slide dark">
+<svg class="deco" viewBox="0 0 1280 720" aria-hidden="true"><g transform="translate(-60,0)">
+<g fill="none" stroke="#ff4d6a" stroke-width="2" opacity=".85">
+<rect x="880" y="200" width="150" height="90" rx="12" fill="rgba(228,0,43,.30)"/>
+<rect x="1110" y="200" width="150" height="90" rx="12" fill="rgba(228,0,43,.16)"/>
+<path d="M1030,245 H1108" stroke-width="3"/>
+<rect x="880" y="380" width="380" height="110" rx="14" fill="rgba(228,0,43,.10)"/>
+<circle cx="955" cy="435" r="22"/><circle cx="1070" cy="435" r="22"/><circle cx="1185" cy="435" r="22"/>
+<path d="M955,290 V378 M1185,290 V378"/>
+</g>
+<g font-weight="700" letter-spacing="2" style="font-size:12px"><text x="955" y="182" text-anchor="middle" style="fill:#cbd5e1">KEYSTONE</text><text x="1185" y="182" text-anchor="middle" style="fill:#cbd5e1">AUTORITÉ</text><text x="1070" y="520" text-anchor="middle" style="fill:#cbd5e1">POLITIQUE · VERROUILLAGE · MFA</text></g>
+</g></svg>
+<div class="tt">
+<span class="kick">Support de formation</span>
+<h1>Authentification externe et mots de passe</h1>
+<p class="sub">Fédération d'identité avec une autorité d'authentification externe, et politique de mots de passe selon le référentiel de l'ANSSI, sur Canonical OpenStack (Sunbeam)</p>
+<ul class="chips"><li>OpenID Connect</li><li>SAML 2</li><li>Règles de correspondance</li><li>Guide ANSSI 2021</li><li>Verrouillage</li><li>Comptes de service</li></ul>
+<p class="ref">Références : OpenStack 2026.1 · Canonical OpenStack 2026.1 LTS · ANSSI, Recommandations relatives à l'authentification multifacteur et aux mots de passe, v2.0, 8 octobre 2021</p>
+</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Objectif et déroulé</h2></header>
+<div class="body">
+<div class="note"><b>Objectif :</b> confier l'authentification des personnes à une autorité externe, raccordée à Keystone par fédération, et appliquer une politique de mots de passe conforme aux recommandations de l'ANSSI — là où elle doit s'appliquer, sans mettre en panne les comptes de service.</div>
+<div class="cols">
+<div class="col">
+<p><b>À l'issue de ce module, vous saurez :</b></p>
+<ul class="pts">
+<li>Expliquer pourquoi et comment déléguer l'authentification à une <b>autorité externe</b>.</li>
+<li>Décrire les objets de la <b>fédération</b> dans Keystone et le déroulé d'une connexion.</li>
+<li>Écrire et tester des <b>règles de correspondance</b>.</li>
+<li>Raccorder un fournisseur d'identité à un cloud <b>Sunbeam</b>, pas à pas.</li>
+<li>Traduire le guide de l'<b>ANSSI</b> en règles : longueur, complexité, expiration, verrouillage.</li>
+<li>Appliquer ces règles dans Keystone sans casser les <b>comptes de service</b>.</li>
+</ul>
+</div>
+<div class="col dense">
+<div class="card"><h3>1 · Pourquoi une autorité externe</h3>Local, annuaire ou fédération ; vocabulaire ; OIDC et SAML ; choisir son fournisseur.</div>
+<div class="card cb"><h3>2 · La fédération dans Keystone</h3>Objets, flux, règles de correspondance, sécurité, limites.</div>
+<div class="card ct"><h3>3 · La fédération sur Sunbeam</h3>Prérequis, pas à pas, vérification, pannes.</div>
+<div class="card ca"><h3>4 · Le référentiel ANSSI</h3>Longueur, complexité, expiration, verrouillage, stockage, multifacteur.</div>
+<div class="card cv"><h3>5 · Appliquer dans Keystone</h3>Options de conformité, stratégie sur Sunbeam.</div>
+<div class="card cn"><h3>6 · Les comptes de service</h3>Risques, exemptions, ordre d'activation.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 3 -->
+<section class="slide dark sec">
+<div class="num">01</div>
+<h2>Pourquoi une autorité d'authentification externe</h2>
+<p>Un cloud ne devrait pas être un annuaire de plus. Les personnes ont déjà une identité dans l'entreprise, avec sa politique, son multifacteur et sa procédure de départ : Keystone doit s'y fier, pas la recopier.</p>
+<ol><li>Identité locale ou externe</li><li>Trois façons de raccorder</li><li>Le vocabulaire de la fédération</li><li>OpenID Connect ou SAML 2</li><li>Choisir son fournisseur</li></ol>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+<header><span class="kick">1 · Autorité externe</span><h2>Identité locale ou identité externe</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:24%">Sujet</th><th style="width:37%">Comptes locaux dans Keystone</th><th>Autorité externe, par fédération</th></tr></thead>
+<tbody>
+<tr><td>Où vit le mot de passe</td><td>dans la base de Keystone, haché</td><td style="color:var(--ink);font-weight:400">chez l'autorité ; Keystone ne le voit jamais</td></tr>
+<tr><td>Politique de mot de passe</td><td>options de Keystone, globales</td><td style="color:var(--ink);font-weight:400">celle de l'autorité, déjà appliquée à toute l'entreprise</td></tr>
+<tr><td>Multifacteur</td><td>TOTP de Keystone, compte par compte</td><td style="color:var(--ink);font-weight:400">celui de l'autorité : application, clé physique, carte</td></tr>
+<tr><td>Départ d'un salarié</td><td>à désactiver dans Keystone, en plus du reste</td><td style="color:var(--ink);font-weight:400">désactivé une fois, chez l'autorité : plus de nouvelle connexion</td></tr>
+<tr><td>Droits</td><td>affectations aux comptes ou aux groupes</td><td style="color:var(--ink);font-weight:400">groupes de l'autorité, traduits en groupes Keystone par des règles</td></tr>
+<tr><td>Traçabilité</td><td>journaux de Keystone</td><td style="color:var(--ink);font-weight:400">journaux de l'autorité et de Keystone, avec le même identifiant</td></tr>
+<tr><td>Dépendance</td><td>aucune</td><td style="color:var(--ink);font-weight:400">l'autorité doit être joignable pour se connecter</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Principe :</b> une seule source de vérité par personne. Chaque compte local supplémentaire est un mot de passe de plus à protéger, à faire expirer, à révoquer au départ.</div>
+<div class="note g"><b>Ce qui reste local :</b> les comptes des services OpenStack, un ou deux comptes d'administration de secours, et les comptes techniques des automates. Ils sont l'objet de la dernière partie.</div>
+</div>
+</div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+<header><span class="kick">1 · Autorité externe</span><h2>Trois façons de raccorder des identités</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 250">
+<rect x="10" y="6" width="360" height="238" rx="12" class="zone"/><text x="190.0" y="30" class="tc tl">Base locale de Keystone</text>
+<rect x="30" y="44" width="90" height="40" rx="9" class="b-grey"/><text x="75.0" y="69.0" class="tc tb" style="font-size:12px">personne</text>
+<path d="M120,64 H224" class="lr"/><rect x="226" y="44" width="124" height="40" rx="9" class="b-red"/><text x="288.0" y="69.0" class="tc tb" style="font-size:12px">Keystone</text>
+<text x="172" y="56" class="tc ts" style="font-size:11px">mot de passe</text>
+<text x="190" y="176" class="tc ts">Keystone vérifie le mot de passe</text>
+<text x="190" y="196" class="tc ts">il le voit et le stocke (haché)</text>
+<text x="190" y="216" class="tc ts tb">politique : options de Keystone</text>
+<rect x="393" y="6" width="360" height="238" rx="12" class="zone"/><text x="573.0" y="30" class="tc tl">Annuaire LDAP</text>
+<rect x="413" y="44" width="90" height="40" rx="9" class="b-grey"/><text x="458.0" y="69.0" class="tc tb" style="font-size:12px">personne</text>
+<path d="M503,64 H607" class="lr"/><rect x="609" y="44" width="124" height="40" rx="9" class="b-red"/><text x="671.0" y="69.0" class="tc tb" style="font-size:12px">Keystone</text>
+<text x="555" y="56" class="tc ts" style="font-size:11px">mot de passe</text>
+<path d="M671,84 V102" class="lr"/><rect x="609" y="104" width="124" height="36" rx="9" class="b-blue"/><text x="671.0" y="127.0" class="tc tb" style="font-size:12px">annuaire</text>
+<text x="573" y="176" class="tc ts">Keystone vérifie auprès de l'annuaire</text>
+<text x="573" y="196" class="tc ts">il voit passer le mot de passe</text>
+<text x="573" y="216" class="tc ts tb">politique : celle de l'annuaire</text>
+<rect x="776" y="6" width="360" height="238" rx="12" class="zone"/><text x="956.0" y="30" class="tc tl">Fédération</text>
+<rect x="796" y="44" width="90" height="40" rx="9" class="b-grey"/><text x="841.0" y="69.0" class="tc tb" style="font-size:12px">personne</text>
+<path d="M841,84 V102" class="lr"/><rect x="796" y="104" width="120" height="36" rx="9" class="b-teal"/><text x="856.0" y="127.0" class="tc tb" style="font-size:12px">autorité</text>
+<text x="841" y="156" class="tc ts" style="font-size:11px">secret + 2e facteur</text>
+<path d="M916,122 H946 V64 H990" class="lr"/><rect x="992" y="44" width="124" height="40" rx="9" class="b-red"/><text x="1054.0" y="69.0" class="tc tb" style="font-size:12px">Keystone</text>
+<text x="976" y="104" class="tc ts" style="font-size:11px">attestation</text>
+<text x="956" y="176" class="tc ts">l'autorité authentifie la personne</text>
+<text x="956" y="196" class="tc ts">Keystone ne voit aucun secret</text>
+<text x="956" y="216" class="tc ts tb">politique et multifacteur : l'autorité</text>
+</svg></div>
+<div class="cols nf">
+<div class="col"><ul class="pts sm">
+<li><b>Annuaire LDAP :</b> Keystone lit l'annuaire et vérifie lui-même le mot de passe. Il le voit passer — et la politique de verrouillage ou d'expiration est celle de l'annuaire.</li>
+<li><b>Fédération :</b> Keystone ne voit ni mot de passe ni second facteur. Il reçoit une attestation signée par l'autorité, et en tire utilisateur et groupes.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Les trois coexistent,</b> un domaine par source : comptes techniques en local, salariés par l'annuaire ou la fédération, partenaires par une autre fédération.</li>
+<li><b>Sur Sunbeam :</b> <code>sunbeam ldap add-domain</code> pour un annuaire, <code>sunbeam identity provider add</code> pour une fédération.</li>
+</ul></div>
+</div>
+</div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+<header><span class="kick">1 · Autorité externe</span><h2>Le vocabulaire de la fédération</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:34%">Terme</th><th>Sens</th></tr></thead>
+<tbody>
+<tr><td>Fournisseur d'identité (IdP)</td><td>l'autorité : authentifie la personne et atteste son identité</td></tr>
+<tr><td>Fournisseur de service (SP)</td><td>l'application qui fait confiance à l'attestation — ici Keystone</td></tr>
+<tr><td>Attestation</td><td>jeton d'identité signé (OIDC) ou assertion signée (SAML)</td></tr>
+<tr><td>Attribut, revendication</td><td>une information de l'attestation : identifiant, courriel, groupes</td></tr>
+<tr><td>Client, client secret</td><td>l'enregistrement du SP chez l'IdP (OIDC) et son secret</td></tr>
+<tr><td>URL de redirection</td><td>adresse du SP où l'IdP renvoie le navigateur après authentification</td></tr>
+<tr><td>Émetteur, identifiant distant</td><td>nom unique de l'IdP ; Keystone le compare à ce qu'il a enregistré</td></tr>
+<tr><td>Règles de correspondance</td><td>traduisent les attributs reçus en utilisateur, groupes, projets</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<p><b>Ce qui se passe, en une phrase :</b> Keystone renvoie le navigateur vers l'autorité ; l'autorité authentifie ; elle renvoie une attestation signée ; Keystone la vérifie, applique ses règles et délivre un jeton OpenStack.</p>
+<ul class="pts sm">
+<li><b>La confiance est configurée, pas négociée :</b> Keystone connaît d'avance l'émetteur, ses clés de signature et l'identifiant de client.</li>
+<li><b>L'autorité ne connaît pas OpenStack :</b> elle ne sait rien des projets ni des rôles. Elle fournit des attributs ; les règles de Keystone en tirent des droits.</li>
+<li><b>Le jeton OpenStack reste un jeton Keystone :</b> les services ne voient jamais l'attestation. Pour eux, un utilisateur fédéré est un utilisateur comme un autre.</li>
+</ul>
+<div class="note g">Le module « Keystone en profondeur » présente la fédération dans les grandes lignes ; ce module en détaille le fonctionnement, la sécurité et la mise en œuvre.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+<header><span class="kick">1 · Autorité externe</span><h2>OpenID Connect ou SAML 2</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:22%">Critère</th><th style="width:39%">OpenID Connect (OIDC)</th><th>SAML 2</th></tr></thead>
+<tbody>
+<tr><td>Fondation</td><td>OAuth 2.0, jetons JSON signés (JWT)</td><td style="color:var(--ink);font-weight:400">assertions XML signées</td></tr>
+<tr><td>Configuration</td><td>adresse de découverte de l'émetteur, identifiant et secret de client</td><td style="color:var(--ink);font-weight:400">échange de fichiers de métadonnées, certificats</td></tr>
+<tr><td>Fournisseurs courants</td><td>Keycloak, Entra ID, Okta, Google, Canonical Identity Platform</td><td style="color:var(--ink);font-weight:400">ADFS, Shibboleth, Keycloak, Entra ID</td></tr>
+<tr><td>Ligne de commande</td><td>possible : mot de passe délégué, autorisation par appareil, jeton d'accès</td><td style="color:var(--ink);font-weight:400">difficile : protocole pensé pour le navigateur</td></tr>
+<tr><td>Dans Keystone</td><td>protocole <code>openid</code>, module Apache <code>mod_auth_openidc</code></td><td style="color:var(--ink);font-weight:400">protocole <code>saml2</code>, module Apache <code>mod_auth_mellon</code> ou Shibboleth</td></tr>
+<tr><td>Sur Sunbeam</td><td>chemin documenté : <code>sunbeam identity provider add … openid</code></td><td style="color:var(--ink);font-weight:400">le charm prévoit une paire de clés SAML ; procédure à vérifier</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Choix par défaut : OIDC.</b> Plus simple à configurer, utilisable en ligne de commande, et c'est le chemin que Canonical documente pour Sunbeam.</div>
+<div class="note g"><b>SAML 2 reste pertinent</b> quand l'autorité de l'entreprise ne parle que lui — un ADFS ancien par exemple — ou pour une fédération entre établissements qui l'impose.</div>
+</div>
+</div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+<header><span class="kick">1 · Autorité externe</span><h2>Choisir son autorité d'authentification</h2></header>
+<div class="body">
+<table class="tbl os xs">
+<thead><tr><th style="width:18%">Autorité</th><th style="width:16%">Hébergement</th><th style="width:22%">Politique de mot de passe</th><th style="width:22%">Multifacteur</th><th>Sur Sunbeam</th></tr></thead>
+<tbody>
+<tr><td>Keycloak</td><td>chez vous</td><td>règles par domaine : longueur, historique, expiration, détection de force brute</td><td>TOTP, WebAuthn, clés physiques</td><td>OIDC générique : vérifier les types acceptés par la commande</td></tr>
+<tr><td>Canonical Identity Platform</td><td>chez vous, déployée par Juju</td><td>celle de son propre stockage d'identités, ou de l'autorité amont</td><td>selon la configuration</td><td class="y">type <code>canonical</code>, documenté</td></tr>
+<tr><td>Entra ID</td><td>nuage Microsoft</td><td>politique du locataire Microsoft</td><td>accès conditionnel, application</td><td class="y">type <code>entra</code>, documenté</td></tr>
+<tr><td>Okta</td><td>nuage Okta</td><td>politique de l'organisation Okta</td><td>application, clés physiques</td><td class="y">type <code>okta</code>, documenté</td></tr>
+<tr><td>Google</td><td>nuage Google</td><td>politique du compte Google Workspace</td><td>validation en deux étapes</td><td class="y">type <code>google</code>, documenté</td></tr>
+<tr><td>ADFS, Shibboleth</td><td>chez vous</td><td>celle de l'annuaire derrière</td><td>selon le produit</td><td>SAML : à vérifier</td></tr>
+</tbody></table>
+<div class="cols c3 nf">
+<div class="card cb"><h3>Critère n° 1 : là où sont déjà les personnes</h3>Le meilleur fournisseur est celui que l'entreprise exploite déjà, avec ses procédures d'arrivée et de départ.</div>
+<div class="card ca"><h3>Critère n° 2 : la maîtrise</h3>Un cloud privé souverain s'accommode mal d'une authentification hébergée hors de l'Union : l'autorité devient un point de dépendance.</div>
+<div class="card cv"><h3>Critère n° 3 : la disponibilité</h3>Autorité indisponible = plus aucune connexion humaine. Prévoir au moins un compte local de secours.</div>
+</div>
+</div>
+</section>
+
+<!-- 9 -->
+<section class="slide dark sec">
+<div class="num">02</div>
+<h2>La fédération dans Keystone</h2>
+<p>Trois objets dans Keystone, un module dans le serveur web, et des règles qui traduisent des attributs en droits. Comprendre ces pièces permet de diagnostiquer presque toutes les pannes de connexion fédérée.</p>
+<ol><li>Architecture</li><li>Les trois objets</li><li>Connexion par le navigateur</li><li>Connexion en ligne de commande</li><li>Les règles de correspondance</li><li>Utilisateurs et groupes fédérés</li><li>Tester une règle</li><li>Sécurité et limites</li></ol>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+<header><span class="kick">2 · Fédération dans Keystone</span><h2>Architecture</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 300">
+<rect x="10" y="110" width="190" height="64" rx="9" class="b-grey"/><text x="105.0" y="138.0" class="tc tb" style="font-size:12.5px">Navigateur</text><text x="105.0" y="157.0" class="tc ts">ou client openstack</text>
+<rect x="10" y="206" width="190" height="64" rx="9" class="b-blue"/><text x="105.0" y="234.0" class="tc tb" style="font-size:12.5px">Horizon</text><text x="105.0" y="253.0" class="tc ts">liste des fournisseurs</text>
+<rect x="260" y="60" width="500" height="234" rx="12" class="zone"/><text x="510.0" y="84" class="tc tl">Keystone — pod du charm keystone-k8s</text>
+<rect x="280" y="100" width="210" height="100" rx="9" class="b-violet"/><text x="385.0" y="128.0" class="tc tb" style="font-size:12.5px">Module web OIDC</text><text x="385.0" y="147.0" class="tc ts">redirections, code</text><text x="385.0" y="164.0" class="tc ts">vérifie la signature</text><text x="385.0" y="181.0" class="tc ts">attributs → variables</text>
+<rect x="530" y="100" width="210" height="100" rx="9" class="b-red"/><text x="635.0" y="128.0" class="tc tb" style="font-size:12.5px">Keystone</text><text x="635.0" y="147.0" class="tc ts">vérifie l'émetteur</text><text x="635.0" y="164.0" class="tc ts">applique les règles</text><text x="635.0" y="181.0" class="tc ts">émet le jeton OpenStack</text>
+<path d="M490,150 H528" class="lr"/>
+<text x="510" y="266" class="tc ts">configuré par « sunbeam identity provider add »</text><text x="510" y="284" class="tc ts tb">fournisseur, règles, protocole : par l'exploitant</text>
+<rect x="820" y="60" width="320" height="234" rx="12" class="zone"/><text x="980.0" y="84" class="tc tl">Autorité d'authentification</text>
+<rect x="840" y="100" width="280" height="56" rx="9" class="b-teal"/><text x="980.0" y="124.0" class="tc tb" style="font-size:12.5px">Comptes et groupes</text><text x="980.0" y="143.0" class="tc ts">salariés, prestataires</text>
+<rect x="840" y="170" width="280" height="56" rx="9" class="b-amber"/><text x="980.0" y="194.0" class="tc tb" style="font-size:12.5px">Politique et multifacteur</text><text x="980.0" y="213.0" class="tc ts">longueur, verrouillage, 2e facteur</text>
+<text x="980" y="254" class="tc ts">Keycloak, Entra ID, Okta, Google,</text><text x="980" y="272" class="tc ts">Canonical Identity Platform…</text>
+<path d="M105,110 V22 H1060 V58" class="lr"/><text x="580" y="16" class="tc ts" style="font-size:11px">① authentification chez l'autorité, dans le navigateur</text>
+<path d="M385,100 V40 H900 V58" class="lr" stroke-dasharray="5 4"/><text x="640" y="54" class="tc ts" style="font-size:11px">③ découverte, clés, échange du code</text>
+<path d="M200,150 H278" class="lr"/><text x="238" y="143" class="tc ts" style="font-size:11px">②</text>
+<path d="M635,200 V240 H202" class="lr"/><text x="440" y="235" class="tc ts" style="font-size:11px">④ jeton OpenStack</text>
+</svg></div>
+<div class="cols nf">
+<div class="col"><ul class="pts sm">
+<li><b>Le module web fait le protocole</b> — redirections, échange du code, vérification de la signature — et transmet les attributs à Keystone sous forme de variables d'environnement.</li>
+<li><b>Keystone fait l'autorisation :</b> il vérifie l'émetteur, applique les règles, crée ou retrouve l'utilisateur et émet un jeton.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Le préfixe des attributs</b> dépend de la configuration du module : <code>OIDC-email</code>, <code>HTTP_OIDC_EMAIL</code>… Les règles de correspondance doivent utiliser exactement ces noms.</li>
+<li><b>Horizon</b> propose le fournisseur dans sa liste de connexion et reçoit le jeton en retour.</li>
+</ul></div>
+</div>
+</div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+<header><span class="kick">2 · Fédération dans Keystone</span><h2>Les trois objets de Keystone</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 200">
+<rect x="10" y="20" width="330" height="86" rx="9" class="b-teal"/><text x="175.0" y="41.0" class="tc tb" style="font-size:12.5px">Fournisseur d'identité</text><text x="175.0" y="60.0" class="tc ts">nom : entreprise-idp</text><text x="175.0" y="77.0" class="tc ts">identifiant distant = émetteur</text><text x="175.0" y="94.0" class="tc ts">domaine : entreprise</text>
+<rect x="410" y="20" width="330" height="86" rx="9" class="b-violet"/><text x="575.0" y="41.0" class="tc tb" style="font-size:12.5px">Protocole</text><text x="575.0" y="60.0" class="tc ts">nom : openid</text><text x="575.0" y="77.0" class="tc ts">relie un fournisseur</text><text x="575.0" y="94.0" class="tc ts">à un jeu de règles</text>
+<rect x="810" y="20" width="330" height="86" rx="9" class="b-amber"/><text x="975.0" y="41.0" class="tc tb" style="font-size:12.5px">Règles de correspondance</text><text x="975.0" y="60.0" class="tc ts">nom : entreprise-mapping</text><text x="975.0" y="77.0" class="tc ts">JSON : attributs → utilisateur,</text><text x="975.0" y="94.0" class="tc ts">groupes, projets</text>
+<path d="M410,63 H343" class="lr"/><path d="M740,63 H807" class="lr"/>
+<rect x="10" y="136" width="330" height="52" rx="9" class="b-grey"/><text x="175.0" y="158.0" class="tc tb" style="font-size:12.5px">Domaine « entreprise »</text><text x="175.0" y="177.0" class="tc ts">où sont créés les utilisateurs fédérés</text>
+<rect x="810" y="136" width="330" height="52" rx="9" class="b-blue"/><text x="975.0" y="158.0" class="tc tb" style="font-size:12.5px">Groupes Keystone existants</text><text x="975.0" y="177.0" class="tc ts">porteurs des rôles sur les projets</text>
+<path d="M175,106 V134" class="lr"/><path d="M975,106 V134" class="lr"/>
+<text x="575" y="160" class="tc ts">un fournisseur peut avoir plusieurs protocoles,</text><text x="575" y="178" class="tc ts">un jeu de règles peut servir à plusieurs protocoles</text>
+</svg></div>
+<div class="cols nf">
+<pre style="font-size:11.8px;flex:none"><span class="m"># Prérequis : identifiants d'administrateur</span>
+<span class="c">source</span> admin-openrc
+<span class="c">openstack identity provider create</span> entreprise-idp \
+  --remote-id https://sso.exemple.fr/realms/entreprise \
+  --domain entreprise
+<span class="c">openstack mapping create</span> entreprise-mapping --rules rules.json
+<span class="c">openstack federation protocol create</span> openid \
+  --identity-provider entreprise-idp --mapping entreprise-mapping</pre>
+<div class="col">
+<ul class="pts sm">
+<li><b>Identifiant distant :</b> doit être égal, caractère pour caractère, à l'émetteur présenté par l'attestation — barre oblique finale comprise.</li>
+<li><b>Domaine du fournisseur :</b> les utilisateurs fédérés y sont créés ; un domaine par fournisseur.</li>
+<li><b>Le nom du protocole</b> fait partie des adresses de connexion : <code style="white-space:normal">…/identity_providers/entreprise-idp/protocols/openid/auth</code>.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+<header><span class="kick">2 · Fédération dans Keystone</span><h2>Connexion par le navigateur (WebSSO)</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 386">
+<path d="M130,46 V382" class="nl" stroke-dasharray="4 5"/>
+<path d="M430,46 V382" class="nl" stroke-dasharray="4 5"/>
+<path d="M730,46 V382" class="nl" stroke-dasharray="4 5"/>
+<path d="M1030,46 V382" class="nl" stroke-dasharray="4 5"/>
+<rect x="10.0" y="4" width="240" height="40" rx="8" class="b-grey"/><text x="130" y="29" class="tc tb">Navigateur</text>
+<rect x="310.0" y="4" width="240" height="40" rx="8" class="b-blue"/><text x="430" y="29" class="tc tb">Horizon</text>
+<rect x="610.0" y="4" width="240" height="40" rx="8" class="b-red"/><text x="730" y="29" class="tc tb">Keystone + module OIDC</text>
+<rect x="910.0" y="4" width="240" height="40" rx="8" class="b-teal"/><text x="1030" y="29" class="tc tb">Autorité</text>
+<path d="M140,78 H427" class="lr"/>
+<text x="280.0" y="72" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">choix « Connexion entreprise »</text>
+<circle cx="130" cy="78" r="10" class="f-red"/><text x="130" y="82" class="tc tw tb" style="font-size:11px">1</text>
+<path d="M420,104 H133" class="ln ld"/>
+<text x="280.0" y="98" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">redirection vers Keystone (WebSSO)</text>
+<circle cx="430" cy="104" r="10" class="f-red"/><text x="430" y="108" class="tc tw tb" style="font-size:11px">2</text>
+<path d="M140,130 H727" class="lr"/>
+<text x="430.0" y="124" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">GET …/auth/OS-FEDERATION/websso/openid</text>
+<circle cx="130" cy="130" r="10" class="f-red"/><text x="130" y="134" class="tc tw tb" style="font-size:11px">3</text>
+<path d="M720,156 H133" class="ln ld"/>
+<text x="430.0" y="150" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">redirection vers l'autorité</text>
+<circle cx="730" cy="156" r="10" class="f-red"/><text x="730" y="160" class="tc tw tb" style="font-size:11px">4</text>
+<path d="M140,182 H1027" class="lr"/>
+<text x="580.0" y="176" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">mot de passe + second facteur</text>
+<circle cx="130" cy="182" r="10" class="f-red"/><text x="130" y="186" class="tc tw tb" style="font-size:11px">5</text>
+<path d="M1020,208 H133" class="ln ld"/>
+<text x="580.0" y="202" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">redirection de retour, code à usage unique</text>
+<circle cx="1030" cy="208" r="10" class="f-red"/><text x="1030" y="212" class="tc tw tb" style="font-size:11px">6</text>
+<path d="M140,234 H727" class="lr"/>
+<text x="430.0" y="228" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">présente le code</text>
+<circle cx="130" cy="234" r="10" class="f-red"/><text x="130" y="238" class="tc tw tb" style="font-size:11px">7</text>
+<path d="M740,260 H1027" class="lr"/>
+<text x="880.0" y="254" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">échange le code contre le jeton d'identité signé</text>
+<circle cx="730" cy="260" r="10" class="f-red"/><text x="730" y="264" class="tc tw tb" style="font-size:11px">8</text>
+<rect x="520.0" y="271" width="420" height="24" rx="6" class="b-grey"/><text x="742.0" y="288" class="tc" style="font-size:12px">vérifie émetteur et signature ; applique les règles</text>
+<circle cx="534.0" cy="286" r="10" class="f-red"/><text x="534.0" y="290" class="tc tw tb" style="font-size:11px">9</text>
+<path d="M720,312 H133" class="ln ld"/>
+<text x="430.0" y="306" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">jeton sans portée, vers le tableau de bord de confiance</text>
+<circle cx="730" cy="312" r="10" class="f-red"/><text x="730" y="316" class="tc tw tb" style="font-size:11px">10</text>
+<path d="M440,338 H727" class="lr"/>
+<text x="580.0" y="332" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">demande un jeton pour un projet</text>
+<circle cx="430" cy="338" r="10" class="f-red"/><text x="430" y="342" class="tc tw tb" style="font-size:11px">11</text>
+<path d="M420,364 H133" class="ln ld"/>
+<text x="280.0" y="358" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">tableau de bord ouvert</text>
+<circle cx="430" cy="364" r="10" class="f-red"/><text x="430" y="368" class="tc tw tb" style="font-size:11px">12</text>
+</svg></div>
+<div class="cols nf">
+<div class="col"><ul class="pts sm">
+<li><b>Le mot de passe et le second facteur</b> ne sont saisis que chez l'autorité (étape 4) : ni Horizon ni Keystone ne les voient.</li>
+<li><b>Le premier jeton est sans portée :</b> il dit qui est l'utilisateur. Horizon en demande ensuite un pour un projet.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Tableau de bord de confiance :</b> Keystone ne renvoie le jeton qu'à une adresse d'Horizon déclarée d'avance — protection contre le vol de jeton par redirection.</li>
+<li><b>Aucun rôle, aucun projet ?</b> La connexion réussit chez l'autorité, puis échoue dans Horizon : la règle n'a donné aucun groupe utile.</li>
+</ul></div>
+</div>
+</div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+<header><span class="kick">2 · Fédération dans Keystone</span><h2>Connexion en ligne de commande</h2></header>
+<div class="body"><div class="cols w46">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:36%">Méthode (<code>auth_type</code>)</th><th>Principe et usage</th></tr></thead>
+<tbody>
+<tr><td><code>v3oidcpassword</code></td><td>le client envoie identifiant et mot de passe à l'autorité ; contourne le multifacteur ; souvent désactivé par les autorités</td></tr>
+<tr><td><code>v3oidcdeviceauthz</code></td><td>le client affiche un code ; la personne le valide dans un navigateur, avec son multifacteur</td></tr>
+<tr><td><code>v3oidcclientcredentials</code></td><td>un programme s'authentifie comme client de l'autorité ; pour les automates</td></tr>
+<tr><td><code>v3oidcaccesstoken</code></td><td>un jeton d'accès déjà obtenu est présenté à Keystone</td></tr>
+<tr><td><code>v3oidcauthcode</code></td><td>code d'autorisation obtenu par ailleurs</td></tr>
+</tbody></table>
+<div class="note g"><b>Recommandé pour les personnes :</b> l'autorisation par appareil, qui conserve le multifacteur. À défaut, se connecter à Horizon et y créer un identifiant d'application.</div>
+</div>
+<div class="col">
+<pre style="font-size:11px"><span class="m"># ~/.config/openstack/clouds.yaml</span>
+clouds:
+  entreprise:
+    auth_type: v3oidcdeviceauthz
+    auth:
+      auth_url: https://keystone.exemple.fr/v3
+      identity_provider: entreprise-idp
+      protocol: openid
+      client_id: openstack-cli
+      discovery_endpoint: &gt;-
+        https://sso.exemple.fr/realms/ent/.well-known/openid-configuration
+      project_name: prod-web
+      project_domain_name: nord
+
+<span class="m"># Le client affiche une adresse et un code à valider</span>
+<span class="c">openstack</span> --os-cloud entreprise token issue</pre>
+<ul class="pts sm">
+<li><b>Le client OIDC de la ligne de commande</b> doit être déclaré chez l'autorité, avec le flux correspondant autorisé.</li>
+<li><b>Méthode disponible selon la version</b> de keystoneauth installée : vérifier avant de la proposer aux équipes.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+<header><span class="kick">2 · Fédération dans Keystone</span><h2>Les règles de correspondance : anatomie</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.6px">[
+  {
+    <span class="c">"local"</span>: [
+      { "user":  { "name": "{0}", "email": "{1}" } },
+      { "group": { "name": "exploitation-prod",
+                   "domain": { "name": "entreprise" } } }
+    ],
+    <span class="c">"remote"</span>: [
+      { "type": "OIDC-preferred_username" },
+      { "type": "OIDC-email" },
+      { "type": "OIDC-groups",
+        "any_one_of": [ "openstack-exploitation" ] }
+    ]
+  },
+  {
+    <span class="c">"local"</span>: [
+      { "user":  { "name": "{0}", "email": "{1}" } },
+      { "group": { "name": "developpeurs",
+                   "domain": { "name": "entreprise" } } }
+    ],
+    <span class="c">"remote"</span>: [
+      { "type": "OIDC-preferred_username" },
+      { "type": "OIDC-email" },
+      { "type": "OIDC-groups",
+        "any_one_of": [ "openstack-dev" ] }
+    ]
+  }
+]</pre>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:30%">Partie</th><th>Rôle</th></tr></thead>
+<tbody>
+<tr><td><code>remote</code></td><td>ce que l'attestation doit contenir ; toutes les conditions doivent être vraies</td></tr>
+<tr><td><code>local</code></td><td>ce que Keystone en tire : utilisateur, groupes, éventuellement projets</td></tr>
+<tr><td><code>{0}</code>, <code>{1}</code></td><td>valeur du 1<sup>er</sup>, du 2<sup>e</sup> attribut de <code>remote</code>, dans l'ordre</td></tr>
+<tr><td>Groupe local</td><td>doit exister dans Keystone et porter les rôles</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Les droits ne sont pas dans la règle :</b> elle ne fait que placer la personne dans un groupe Keystone ; les rôles sont affectés au groupe, comme pour tout autre utilisateur.</li>
+<li><b>Les règles se cumulent :</b> une personne présente dans les deux groupes de l'autorité reçoit les deux groupes Keystone.</li>
+<li><b>Aucune règle ne correspond :</b> refus de la connexion (401). C'est le comportement par défaut voulu — n'entre que qui est prévu.</li>
+</ul>
+<div class="note">Noms d'attributs d'exemple ; leur forme exacte dépend du module web et de l'autorité.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+<header><span class="kick">2 · Fédération dans Keystone</span><h2>Les conditions sur les attributs</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:26%">Condition</th><th style="width:38%">Effet</th><th>Usage</th></tr></thead>
+<tbody>
+<tr><td><code>any_one_of</code></td><td>vraie si l'une des valeurs est présente</td><td>appartenance à un groupe de l'autorité</td></tr>
+<tr><td><code>not_any_of</code></td><td>fausse si l'une des valeurs est présente</td><td>exclure les comptes externes, les comptes suspendus</td></tr>
+<tr><td><code>whitelist</code></td><td>ne garde que les valeurs listées</td><td>transmettre seulement certains groupes</td></tr>
+<tr><td><code>blacklist</code></td><td>retire les valeurs listées</td><td>écarter des groupes sensibles</td></tr>
+<tr><td><code>regex: true</code></td><td>les valeurs sont des expressions régulières</td><td>domaine de courriel, préfixe de groupe</td></tr>
+</tbody></table>
+<div class="note g"><b>Ordre et cumul :</b> chaque règle qui réussit ajoute ses groupes. Une règle d'exclusion doit donc être portée par chaque règle d'accès — par une condition <code>not_any_of</code> — et non par une règle séparée.</div>
+</div>
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Seuls les salariés du domaine de courriel de l'entreprise,</span>
+<span class="m"># et jamais les comptes marqués « suspendu »</span>
+"remote": [
+  { "type": "OIDC-preferred_username" },
+  { "type": "OIDC-email",
+    "any_one_of": [ ".*@exemple\\.fr$" ], "regex": true },
+  { "type": "OIDC-groups",
+    "not_any_of": [ "comptes-suspendus" ] },
+  { "type": "OIDC-groups",
+    "any_one_of": [ "openstack-dev" ] }
+]
+
+<span class="m"># Transmettre tels quels tous les groupes « os-* »</span>
+"local": [
+  { "user": { "name": "{0}" } },
+  { "groups": "{1}", "domain": { "name": "entreprise" } }
+],
+"remote": [
+  { "type": "OIDC-preferred_username" },
+  { "type": "OIDC-groups",
+    "any_one_of": [ "^os-.*" ], "regex": true }
+]</pre>
+<div class="note"><b>Transmettre des groupes en masse</b> est pratique mais délègue à l'autorité le pouvoir d'ouvrir des droits : quiconque peut créer un groupe « os-… » chez elle en devient maître.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+<header><span class="kick">2 · Fédération dans Keystone</span><h2>Utilisateurs et groupes fédérés</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:30%">Type d'utilisateur</th><th>Comportement</th></tr></thead>
+<tbody>
+<tr><td>éphémère (par défaut)</td><td>créé à la première connexion dans le domaine du fournisseur ; attributs venus de l'autorité</td></tr>
+<tr><td>local</td><td>doit exister déjà dans Keystone ; la fédération ne sert qu'à l'authentifier ; ses groupes et rôles locaux s'appliquent</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Appartenance aux groupes :</b> recalculée à chaque connexion à partir de l'attestation. Quitter le groupe chez l'autorité retire le droit à la connexion suivante.</li>
+<li><b>Utilisateur « fantôme » :</b> Keystone garde une trace de chaque utilisateur fédéré — identifiant stable, dernière connexion — ce qui permet audit et affectations directes.</li>
+<li><b>Appartenance persistante :</b> pour qu'un identifiant d'application ou une délégation d'un utilisateur fédéré reste valable entre deux connexions, Keystone peut conserver l'appartenance pendant une durée réglée sur le fournisseur (<code>authorization_ttl</code>) — à vérifier sur votre version.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Départ d'un salarié</b></p>
+<table class="tbl tight">
+<thead><tr><th style="width:42%">Moment</th><th>Effet</th></tr></thead>
+<tbody>
+<tr><td>Compte désactivé chez l'autorité</td><td>plus de nouvelle connexion</td></tr>
+<tr><td>Jetons Keystone déjà émis</td><td>valides jusqu'à expiration, quelques heures</td></tr>
+<tr><td>Identifiants d'application créés par lui</td><td>à supprimer : ils ne passent pas par l'autorité</td></tr>
+<tr><td>Ressources qu'il a créées</td><td>restent dans les projets : elles appartiennent au projet</td></tr>
+</tbody></table>
+<div class="note"><b>La fédération ne coupe pas tout :</b> la procédure de départ doit inclure la suppression des identifiants d'application ; pour un départ sensible, tenir compte de la durée de vie des jetons déjà émis.</div>
+<pre style="font-size:11.6px;flex:none"><span class="m"># Utilisateurs fédérés et leurs identifiants</span>
+<span class="c">openstack user list</span> --domain entreprise
+<span class="c">openstack application credential list</span> --user &lt;id&gt;</pre>
+</div>
+</div></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+<header><span class="kick">2 · Fédération dans Keystone</span><h2>Créer les projets automatiquement ?</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.6px">"local": [
+  { "user": { "name": "{0}" } },
+  { "projects": [
+      { "name": "bac-a-sable-{0}",
+        "roles": [ { "name": "member" } ] }
+  ] }
+],
+"remote": [
+  { "type": "OIDC-preferred_username" },
+  { "type": "OIDC-groups",
+    "any_one_of": [ "openstack-bac-a-sable" ] }
+]</pre>
+<ul class="pts sm">
+<li><b>Effet :</b> à la première connexion, Keystone crée le projet s'il n'existe pas et y affecte le rôle à l'utilisateur.</li>
+<li><b>Ces affectations persistent</b> dans Keystone, même si la règle change ensuite : il faut les retirer à la main.</li>
+<li><b>Les projets ainsi créés</b> reçoivent les quotas par défaut : ceux-ci deviennent la seule protection.</li>
+</ul>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:44%">Pour</th><th>Contre</th></tr></thead>
+<tbody>
+<tr><td>Libre-service immédiat</td><td>prolifération de projets jamais supprimés</td></tr>
+<tr><td>Pas de demande à l'équipe plateforme</td><td>droits persistants hors de l'autorité</td></tr>
+<tr><td>Utile en formation, en recherche</td><td>déconseillé en production</td></tr>
+</tbody></table>
+<div class="note g"><b>Recommandation :</b> en production, les projets se créent par la plateforme ou le gestionnaire du domaine ; la fédération ne fait que placer les personnes dans des groupes existants.</div>
+<div class="note">Si l'on garde l'auto-création : quotas par défaut très bas, étiquette d'échéance, et revue mensuelle des projets créés ainsi.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+<header><span class="kick">2 · Fédération dans Keystone</span><h2>Tester une règle avant de la publier</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># 1 · Un fichier d'attributs, tels que l'autorité les envoie</span>
+cat &gt; alice.txt &lt;&lt;'EOF'
+OIDC-preferred_username: alice
+OIDC-email: alice@exemple.fr
+OIDC-groups: openstack-dev;comptes-standard
+EOF
+
+<span class="m"># 2 · Le moteur de correspondance, hors ligne</span>
+<span class="c">keystone-manage mapping_engine</span> \
+  --rules rules.json --input alice.txt
+
+<span class="m"># 3 · Sur Sunbeam : dans le conteneur de Keystone</span>
+sudo k8s kubectl -n openstack cp rules.json \
+  keystone-0:/tmp/rules.json -c keystone
+sudo k8s kubectl -n openstack cp alice.txt \
+  keystone-0:/tmp/alice.txt -c keystone
+sudo k8s kubectl -n openstack exec keystone-0 -c keystone -- \
+  keystone-manage mapping_engine \
+  --rules /tmp/rules.json --input /tmp/alice.txt
+
+<span class="m"># 4 · Publier la règle</span>
+<span class="c">openstack mapping set</span> entreprise-mapping --rules rules.json</pre>
+</div>
+<div class="col">
+<p><b>Jeu d'essai minimal</b></p>
+<table class="tbl tight os">
+<thead><tr><th style="width:48%">Cas</th><th>Résultat attendu</th></tr></thead>
+<tbody>
+<tr><td>Membre de <code>openstack-dev</code></td><td>groupe <code>developpeurs</code></td></tr>
+<tr><td>Membre des deux groupes</td><td>les deux groupes</td></tr>
+<tr><td>Membre d'aucun groupe prévu</td><td>aucune correspondance : refus</td></tr>
+<tr><td>Compte suspendu</td><td>refus</td></tr>
+<tr><td>Courriel d'un autre domaine</td><td>refus</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Une règle se publie comme du code :</b> fichier versionné, revue par un second, jeu d'essai rejoué à chaque modification.</li>
+<li><b>Récupérer les attributs réels :</b> journaux de Keystone en mode débogage lors d'une connexion d'essai, puis désactiver le débogage.</li>
+</ul>
+<div class="note g">Le moteur hors ligne ne vérifie pas que les groupes et domaines existent ; l'essai réel reste nécessaire.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+<header><span class="kick">2 · Fédération dans Keystone</span><h2>Sécuriser la fédération</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:27%">Point</th><th style="width:38%">Risque</th><th>Mesure</th></tr></thead>
+<tbody>
+<tr><td>Transport</td><td>vol de code ou de jeton en clair</td><td style="color:var(--ink);font-weight:400">TLS partout : Keystone, Horizon, autorité ; URL de redirection en https</td></tr>
+<tr><td>Identifiant distant</td><td>un autre émetteur se fait passer pour l'autorité</td><td style="color:var(--ink);font-weight:400">identifiant distant exact, un fournisseur par émetteur</td></tr>
+<tr><td>Secret du client</td><td>fuite : n'importe qui se fait passer pour Keystone auprès de l'autorité</td><td style="color:var(--ink);font-weight:400">secret long, stocké en secret Juju, renouvelé ; jamais dans un dépôt</td></tr>
+<tr><td>Règles trop larges</td><td>tout compte de l'autorité entre dans le cloud</td><td style="color:var(--ink);font-weight:400">conditions explicites ; aucune règle sans condition de groupe</td></tr>
+<tr><td>Groupes transmis en masse</td><td>un administrateur de l'autorité ouvre des droits OpenStack</td><td style="color:var(--ink);font-weight:400">liste fermée de groupes, revue conjointe</td></tr>
+<tr><td>Horloges</td><td>attestations refusées, ou acceptées trop longtemps</td><td style="color:var(--ink);font-weight:400">NTP sur tous les nœuds et chez l'autorité</td></tr>
+<tr><td>Disponibilité de l'autorité</td><td>plus aucune connexion humaine</td><td style="color:var(--ink);font-weight:400">compte local de secours, sous scellé, avec multifacteur</td></tr>
+<tr><td>Multifacteur</td><td>contourné par le flux « mot de passe » en ligne de commande</td><td style="color:var(--ink);font-weight:400">désactiver ce flux chez l'autorité ; autorisation par appareil</td></tr>
+</tbody></table>
+<div class="note"><b>La fédération déplace la confiance :</b> l'autorité devient un composant critique du cloud. Ses administrateurs, ses journaux et sa disponibilité relèvent du même niveau d'exigence que ceux de Keystone.</div>
+</div>
+</section>
+
+<!-- 20 -->
+<section class="slide">
+<header><span class="kick">2 · Fédération dans Keystone</span><h2>Limites à connaître</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:40%">Limite</th><th>Conséquence et contournement</th></tr></thead>
+<tbody>
+<tr><td>Groupes recalculés à chaque connexion</td><td>identifiants d'application et délégations d'un utilisateur fédéré peuvent perdre leurs droits ; durée d'appartenance persistante, ou compte technique local</td></tr>
+<tr><td>Pas de révocation à la source</td><td>désactiver chez l'autorité n'invalide pas les jetons déjà émis ; durée de vie courte des jetons</td></tr>
+<tr><td>Ligne de commande</td><td>selon les flux autorisés par l'autorité ; sinon, passer par Horizon et un identifiant d'application</td></tr>
+<tr><td>Un domaine par fournisseur</td><td>un même salarié présent dans deux fournisseurs = deux utilisateurs</td></tr>
+<tr><td>Politique de Keystone</td><td>les options de conformité de Keystone — verrouillage, expiration — ne s'appliquent pas aux utilisateurs fédérés : c'est l'autorité qui décide</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<div class="card cb"><h3>Ce que la fédération apporte</h3>
+<ul class="pts sm"><li>une seule politique de mot de passe, celle de l'entreprise ;</li><li>le multifacteur sans rien développer ;</li><li>des départs traités une fois ;</li><li>aucun mot de passe humain dans Keystone.</li></ul></div>
+<div class="card ca"><h3>Ce qu'elle n'apporte pas</h3>
+<ul class="pts sm"><li>les droits OpenStack : ils restent à concevoir dans Keystone ;</li><li>l'authentification des services et des automates ;</li><li>une révocation instantanée des sessions ouvertes.</li></ul></div>
+<div class="note g">C'est la dernière ligne du tableau qui fait le lien avec la suite : une fois les personnes fédérées, la politique de mots de passe de Keystone ne concerne plus que les comptes locaux.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 21 -->
+<section class="slide dark sec">
+<div class="num">03</div>
+<h2>La fédération sur Sunbeam</h2>
+<p>Sunbeam configure le module web, l'enregistrement du fournisseur et Horizon. Il reste à l'exploitant ce qui relève de ses choix : le domaine, les groupes, les rôles et les règles de correspondance.</p>
+<ol><li>Ce que Sunbeam fait, ce qui reste à faire</li><li>Prérequis</li><li>Pas à pas : le fournisseur</li><li>Pas à pas : Keystone</li><li>Vérifier</li><li>Exploiter et dépanner</li></ol>
+</section>
+
+<!-- 22 -->
+<section class="slide">
+<header><span class="kick">3 · Fédération sur Sunbeam</span><h2>Ce que Sunbeam fait, ce qui reste à faire</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:30%">Étape</th><th style="width:22%">Qui la fait</th><th>Commande ou action</th></tr></thead>
+<tbody>
+<tr><td>Déclarer Keystone comme client chez l'autorité</td><td>l'exploitant, chez l'autorité</td><td style="color:var(--ink);font-weight:400">URL de redirection donnée par <code>sunbeam identity provider get-oidc-redirect-url</code></td></tr>
+<tr><td>Configurer le module OIDC de Keystone</td><td class="y">Sunbeam</td><td style="color:var(--ink);font-weight:400"><code>sunbeam identity provider add</code></td></tr>
+<tr><td>Proposer le fournisseur dans Horizon</td><td class="y">Sunbeam</td><td style="color:var(--ink);font-weight:400">automatique : le nom choisi sert d'étiquette</td></tr>
+<tr><td>Créer le domaine du fournisseur</td><td>l'exploitant</td><td style="color:var(--ink);font-weight:400"><code>openstack domain create</code></td></tr>
+<tr><td>Enregistrer le fournisseur dans Keystone</td><td>l'exploitant</td><td style="color:var(--ink);font-weight:400"><code>openstack identity provider create</code>, même nom que dans Sunbeam</td></tr>
+<tr><td>Groupes, projets, rôles</td><td>l'exploitant</td><td style="color:var(--ink);font-weight:400">modules précédents : projets, rôles, moindre privilège</td></tr>
+<tr><td>Règles de correspondance et protocole</td><td>l'exploitant</td><td style="color:var(--ink);font-weight:400"><code>openstack mapping create</code>, <code>openstack federation protocol create</code></td></tr>
+<tr><td>Retirer le fournisseur</td><td>Sunbeam, puis l'exploitant</td><td style="color:var(--ink);font-weight:400"><code>sunbeam identity provider remove</code> ne supprime pas les objets créés avec <code>openstack</code></td></tr>
+</tbody></table>
+<div class="note g"><b>Types documentés par Canonical :</b> <code>canonical</code> (Canonical Identity Platform), <code>google</code>, <code>okta</code>, <code>entra</code>, tous en OpenID Connect. Pour un autre fournisseur — Keycloak par exemple —, consulter <code>sunbeam identity provider add --help</code> sur votre version.</div>
+</div>
+</section>
+
+<!-- 23 -->
+<section class="slide">
+<header><span class="kick">3 · Fédération sur Sunbeam</span><h2>Prérequis</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:36%">Prérequis</th><th>Pourquoi, comment</th></tr></thead>
+<tbody>
+<tr><td>TLS sur les points d'accès publics</td><td>la plupart des autorités refusent une URL de redirection en http ; Sunbeam le fait avec Vault</td></tr>
+<tr><td>Nom de domaine complet</td><td>certaines autorités — Google — refusent une adresse IP</td></tr>
+<tr><td>Résolution et accès réseau</td><td>Keystone doit joindre l'autorité (découverte, clés, échange du code) ; le navigateur aussi</td></tr>
+<tr><td>Horloges synchronisées</td><td>validité des attestations</td></tr>
+<tr><td>Client déclaré chez l'autorité</td><td>identifiant, secret, URL de redirection, revendications utiles — dont les groupes</td></tr>
+<tr><td>Compte local de secours</td><td>pour se connecter si l'autorité est indisponible</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Étape 0 — TLS des points d'accès publics par Vault</span>
+<span class="m"># (Vault activé, initialisé, descellé, autorisé :</span>
+<span class="m">#  voir la documentation « Enable Vault »)</span>
+<span class="c">sunbeam enable tls vault</span> \
+  --ca "$(base64 -w0 ca.pem)" \
+  --ca-chain "$(base64 -w0 chaine.pem)"
+
+<span class="m"># Points d'accès : doivent être en https</span>
+<span class="c">source</span> admin-openrc
+<span class="c">openstack endpoint list</span> --interface public \
+  -c "Service Name" -c URL
+
+<span class="m"># L'URL de redirection à déclarer chez l'autorité</span>
+<span class="c">sunbeam identity provider get-oidc-redirect-url</span> \
+  &lt;adresse-de-redirection-de-keystone&gt;</pre>
+<div class="note g">L'option <code>--ca-chain</code> s'omet avec un certificat autosigné. La remise des certificats signés à Vault fait l'objet d'une procédure à part, selon l'autorité de certification.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 24 -->
+<section class="slide">
+<header><span class="kick">3 · Fédération sur Sunbeam</span><h2>Pas à pas (1) : déclarer le fournisseur</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Exemple : Entra ID</span>
+cat &gt; entra.yaml &lt;&lt;'EOF'
+client-id: 1b2c…
+client-secret: &lt;secret fourni par Entra ID&gt;
+microsoft-tenant: 7f3e…
+label: Connexion entreprise
+EOF
+chmod 600 entra.yaml
+
+<span class="c">sunbeam identity provider add</span> entra openid \
+  entreprise-idp --config entra.yaml
+
+<span class="m"># Vérifier, et lire l'émetteur pour la suite</span>
+<span class="c">sunbeam identity provider list</span>
+<span class="c">sunbeam identity provider list</span> --format=yaml
+
+<span class="m"># Supprimer le fichier : le secret est désormais</span>
+<span class="m"># conservé par le déploiement</span>
+shred -u entra.yaml</pre>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:26%">Type</th><th>Champs du fichier</th></tr></thead>
+<tbody>
+<tr><td><code>google</code></td><td><code>client-id</code>, <code>client-secret</code>, <code>label</code></td></tr>
+<tr><td><code>okta</code></td><td>idem + <code>okta-org</code></td></tr>
+<tr><td><code>entra</code></td><td>idem + <code>microsoft-tenant</code></td></tr>
+<tr><td><code>canonical</code></td><td>offres Juju du modèle <code>iam</code> : <code>oauth_offer</code>, <code>cert_offer</code></td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Le nom choisi</b> — <code>entreprise-idp</code> — sera repris tel quel dans Keystone ; il apparaît dans Horizon sous l'étiquette.</li>
+<li><b>Le secret du client</b> ne doit pas traîner dans l'historique ni dans un dépôt : fichier en mode 600, supprimé après usage.</li>
+</ul>
+<div class="note">La documentation écrit les clés tantôt avec tiret, tantôt avec soulignement : vérifier la forme attendue par votre version.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 25 -->
+<section class="slide">
+<header><span class="kick">3 · Fédération sur Sunbeam</span><h2>Pas à pas (2) : les objets de Keystone</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.4px"><span class="m"># Prérequis : identifiants d'administrateur</span>
+<span class="c">source</span> admin-openrc
+ISSUER=$(sunbeam identity provider list --format=yaml \
+  | yq '.[] | select(.name=="entreprise-idp") | .issuer')
+<span class="m"># (clé à adapter à la sortie de votre version)</span>
+
+<span class="m"># 1 · Domaine dédié au fournisseur</span>
+<span class="c">openstack domain create</span> entreprise \
+  --description "Utilisateurs fédérés — Entra ID"
+
+<span class="m"># 2 · Fournisseur : MÊME nom que dans Sunbeam</span>
+<span class="c">openstack identity provider create</span> entreprise-idp \
+  --remote-id "$ISSUER" --domain entreprise
+
+<span class="m"># 3 · Groupes porteurs des rôles</span>
+<span class="c">openstack group create</span> developpeurs --domain entreprise
+<span class="c">openstack role add</span> member \
+  --group developpeurs --group-domain entreprise \
+  --project rec-web --project-domain nord</pre>
+</div>
+<div class="col">
+<pre style="font-size:11.4px"><span class="m"># 4 · Règles de correspondance, testées hors ligne</span>
+<span class="c">openstack mapping create</span> entreprise-mapping \
+  --rules rules.json
+
+<span class="m"># 5 · Protocole : relie fournisseur et règles</span>
+<span class="c">openstack federation protocol create</span> openid \
+  --identity-provider entreprise-idp \
+  --mapping entreprise-mapping
+
+<span class="m"># Relire l'ensemble</span>
+<span class="c">openstack identity provider show</span> entreprise-idp
+<span class="c">openstack federation protocol list</span> \
+  --identity-provider entreprise-idp
+<span class="c">openstack mapping show</span> entreprise-mapping</pre>
+<div class="note g"><b>Groupes et projets peuvent être dans des domaines différents :</b> le groupe vit dans le domaine du fournisseur ; il reçoit des rôles sur les projets du domaine « nord ».</div>
+<div class="note">Le nom du protocole, <code>openid</code>, est celui que le module configuré par Sunbeam attend.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 26 -->
+<section class="slide">
+<header><span class="kick">3 · Fédération sur Sunbeam</span><h2>Pas à pas (3) : vérifier</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:50%">Essai</th><th>Résultat attendu</th></tr></thead>
+<tbody>
+<tr><td>Horizon : le fournisseur apparaît dans la liste</td><td>étiquette choisie</td></tr>
+<tr><td>Connexion d'un membre de <code>openstack-dev</code></td><td>redirection, multifacteur chez l'autorité, retour dans Horizon, projet <code>rec-web</code> visible</td></tr>
+<tr><td>Connexion d'un salarié hors groupe</td><td>refus à l'arrivée dans Keystone</td></tr>
+<tr><td>L'utilisateur fédéré existe</td><td>dans le domaine <code>entreprise</code></td></tr>
+<tr><td>Ses droits effectifs</td><td><code>member</code> sur <code>rec-web</code>, rien d'autre</td></tr>
+<tr><td>Retrait du groupe chez l'autorité</td><td>plus de projet à la connexion suivante</td></tr>
+<tr><td>Compte local de secours</td><td>connexion possible par le domaine local</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Après une première connexion d'alice</span>
+<span class="c">openstack user list</span> --domain entreprise
+<span class="c">openstack role assignment list</span> --effective --names \
+  --user &lt;id-alice&gt;
+
+<span class="m"># Journaux de Keystone pendant un essai</span>
+sudo k8s kubectl -n openstack logs keystone-0 \
+  -c keystone --since 5m | grep -i -e federation -e mapping
+
+<span class="m"># État des unités et de la relation avec l'autorité</span>
+juju status -m openstack keystone --relations</pre>
+<div class="note"><b>Mettre le niveau de journalisation en débogage</b> (<code>juju config -m openstack keystone log-level=DEBUG</code>) permet de lire les attributs reçus — à remettre à <code>WARNING</code> aussitôt : ces journaux contiennent des données personnelles.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 27 -->
+<section class="slide">
+<header><span class="kick">3 · Fédération sur Sunbeam</span><h2>Pannes typiques</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:30%">Symptôme</th><th style="width:36%">Cause probable</th><th>Vérification</th></tr></thead>
+<tbody>
+<tr><td>L'autorité refuse : « redirect URI mismatch »</td><td>URL déclarée chez l'autorité différente de celle de Keystone</td><td style="color:var(--ink);font-weight:400"><code>get-oidc-redirect-url</code>, comparer caractère par caractère</td></tr>
+<tr><td>Retour dans Keystone, erreur 401</td><td>aucune règle ne correspond, ou groupe inexistant</td><td style="color:var(--ink);font-weight:400">attributs reçus dans les journaux ; moteur de correspondance hors ligne</td></tr>
+<tr><td>« Could not find Identity Provider »</td><td>nom différent entre Sunbeam et Keystone</td><td style="color:var(--ink);font-weight:400"><code>sunbeam identity provider list</code> et <code>openstack identity provider list</code></td></tr>
+<tr><td>Erreur sur l'émetteur</td><td>identifiant distant inexact</td><td style="color:var(--ink);font-weight:400">barre oblique finale, http au lieu de https</td></tr>
+<tr><td>Connexion réussie, aucun projet</td><td>groupe sans rôle, ou rôle sur un autre projet</td><td style="color:var(--ink);font-weight:400"><code>role assignment list --effective</code></td></tr>
+<tr><td>Échecs intermittents</td><td>horloge décalée ; une unité de Keystone mal configurée</td><td style="color:var(--ink);font-weight:400">NTP ; journaux de chaque unité</td></tr>
+<tr><td>Fonctionnait, ne fonctionne plus</td><td>secret du client expiré chez l'autorité</td><td style="color:var(--ink);font-weight:400">date d'expiration du secret côté autorité</td></tr>
+</tbody></table>
+<div class="note g"><b>Le secret d'un client chez Entra ID ou Okta expire</b> selon la durée choisie à sa création : noter la date et planifier son renouvellement, sinon toutes les connexions s'arrêtent le même jour.</div>
+</div>
+</section>
+
+<!-- 28 -->
+<section class="slide dark sec">
+<div class="num">04</div>
+<h2>Le référentiel ANSSI : mots de passe et multifacteur</h2>
+<p>Le guide de l'ANSSI de 2021 rompt avec des habitudes anciennes : la longueur prime sur la complexité, l'expiration systématique n'est plus recommandée pour tous, le multifacteur devient la norme dès que l'enjeu monte.</p>
+<ol><li>Le guide et ses principes</li><li>Longueur et entropie</li><li>Complexité et listes interdites</li><li>Expiration</li><li>Verrouillage et temporisation</li><li>Stockage</li><li>Renouvellement et récupération</li><li>Multifacteur</li><li>Comptes à privilèges</li><li>De la règle à la valeur</li></ol>
+</section>
+
+<!-- 29 -->
+<section class="slide">
+<header><span class="kick">4 · Référentiel ANSSI</span><h2>Le guide et ses principes</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<div class="note b"><b>Référence :</b> ANSSI, <i>Recommandations relatives à l'authentification multifacteur et aux mots de passe</i>, version 2.0, 8 octobre 2021. Recommandations numérotées R1 à R38.</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:16%">N°</th><th>Principe</th></tr></thead>
+<tbody>
+<tr><td>R1</td><td>privilégier l'authentification multifacteur</td></tr>
+<tr><td>R2</td><td>privilégier des mécanismes robustes, conformes au RGS</td></tr>
+<tr><td>R3</td><td>choisir les moyens d'authentification après une analyse de risque</td></tr>
+<tr><td>R10</td><td>limiter le nombre de tentatives dans le temps</td></tr>
+<tr><td>R13</td><td>protéger les données d'authentification stockées</td></tr>
+<tr><td>R31</td><td>fournir un gestionnaire de mots de passe et former à son usage</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<p><b>Trois idées à retenir</b></p>
+<div class="card cb"><h3>Adapter à l'enjeu</h3>Il n'y a pas une politique, mais des politiques : un compte d'administration du cloud n'a pas le même niveau d'exigence qu'un compte de lecture d'un projet d'essai.</div>
+<div class="card ca"><h3>La longueur d'abord</h3>Un mot de passe long résiste mieux qu'un mot de passe court et « complexe », que les utilisateurs construisent selon des schémas prévisibles.</div>
+<div class="card cv"><h3>Le mot de passe seul ne suffit pas</h3>Pour les accès sensibles — l'administration en tête — le guide recommande un second facteur, de préférence de possession.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 30 -->
+<section class="slide">
+<header><span class="kick">4 · Référentiel ANSSI</span><h2>Longueur et entropie (R21)</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<div class="fig"><svg viewBox="0 0 560 306">
+<text x="280" y="16" class="tc tl" style="font-size:13px">Longueur nécessaire selon l'alphabet</text>
+<text x="150" y="64" class="ts tb" style="text-anchor:end">chiffres (10)</text>
+<rect x="160" y="34" width="220" height="14" rx="3" class="b-teal"/><text x="386" y="45" class="ts" style="font-size:11px;text-anchor:start">20</text>
+<rect x="160" y="51" width="286" height="14" rx="3" class="b-amber"/><text x="452" y="62" class="ts" style="font-size:11px;text-anchor:start">26</text>
+<rect x="160" y="68" width="341" height="14" rx="3" class="b-red"/><text x="507" y="79" class="ts" style="font-size:11px;text-anchor:start">31</text>
+<text x="150" y="126" class="ts tb" style="text-anchor:end">minuscules (26)</text>
+<rect x="160" y="96" width="154" height="14" rx="3" class="b-teal"/><text x="320" y="107" class="ts" style="font-size:11px;text-anchor:start">14</text>
+<rect x="160" y="113" width="209" height="14" rx="3" class="b-amber"/><text x="375" y="124" class="ts" style="font-size:11px;text-anchor:start">19</text>
+<rect x="160" y="130" width="242" height="14" rx="3" class="b-red"/><text x="408" y="141" class="ts" style="font-size:11px;text-anchor:start">22</text>
+<text x="150" y="188" class="ts tb" style="text-anchor:end">alphanumérique (62)</text>
+<rect x="160" y="158" width="121" height="14" rx="3" class="b-teal"/><text x="287" y="169" class="ts" style="font-size:11px;text-anchor:start">11</text>
+<rect x="160" y="175" width="165" height="14" rx="3" class="b-amber"/><text x="331" y="186" class="ts" style="font-size:11px;text-anchor:start">15</text>
+<rect x="160" y="192" width="187" height="14" rx="3" class="b-red"/><text x="353" y="203" class="ts" style="font-size:11px;text-anchor:start">17</text>
+<text x="150" y="250" class="ts tb" style="text-anchor:end">90 caractères</text>
+<rect x="160" y="220" width="121" height="14" rx="3" class="b-teal"/><text x="287" y="231" class="ts" style="font-size:11px;text-anchor:start">11</text>
+<rect x="160" y="237" width="154" height="14" rx="3" class="b-amber"/><text x="320" y="248" class="ts" style="font-size:11px;text-anchor:start">14</text>
+<rect x="160" y="254" width="176" height="14" rx="3" class="b-red"/><text x="342" y="265" class="ts" style="font-size:11px;text-anchor:start">16</text>
+<rect x="170" y="288" width="14" height="12" rx="3" class="b-teal"/><text x="190" y="298" class="ts" style="font-size:11.5px;text-anchor:start">≈ 65 bits</text>
+<rect x="295" y="288" width="14" height="12" rx="3" class="b-amber"/><text x="315" y="298" class="ts" style="font-size:11.5px;text-anchor:start">≈ 85 bits</text>
+<rect x="420" y="288" width="14" height="12" rx="3" class="b-red"/><text x="440" y="298" class="ts" style="font-size:11.5px;text-anchor:start">≥ 100 bits</text>
+</svg></div>
+<div class="note g"><b>Calcul :</b> longueur × log<sub>2</sub>(taille de l'alphabet). Valable seulement pour un tirage aléatoire uniforme — ce que n'est presque jamais un mot de passe choisi par une personne.</div>
+</div>
+<div class="col">
+<p><b>Tableau du guide</b> — alphabet de 90 caractères</p>
+<table class="tbl tight os">
+<thead><tr><th style="width:38%">Sensibilité</th><th style="width:30%">Longueur minimale</th><th>Équivalent</th></tr></thead>
+<tbody>
+<tr><td>Faible à moyenne</td><td>9 à 11</td><td>≈ 65 bits</td></tr>
+<tr><td>Moyenne à forte</td><td>12 à 14</td><td>≈ 85 bits</td></tr>
+<tr><td>Forte à très forte</td><td>15 et plus</td><td>≥ 100 bits</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Forte à très forte sensibilité :</b> le guide recommande en plus le multifacteur.</li>
+<li><b>Mots de passe non mémorisés</b> — ceux d'un gestionnaire, d'un compte technique — : plus de 20 caractères.</li>
+<li><b>Code court acceptable</b> seulement avec des mesures fortes : blocage définitif après trois échecs, comme une carte à puce.</li>
+</ul>
+<div class="note"><b>Pour un cloud :</b> les comptes d'administration relèvent de la sensibilité forte ; un compte de travail ordinaire, au minimum de la moyenne à forte.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 31 -->
+<section class="slide">
+<header><span class="kick">4 · Référentiel ANSSI</span><h2>Complexité, longueur maximale, listes interdites</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os wrap">
+<thead><tr><th style="width:12%">N°</th><th>Recommandation</th></tr></thead>
+<tbody>
+<tr><td>R22</td><td>ne pas imposer de longueur maximale, pour permettre les phrases de passe ; seulement une borne technique de quelques centaines de caractères</td></tr>
+<tr><td>R23</td><td>imposer des règles de complexité à la création et au renouvellement, en autorisant le plus large jeu de caractères</td></tr>
+<tr><td>R27</td><td>interdire la réutilisation des derniers mots de passe ; vérifier à la création les listes de mots de passe courants ou compromis, les suites prévisibles, les informations personnelles</td></tr>
+</tbody></table>
+<div class="note g"><b>Ce que dit le guide des règles de complexité :</b> elles se contournent facilement hors ligne (« a » devient « @ ») ; elles sont surtout utiles contre les attaques en ligne, avec une limitation des tentatives.</div>
+</div>
+<div class="col">
+<p><b>Traduction pratique</b></p>
+<table class="tbl tight">
+<thead><tr><th style="width:40%">Règle</th><th>Valeur proposée</th></tr></thead>
+<tbody>
+<tr><td>Longueur minimale</td><td>12 caractères, 15 pour les comptes à privilèges</td></tr>
+<tr><td>Longueur maximale</td><td>aucune, ou ≥ 128</td></tr>
+<tr><td>Jeu de caractères</td><td>tous, espace et accents compris</td></tr>
+<tr><td>Classes imposées</td><td>au plus deux ; la longueur fait le reste</td></tr>
+<tr><td>Historique</td><td>5 derniers interdits</td></tr>
+<tr><td>Liste de refus</td><td>mots de passe compromis connus, nom de l'entreprise, identifiant</td></tr>
+</tbody></table>
+<div class="note">Valeurs proposées pour ce module, à valider par votre analyse de risque. La vérification contre des listes de mots de passe compromis relève de l'autorité d'authentification : Keystone ne sait pas la faire.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 32 -->
+<section class="slide">
+<header><span class="kick">4 · Référentiel ANSSI</span><h2>Expiration (R24, R25, R26)</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card ct"><h3>R24 — Comptes ordinaires</h3>Si la robustesse est imposée et que le système le permet : <b>pas d'expiration par défaut</b>. Le guide note qu'une expiration courte, de 3 à 6 mois, peut être contre-productive : les utilisateurs incrémentent un chiffre.</div>
+<div class="card ca"><h3>R25 — Comptes à privilèges</h3><b>Imposer une expiration</b>, par exemple <b>entre 1 et 3 ans</b>. Le guide préfère, pour ces comptes, une authentification à deux facteurs.</div>
+<div class="card"><h3>R26 — Compromission suspectée</h3><b>Renouveler sans délai</b> — dans la journée — tous les mots de passe concernés ; à défaut, désactiver les comptes et prévoir une procédure de réactivation.</div>
+</div>
+<table class="tbl os">
+<thead><tr><th style="width:30%">Habitude ancienne</th><th style="width:34%">Problème</th><th>Pratique conforme au guide</th></tr></thead>
+<tbody>
+<tr><td>Expiration à 90 jours pour tous</td><td>mots de passe prévisibles : « Printemps2026! »</td><td style="color:var(--ink);font-weight:400">pas d'expiration pour les comptes ordinaires robustes</td></tr>
+<tr><td>Jamais d'expiration pour l'administration</td><td>un mot de passe ancien a eu le temps de fuiter</td><td style="color:var(--ink);font-weight:400">1 à 3 ans, plus multifacteur</td></tr>
+<tr><td>Attendre l'expiration après une fuite</td><td>fenêtre d'exploitation ouverte</td><td style="color:var(--ink);font-weight:400">renouvellement immédiat, procédure prête</td></tr>
+</tbody></table>
+<div class="note g"><b>Dans Keystone,</b> l'expiration est une option globale : elle ne distingue pas comptes ordinaires et privilégiés. On la module compte par compte avec une option d'exemption — partie 5.</div>
+</div>
+</section>
+
+<!-- 33 -->
+<section class="slide">
+<header><span class="kick">4 · Référentiel ANSSI</span><h2>Verrouillage et temporisation (R10)</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 250">
+<rect x="10" y="6" width="1130" height="112" rx="12" class="zone"/><text x="575.0" y="30" class="tc tl">Temporisation — recommandée (R10)</text>
+<circle cx="52" cy="66" r="12" class="f-red"/><text x="52" y="71" class="tc tw tb" style="font-size:12px">✕</text>
+<circle cx="84" cy="66" r="12" class="f-red"/><text x="84" y="71" class="tc tw tb" style="font-size:12px">✕</text>
+<circle cx="116" cy="66" r="12" class="f-red"/><text x="116" y="71" class="tc tw tb" style="font-size:12px">✕</text>
+<circle cx="148" cy="66" r="12" class="f-red"/><text x="148" y="71" class="tc tw tb" style="font-size:12px">✕</text>
+<circle cx="180" cy="66" r="12" class="f-red"/><text x="180" y="71" class="tc tw tb" style="font-size:12px">✕</text>
+<rect x="200" y="56" width="48.0" height="20" rx="5" class="b-amber"/><text x="224.0" y="71" class="tc ts" style="font-size:11px">attente</text>
+<circle cx="268.0" cy="66" r="12" class="f-red"/><text x="268.0" y="71" class="tc tw tb" style="font-size:12px">✕</text>
+<rect x="288.0" y="56" width="96.0" height="20" rx="5" class="b-amber"/><text x="336.0" y="71" class="tc ts" style="font-size:11px">attente</text>
+<circle cx="404.0" cy="66" r="12" class="f-red"/><text x="404.0" y="71" class="tc tw tb" style="font-size:12px">✕</text>
+<rect x="424.0" y="56" width="192.0" height="20" rx="5" class="b-amber"/><text x="520.0" y="71" class="tc ts" style="font-size:11px">attente</text>
+<circle cx="636.0" cy="66" r="12" class="f-green" style="fill:#16a34a"/><text x="636.0" y="71" class="tc tw tb" style="font-size:12px">✓</text>
+<text x="664.0" y="62" class="ts" style="text-anchor:start">la personne légitime</text><text x="664.0" y="78" class="ts" style="text-anchor:start">finit par entrer</text>
+<text x="575" y="104" class="tc ts">l'attaquant est ralenti : quelques essais par heure au lieu de milliers par seconde</text>
+<rect x="10" y="130" width="1130" height="114" rx="12" class="zone"/><text x="575.0" y="154" class="tc tl">Verrouillage jusqu'à réactivation — à réserver aux cas protégés autrement</text>
+<circle cx="52" cy="190" r="12" class="f-red"/><text x="52" y="195" class="tc tw tb" style="font-size:12px">✕</text>
+<circle cx="84" cy="190" r="12" class="f-red"/><text x="84" y="195" class="tc tw tb" style="font-size:12px">✕</text>
+<circle cx="116" cy="190" r="12" class="f-red"/><text x="116" y="195" class="tc tw tb" style="font-size:12px">✕</text>
+<circle cx="148" cy="190" r="12" class="f-red"/><text x="148" y="195" class="tc tw tb" style="font-size:12px">✕</text>
+<circle cx="180" cy="190" r="12" class="f-red"/><text x="180" y="195" class="tc tw tb" style="font-size:12px">✕</text>
+<rect x="206" y="178" width="520" height="24" rx="6" class="b-dark"/><text x="466" y="195" class="tc tw tb" style="font-size:12.5px">compte bloqué jusqu'à intervention de l'administration</text>
+<text x="740" y="186" class="ts tb tr" style="text-anchor:start">5 essais faux suffisent à bloquer</text><text x="740" y="203" class="ts tr" style="text-anchor:start">n'importe quel compte : déni de service</text>
+<text x="575" y="232" class="tc ts">Keystone : lockout_failure_attempts + lockout_duration = blocage temporaire à durée fixe ; sans durée, blocage jusqu'à réactivation</text>
+</svg></div>
+<div class="cols nf">
+<div class="col"><ul class="pts sm">
+<li><b>R10 :</b> limiter le nombre de tentatives sur une période — blocage temporaire de quelques secondes ou minutes après plusieurs échecs, linéaire ou exponentiel.</li>
+<li><b>Un blocage définitif</b> n'est envisagé par le guide que pour des codes courts protégés autrement — une carte à puce, par exemple.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Le revers du verrouillage :</b> quiconque connaît un identifiant peut le bloquer en tapant de faux mots de passe. Sur un compte de service, c'est une panne du cloud.</li>
+<li><b>R14 :</b> en multifacteur, un échec ne doit pas révéler quel facteur a échoué.</li>
+</ul></div>
+</div>
+</div>
+</section>
+
+<!-- 34 -->
+<section class="slide">
+<header><span class="kick">4 · Référentiel ANSSI</span><h2>Stockage des mots de passe (R13, R28, R29)</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os wrap">
+<thead><tr><th style="width:14%">N°</th><th>Recommandation</th></tr></thead>
+<tbody>
+<tr><td>R13</td><td>protéger en confidentialité et en intégrité les données d'authentification stockées ; en restreindre l'accès</td></tr>
+<tr><td>—</td><td>ne jamais stocker un mot de passe en clair : interdit absolu</td></tr>
+<tr><td>R28</td><td>sel aléatoire propre à chaque compte, d'au moins 128 bits</td></tr>
+<tr><td>R29</td><td>état de l'art : fonction de dérivation coûteuse en mémoire — scrypt, Argon2 — réglée au plus fort que l'usage permet</td></tr>
+<tr><td>R29-</td><td>à défaut : PBKDF2, avec le plus grand nombre d'itérations possible</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<p><b>Dans Keystone</b> — <code>[identity] password_hash_algorithm</code></p>
+<table class="tbl tight">
+<thead><tr><th style="width:32%">Valeur</th><th>Au regard du guide</th></tr></thead>
+<tbody>
+<tr><td><code>bcrypt</code></td><td>valeur par défaut ; robuste, mais ni l'une ni l'autre des familles citées</td></tr>
+<tr><td><code>bcrypt_sha256</code></td><td>variante sans troncature à 72 octets</td></tr>
+<tr><td><code>scrypt</code></td><td>conforme à R29</td></tr>
+<tr><td><code>pbkdf2_sha512</code></td><td>conforme à R29-</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Changement transparent :</b> à la connexion suivante réussie, Keystone recalcule l'empreinte avec le nouvel algorithme. Les comptes qui ne se connectent jamais gardent l'ancienne.</li>
+<li><b>R13 sur Sunbeam :</b> la base de Keystone vit dans la grappe MySQL du déploiement ; accès au nœud de contrôle, sauvegardes et secrets Juju sont à protéger au même niveau.</li>
+</ul>
+<div class="note">Sur Sunbeam, l'algorithme n'est pas exposé par le charm : bcrypt reste en place. Les mots de passe des personnes, une fois fédérées, ne sont plus stockés dans Keystone.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 35 -->
+<section class="slide">
+<header><span class="kick">4 · Référentiel ANSSI</span><h2>Mots de passe initiaux, récupération, défauts</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os wrap">
+<thead><tr><th style="width:12%">N°</th><th>Recommandation</th></tr></thead>
+<tbody>
+<tr><td>R30</td><td>prévoir une méthode de récupération adaptée — mot de passe temporaire, lien à usage unique, assistance — ; ne jamais renvoyer le mot de passe d'origine en clair</td></tr>
+<tr><td>R38</td><td>changer les mots de passe par défaut des comptes natifs dès l'installation</td></tr>
+<tr><td>R18, R19</td><td>organiser la révocation et en fixer les délais selon l'analyse de risque</td></tr>
+<tr><td>R33, R35</td><td>un mot de passe différent par service ; ni papier, ni fichier, ni courriel</td></tr>
+</tbody></table>
+<div class="note g"><b>Mot de passe temporaire</b> remis par l'administration : il doit être changé dès la première connexion. Keystone le permet (<code>change_password_upon_first_use</code>).</div>
+</div>
+<div class="col">
+<p><b>Sur un cloud Sunbeam</b></p>
+<table class="tbl tight">
+<thead><tr><th style="width:44%">Compte natif</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><code>admin</code> créé à l'installation</td><td>mot de passe tiré au sort par le déploiement : le garder dans un coffre, restreindre <code>sunbeam openrc</code></td></tr>
+<tr><td>Utilisateur de démonstration</td><td>créé par <code>sunbeam configure</code> : à supprimer ou désactiver en production</td></tr>
+<tr><td>Comptes des services</td><td>secrets générés par les charms : ne pas y toucher</td></tr>
+<tr><td>Images d'instances</td><td>pas de mot de passe par défaut ; accès par clé, injectée au démarrage</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Récupération pour les personnes fédérées :</b> celle de l'autorité — le cloud n'a rien à prévoir.</li>
+<li><b>Pour les comptes locaux :</b> réinitialisation par l'administration, avec changement imposé à la première connexion.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 36 -->
+<section class="slide">
+<header><span class="kick">4 · Référentiel ANSSI</span><h2>Multifacteur (R1, R8, R14)</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:24%">Catégorie</th><th style="width:38%">Exemples</th><th>Remarque</th></tr></thead>
+<tbody>
+<tr><td>Connaissance</td><td>mot de passe, code</td><td>le facteur le plus exposé</td></tr>
+<tr><td>Possession</td><td>clé physique, carte à puce, application de code à usage unique</td><td>préférée par le guide</td></tr>
+<tr><td>Inhérence</td><td>empreinte, visage</td><td>sur l'appareil de la personne</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>R1 :</b> deux facteurs de catégories différentes — deux mots de passe ne font pas un multifacteur.</li>
+<li><b>R8 :</b> ne pas utiliser le SMS pour transmettre un facteur.</li>
+<li><b>R14 :</b> un échec ne doit pas dire lequel des facteurs a échoué.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Où le mettre en œuvre</b></p>
+<table class="tbl tight">
+<thead><tr><th style="width:38%">Population</th><th>Moyen</th></tr></thead>
+<tbody>
+<tr><td>Personnes fédérées</td><td>multifacteur de l'autorité, imposé pour l'application OpenStack</td></tr>
+<tr><td>Comptes locaux d'administration</td><td>TOTP de Keystone : règle « mot de passe + totp »</td></tr>
+<tr><td>Compte de secours</td><td>TOTP, secret sous scellé avec le mot de passe, séparément</td></tr>
+<tr><td>Comptes de service, automates</td><td>sans objet : secrets longs, identifiants d'application</td></tr>
+</tbody></table>
+<div class="note"><b>Le multifacteur de l'autorité ne protège que ses propres flux :</b> si le flux « mot de passe » en ligne de commande reste ouvert, il le contourne. Le fermer chez l'autorité.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 37 -->
+<section class="slide">
+<header><span class="kick">4 · Référentiel ANSSI</span><h2>Les comptes à privilèges</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Qu'est-ce qu'un compte à privilèges sur un cloud OpenStack ?</b></p>
+<table class="tbl tight os">
+<thead><tr><th style="width:44%">Compte</th><th>Pourquoi</th></tr></thead>
+<tbody>
+<tr><td>Détenteurs de <code>admin</code></td><td>administrent tout le cloud</td></tr>
+<tr><td>Gestionnaires de domaine</td><td>créent comptes et affectations</td></tr>
+<tr><td>Comptes des services OpenStack</td><td>détiennent <code>admin</code> et <code>service</code></td></tr>
+<tr><td>Accès aux nœuds, à Juju, à Vault</td><td>contournent toute politique de Keystone</td></tr>
+<tr><td>Administrateurs de l'autorité</td><td>peuvent ouvrir des droits par les groupes</td></tr>
+</tbody></table>
+<div class="note">La dernière ligne est souvent oubliée : avec la fédération, l'administrateur de l'autorité est un administrateur du cloud par procuration.</div>
+</div>
+<div class="col">
+<p><b>Exigences renforcées</b></p>
+<ul class="pts sm">
+<li><b>Multifacteur obligatoire</b> pour toute personne détenant un de ces droits.</li>
+<li><b>Mot de passe d'au moins 15 caractères,</b> expiration entre 1 et 3 ans (R25).</li>
+<li><b>Comptes dédiés :</b> le compte d'administration n'est pas le compte de messagerie.</li>
+<li><b>Nombre minimal</b> et revue mensuelle.</li>
+<li><b>Poste d'administration maîtrisé :</b> le guide de l'ANSSI sur l'administration sécurisée des systèmes d'information le développe.</li>
+</ul>
+<div class="note g">Pour les comptes de service, l'enjeu est le même mais les moyens diffèrent : pas de multifacteur possible, donc des secrets très longs, jamais saisis par une personne, et un accès restreint à leur stockage.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 38 -->
+<section class="slide">
+<header><span class="kick">4 · Référentiel ANSSI</span><h2>De la règle à la valeur : une politique par population</h2></header>
+<div class="body">
+<table class="tbl os xs">
+<thead><tr><th style="width:16%">Règle</th><th style="width:20%">Personnes, compte ordinaire</th><th style="width:20%">Personnes, à privilèges</th><th style="width:20%">Compte local de secours</th><th>Compte de service</th></tr></thead>
+<tbody>
+<tr><td>Où il vit</td><td>autorité externe</td><td>autorité externe</td><td>Keystone, domaine local</td><td>Keystone, domaine des services</td></tr>
+<tr><td>Longueur</td><td>≥ 12</td><td>≥ 15</td><td>≥ 20, tiré au sort</td><td>&gt; 20, tiré au sort</td></tr>
+<tr><td>Complexité</td><td>largeur du jeu de caractères, liste de refus</td><td>idem</td><td>sans objet : aléatoire</td><td>sans objet : aléatoire</td></tr>
+<tr><td>Expiration</td><td>aucune (R24)</td><td>1 à 3 ans (R25)</td><td>1 an, et après chaque usage</td><td>rotation planifiée, hors expiration automatique</td></tr>
+<tr><td>Historique</td><td>5</td><td>5</td><td>5</td><td>sans objet</td></tr>
+<tr><td>Verrouillage</td><td>temporisation après 5 à 10 échecs</td><td>idem</td><td>temporisation, alerte</td><td>exempté — surveillance des échecs</td></tr>
+<tr><td>Multifacteur</td><td>recommandé</td><td>obligatoire</td><td>obligatoire (TOTP)</td><td>impossible : secret protégé à la place</td></tr>
+<tr><td>Inactivité</td><td>désactivation après 90 jours</td><td>idem</td><td>exempté — revue périodique</td><td>exempté</td></tr>
+<tr><td>Premier usage</td><td>selon l'autorité</td><td>selon l'autorité</td><td>changement imposé</td><td>exempté</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Valeurs proposées, à adapter :</b> elles découlent du guide (R10, R21, R24, R25, R27) et d'une analyse de risque type ; elles ne remplacent pas la vôtre.</div>
+<div class="note g"><b>Lecture :</b> deux colonnes se règlent chez l'autorité, deux dans Keystone. Les exemptions de la dernière colonne évitent de mettre le cloud en panne — partie 6.</div>
+</div>
+</div>
+</section>
+
+<!-- 39 -->
+<section class="slide">
+<header><span class="kick">4 · Référentiel ANSSI</span><h2>Où s'applique chaque règle</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 260">
+<rect x="10" y="6" width="360" height="248" rx="12" class="zone"/><text x="190.0" y="30" class="tc tl">Autorité d'authentification</text>
+<text x="190" y="48" class="tc ts tb">les personnes</text>
+<rect x="30" y="60" width="320" height="30" rx="6" class="b-teal"/><text x="190" y="80" class="tc" style="font-size:12.5px">longueur, liste de refus</text>
+<rect x="30" y="98" width="320" height="30" rx="6" class="b-teal"/><text x="190" y="118" class="tc" style="font-size:12.5px">historique, expiration</text>
+<rect x="30" y="136" width="320" height="30" rx="6" class="b-teal"/><text x="190" y="156" class="tc" style="font-size:12.5px">temporisation</text>
+<rect x="30" y="174" width="320" height="30" rx="6" class="b-teal"/><text x="190" y="194" class="tc" style="font-size:12.5px">multifacteur</text>
+<rect x="30" y="212" width="320" height="30" rx="6" class="b-teal"/><text x="190" y="232" class="tc" style="font-size:12.5px">récupération, départs</text>
+<rect x="393" y="6" width="360" height="248" rx="12" class="zone"/><text x="573.0" y="30" class="tc tl">Keystone</text>
+<text x="573" y="48" class="tc ts tb">les comptes locaux restants</text>
+<rect x="413" y="60" width="320" height="30" rx="6" class="b-red"/><text x="573" y="80" class="tc" style="font-size:12.5px">[security_compliance]</text>
+<rect x="413" y="98" width="320" height="30" rx="6" class="b-red"/><text x="573" y="118" class="tc" style="font-size:12.5px">TOTP du compte de secours</text>
+<rect x="413" y="136" width="320" height="30" rx="6" class="b-red"/><text x="573" y="156" class="tc" style="font-size:12.5px">exemptions par compte</text>
+<rect x="413" y="174" width="320" height="30" rx="6" class="b-red"/><text x="573" y="194" class="tc" style="font-size:12.5px">algorithme d'empreinte</text>
+<rect x="413" y="212" width="320" height="30" rx="6" class="b-red"/><text x="573" y="232" class="tc" style="font-size:12.5px">journaux d'audit</text>
+<rect x="776" y="6" width="360" height="248" rx="12" class="zone"/><text x="956.0" y="30" class="tc tl">Gestion de secrets</text>
+<text x="956" y="48" class="tc ts tb">les machines</text>
+<rect x="796" y="60" width="320" height="30" rx="6" class="b-violet"/><text x="956" y="80" class="tc" style="font-size:12.5px">secrets générés, longs</text>
+<rect x="796" y="98" width="320" height="30" rx="6" class="b-violet"/><text x="956" y="118" class="tc" style="font-size:12.5px">coffre, accès restreint</text>
+<rect x="796" y="136" width="320" height="30" rx="6" class="b-violet"/><text x="956" y="156" class="tc" style="font-size:12.5px">rotation planifiée</text>
+<rect x="796" y="174" width="320" height="30" rx="6" class="b-violet"/><text x="956" y="194" class="tc" style="font-size:12.5px">identifiants d'application</text>
+<rect x="796" y="212" width="320" height="30" rx="6" class="b-violet"/><text x="956" y="232" class="tc" style="font-size:12.5px">alertes sur échecs</text>
+</svg></div>
+<div class="cols nf">
+<div class="note"><b>Règle d'architecture :</b> la politique des personnes se règle à un seul endroit — l'autorité. Keystone n'applique sa propre politique qu'aux quelques comptes locaux qui lui restent.</div>
+<div class="note g"><b>Les secrets non humains</b> — comptes de service, identifiants d'application — ne relèvent pas d'une politique de mot de passe mais d'une gestion de secrets : génération, stockage, rotation.</div>
+</div>
+</div>
+</section>
+
+<!-- 40 -->
+<section class="slide dark sec">
+<div class="num">05</div>
+<h2>Appliquer la politique dans Keystone</h2>
+<p>Keystone dispose d'options de conformité pour ses comptes locaux : verrouillage, expiration, historique, complexité, inactivité, multifacteur. Elles sont désactivées par défaut, globales, et Sunbeam ne les expose pas : il faut savoir ce qu'elles font avant de décider où appliquer la politique.</p>
+<ol><li>Les options de conformité</li><li>Une configuration alignée sur le guide</li><li>Ce qu'elles ne couvrent pas</li><li>La stratégie sur Sunbeam</li><li>Le multifacteur des comptes locaux</li></ol>
+</section>
+
+<!-- 41 -->
+<section class="slide">
+<header><span class="kick">5 · Appliquer dans Keystone</span><h2>Les options de conformité — <code>[security_compliance]</code></h2></header>
+<div class="body">
+<table class="tbl os xs">
+<thead><tr><th style="width:30%">Option</th><th style="width:34%">Effet</th><th style="width:12%">Guide</th><th>Exemption par compte</th></tr></thead>
+<tbody>
+<tr><td><code>lockout_failure_attempts</code></td><td>verrouille après N échecs consécutifs</td><td>R10</td><td><code>ignore_lockout_failure_attempts</code></td></tr>
+<tr><td><code>lockout_duration</code></td><td>durée du verrouillage en secondes ; sans valeur, verrouillage jusqu'à réactivation</td><td>R10</td><td>—</td></tr>
+<tr><td><code>password_expires_days</code></td><td>expiration des mots de passe changés après activation</td><td>R24, R25</td><td><code>ignore_password_expiry</code></td></tr>
+<tr><td><code>unique_last_password_count</code></td><td>nombre de derniers mots de passe interdits, l'actuel compris</td><td>R27</td><td>—</td></tr>
+<tr><td><code>minimum_password_age</code></td><td>délai minimal entre deux changements, en jours</td><td>R27</td><td>—</td></tr>
+<tr><td><code>password_regex</code>, <code>password_regex_description</code></td><td>règle de composition, et son explication affichée</td><td>R21, R23</td><td>—</td></tr>
+<tr><td><code>change_password_upon_first_use</code></td><td>changement imposé après création ou réinitialisation par l'administration</td><td>R30</td><td><code>ignore_change_password_upon_first_use</code></td></tr>
+<tr><td><code>disable_user_account_days_inactive</code></td><td>désactive les comptes sans authentification depuis N jours</td><td>R18</td><td><code>ignore_user_inactivity</code></td></tr>
+<tr><td>— (options de compte)</td><td><code>multi_factor_auth_enabled</code>, <code>multi_factor_auth_rules</code>, <code>lock_password</code></td><td>R1</td><td>—</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Toutes désactivées par défaut,</b> et ne s'appliquent qu'au stockage SQL de Keystone : ni aux domaines LDAP, ni aux utilisateurs fédérés.</div>
+<div class="note g"><b>Globales :</b> une seule valeur pour tout le cloud. La différenciation par population passe par les options d'exemption, posées compte par compte.</div>
+</div>
+</div>
+</section>
+
+<!-- 42 -->
+<section class="slide">
+<header><span class="kick">5 · Appliquer dans Keystone</span><h2>Une configuration alignée sur le guide</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># keystone.conf — comptes locaux restants :</span>
+<span class="m"># administration de secours et comptes techniques</span>
+[security_compliance]
+<span class="m"># R10 : temporisation, pas de blocage définitif</span>
+lockout_failure_attempts = 5
+lockout_duration = 900
+<span class="m"># R25 : comptes locaux = comptes à privilèges</span>
+password_expires_days = 365
+<span class="m"># R27 : historique</span>
+unique_last_password_count = 5
+minimum_password_age = 1
+<span class="m"># R21 / R22 : longueur d'abord, pas de maximum utile</span>
+password_regex = ^.{15,256}$
+password_regex_description = Au moins 15 caractères.
+<span class="m"># R30 : mot de passe remis par l'administration</span>
+change_password_upon_first_use = true
+<span class="m"># R18 : comptes oubliés</span>
+disable_user_account_days_inactive = 90
+
+[identity]
+<span class="m"># R29- : PBKDF2 ; R29 : scrypt</span>
+password_hash_algorithm = scrypt</pre>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Expiration à 365 jours pour tous les comptes locaux :</b> cohérent avec R25 dès lors que les personnes ordinaires sont fédérées ; il ne reste en local que des comptes à privilèges.</li>
+<li><b>Expression régulière centrée sur la longueur :</b> 15 caractères minimum, sans classes imposées ; la borne de 256 protège seulement contre les abus.</li>
+<li><b><code>minimum_password_age</code> inférieur à <code>password_expires_days</code>,</b> sinon impossible de changer avant expiration.</li>
+<li><b>Expiration des mots de passe existants :</b> l'option ne s'applique qu'aux mots de passe changés après son activation.</li>
+</ul>
+<div class="note"><b>Avant toute activation :</b> poser les exemptions sur les comptes de service et le compte de secours — partie 6. Activer d'abord, exempter ensuite, c'est risquer de verrouiller le cloud.</div>
+<div class="note g">Valeurs proposées pour ce module, à valider par votre analyse de risque.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 43 -->
+<section class="slide">
+<header><span class="kick">5 · Appliquer dans Keystone</span><h2>Ce que les options de Keystone ne couvrent pas</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:30%">Exigence du guide</th><th style="width:36%">Keystone</th><th>Où la satisfaire</th></tr></thead>
+<tbody>
+<tr><td>Liste de mots de passe compromis (R27)</td><td class="n">non</td><td style="color:var(--ink);font-weight:400">autorité d'authentification</td></tr>
+<tr><td>Refus des informations personnelles (R27)</td><td class="n">non, sauf par expression régulière</td><td style="color:var(--ink);font-weight:400">autorité</td></tr>
+<tr><td>Temporisation exponentielle (R10)</td><td>durée fixe seulement</td><td style="color:var(--ink);font-weight:400">autorité ; répartiteur de charge en frontal</td></tr>
+<tr><td>Politique différente par population</td><td>globale, avec exemptions</td><td style="color:var(--ink);font-weight:400">autorité : une politique par groupe</td></tr>
+<tr><td>Multifacteur par clé physique</td><td>règles de méthodes, TOTP intégré</td><td style="color:var(--ink);font-weight:400">autorité</td></tr>
+<tr><td>Comptes d'un annuaire LDAP</td><td class="n">options sans effet</td><td style="color:var(--ink);font-weight:400">l'annuaire lui-même</td></tr>
+<tr><td>Utilisateurs fédérés</td><td class="n">options sans effet</td><td style="color:var(--ink);font-weight:400">l'autorité</td></tr>
+<tr><td>Alerte sur échecs répétés</td><td>journaux et notifications d'audit</td><td style="color:var(--ink);font-weight:400">centralisation des journaux, règles d'alerte</td></tr>
+</tbody></table>
+<div class="note g"><b>Conclusion :</b> Keystone sait appliquer une politique raisonnable à quelques comptes locaux ; il n'est pas fait pour être l'autorité d'authentification d'une entreprise. C'est l'argument technique en faveur de la fédération.</div>
+</div>
+</section>
+
+<!-- 44 -->
+<section class="slide">
+<header><span class="kick">5 · Appliquer dans Keystone</span><h2>La stratégie sur Sunbeam</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 250">
+<rect x="10" y="6" width="360" height="168" rx="12" class="b-teal"/><text x="190" y="34" class="tc tl">Domaine fédéré « entreprise »</text>
+<rect x="26" y="50" width="328" height="30" rx="6" class="bx"/><text x="190" y="70" class="tc" style="font-size:12.5px">toutes les personnes</text>
+<rect x="26" y="88" width="328" height="30" rx="6" class="bx"/><text x="190" y="108" class="tc" style="font-size:12.5px">politique et multifacteur de l'autorité</text>
+<rect x="26" y="126" width="328" height="30" rx="6" class="bx"/><text x="190" y="146" class="tc" style="font-size:12.5px">aucun mot de passe dans Keystone</text>
+<rect x="393" y="6" width="360" height="168" rx="12" class="b-amber"/><text x="573" y="34" class="tc tl">Domaine local d'administration</text>
+<rect x="409" y="50" width="328" height="30" rx="6" class="bx"/><text x="573" y="70" class="tc" style="font-size:12.5px">compte admin de l'installation</text>
+<rect x="409" y="88" width="328" height="30" rx="6" class="bx"/><text x="573" y="108" class="tc" style="font-size:12.5px">un compte de secours, TOTP</text>
+<rect x="409" y="126" width="328" height="30" rx="6" class="bx"/><text x="573" y="146" class="tc" style="font-size:12.5px">≥ 20 caractères, sous scellé</text>
+<rect x="776" y="6" width="360" height="168" rx="12" class="b-violet"/><text x="956" y="34" class="tc tl">Domaine des services</text>
+<rect x="792" y="50" width="328" height="30" rx="6" class="bx"/><text x="956" y="70" class="tc" style="font-size:12.5px">comptes des charms</text>
+<rect x="792" y="88" width="328" height="30" rx="6" class="bx"/><text x="956" y="108" class="tc" style="font-size:12.5px">secrets générés et tenus par les charms</text>
+<rect x="792" y="126" width="328" height="30" rx="6" class="bx"/><text x="956" y="146" class="tc" style="font-size:12.5px">exemptions si options activées</text>
+<rect x="10" y="190" width="1130" height="54" rx="10" class="b-grey"/><text x="575" y="212" class="tc tb">Options [security_compliance] de Keystone : non exposées par le charm en 2026.1</text><text x="575" y="232" class="tc ts">la politique se joue à l'autorité pour les personnes, et par la réduction et la protection des comptes locaux pour le reste</text>
+</svg></div>
+<div class="cols nf">
+<div class="col"><ul class="pts sm">
+<li><b>Le charm de Keystone n'expose aucune option de conformité</b> en 2026.1 : ses options portent sur le cache, la journalisation, la région, le stockage d'identité et la paire de clés SAML.</li>
+<li><b>Modifier <code>keystone.conf</code> dans le pod</b> n'est pas durable : le charm réécrit sa configuration.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Donc :</b> la politique des personnes va à l'autorité ; Keystone garde un minimum de comptes locaux, protégés par la longueur, le multifacteur et les procédures.</li>
+<li><b>À suivre :</b> si une version ultérieure du charm expose ces options, appliquer la configuration de la slide précédente, exemptions d'abord.</li>
+</ul></div>
+</div>
+</div>
+</section>
+
+<!-- 45 -->
+<section class="slide">
+<header><span class="kick">5 · Appliquer dans Keystone</span><h2>Le multifacteur des comptes locaux</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.4px"><span class="m"># Prérequis : identifiants d'administrateur ; méthode</span>
+<span class="m"># totp acceptée par Keystone (à vérifier : [auth] methods)</span>
+<span class="c">source</span> admin-openrc
+
+<span class="m"># 1 · Secret TOTP : 20 octets aléatoires, en base32</span>
+SECRET=$(head -c 20 /dev/urandom | base32 | tr -d '=')
+
+<span class="m"># 2 · L'enregistrer comme justificatif du compte</span>
+<span class="c">openstack credential create</span> --type totp secours "$SECRET"
+
+<span class="m"># 3 · Imposer mot de passe + totp</span>
+<span class="c">openstack user set</span> secours \
+  --enable-multi-factor-auth \
+  --multi-factor-auth-rule password,totp
+
+<span class="m"># 4 · QR code pour l'application d'authentification</span>
+qrencode -t ansiutf8 \
+  "otpauth://totp/OpenStack:secours?secret=$SECRET&amp;issuer=OpenStack"
+
+<span class="m"># 5 · Se connecter avec les deux méthodes</span>
+<span class="k">export</span> OS_AUTH_TYPE=v3multifactor
+<span class="k">export</span> OS_AUTH_METHODS=v3password,v3totp
+<span class="k">read</span> -rs OS_PASSCODE; <span class="k">export</span> OS_PASSCODE
+<span class="c">openstack token issue</span></pre>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Règles de méthodes :</b> une liste de combinaisons acceptées ; <code>password,totp</code> exige les deux. Plusieurs règles peuvent coexister.</li>
+<li><b>Le secret TOTP est stocké dans Keystone :</b> il fait partie de ce que R13 demande de protéger, comme les empreintes de mots de passe.</li>
+<li><b>Horizon</b> doit savoir demander le code : à vérifier sur votre version avant de compter dessus pour le compte de secours.</li>
+<li><b>Ne jamais activer le multifacteur sur un compte de service :</b> les services s'authentifient par mot de passe seul.</li>
+</ul>
+<table class="tbl tight os">
+<thead><tr><th style="width:44%">Compte local</th><th>Multifacteur</th></tr></thead>
+<tbody>
+<tr><td>Administration de secours</td><td class="y">oui</td></tr>
+<tr><td>Administration nominative locale</td><td class="y">oui — ou fédérer la personne</td></tr>
+<tr><td>Comptes des services</td><td class="n">non</td></tr>
+<tr><td>Comptes techniques d'automates</td><td class="n">non : identifiants d'application</td></tr>
+</tbody></table>
+<div class="note g">Le secret et le mot de passe du compte de secours sont conservés séparément, par deux personnes différentes.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 46 -->
+<section class="slide dark sec">
+<div class="num">06</div>
+<h2>L'impact sur les comptes de service</h2>
+<p>Une politique de mots de passe pensée pour des personnes, appliquée sans précaution à des comptes de machines, produit des pannes : verrouillage à distance, expiration un dimanche, changement imposé qu'aucun programme ne sait faire.</p>
+<ol><li>Quatre risques</li><li>Les exemptions</li><li>Une stratégie par type de compte</li><li>Activer sans casser</li><li>Exercices</li><li>Synthèse</li></ol>
+</section>
+
+<!-- 47 -->
+<section class="slide">
+<header><span class="kick">6 · Comptes de service</span><h2>Quatre risques</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 260">
+<rect x="10" y="6" width="270" height="248" rx="12" class="b-red"/><text x="145" y="34" class="tc tl">Verrouillage</text>
+<text x="145" y="56" class="tc tm" style="font-size:11px">lockout_failure_attempts</text>
+<text x="145" y="86" class="tc" style="font-size:12.5px">quelqu'un tape « nova » et</text>
+<text x="145" y="106" class="tc" style="font-size:12.5px">de faux mots de passe</text>
+<text x="145" y="126" class="tc" style="font-size:12.5px">→ Nova ne s'authentifie plus</text>
+<text x="145" y="146" class="tc" style="font-size:12.5px">→ le cloud ne crée plus rien</text>
+<rect x="22" y="190" width="246" height="50" rx="7" class="bx"/><text x="145" y="210" class="tc ts tb">exemption</text><text x="145" y="229" class="tc tm" style="font-size:10.5px">ignore_lockout_failure_attempts</text>
+<rect x="295" y="6" width="270" height="248" rx="12" class="b-amber"/><text x="430" y="34" class="tc tl">Expiration</text>
+<text x="430" y="56" class="tc tm" style="font-size:11px">password_expires_days</text>
+<text x="430" y="86" class="tc" style="font-size:12.5px">le mot de passe du compte</text>
+<text x="430" y="106" class="tc" style="font-size:12.5px">expire à date fixe</text>
+<text x="430" y="126" class="tc" style="font-size:12.5px">→ tous les services liés</text>
+<text x="430" y="146" class="tc" style="font-size:12.5px">tombent le même jour</text>
+<rect x="307" y="190" width="246" height="50" rx="7" class="bx"/><text x="430" y="210" class="tc ts tb">exemption</text><text x="430" y="229" class="tc tm" style="font-size:10.5px">ignore_password_expiry</text>
+<rect x="580" y="6" width="270" height="248" rx="12" class="b-violet"/><text x="715" y="34" class="tc tl">Premier usage</text>
+<text x="715" y="56" class="tc tm" style="font-size:11px">change_password_upon_first_use</text>
+<text x="715" y="86" class="tc" style="font-size:12.5px">après création ou</text>
+<text x="715" y="106" class="tc" style="font-size:12.5px">réinitialisation par script</text>
+<text x="715" y="126" class="tc" style="font-size:12.5px">→ changement exigé</text>
+<text x="715" y="146" class="tc" style="font-size:12.5px">qu'aucun service ne sait faire</text>
+<rect x="592" y="190" width="246" height="50" rx="7" class="bx"/><text x="715" y="210" class="tc ts tb">exemption</text><text x="715" y="229" class="tc tm" style="font-size:10.5px">ignore_change_password_upon_first_use</text>
+<rect x="865" y="6" width="270" height="248" rx="12" class="b-blue"/><text x="1000" y="34" class="tc tl">Inactivité</text>
+<text x="1000" y="56" class="tc tm" style="font-size:11px">disable_user_account_days_inactive</text>
+<text x="1000" y="86" class="tc" style="font-size:12.5px">un compte rarement utilisé —</text>
+<text x="1000" y="106" class="tc" style="font-size:12.5px">le compte de secours —</text>
+<text x="1000" y="126" class="tc" style="font-size:12.5px">→ désactivé sans bruit</text>
+<text x="1000" y="146" class="tc" style="font-size:12.5px">→ indisponible le jour J</text>
+<rect x="877" y="190" width="246" height="50" rx="7" class="bx"/><text x="1000" y="210" class="tc ts tb">exemption</text><text x="1000" y="229" class="tc tm" style="font-size:10.5px">ignore_user_inactivity</text>
+</svg></div>
+<div class="cols nf">
+<div class="note"><b>Le plus grave est le verrouillage :</b> il transforme une simple connaissance du nom d'un compte — <code>nova</code>, <code>neutron</code> — en moyen de mettre le cloud hors service, sans aucun mot de passe.</div>
+<div class="note g"><b>Ces risques concernent aussi les comptes techniques des automates</b> qui s'authentifient par mot de passe. Les identifiants d'application, eux, ne passent pas par le mot de passe du compte.</div>
+</div>
+</div>
+</section>
+
+<!-- 48 -->
+<section class="slide">
+<header><span class="kick">6 · Comptes de service</span><h2>Les exemptions</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.4px"><span class="m"># Prérequis : identifiants d'administrateur</span>
+<span class="c">source</span> admin-openrc
+
+<span class="m"># Les comptes des services sur Sunbeam</span>
+<span class="c">openstack user list</span> --domain service_domain
+
+<span class="m"># Exempter chaque compte de service</span>
+<span class="k">for</span> u <span class="k">in</span> $(openstack user list --domain service_domain \
+            -f value -c ID); <span class="k">do</span>
+  <span class="c">openstack user set</span> "$u" \
+    --ignore-lockout-failure-attempts \
+    --ignore-password-expiry \
+    --ignore-change-password-upon-first-use
+<span class="k">done</span>
+
+<span class="m"># Inactivité : par l'API (option sans équivalent</span>
+<span class="m"># dans le client selon les versions)</span>
+TOKEN=$(openstack token issue -f value -c id)
+curl -s -X PATCH "$OS_AUTH_URL/users/$UID_SVC" \
+  -H "X-Auth-Token: $TOKEN" -H "Content-Type: application/json" \
+  -d '{"user":{"options":{"ignore_user_inactivity":true}}}'
+
+<span class="m"># Contrôle</span>
+<span class="c">openstack user show</span> nova --domain service_domain -c options</pre>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:46%">Option de compte</th><th>À poser sur</th></tr></thead>
+<tbody>
+<tr><td><code>ignore_lockout_failure_attempts</code></td><td>comptes de service ; comptes techniques</td></tr>
+<tr><td><code>ignore_password_expiry</code></td><td>comptes de service ; comptes techniques</td></tr>
+<tr><td><code>ignore_change_password_upon_first_use</code></td><td>comptes de service ; comptes créés par script</td></tr>
+<tr><td><code>ignore_user_inactivity</code></td><td>compte de secours ; comptes techniques peu utilisés</td></tr>
+<tr><td><code>lock_password</code></td><td>comptes dont le secret est géré ailleurs</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Une exemption n'est pas une absence de contrôle :</b> elle déplace la protection vers la longueur du secret, son stockage et la surveillance des échecs.</li>
+<li><b>Les exemptions sont visibles :</b> <code>openstack user show … -c options</code> ; les lister à chaque revue.</li>
+</ul>
+<div class="note">Noms des options du client et de l'API à vérifier sur votre version. Sur Sunbeam, poser ces options sur les comptes gérés par les charms est sans risque pour eux, mais à refaire si un charm recrée son compte.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 49 -->
+<section class="slide">
+<header><span class="kick">6 · Comptes de service</span><h2>Une stratégie par type de compte</h2></header>
+<div class="body">
+<table class="tbl os xs">
+<thead><tr><th style="width:18%">Type de compte</th><th style="width:22%">Secret</th><th style="width:20%">Protection à la place des règles humaines</th><th style="width:20%">Rotation</th><th>Surveillance</th></tr></thead>
+<tbody>
+<tr><td>Comptes des services OpenStack</td><td>généré par le charm, long, aléatoire</td><td>accès restreint au nœud de contrôle, à Juju, à Vault</td><td>procédure du déploiement ; jamais à la main</td><td>échecs d'authentification sur ces comptes = alerte immédiate</td></tr>
+<tr><td>Compte technique d'automate</td><td>mot de passe &gt; 20 caractères, au coffre</td><td>sert seulement à créer des identifiants d'application</td><td>trimestrielle, avec celle de ses identifiants</td><td>connexions par mot de passe hors fenêtre de rotation</td></tr>
+<tr><td>Identifiant d'application</td><td>secret généré par Keystone</td><td>projet unique, rôle minimal, règles d'accès, expiration</td><td>avant l'expiration, sans coupure</td><td>usage depuis une adresse inattendue</td></tr>
+<tr><td>Compte de secours</td><td>&gt; 20 caractères + TOTP, sous scellé</td><td>multifacteur, deux détenteurs</td><td>après chaque usage, et au moins annuelle</td><td>toute connexion = alerte</td></tr>
+<tr><td>Compte <code>admin</code> de l'installation</td><td>généré par Sunbeam</td><td>fichier <code>admin-openrc</code> confiné</td><td>selon la procédure du déploiement</td><td>toute connexion hors exploitation</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Point commun :</b> aucun de ces secrets n'est choisi ni tapé par une personne. Les règles de complexité n'ont pas de sens ; seules comptent la longueur, la confidentialité du stockage et la rotation.</div>
+<div class="note g"><b>Rapport au guide :</b> le guide vise l'authentification des personnes et renvoie, pour les secrets entre machines, au RGS ; les règles de cette slide en sont une application raisonnée.</div>
+</div>
+</div>
+</section>
+
+<!-- 50 -->
+<section class="slide">
+<header><span class="kick">6 · Comptes de service</span><h2>Activer sans casser : l'ordre des opérations</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os wrap">
+<thead><tr><th style="width:8%">#</th><th>Étape</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Inventorier les comptes locaux : <code>openstack user list --domain …</code> pour chaque domaine local</td></tr>
+<tr><td>2</td><td>Classer chaque compte : personne, privilégié, secours, service, automate</td></tr>
+<tr><td>3</td><td>Fédérer les personnes ; supprimer leurs comptes locaux</td></tr>
+<tr><td>4</td><td>Remplacer les mots de passe d'automates par des identifiants d'application</td></tr>
+<tr><td>5</td><td>Poser les exemptions sur les comptes de service et techniques</td></tr>
+<tr><td>6</td><td>Vérifier les exemptions, compte par compte</td></tr>
+<tr><td>7</td><td>Activer les options, une à une, sur un environnement d'essai</td></tr>
+<tr><td>8</td><td>Essais : verrouillage d'un compte d'essai, pas d'un compte de service</td></tr>
+<tr><td>9</td><td>Activer en production, hors période critique</td></tr>
+<tr><td>10</td><td>Surveiller les échecs d'authentification pendant une semaine</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Étape 8 — essai de verrouillage, compte d'essai</span>
+<span class="c">openstack user create</span> essai-verrou --domain nord \
+  --password 'un-mot-de-passe-de-test-long-1'
+<span class="k">for</span> i <span class="k">in</span> 1 2 3 4 5 6; <span class="k">do</span>
+  <span class="c">openstack</span> --os-username essai-verrou \
+    --os-user-domain-name nord --os-password faux \
+    token issue 2&gt;&amp;1 | tail -1
+<span class="k">done</span>
+<span class="m"># attendu : refus, puis compte verrouillé ;</span>
+<span class="m"># bon mot de passe refusé pendant lockout_duration</span>
+
+<span class="m"># Le même essai sur « nova » doit NE PAS verrouiller —</span>
+<span class="m"># à ne faire que sur un environnement d'essai</span></pre>
+<div class="note"><b>Ne jamais tester le verrouillage sur un compte de service en production :</b> si l'exemption manque, le service tombe.</div>
+<div class="note g">Retour arrière : désactiver l'option, puis réactiver les comptes verrouillés (<code>openstack user set --enable</code>).</div>
+</div>
+</div></div>
+</section>
+
+<!-- 51 -->
+<section class="slide">
+<header><span class="kick">6 · Comptes de service</span><h2>Exercices de mise en pratique</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os wrap">
+<thead><tr><th style="width:8%">#</th><th>Énoncé</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Écrire une règle de correspondance qui place les membres de <code>openstack-dev</code> dans <code>developpeurs</code> et refuse les comptes suspendus ; la tester hors ligne avec trois profils.</td></tr>
+<tr><td>2</td><td>Raccorder un fournisseur d'identité au cloud Sunbeam du TP ; se connecter dans Horizon ; vérifier les droits effectifs de l'utilisateur fédéré.</td></tr>
+<tr><td>3</td><td>Retirer l'utilisateur de son groupe chez l'autorité ; constater l'effet à la connexion suivante et sur un jeton déjà émis.</td></tr>
+<tr><td>4</td><td>Remplir le tableau « politique par population » pour votre organisation ; justifier chaque valeur par une recommandation du guide.</td></tr>
+<tr><td>5</td><td>Lister les comptes locaux du cloud et proposer, pour chacun, son devenir : fédéré, exempté, remplacé, supprimé.</td></tr>
+<tr><td>6</td><td>Activer le multifacteur TOTP sur un compte de secours et se connecter en ligne de commande.</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<p><b>Corrigé — points clés</b></p>
+<ul class="pts sm">
+<li><b>1 :</b> condition <code>not_any_of</code> dans la règle d'accès elle-même ; une règle d'exclusion séparée ne retire rien.</li>
+<li><b>2 :</b> même nom de fournisseur dans Sunbeam et dans Keystone ; identifiant distant exact.</li>
+<li><b>3 :</b> plus de projet à la connexion suivante ; le jeton déjà émis reste valable jusqu'à son expiration.</li>
+<li><b>4 :</b> pas d'expiration pour les comptes ordinaires robustes (R24) ; 1 à 3 ans et multifacteur pour les privilégiés (R25, R1).</li>
+<li><b>5 :</b> attendu — personnes fédérées ; comptes des services exemptés ; automates sur identifiants d'application ; un compte de secours.</li>
+<li><b>6 :</b> règle <code>password,totp</code> ; authentification <code>v3multifactor</code> avec les deux méthodes.</li>
+</ul>
+<div class="note g">Prérequis du TP : cloud Sunbeam avec TLS, <code>admin-openrc</code>, une autorité de test — Keycloak ou Canonical Identity Platform — joignable depuis le cloud et le poste.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 52 -->
+<section class="slide">
+<header><span class="kick">Synthèse</span><h2>Ce qu'il faut retenir</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card cb"><h3>La fédération</h3>
+<ul class="pts sm"><li>L'autorité authentifie ; Keystone traduit des attributs en groupes.</li><li>Trois objets : fournisseur, règles, protocole.</li><li>Règles testées hors ligne, versionnées, fermées par défaut.</li><li>Sur Sunbeam : <code>sunbeam identity provider add</code>, puis les objets Keystone.</li></ul></div>
+<div class="card ca"><h3>Le référentiel ANSSI</h3>
+<ul class="pts sm"><li>Longueur d'abord : 12, 15, plus de 20 selon l'enjeu.</li><li>Pas d'expiration systématique ; 1 à 3 ans pour les privilégiés.</li><li>Temporisation plutôt que blocage définitif.</li><li>Multifacteur pour tout accès sensible.</li></ul></div>
+<div class="card cv"><h3>Les comptes de service</h3>
+<ul class="pts sm"><li>Verrouillage, expiration, premier usage, inactivité : quatre pannes possibles.</li><li>Exemptions posées avant d'activer.</li><li>Secrets longs, aléatoires, stockés et tournés.</li><li>Échec d'authentification = alerte.</li></ul></div>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:30%">Question</th><th>Réponse courte</th></tr></thead>
+<tbody>
+<tr><td>Où appliquer la politique des personnes ?</td><td>chez l'autorité d'authentification, raccordée par fédération</td></tr>
+<tr><td>Et dans Keystone ?</td><td style="color:var(--ink);font-weight:400">pour les seuls comptes locaux restants, avec exemptions pour les services</td></tr>
+<tr><td>Sur Sunbeam ?</td><td style="color:var(--ink);font-weight:400">options de conformité non exposées par le charm : fédérer les personnes, réduire les comptes locaux, multifacteur sur le compte de secours</td></tr>
+<tr><td>Le piège principal ?</td><td style="color:var(--ink);font-weight:400">un verrouillage activé sans exemption sur les comptes des services</td></tr>
+</tbody></table>
+<div class="note g"><b>Sources :</b> ANSSI, Recommandations relatives à l'authentification multifacteur et aux mots de passe, v2.0 (2021) ; documentation de Keystone (configuration, options de compte, fédération, règles de correspondance) ; documentation de Canonical OpenStack 2026.1 (fournisseurs d'identité, TLS par Vault) ; page de configuration du charm keystone-k8s — consultées en octobre 2026.</div>
+</div>
+</section>
+
+</div>
+<div id="bar"></div>
+<div id="nav"><button id="bO" title="Vue d'ensemble (O)">▦</button><button id="bF" title="Plein écran (F)">⛶</button><button id="bP" title="Précédent (←)">←</button><button id="bN" title="Suivant (→)">→</button></div>
+<script>
+(function(){
+var stage=document.getElementById('stage'),bar=document.getElementById('bar'),body=document.body;
+var slides=Array.prototype.slice.call(document.querySelectorAll('.slide')),N=slides.length,cur=0;
+slides.forEach(function(s,i){
+  var f=document.createElement('div');f.className='foot';
+  f.innerHTML='<span>OpenStack — authentification externe et mots de passe</span><span>'+(i+1)+' / '+N+'</span>';
+  s.appendChild(f);
+  s.addEventListener('click',function(){if(body.classList.contains('ov')){body.classList.remove('ov');go(i);fit();}});
+});
+function go(n){
+  cur=Math.max(0,Math.min(N-1,n));
+  slides.forEach(function(s,i){s.classList.toggle('active',i===cur);});
+  bar.style.width=((cur+1)/N*100)+'%';
+  try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+}
+function fit(){
+  if(body.classList.contains('ov')){
+    stage.style.transform='';
+    document.documentElement.style.setProperty('--z',Math.max(.1,(window.innerWidth-40-4*14-20)/5/1280));
+  }else{
+    stage.style.transform='scale('+Math.min(window.innerWidth/1280,window.innerHeight/720)+')';
+  }
+}
+function overview(){body.classList.toggle('ov');fit();if(body.classList.contains('ov')){slides[cur].scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}}
+function full(){if(document.fullscreenElement){document.exitFullscreen();}else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen();}}
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'||k===' '||k==='ArrowDown'){e.preventDefault();go(cur+1);}
+  else if(k==='ArrowLeft'||k==='PageUp'||k==='ArrowUp'){e.preventDefault();go(cur-1);}
+  else if(k==='Home'){go(0);}
+  else if(k==='End'){go(N-1);}
+  else if(k==='o'||k==='O'||k==='Escape'){if(k!=='Escape'||body.classList.contains('ov'))overview();}
+  else if(k==='f'||k==='F'){full();}
+});
+document.getElementById('bN').onclick=function(){go(cur+1);};
+document.getElementById('bP').onclick=function(){go(cur-1);};
+document.getElementById('bO').onclick=overview;
+document.getElementById('bF').onclick=full;
+var tx=null;
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){if(tx===null||body.classList.contains('ov'))return;var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1));tx=null;},{passive:true});
+window.addEventListener('resize',fit);
+window.addEventListener('hashchange',function(){var h=parseInt(location.hash.slice(1),10);if(h&&h-1!==cur)go(h-1);});
+var h=parseInt(location.hash.slice(1),10);
+go(h?h-1:0);fit();
+})();
+</script>
+</body>
+</html>

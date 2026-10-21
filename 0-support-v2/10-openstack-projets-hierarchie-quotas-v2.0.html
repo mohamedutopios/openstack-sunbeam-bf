@@ -1,0 +1,2049 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenStack · Module 10 — Projets, hiérarchie et quotas</title>
+<style>
+:root{--ink:#0f172a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;--navy:#101a33;--red:#e4002b;--red2:#b3122f;--blue:#2563eb;--teal:#0d9488;--amber:#d97706;--violet:#7c3aed;--green:#16a34a;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;--z:.2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#070b17;overflow:hidden;font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:#fff;color:var(--ink);padding:38px 64px 46px;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide>header{border-left:5px solid var(--red);padding:2px 0 2px 18px;margin-bottom:18px;flex:none}
+.kick{display:block;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+h2{font-size:32px;line-height:1.15;letter-spacing:-.012em;font-weight:750}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;font-size:17.5px;line-height:1.45;color:var(--ink2)}
+.body b,.body strong{color:var(--ink);font-weight:680}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;min-height:0}
+.cols.c3{grid-template-columns:repeat(3,1fr);gap:18px}
+.cols.c4{grid-template-columns:repeat(4,1fr);gap:14px}
+.cols.c5{grid-template-columns:repeat(5,1fr);gap:12px}
+.cols.w64{grid-template-columns:1.45fr 1fr}
+.cols.w46{grid-template-columns:1fr 1.35fr}
+.cols.nf{flex:none}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+ul.pts{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.pts li{padding-left:22px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.52em;width:8px;height:8px;border-radius:2px;background:var(--red)}
+ul.pts.sm{gap:5px;font-size:15px;line-height:1.38}
+ul.pts.sm li{padding-left:17px}
+ul.pts.sm li::before{width:6px;height:6px;top:.5em}
+.card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--c,var(--red));border-radius:10px;padding:13px 16px;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:15px;line-height:1.4;min-width:0}
+.card h3{font-size:16.5px;color:var(--ink);margin-bottom:5px;line-height:1.2}
+.card .os{display:block;margin-top:7px;font-size:13px;color:var(--mut)}
+.card .os b{color:var(--red2)}
+.cb{--c:var(--blue)}.ct{--c:var(--teal)}.ca{--c:var(--amber)}.cv{--c:var(--violet)}.cg{--c:var(--green)}.cn{--c:var(--navy)}
+.note{background:#fff5f6;border-left:4px solid var(--red);padding:9px 16px;border-radius:0 8px 8px 0;font-size:15.5px;color:var(--ink);flex:none}
+.note.b{background:#eff5ff;border-color:var(--blue)}
+.note.g{background:#f1f5f9;border-color:#64748b}
+table.tbl{width:100%;border-collapse:collapse;font-size:14.5px;line-height:1.35}
+.tbl th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-size:13px;letter-spacing:.03em;font-weight:650}
+.tbl td{padding:6.5px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:nth-child(even) td{background:#f8fafc}
+.tbl td:first-child{font-weight:680;color:var(--ink);white-space:nowrap}
+.tbl.os td:nth-child(2){color:var(--red2);font-weight:650}
+.tbl.tight td{padding:5px 12px;font-size:14px}
+table.resp{width:100%;border-collapse:separate;border-spacing:5px 4px;font-size:14.5px;text-align:center}
+.resp thead th{font-size:15px;color:var(--ink);padding:2px 4px 6px;line-height:1.2}
+.resp thead small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+.resp tbody th{text-align:right;padding-right:12px;font-weight:650;color:var(--ink);white-space:nowrap;width:210px}
+.resp td{padding:6px;border-radius:6px;font-weight:600}
+.resp .u{background:#e3edff;color:#1d4ed8}
+.resp .p{background:#fde8ec;color:var(--red2)}
+code{font-family:var(--mono);font-size:.87em;background:#f1f5f9;padding:1px 6px;border-radius:4px;color:var(--ink)}
+pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;font:13.5px/1.5 var(--mono);white-space:pre;overflow:hidden}
+pre .c{color:#7dd3fc}pre .k{color:#fda4af}pre .m{color:#94a3b8}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:#fde8ec;color:var(--red2);letter-spacing:.03em}
+.fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:100%}
+.foot{position:absolute;left:64px;right:64px;bottom:15px;display:flex;justify-content:space-between;font-size:11.5px;color:#94a3b8;letter-spacing:.02em}
+/* dark slides */
+.slide.dark{background:radial-gradient(1100px 600px at 85% 15%,#1c2a55 0%,var(--navy) 55%,#0b1226 100%);color:#fff;justify-content:center}
+.dark .foot{color:#64748b}
+.dark .kick{color:#ff6b84}
+h1{font-size:68px;line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:10px 0 14px}
+.sub{font-size:27px;color:#cbd5e1;font-weight:400}
+.chips{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin-top:34px}
+.chips li{border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:7px 16px;font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.04)}
+.ref{margin-top:36px;font-size:14px;color:#94a3b8}
+.deco{position:absolute;right:0;top:0;width:1280px;height:720px;pointer-events:none}
+.tt{position:relative;max-width:760px}
+.sec .num{font-size:150px;font-weight:800;line-height:.9;color:transparent;-webkit-text-stroke:2px #ff4d6a;letter-spacing:-.04em}
+.sec h2{font-size:50px;margin:16px 0 12px;letter-spacing:-.02em}
+.sec p{font-size:20px;color:#cbd5e1;max-width:820px;line-height:1.45}
+.sec ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:9px 40px;margin-top:30px;max-width:980px;font-size:16.5px;color:#e2e8f0}
+.sec ol li{padding-left:20px;position:relative}
+.sec ol li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:3px;background:#ff4d6a}
+/* svg */
+svg{display:block}
+svg{font-size:14px}
+svg text{font-family:inherit;fill:#0f172a}
+svg g.ts text{fill:#475569}svg g.tw text{fill:#fff}
+.big .card{font-size:17px;padding:18px 16px;display:flex;flex-direction:column;line-height:1.42}.big .card h3{font-size:19px;margin-bottom:12px}.big .card .os{font-size:14.5px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line);line-height:1.4}
+.dense .card{font-size:14px;padding:10px 14px;line-height:1.36}.dense .card h3{font-size:15.5px;margin-bottom:3px}
+.tc{text-anchor:middle}.te{text-anchor:end}
+svg .tb{font-weight:700}svg .ts{font-size:12px;fill:#475569}svg .tl{font-size:17px;font-weight:750}svg .tw{fill:#fff}svg .tr{fill:#b3122f}
+svg .tm{font-family:var(--mono);font-size:12px}
+.bx{fill:#fff;stroke:#94a3b8;stroke-width:1.5}
+.b-red{fill:#fde8ec;stroke:#e4002b;stroke-width:1.5}
+.b-blue{fill:#e3edff;stroke:#2563eb;stroke-width:1.5}
+.b-teal{fill:#d8f3ee;stroke:#0d9488;stroke-width:1.5}
+.b-amber{fill:#fdf0d5;stroke:#d97706;stroke-width:1.5}
+.b-violet{fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5}
+.b-green{fill:#dcf5e3;stroke:#16a34a;stroke-width:1.5}
+.b-grey{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5}
+.b-dark{fill:#101a33;stroke:#101a33}
+.f-red{fill:#e4002b}
+.zone{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 4}
+.ln{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar)}
+.ln2{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar);marker-start:url(#ar)}
+.lr{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr)}
+.lr2{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr);marker-start:url(#arr)}
+.ld{stroke-dasharray:5 4}
+.nl{stroke:#94a3b8;stroke-width:1.5;fill:none}
+/* ui */
+#bar{position:fixed;left:0;bottom:0;height:3px;background:var(--red);width:0;transition:width .2s;z-index:5}
+#nav{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;display:flex;gap:6px;z-index:6;opacity:.07;transition:opacity .2s}
+#nav:hover{opacity:1}
+#nav button{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;font:600 13px/1 inherit;padding:7px 10px;cursor:pointer}
+#nav button:hover{background:var(--red);border-color:var(--red)}
+body.ov{overflow:auto}
+body.ov #stage{position:static;margin:0;width:auto;height:auto;transform:none!important;display:flex;flex-wrap:wrap;gap:14px;padding:20px}
+body.ov .slide{display:flex;position:relative;inset:auto;flex:none;width:1280px;height:720px;zoom:var(--z);cursor:pointer;border-radius:8px}
+body.ov .slide.active{outline:14px solid var(--red)}
+@page{size:1280px 720px;margin:0}
+@media print{
+html,body{height:auto;overflow:visible;background:#fff}
+#stage{position:static;margin:0;width:1280px;height:auto;transform:none!important;display:block}
+.slide{display:flex!important;position:relative;inset:auto;width:1280px;height:720px;break-after:page;page-break-after:always;zoom:1!important}
+#bar,#nav{display:none}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.la{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA)}.la2{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA);marker-start:url(#arA)}
+.lt{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT)}.lt2{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT);marker-start:url(#arT)}
+.lb{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB)}.lb2{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB);marker-start:url(#arB)}
+svg text.fa,svg .fa{fill:#b45309}svg text.ft,svg .ft{fill:#0f766e}svg text.fb,svg .fb{fill:#1d4ed8}
+.tbl td.c,.tbl th.c{text-align:center}.tbl td.y{color:#16a34a;font-weight:800}.tbl td.n{color:#cbd5e1}
+.kick .deep{display:inline-block;margin-left:12px;padding:2px 10px;border-radius:99px;background:#eff5ff;color:#1d4ed8;font-weight:650;font-size:11.5px;letter-spacing:.02em;text-transform:none;vertical-align:1px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e4002b"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+<marker id="arT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker>
+<marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+</defs></svg>
+<div id="stage">
+
+<style>
+.tbl.xs td{font-size:12.8px;padding:5px 9px;line-height:1.32}
+.tbl.xs th{font-size:12.2px;padding:7px 9px}
+.tbl.xs td:first-child{white-space:normal}
+.body code{white-space:nowrap}
+.tbl.wrap td:first-child{white-space:normal}
+.tbl.wrap td:first-child code{white-space:normal}
+</style>
+
+<!-- 1 -->
+<section class="slide dark">
+<svg class="deco" viewBox="0 0 1280 720" aria-hidden="true"><g transform="translate(-60,0)">
+<g fill="none" stroke="#ff4d6a" stroke-width="2" opacity=".85">
+<path d="M900,470 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.16)"/>
+<path d="M900,400 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.24)"/>
+<path d="M900,330 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.34)"/>
+<path d="M900,260 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.5)"/>
+</g>
+<g font-weight="700" letter-spacing="2" style="font-size:12px"><text x="1210" y="264" style="fill:#cbd5e1">DOMAINE</text><text x="1210" y="334" style="fill:#cbd5e1">PROJETS</text><text x="1210" y="404" style="fill:#cbd5e1">SOUS-PROJETS</text><text x="1210" y="474" style="fill:#cbd5e1">QUOTAS</text></g>
+</g></svg>
+<div class="tt">
+<span class="kick">Comprendre OpenStack · module 10</span>
+<h1>Projets, hiérarchie et quotas</h1>
+<p class="sub">Organiser un système d'information cloisonné sur Canonical OpenStack (Sunbeam) : le projet comme unité de propriété, l'arbre de projets, les plafonds de consommation</p>
+<ul class="chips"><li>Projet</li><li>Sous-projets</li><li>Rôles hérités</li><li>Quotas</li><li>Limites unifiées</li><li>Cloisonnement</li></ul>
+<p class="ref">Version déployée : Canonical OpenStack 2026.1 LTS, donc OpenStack 2026.1 (les modules 1 à 5 suivent l'amont 2026.2) · documentations consultées en octobre 2026</p>
+</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Objectif et déroulé</h2></header>
+<div class="body">
+<div class="note"><b>Objectif :</b> savoir découper un cloud en projets, les ranger dans une hiérarchie, borner leur consommation par des quotas, et choisir un modèle d'organisation qui cloisonne réellement équipes, applications et environnements.</div>
+<div class="cols">
+<div class="col">
+<p><b>À l'issue de ce module, vous saurez :</b></p>
+<ul class="pts">
+<li>Dire ce qu'un <b>projet</b> isole, service par service, et ce qu'il laisse partagé.</li>
+<li>Construire un <b>arbre de projets</b> et y poser des <b>rôles hérités</b>.</li>
+<li>Lire, fixer et dimensionner des <b>quotas</b> pour le calcul, le stockage et le réseau.</li>
+<li>Expliquer les <b>limites unifiées</b> et leurs deux modèles d'application.</li>
+<li>Comparer plusieurs <b>modèles d'organisation</b> et en choisir un.</li>
+<li>Compléter le cloisonnement par le réseau et le matériel.</li>
+</ul>
+</div>
+<div class="col dense">
+<div class="card"><h3>1 · Le projet</h3>Unité de propriété, isolation, partage, cycle de vie.</div>
+<div class="card cb"><h3>2 · La hiérarchie de projets</h3>Arbre, règles, rôles hérités, ce qu'elle ne fait pas.</div>
+<div class="card ca"><h3>3 · Les quotas</h3>Par service, vérification, lecture et réglage, limites unifiées, dimensionnement.</div>
+<div class="card cv"><h3>4 · Organiser un SI cloisonné</h3>Niveaux de cloisonnement, quatre modèles, réseau et matériel.</div>
+<div class="card cn"><h3>5 · Mise en œuvre</h3>Pas à pas sur Sunbeam, revue, bonnes pratiques.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 3 -->
+<section class="slide dark sec">
+<div class="num">01</div>
+<h2>Le projet</h2>
+<p>Dans OpenStack, toute ressource appartient à un projet et à un seul. C'est l'unité sur laquelle reposent la propriété, l'isolation, les droits et les plafonds.</p>
+<ol><li>Ce qu'est un projet</li><li>Ce qu'il porte, service par service</li><li>Ce qui est étanche, ce qui est partagé</li><li>Partager entre projets, volontairement</li><li>Cycle de vie</li><li>Étiquettes et propriétés</li><li>Les projets d'un cloud Sunbeam</li></ol>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+<header><span class="kick">1 · Le projet</span><h2>Ce qu'est un projet</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 300">
+<rect x="20" y="10" width="1110" height="280" rx="14" class="b-violet"/><text x="40" y="38" class="tl" style="text-anchor:start">Projet « web » — identifiant 9a7e… — domaine « nord »</text>
+<g class="tc">
+<rect x="40" y="54" width="250" height="100" rx="10" class="bx"/><text x="165" y="80" class="tb">① Propriété</text><text x="165" y="104" class="ts">chaque instance, volume, réseau,</text><text x="165" y="122" class="ts">image porte l'identifiant du projet</text><text x="165" y="142" class="ts tb">« à qui est-ce ? »</text>
+<rect x="306" y="54" width="250" height="100" rx="10" class="bx"/><text x="431" y="80" class="tb">② Isolation</text><text x="431" y="104" class="ts">par défaut, un projet ne voit</text><text x="431" y="122" class="ts">ni n'atteint les ressources d'un autre</text><text x="431" y="142" class="ts tb">« qui peut le voir ? »</text>
+<rect x="572" y="54" width="250" height="100" rx="10" class="bx"/><text x="697" y="80" class="tb">③ Droits</text><text x="697" y="104" class="ts">les rôles s'attribuent sur le projet :</text><text x="697" y="122" class="ts">c'est la portée la plus courante d'un jeton</text><text x="697" y="142" class="ts tb">« qui peut agir ? »</text>
+<rect x="838" y="54" width="272" height="100" rx="10" class="bx"/><text x="974" y="80" class="tb">④ Plafonds</text><text x="974" y="104" class="ts">les quotas se fixent par projet</text><text x="974" y="122" class="ts">et se mesurent sur ce qu'il possède</text><text x="974" y="142" class="ts tb">« jusqu'à combien ? »</text>
+<rect x="40" y="176" width="160" height="96" rx="8" class="b-blue"/><text x="120" y="204" class="tb">instances</text><text x="120" y="224" class="ts">clés, groupes</text><text x="120" y="242" class="ts">de serveurs</text>
+<rect x="212" y="176" width="160" height="96" rx="8" class="b-amber"/><text x="292" y="204" class="tb">volumes</text><text x="292" y="224" class="ts">instantanés,</text><text x="292" y="242" class="ts">sauvegardes</text>
+<rect x="384" y="176" width="160" height="96" rx="8" class="b-teal"/><text x="464" y="204" class="tb">réseaux</text><text x="464" y="224" class="ts">sous-réseaux, routeurs,</text><text x="464" y="242" class="ts">adresses flottantes</text>
+<rect x="556" y="176" width="160" height="96" rx="8" class="b-teal"/><text x="636" y="204" class="tb">sécurité</text><text x="636" y="224" class="ts">groupes de sécurité</text><text x="636" y="242" class="ts">et leurs règles</text>
+<rect x="728" y="176" width="160" height="96" rx="8" class="b-grey"/><text x="808" y="204" class="tb">images</text><text x="808" y="224" class="ts">privées</text><text x="808" y="242" class="ts">et partagées</text>
+<rect x="900" y="176" width="210" height="96" rx="8" class="b-grey"/><text x="1005" y="204" class="tb">et, selon les options</text><text x="1005" y="224" class="ts">répartiteurs, piles, secrets,</text><text x="1005" y="242" class="ts">partages de fichiers, clusters</text>
+</g>
+</svg>
+</div>
+<div class="cols nf">
+<div class="note g"><b>Vocabulaire :</b> « projet » et « tenant » désignent la même chose ; le second est l'ancien nom, encore présent dans certaines commandes, options et messages d'erreur.</div>
+<div class="note b"><b>Un projet n'est pas un groupe de personnes.</b> C'est un conteneur de ressources ; les personnes y accèdent par des rôles, et une même personne peut travailler dans plusieurs projets.</div>
+</div>
+</div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+<header><span class="kick">1 · Le projet</span><h2>Ce qu'un projet porte, service par service</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:14%">Service</th><th style="width:30%">Ressources appartenant au projet</th><th style="width:28%">Visible des autres projets ?</th><th>Plafonné par quota ?</th></tr></thead>
+<tbody>
+<tr><td>Nova</td><td>instances, groupes de serveurs ; paires de clés (par utilisateur)</td><td style="color:var(--ink);font-weight:400">non</td><td style="color:var(--ink);font-weight:400">oui : instances, cœurs, mémoire</td></tr>
+<tr><td>Cinder</td><td>volumes, instantanés, sauvegardes</td><td style="color:var(--ink);font-weight:400">non, sauf transfert accepté</td><td style="color:var(--ink);font-weight:400">oui : nombre et gigaoctets</td></tr>
+<tr><td>Neutron</td><td>réseaux, sous-réseaux, ports, routeurs, adresses flottantes, groupes de sécurité</td><td style="color:var(--ink);font-weight:400">non, sauf partage explicite</td><td style="color:var(--ink);font-weight:400">oui : chaque type d'objet</td></tr>
+<tr><td>Glance</td><td>images privées</td><td style="color:var(--ink);font-weight:400">selon la visibilité : privée, partagée, communautaire, publique</td><td style="color:var(--ink);font-weight:400">oui, par limites unifiées</td></tr>
+<tr><td>Keystone</td><td>rien : il décrit le projet lui-même</td><td style="color:var(--ink);font-weight:400">visible dans son domaine</td><td style="color:var(--ink);font-weight:400">c'est lui qui stocke les limites unifiées</td></tr>
+<tr><td>Octavia</td><td>répartiteurs de charge, écouteurs, groupes de membres</td><td style="color:var(--ink);font-weight:400">non</td><td style="color:var(--ink);font-weight:400">oui</td></tr>
+<tr><td>Heat</td><td>piles d'orchestration</td><td style="color:var(--ink);font-weight:400">non</td><td style="color:var(--ink);font-weight:400">nombre de piles, par configuration</td></tr>
+<tr><td>Barbican, Manila, Magnum, Designate</td><td>secrets, partages de fichiers, clusters, zones DNS</td><td style="color:var(--ink);font-weight:400">non</td><td style="color:var(--ink);font-weight:400">oui, propres à chaque service</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Ce qui n'appartient à aucun projet :</b> gabarits, hyperviseurs, agrégats, types de volumes, réseaux fournisseurs. Ce sont des ressources du cloud, gérées par l'administration.</div>
+<div class="note"><b>Chaque service tient ses propres comptes :</b> il n'existe pas de « quota global du projet ». Un projet a un jeu de quotas dans Nova, un autre dans Cinder, un autre dans Neutron.</div>
+</div>
+</div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+<header><span class="kick">1 · Le projet</span><h2>Ce qui est étanche, ce qui est partagé</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 330">
+<rect x="20" y="10" width="1110" height="92" rx="12" class="b-grey"/><text x="40" y="36" class="tl" style="text-anchor:start">Partagé par tous les projets — géré par l'administration</text>
+<g class="tc">
+<rect x="40" y="48" width="165" height="42" rx="7" class="bx"/><text x="122" y="74">gabarits publics</text>
+<rect x="217" y="48" width="165" height="42" rx="7" class="bx"/><text x="299" y="74">images publiques</text>
+<rect x="394" y="48" width="165" height="42" rx="7" class="bx"/><text x="476" y="74">réseau externe</text>
+<rect x="571" y="48" width="165" height="42" rx="7" class="bx"/><text x="653" y="74">types de volumes</text>
+<rect x="748" y="48" width="165" height="42" rx="7" class="bx"/><text x="830" y="74">zones de disponibilité</text>
+<rect x="925" y="48" width="185" height="42" rx="7" class="bx"/><text x="1017" y="74">hyperviseurs, stockage</text>
+</g>
+<rect x="20" y="124" width="540" height="196" rx="12" class="b-violet"/><text x="40" y="150" class="tl" style="text-anchor:start">Projet « web »</text>
+<rect x="590" y="124" width="540" height="196" rx="12" class="b-violet"/><text x="610" y="150" class="tl" style="text-anchor:start">Projet « bases »</text>
+<g class="tc">
+<rect x="36" y="162" width="122" height="46" rx="7" class="bx"/><text x="97" y="182" class="tb" style="font-size:12px">instances</text><text x="97" y="199" class="ts">et leurs disques</text>
+<rect x="164" y="162" width="122" height="46" rx="7" class="bx"/><text x="225" y="182" class="tb" style="font-size:12px">réseaux, routeurs</text><text x="225" y="199" class="ts">sous-réseaux, ports</text>
+<rect x="292" y="162" width="122" height="46" rx="7" class="bx"/><text x="353" y="182" class="tb" style="font-size:12px">volumes</text><text x="353" y="199" class="ts">instantanés</text>
+<rect x="420" y="162" width="122" height="46" rx="7" class="bx"/><text x="481" y="182" class="tb" style="font-size:12px">groupes de sécurité</text><text x="481" y="199" class="ts">et leurs règles</text>
+<rect x="36" y="216" width="122" height="46" rx="7" class="bx"/><text x="97" y="236" class="tb" style="font-size:12px">images privées</text><text x="97" y="253" class="ts">du projet</text>
+<rect x="164" y="216" width="122" height="46" rx="7" class="bx"/><text x="225" y="236" class="tb" style="font-size:12px">adresses flottantes</text><text x="225" y="253" class="ts">réservées</text>
+<rect x="292" y="216" width="122" height="46" rx="7" class="bx"/><text x="353" y="236" class="tb" style="font-size:12px">quotas</text><text x="353" y="253" class="ts">ses plafonds</text>
+<rect x="420" y="216" width="122" height="46" rx="7" class="bx"/><text x="481" y="236" class="tb" style="font-size:12px">rôles attribués</text><text x="481" y="253" class="ts">qui y travaille</text>
+<text x="290" y="296" class="ts">visibles et modifiables par les seuls détenteurs d'un rôle sur ce projet</text>
+<rect x="606" y="162" width="122" height="46" rx="7" class="bx"/><text x="667" y="182" class="tb" style="font-size:12px">instances</text><text x="667" y="199" class="ts">et leurs disques</text>
+<rect x="734" y="162" width="122" height="46" rx="7" class="bx"/><text x="795" y="182" class="tb" style="font-size:12px">réseaux, routeurs</text><text x="795" y="199" class="ts">sous-réseaux, ports</text>
+<rect x="862" y="162" width="122" height="46" rx="7" class="bx"/><text x="923" y="182" class="tb" style="font-size:12px">volumes</text><text x="923" y="199" class="ts">instantanés</text>
+<rect x="990" y="162" width="122" height="46" rx="7" class="bx"/><text x="1051" y="182" class="tb" style="font-size:12px">groupes de sécurité</text><text x="1051" y="199" class="ts">et leurs règles</text>
+<rect x="606" y="216" width="122" height="46" rx="7" class="bx"/><text x="667" y="236" class="tb" style="font-size:12px">images privées</text><text x="667" y="253" class="ts">du projet</text>
+<rect x="734" y="216" width="122" height="46" rx="7" class="bx"/><text x="795" y="236" class="tb" style="font-size:12px">adresses flottantes</text><text x="795" y="253" class="ts">réservées</text>
+<rect x="862" y="216" width="122" height="46" rx="7" class="bx"/><text x="923" y="236" class="tb" style="font-size:12px">quotas</text><text x="923" y="253" class="ts">ses plafonds</text>
+<rect x="990" y="216" width="122" height="46" rx="7" class="bx"/><text x="1051" y="236" class="tb" style="font-size:12px">rôles attribués</text><text x="1051" y="253" class="ts">qui y travaille</text>
+<text x="860" y="296" class="ts">visibles et modifiables par les seuls détenteurs d'un rôle sur ce projet</text>
+</g>
+<path d="M575,128 V316" style="stroke:#e4002b;stroke-width:4"/><text x="575" y="118" class="tc ts tb tr">cloison</text>
+</svg>
+</div>
+<div class="cols nf">
+<div class="col">
+<ul class="pts sm">
+<li><b>Réseau :</b> deux réseaux de deux projets ne communiquent pas, sauf par un routeur et une adresse externe, comme deux réseaux d'entreprises distinctes.</li>
+<li><b>API :</b> lister les instances ne renvoie que celles du projet du jeton ; demander celle d'un autre renvoie « introuvable ».</li>
+</ul>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Matériel :</b> la cloison est logique. Les instances de deux projets partagent hyperviseurs et disques ; l'étanchéité repose sur la virtualisation.</li>
+<li><b>Entre membres d'un même projet :</b> aucune cloison. Tout membre voit et peut modifier toutes les ressources du projet.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+<header><span class="kick">1 · Le projet</span><h2>Partager entre projets, volontairement</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:17%">Ressource</th><th style="width:30%">Mécanisme</th><th style="width:30%">Commande type</th><th>Qui décide</th></tr></thead>
+<tbody>
+<tr><td>Image</td><td>visibilité « partagée » : le propriétaire ajoute un projet membre, qui accepte</td><td style="color:var(--ink);font-weight:400"><code>openstack image add project</code></td><td style="color:var(--ink);font-weight:400">le propriétaire, puis le destinataire</td></tr>
+<tr><td>Réseau</td><td>règle de partage ciblée vers un projet</td><td style="color:var(--ink);font-weight:400"><code>openstack network rbac create</code></td><td style="color:var(--ink);font-weight:400">le propriétaire du réseau</td></tr>
+<tr><td>Groupe de sécurité, pool d'adresses</td><td>même mécanisme de partage ciblé</td><td style="color:var(--ink);font-weight:400"><code>openstack network rbac create</code></td><td style="color:var(--ink);font-weight:400">le propriétaire</td></tr>
+<tr><td>Volume</td><td>transfert de propriété : un code est remis au projet destinataire</td><td style="color:var(--ink);font-weight:400"><code>openstack volume transfer request create</code></td><td style="color:var(--ink);font-weight:400">le propriétaire, puis le destinataire</td></tr>
+<tr><td>Gabarit</td><td>gabarit privé, ouvert à une liste de projets</td><td style="color:var(--ink);font-weight:400"><code>openstack flavor set --project</code></td><td style="color:var(--ink);font-weight:400">l'administration</td></tr>
+<tr><td>Type de volume</td><td>type privé, ouvert à une liste de projets</td><td style="color:var(--ink);font-weight:400"><code>openstack volume type set --project</code></td><td style="color:var(--ink);font-weight:400">l'administration</td></tr>
+<tr><td>Accès humain</td><td>un rôle dans les deux projets</td><td style="color:var(--ink);font-weight:400"><code>openstack role add</code></td><td style="color:var(--ink);font-weight:400">gestionnaire du domaine</td></tr>
+</tbody></table>
+<div class="cols">
+<pre style="font-size:12px;align-self:start"><span class="m"># Ouvrir le réseau « commun » du projet socle au projet web</span>
+<span class="c">openstack network rbac create</span> --type network \
+  --action access_as_shared \
+  --target-project web --target-project-domain nord \
+  commun
+
+<span class="m"># Voir ce qui est partagé, et avec qui</span>
+<span class="c">openstack network rbac list</span> --long</pre>
+<div class="col">
+<ul class="pts sm">
+<li><b>Le partage est une exception explicite :</b> il se déclare ressource par ressource et projet par projet, et se retire de même.</li>
+<li><b>Le quota reste chez le propriétaire :</b> une ressource partagée compte dans le projet qui la possède ; les ports créés dessus comptent chez celui qui les crée.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+<header><span class="kick">1 · Le projet</span><h2>Cycle de vie d'un projet</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 190">
+<g class="tc">
+<rect x="20" y="20" width="200" height="130" rx="12" class="b-grey"/><text x="120" y="48" class="tl">① Créé</text><text x="120" y="74" class="ts">vide ; quotas par défaut</text><text x="120" y="92" class="ts">de chaque service ;</text><text x="120" y="110" class="ts">personne n'y a de rôle</text>
+<rect x="252" y="20" width="200" height="130" rx="12" class="b-blue"/><text x="352" y="48" class="tl">② Préparé</text><text x="352" y="74" class="ts">quotas ajustés,</text><text x="352" y="92" class="ts">rôles attribués aux groupes,</text><text x="352" y="110" class="ts">réseau et routeur de base</text>
+<rect x="484" y="20" width="200" height="130" rx="12" class="b-green"/><text x="584" y="48" class="tl">③ En service</text><text x="584" y="74" class="ts">les membres créent</text><text x="584" y="92" class="ts">leurs ressources ;</text><text x="584" y="110" class="ts">revue périodique</text>
+<rect x="716" y="20" width="200" height="130" rx="12" class="b-amber"/><text x="816" y="48" class="tl">④ Désactivé</text><text x="816" y="74" class="ts">plus de jeton vers lui ;</text><text x="816" y="92" class="ts">les instances continuent</text><text x="816" y="110" class="ts">de tourner</text><text x="816" y="136" class="ts tb">réversible</text>
+<rect x="948" y="20" width="182" height="130" rx="12" class="b-dark"/><text x="1039" y="48" class="tl tw">⑤ Supprimé</text><text x="1039" y="74" class="tw" style="font-size:12px">après purge</text><text x="1039" y="92" class="tw" style="font-size:12px">des ressources</text><text x="1039" y="136" class="tw tb" style="font-size:12px">irréversible</text>
+</g>
+<path d="M220,85 H250" class="lr"/><path d="M452,85 H482" class="lr"/><path d="M684,85 H714" class="lr"/><path d="M916,85 H946" class="lr"/>
+<text x="575" y="178" class="tc ts">Supprimer un projet dans Keystone ne supprime <tspan class="tb">pas</tspan> ses ressources dans les autres services : elles deviennent orphelines.</text>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Prérequis : jeton d'administrateur ou de gestionnaire de domaine</span>
+<span class="c">openstack project create</span> --domain nord \
+  --description "Site vitrine" vitrine
+<span class="c">openstack project show</span> vitrine --domain nord
+
+<span class="m"># Suspendre, reprendre</span>
+<span class="c">openstack project set</span> --disable vitrine --domain nord
+<span class="c">openstack project set</span> --enable  vitrine --domain nord
+
+<span class="m"># Retirer : purger d'abord, supprimer ensuite</span>
+<span class="c">openstack project purge</span> --dry-run --project &lt;id&gt;
+<span class="c">openstack project purge</span> --project &lt;id&gt;
+<span class="c">openstack project delete</span> &lt;id&gt;</pre>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Désactiver n'arrête rien :</b> c'est l'accès par l'API qui est coupé. Pour libérer de la capacité, il faut arrêter ou supprimer les instances.</li>
+<li><b><code>project purge</code></b> supprime instances, volumes, instantanés et images du projet ; l'option <code>--dry-run</code> liste sans agir. Réseaux, routeurs, adresses flottantes, répartiteurs et secrets sont à vérifier à part.</li>
+<li><b>Ordre de nettoyage réseau :</b> ports et adresses flottantes, interfaces de routeur, routeurs, sous-réseaux, réseaux.</li>
+</ul>
+<div class="note">Un projet supprimé sans purge laisse des instances qui tournent et consomment, mais que plus personne ne peut atteindre sans droits d'administration.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+<header><span class="kick">1 · Le projet</span><h2>Étiquettes et propriétés</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Attribut</th><th>Rôle</th></tr></thead>
+<tbody>
+<tr><td>identifiant</td><td>attribué par Keystone, immuable ; référence de toutes les ressources</td></tr>
+<tr><td>nom</td><td>unique dans le domaine ; modifiable</td></tr>
+<tr><td>domaine</td><td>fixé à la création, définitif</td></tr>
+<tr><td>parent</td><td>le domaine ou un autre projet ; fixé à la création</td></tr>
+<tr><td>description</td><td>texte libre</td></tr>
+<tr><td>activé</td><td>interrupteur d'accès</td></tr>
+<tr><td>étiquettes</td><td>mots-clés libres, filtrables</td></tr>
+<tr><td>options</td><td>par exemple « immuable » : interdit modification et suppression</td></tr>
+</tbody></table>
+<div class="note g"><b>Les étiquettes compensent ce que la hiérarchie ne dit pas :</b> environnement, centre de coût, niveau de sensibilité, application. Elles servent ensuite à filtrer et à produire des rapports.</div>
+</div>
+<div class="col">
+<pre style="font-size:12px"><span class="m"># Poser des étiquettes</span>
+<span class="c">openstack project set</span> vitrine --domain nord \
+  --tag env:prod --tag cout:cc-4410 --tag sens:interne
+
+<span class="m"># Filtrer : tous les projets de production du domaine</span>
+<span class="c">openstack project list</span> --domain nord --tags env:prod
+
+<span class="m"># Ceux qui portent l'une OU l'autre étiquette</span>
+<span class="c">openstack project list</span> --tags-any env:prod,env:rec
+
+<span class="m"># Ceux qui n'en portent aucune : à corriger</span>
+<span class="c">openstack project list</span> --domain nord --not-tags-any \
+  env:prod,env:rec,env:dev
+
+<span class="m"># Protéger un projet critique contre l'erreur de manipulation</span>
+<span class="c">openstack project set</span> socle --domain nord --immutable</pre>
+<ul class="pts sm">
+<li><b>Convention à fixer une fois :</b> des préfixes — <code>env:</code>, <code>cout:</code>, <code>sens:</code>, <code>app:</code> — évitent les variantes d'écriture.</li>
+<li><b>Une étiquette n'a aucun effet technique :</b> elle ne donne ni droit ni quota. C'est un classement.</li>
+<li><b>Les services peuvent lire les étiquettes</b> par l'API de Keystone ; un outil de facturation s'en sert pour ventiler les coûts.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+<header><span class="kick">1 · Le projet<span class="deep">Comptes : module 8 · domaines : module 9</span></span><h2>Les projets d'un cloud Sunbeam</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:17%">Projet</th><th style="width:19%">Créé par</th><th style="width:32%">Contenu</th><th>Règle de conduite</th></tr></thead>
+<tbody>
+<tr><td>d'administration</td><td>l'installation</td><td style="color:var(--ink);font-weight:400">portée par défaut du compte <code>admin</code> ; ressources de l'administration : images publiques, réseau externe</td><td style="color:var(--ink);font-weight:400">ne pas y faire tourner de charge applicative</td></tr>
+<tr><td>des services</td><td>les charms</td><td style="color:var(--ink);font-weight:400">portée des comptes de service ; ressources internes de certaines fonctionnalités</td><td style="color:var(--ink);font-weight:400">ne pas y toucher</td></tr>
+<tr><td>de démonstration</td><td><code>sunbeam configure</code></td><td style="color:var(--ink);font-weight:400">un réseau privé, un routeur vers l'externe, des règles de sécurité ouvertes pour SSH et ping</td><td style="color:var(--ink);font-weight:400">sert à valider l'installation ; à retirer en production</td></tr>
+<tr><td>les vôtres</td><td>administrateur ou gestionnaires de domaine</td><td style="color:var(--ink);font-weight:400">ce que les équipes y créent</td><td style="color:var(--ink);font-weight:400">dans vos domaines, jamais dans les domaines techniques</td></tr>
+</tbody></table>
+<div class="cols">
+<pre style="font-size:12px;align-self:start"><span class="m"># Relever l'existant — prérequis : source admin-openrc</span>
+<span class="c">openstack project list</span> --long
+<span class="c">openstack quota show</span> --default
+<span class="c">openstack network list</span> --external
+<span class="c">openstack flavor list</span>
+<span class="c">openstack image list</span> --public
+
+<span class="m"># Ce que le projet de démonstration a reçu</span>
+<span class="c">source</span> demo-openrc
+<span class="c">openstack network list</span>
+<span class="c">openstack router list</span>
+<span class="c">openstack quota show</span></pre>
+<div class="col">
+<ul class="pts sm">
+<li><b><code>sunbeam configure</code></b> montre, sur un cas réel, ce qu'il faut préparer pour qu'un projet soit utilisable : un réseau, un sous-réseau, un routeur, des règles de sécurité.</li>
+<li><b>Un projet neuf est vide :</b> ni réseau ni routeur. Tant qu'on ne lui en donne pas, ses membres ne peuvent lancer d'instance que sur un réseau partagé.</li>
+<li><b>Noms exacts</b> des projets techniques : à lire avec la première commande, plutôt qu'à supposer.</li>
+</ul>
+<div class="note g">Les fonctionnalités optionnelles — équilibrage de charge, par exemple — créent leurs propres ressources dans le projet des services : c'est normal, et à ne pas « nettoyer ».</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 11 -->
+<section class="slide dark sec">
+<div class="num">02</div>
+<h2>La hiérarchie de projets</h2>
+<p>Un projet peut en contenir d'autres. L'arbre ne change rien à l'isolation des ressources ; il sert à organiser, et surtout à faire descendre des droits.</p>
+<ol><li>L'arbre de projets</li><li>Les règles de l'arbre</li><li>Les rôles hérités</li><li>Direct ou hérité : comparaison</li><li>Ce que la hiérarchie ne fait pas</li><li>Consulter et manipuler l'arbre</li><li>Quand s'en servir</li></ol>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+<header><span class="kick">2 · La hiérarchie</span><h2>L'arbre de projets</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 330">
+<text x="14" y="34" class="ts tb" style="text-anchor:start">racine</text><path d="M110,30 H1140" class="nl" stroke-dasharray="2 6" opacity=".45"/><text x="14" y="124" class="ts tb" style="text-anchor:start">niveau 1</text><path d="M110,120 H1140" class="nl" stroke-dasharray="2 6" opacity=".45"/><text x="14" y="214" class="ts tb" style="text-anchor:start">niveau 2</text><path d="M110,210 H1140" class="nl" stroke-dasharray="2 6" opacity=".45"/><text x="14" y="304" class="ts tb" style="text-anchor:start">niveau 3</text><path d="M110,300 H1140" class="nl" stroke-dasharray="2 6" opacity=".45"/>
+<path d="M640,52 V75.0 H330 V98" class="nl"/>
+<path d="M640,52 V75.0 H800 V98" class="nl"/>
+<path d="M640,52 V75.0 H1060 V98" class="nl"/>
+<path d="M330,142 V165.0 H170 V188" class="nl"/>
+<path d="M330,142 V165.0 H330 V188" class="nl"/>
+<path d="M330,142 V165.0 H490 V188" class="nl"/>
+<path d="M800,142 V165.0 H700 V188" class="nl"/>
+<path d="M800,142 V165.0 H900 V188" class="nl"/>
+<path d="M700,232 V255.0 H620 V278" class="nl"/>
+<path d="M700,232 V255.0 H780 V278" class="nl"/>
+<rect x="530.0" y="8" width="220" height="44" rx="8" class="b-dark"/>
+<text x="640" y="27" class="tc tb tw" style="font-size:12.5px">domaine « nord »</text><text x="640" y="43" class="tc ts tw">racine de l'arbre</text>
+<rect x="255.0" y="98" width="150" height="44" rx="8" class="b-violet"/>
+<text x="330" y="117" class="tc tb" style="font-size:12.5px">prod</text><text x="330" y="133" class="tc ts">nœud</text>
+<rect x="725.0" y="98" width="150" height="44" rx="8" class="b-violet"/>
+<text x="800" y="117" class="tc tb" style="font-size:12.5px">horsprod</text><text x="800" y="133" class="tc ts">nœud</text>
+<rect x="985.0" y="98" width="150" height="44" rx="8" class="b-teal"/>
+<text x="1060" y="117" class="tc tb" style="font-size:12.5px">socle</text><text x="1060" y="133" class="tc ts">feuille</text>
+<rect x="95.0" y="188" width="150" height="44" rx="8" class="b-blue"/>
+<text x="170" y="207" class="tc tb" style="font-size:12.5px">prod-web</text><text x="170" y="223" class="tc ts">feuille</text>
+<rect x="255.0" y="188" width="150" height="44" rx="8" class="b-blue"/>
+<text x="330" y="207" class="tc tb" style="font-size:12.5px">prod-bases</text><text x="330" y="223" class="tc ts">feuille</text>
+<rect x="415.0" y="188" width="150" height="44" rx="8" class="b-blue"/>
+<text x="490" y="207" class="tc tb" style="font-size:12.5px">prod-data</text><text x="490" y="223" class="tc ts">feuille</text>
+<rect x="625.0" y="188" width="150" height="44" rx="8" class="b-violet"/>
+<text x="700" y="207" class="tc tb" style="font-size:12.5px">recette</text><text x="700" y="223" class="tc ts">nœud</text>
+<rect x="825.0" y="188" width="150" height="44" rx="8" class="b-blue"/>
+<text x="900" y="207" class="tc tb" style="font-size:12.5px">dev-web</text><text x="900" y="223" class="tc ts">feuille</text>
+<rect x="545.0" y="278" width="150" height="44" rx="8" class="b-blue"/>
+<text x="620" y="297" class="tc tb" style="font-size:12.5px">rec-web</text><text x="620" y="313" class="tc ts">feuille</text>
+<rect x="705.0" y="278" width="150" height="44" rx="8" class="b-blue"/>
+<text x="780" y="297" class="tc tb" style="font-size:12.5px">rec-bases</text><text x="780" y="313" class="tc ts">feuille</text>
+
+</svg></div>
+<div class="cols nf">
+<div class="note g"><b>Lecture :</b> le domaine est la racine ; chaque projet a exactement un parent ; les projets sans enfant — les feuilles — sont en général ceux qui portent les ressources.</div>
+<div class="note b"><b>Rien n'oblige à mettre des ressources dans un nœud intermédiaire :</b> « production » peut n'être qu'un dossier, qui sert à ranger et à porter des rôles hérités.</div>
+</div>
+</div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+<header><span class="kick">2 · La hiérarchie</span><h2>Les règles de l'arbre</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:24%">Règle</th><th style="width:40%">Détail</th><th>Conséquence pratique</th></tr></thead>
+<tbody>
+<tr><td>Un seul parent</td><td>fixé à la création du projet</td><td style="color:var(--ink);font-weight:400">c'est un arbre, pas un graphe</td></tr>
+<tr><td>Parent immuable</td><td>on ne déplace pas un projet sous un autre parent</td><td style="color:var(--ink);font-weight:400">concevoir l'arbre avant de créer ; sinon recréer et migrer</td></tr>
+<tr><td>Même domaine</td><td>un sous-projet est dans le domaine de son parent</td><td style="color:var(--ink);font-weight:400">un arbre ne traverse pas les domaines</td></tr>
+<tr><td>Noms uniques dans le domaine</td><td>deux projets d'un même domaine ne peuvent porter le même nom, même sous des parents différents</td><td style="color:var(--ink);font-weight:400">« prod/web » et « recette/web » : impossible ; préfixer ou suffixer</td></tr>
+<tr><td>Profondeur limitée</td><td>option <code>max_project_tree_depth</code> de Keystone, cinq niveaux par défaut</td><td style="color:var(--ink);font-weight:400">deux ou trois niveaux suffisent presque toujours</td></tr>
+<tr><td>Désactivation par les feuilles</td><td>un projet désactivé ne peut pas avoir d'enfant actif</td><td style="color:var(--ink);font-weight:400">pour suspendre une branche : désactiver les enfants, puis le parent</td></tr>
+<tr><td>Suppression par les feuilles</td><td>un projet qui a des enfants ne se supprime pas tel quel</td><td style="color:var(--ink);font-weight:400">remonter l'arbre : feuilles d'abord</td></tr>
+<tr><td>Isolation inchangée</td><td>parent et enfant sont deux projets distincts pour tous les services</td><td style="color:var(--ink);font-weight:400">le parent ne « voit » pas les instances de l'enfant</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>La règle qui surprend le plus : l'unicité des noms.</b> L'arbre n'est pas un système de fichiers ; le nom complet d'un projet reste « nom + domaine », pas un chemin.</div>
+<div class="note g">Règles décrites d'après le comportement connu de Keystone ; la profondeur maximale se vérifie sur votre version.</div>
+</div>
+</div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+<header><span class="kick">2 · La hiérarchie<span class="deep">Héritage depuis le domaine : module 9</span></span><h2>Les rôles hérités</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 280">
+
+<path d="M640,52 V75.0 H470 V98" class="nl"/>
+<path d="M640,52 V75.0 H960 V98" class="nl"/>
+<path d="M470,142 V169.0 H250 V196" class="nl"/>
+<path d="M470,142 V169.0 H470 V196" class="nl"/>
+<path d="M470,142 V169.0 H690 V196" class="nl" stroke-dasharray="5 4"/>
+<path d="M960,142 V169.0 H960 V196" class="nl"/>
+<rect x="530.0" y="8" width="220" height="44" rx="8" class="b-dark"/>
+<text x="640" y="35" class="tc tb tw" style="font-size:12.5px">domaine « nord »</text>
+<rect x="375.0" y="98" width="190" height="44" rx="8" class="b-violet"/>
+<text x="470" y="117" class="tc tb" style="font-size:12.5px">prod</text><text x="470" y="133" class="tc ts">nœud porteur du rôle hérité</text>
+<rect x="885.0" y="98" width="150" height="44" rx="8" class="b-violet"/>
+<text x="960" y="117" class="tc tb" style="font-size:12.5px">horsprod</text><text x="960" y="133" class="tc ts">nœud</text>
+<rect x="175.0" y="196" width="150" height="44" rx="8" class="b-green"/>
+<text x="250" y="215" class="tc tb" style="font-size:12.5px">prod-web</text><text x="250" y="231" class="tc ts">feuille</text>
+<rect x="395.0" y="196" width="150" height="44" rx="8" class="b-green"/>
+<text x="470" y="215" class="tc tb" style="font-size:12.5px">prod-bases</text><text x="470" y="231" class="tc ts">feuille</text>
+<rect x="615.0" y="196" width="150" height="44" rx="8" class="b-green" stroke-dasharray="5 4"/>
+<text x="690" y="215" class="tc tb" style="font-size:12.5px">prod-data</text><text x="690" y="231" class="tc ts">créé plus tard</text>
+<rect x="885.0" y="196" width="150" height="44" rx="8" class="b-blue"/>
+<text x="960" y="215" class="tc tb" style="font-size:12.5px">dev-web</text><text x="960" y="231" class="tc ts">feuille</text>
+<rect x="20" y="92" width="290" height="50" rx="8" class="b-amber"/><text x="165" y="113" class="tc tb" style="font-size:12.5px">groupe exploitation-prod</text><text x="165" y="131" class="tc ts">rôle member, hérité, posé sur « prod »</text><path d="M310,117 H392" class="lr"/><text x="470" y="164" class="tc ts tb tr" style="paint-order:stroke;stroke:#fff;stroke-width:6px">ne s'applique pas au nœud lui-même</text><text x="250" y="262" class="tc ts tb" style="fill:#0f7b4f">member : oui</text><text x="470" y="262" class="tc ts tb" style="fill:#0f7b4f">member : oui</text><text x="690" y="262" class="tc ts tb" style="fill:#0f7b4f">member : oui, dès sa création</text><text x="960" y="164" class="tc ts">aucun effet : autre branche</text><text x="960" y="262" class="tc ts">aucun effet</text><rect x="20" y="196" width="150" height="50" rx="8" class="b-grey"/><text x="95" y="217" class="tc tb" style="font-size:12px">groupe equipe-web</text><text x="95" y="235" class="tc ts">member, direct</text><path d="M95,196 V182 H140 V218 H172" class="ln" style="display:none"/><path d="M170,221 H172" class="ln"/>
+</svg></div>
+<div class="cols nf">
+<div class="col">
+<ul class="pts sm">
+<li><b>Un rôle hérité se pose sur un nœud et s'applique en dessous :</b> à tous ses descendants, présents et futurs — mais <b>pas</b> au nœud lui-même.</li>
+<li><b>Pour avoir aussi le rôle sur le nœud,</b> on ajoute une affectation directe : les deux se cumulent.</li>
+</ul>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Posé sur le domaine,</b> un rôle hérité couvre tous les projets du domaine.</li>
+<li><b>Un nouveau sous-projet reçoit les droits sans rien faire :</b> c'est tout l'intérêt, et aussi le risque — il faut savoir ce qui descend avant de créer.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+<header><span class="kick">2 · La hiérarchie</span><h2>Direct ou hérité : commandes et lecture</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Hérité : les exploitants lisent toute la production</span>
+<span class="c">openstack role add</span> --group exploitants --group-domain nord \
+  --project production --project-domain nord \
+  <span class="k">--inherited</span> reader
+
+<span class="m"># Direct : l'équipe web agit dans son projet seulement</span>
+<span class="c">openstack role add</span> --group web-dev --group-domain nord \
+  --project prod-web --project-domain nord member
+
+<span class="m"># Hérité sur le domaine : l'audit lit tous les projets</span>
+<span class="c">openstack role add</span> --group audit --group-domain nord \
+  --domain nord <span class="k">--inherited</span> reader</pre>
+<pre style="font-size:11.8px"><span class="m"># Ce qui a été saisi sur un nœud</span>
+<span class="c">openstack role assignment list</span> --names \
+  --project production --project-domain nord
+<span class="c">openstack role assignment list</span> --names \
+  --project production --project-domain nord --inherited
+
+<span class="m"># Ce qui s'applique réellement sur une feuille</span>
+<span class="c">openstack role assignment list</span> --names --effective \
+  --project prod-web --project-domain nord</pre>
+</div>
+<div class="col">
+<table class="tbl tight os wrap">
+<thead><tr><th style="width:27%"></th><th style="width:35%">Affectation directe</th><th>Affectation héritée</th></tr></thead>
+<tbody>
+<tr><td>S'applique à</td><td>la cible elle-même</td><td style="color:var(--ink);font-weight:400">les descendants de la cible</td></tr>
+<tr><td>Nouveaux sous-projets</td><td>rien : à refaire</td><td style="color:var(--ink);font-weight:400">couverts automatiquement</td></tr>
+<tr><td>Lisibilité</td><td>évidente</td><td style="color:var(--ink);font-weight:400">exige <code>--effective</code> pour voir le résultat</td></tr>
+<tr><td>Retrait d'un droit sur un seul enfant</td><td>simple</td><td style="color:var(--ink);font-weight:400">impossible : l'héritage ne se « coupe » pas</td></tr>
+<tr><td>Usage type</td><td>équipes applicatives</td><td style="color:var(--ink);font-weight:400">fonctions transverses : exploitation, audit, sécurité</td></tr>
+</tbody></table>
+<div class="note"><b>Pas d'exception possible :</b> on ne peut pas dire « hérité partout sauf ici ». Si une feuille doit échapper à un droit, elle n'est pas sous la bonne branche.</div>
+<div class="note g"><b>Règle simple :</b> lecture en hérité, large ; écriture en direct, ciblée.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+<header><span class="kick">2 · La hiérarchie</span><h2>Ce que la hiérarchie ne fait pas</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 420">
+<rect x="10" y="6" width="540" height="170" rx="12" class="zone"/><text x="280" y="30" class="tc tl">Ce que voit Keystone</text>
+<g class="tc">
+<rect x="210" y="42" width="140" height="36" rx="7" class="b-violet"/><text x="280" y="65" class="tb">production</text>
+<rect x="60" y="118" width="140" height="36" rx="7" class="bx"/><text x="130" y="141" class="tb">prod-web</text>
+<rect x="210" y="118" width="140" height="36" rx="7" class="bx"/><text x="280" y="141" class="tb">prod-bases</text>
+<rect x="360" y="118" width="140" height="36" rx="7" class="bx"/><text x="430" y="141" class="tb">prod-data</text>
+</g>
+<path d="M250,78 L140,116" class="ln"/><path d="M280,78 V116" class="ln"/><path d="M310,78 L420,116" class="ln"/>
+<rect x="10" y="212" width="540" height="196" rx="12" class="zone"/><text x="280" y="236" class="tc tl">Ce que voient Nova, Neutron, Cinder</text>
+<g class="tc">
+<rect x="26" y="250" width="120" height="60" rx="7" class="b-blue"/><text x="86" y="274" class="tb" style="font-size:12px">projet 11aa…</text><text x="86" y="294" class="ts">ses ressources</text>
+<rect x="156" y="250" width="120" height="60" rx="7" class="b-blue"/><text x="216" y="274" class="tb" style="font-size:12px">projet 22bb…</text><text x="216" y="294" class="ts">ses ressources</text>
+<rect x="286" y="250" width="120" height="60" rx="7" class="b-blue"/><text x="346" y="274" class="tb" style="font-size:12px">projet 33cc…</text><text x="346" y="294" class="ts">ses ressources</text>
+<rect x="416" y="250" width="120" height="60" rx="7" class="b-blue"/><text x="476" y="274" class="tb" style="font-size:12px">projet 44dd…</text><text x="476" y="294" class="ts">ses ressources</text>
+<text x="280" y="340" class="ts">quatre projets au même niveau, sans lien entre eux :</text><text x="280" y="358" class="ts">ni parent, ni enfant, ni domaine</text><text x="280" y="386" class="ts tb">l'arbre n'existe que dans Keystone</text>
+</g>
+<path d="M280,176 V210" class="lr"/><text x="292" y="198" class="ts tb">le jeton ne porte qu'un identifiant de projet</text>
+</svg>
+</div>
+<div class="col">
+<table class="tbl tight os wrap">
+<thead><tr><th style="width:44%">On pourrait croire que…</th><th>En réalité</th></tr></thead>
+<tbody>
+<tr><td>un membre du parent voit les instances des enfants</td><td>non : il lui faut un rôle hérité, ou direct, sur chaque enfant</td></tr>
+<tr><td>le quota du parent borne les enfants</td><td>non avec les quotas classiques ; oui seulement avec les limites unifiées en mode strict</td></tr>
+<tr><td>les réseaux du parent sont accessibles aux enfants</td><td>non : il faut un partage explicite</td></tr>
+<tr><td>supprimer le parent supprime la branche</td><td>non : feuilles d'abord, et les ressources à part</td></tr>
+<tr><td>la facture se cumule vers le haut</td><td>à faire par l'outil de facturation, en lisant l'arbre</td></tr>
+</tbody></table>
+<div class="note g"><b>À retenir :</b> la hiérarchie est un outil d'<b>organisation des droits</b>. Pour tout le reste — réseau, capacité, facturation — elle n'est qu'une information que d'autres mécanismes peuvent exploiter.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+<header><span class="kick">2 · La hiérarchie</span><h2>Consulter et manipuler l'arbre</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Prérequis : jeton d'administrateur ou de gestionnaire du domaine</span>
+
+<span class="m"># Construire une branche</span>
+<span class="c">openstack project create</span> --domain nord production
+<span class="c">openstack project create</span> --domain nord \
+  --parent production prod-web
+<span class="c">openstack project create</span> --domain nord \
+  --parent production prod-bases
+
+<span class="m"># Voir la position d'un projet</span>
+<span class="c">openstack project show</span> prod-web --domain nord \
+  -c id -c parent_id -c domain_id
+
+<span class="m"># Ses ancêtres, sa descendance</span>
+<span class="c">openstack project show</span> prod-web --domain nord --parents
+<span class="c">openstack project show</span> production --domain nord --children
+
+<span class="m"># Les enfants directs d'un nœud</span>
+<span class="c">openstack project list</span> --parent production --domain nord</pre>
+</div>
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Tout l'arbre d'un domaine, sous forme lisible</span>
+<span class="c">openstack project list</span> --domain nord --long \
+  -c ID -c Name -c "Parent ID" -c Enabled
+
+<span class="m"># Retirer une branche : feuilles d'abord</span>
+<span class="c">openstack project purge</span> --project &lt;id de prod-web&gt;
+<span class="c">openstack project delete</span> &lt;id de prod-web&gt;
+<span class="c">openstack project purge</span> --project &lt;id de prod-bases&gt;
+<span class="c">openstack project delete</span> &lt;id de prod-bases&gt;
+<span class="c">openstack project delete</span> &lt;id de production&gt;</pre>
+<ul class="pts sm">
+<li><b>L'option <code>--parent</code> ne s'utilise qu'à la création :</b> il n'existe pas de commande pour déplacer un projet.</li>
+<li><b>Colonnes affichées :</b> elles varient selon la version du client ; <code>-f json</code> donne toujours <code>parent_id</code>.</li>
+<li><b>Pour un vrai dessin de l'arbre,</b> exporter en JSON et le reconstruire avec un petit script : c'est un bon exercice de travaux pratiques.</li>
+</ul>
+<div class="note g">Dans les commandes de suppression, préférer les identifiants : un nom se trompe plus facilement de domaine qu'un identifiant.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+<header><span class="kick">2 · La hiérarchie</span><h2>Quand se servir de la hiérarchie</h2></header>
+<div class="body">
+<div class="cols">
+<div class="col">
+<p><b>Elle apporte quelque chose quand…</b></p>
+<ul class="pts sm">
+<li><b>Des fonctions transverses</b> — exploitation, sécurité, audit — doivent avoir le même droit sur un ensemble de projets qui grandit.</li>
+<li><b>Des projets naissent souvent :</b> un rôle hérité évite d'oublier une affectation à chaque création.</li>
+<li><b>Une capacité doit être partagée</b> entre projets d'une même équipe, avec les limites unifiées en mode à deux niveaux.</li>
+<li><b>Une branche doit pouvoir être suspendue ensemble</b> — un environnement, une application en fin de vie : l'arbre donne la liste, on désactive les feuilles puis le nœud.</li>
+<li><b>Les rapports se font par regroupement :</b> coût par application, par environnement.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Elle complique sans rien apporter quand…</b></p>
+<ul class="pts sm">
+<li><b>Il y a peu de projets,</b> stables : des affectations directes se lisent mieux.</li>
+<li><b>Chaque projet a sa propre équipe,</b> sans fonction transverse.</li>
+<li><b>L'arbre voudrait refléter l'organigramme :</b> il change plus vite que les projets, et un projet ne se déplace pas.</li>
+<li><b>On attend d'elle une isolation</b> qu'elle ne fournit pas.</li>
+<li><b>Les étiquettes suffisent</b> au classement dont on a besoin.</li>
+</ul>
+</div>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:24%">Besoin</th><th style="width:26%">Hiérarchie</th><th style="width:24%">Étiquettes</th><th>Domaines</th></tr></thead>
+<tbody>
+<tr><td>Faire descendre un droit</td><td>oui : rôles hérités</td><td style="color:var(--ink);font-weight:400">non</td><td style="color:var(--ink);font-weight:400">oui, sur tout le domaine</td></tr>
+<tr><td>Classer selon plusieurs axes</td><td>un seul axe : l'arbre</td><td style="color:var(--ink);font-weight:400">oui, autant d'axes que voulu</td><td style="color:var(--ink);font-weight:400">non</td></tr>
+<tr><td>Changer de classement plus tard</td><td>non : parent immuable</td><td style="color:var(--ink);font-weight:400">oui, librement</td><td style="color:var(--ink);font-weight:400">non</td></tr>
+<tr><td>Déléguer l'administration</td><td>non</td><td style="color:var(--ink);font-weight:400">non</td><td style="color:var(--ink);font-weight:400">oui</td></tr>
+<tr><td>Partager un plafond</td><td>oui, limites unifiées à deux niveaux</td><td style="color:var(--ink);font-weight:400">non</td><td style="color:var(--ink);font-weight:400">oui, limite de domaine</td></tr>
+</tbody></table>
+<div class="note g"><b>Combinaison fréquente :</b> un arbre peu profond pour l'axe qui porte les droits, des étiquettes pour tous les autres axes.</div>
+</div>
+</section>
+
+<!-- 19 -->
+<section class="slide dark sec">
+<div class="num">03</div>
+<h2>Les quotas</h2>
+<p>Un plafond par projet et par type de ressource. Sans eux, le premier projet venu peut consommer tout le cloud ; mal réglés, ils bloquent les équipes ou ne protègent rien.</p>
+<ol><li>À quoi servent les quotas</li><li>Deux générations de mécanismes</li><li>Calcul, stockage, réseau</li><li>Comment un quota est vérifié</li><li>Lire, fixer, modifier</li><li>Les quotas par défaut</li><li>Les limites unifiées</li><li>Quota et capacité réelle</li><li>Dimensionner</li><li>Pannes typiques</li></ol>
+</section>
+
+<!-- 20 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>À quoi servent les quotas</h2></header>
+<div class="body">
+<div class="cols c4 nf">
+<div class="card"><h3>Protéger la capacité</h3>Aucun projet ne peut, par erreur ou par excès, épuiser les hyperviseurs, le stockage ou les adresses.</div>
+<div class="card cb"><h3>Répartir équitablement</h3>La capacité achetée ou allouée à chaque équipe est matérialisée et opposable.</div>
+<div class="card ct"><h3>Borner les erreurs</h3>Une boucle dans un script d'automatisation s'arrête au quota, pas à la saturation du cloud.</div>
+<div class="card ca"><h3>Maîtriser les coûts</h3>Le plafond de consommation est aussi un plafond de dépense, connu d'avance.</div>
+</div>
+<div class="fig">
+<svg viewBox="0 0 1150 200">
+<text x="20" y="22" class="tl">Un quota est un plafond, pas une réservation</text>
+<g class="tc">
+<rect x="20" y="40" width="1110" height="44" rx="8" class="b-dark"/><text x="575" y="67" class="tw tb">capacité réelle du cloud : 400 cœurs virtuels</text>
+<rect x="20" y="104" width="330" height="44" rx="8" class="b-blue"/><text x="185" y="131" class="tb">projet A : quota 200</text>
+<rect x="360" y="104" width="330" height="44" rx="8" class="b-blue"/><text x="525" y="131" class="tb">projet B : quota 200</text>
+<rect x="700" y="104" width="330" height="44" rx="8" class="b-blue"/><text x="865" y="131" class="tb">projet C : quota 200</text>
+<rect x="1040" y="104" width="90" height="44" rx="8" class="b-red"/><text x="1085" y="131" class="tb">…</text>
+</g>
+<path d="M1030,96 H1130" style="stroke:#e4002b;stroke-width:3"/>
+<text x="575" y="174" class="tc ts">La somme des quotas — 600 — dépasse la capacité — 400. C'est permis, et courant : tous les projets ne consomment pas leur maximum en même temps.</text>
+<text x="575" y="192" class="tc ts tb">Mais rien ne garantit alors à un projet qu'il pourra atteindre son quota.</text>
+</svg>
+</div>
+<div class="cols nf">
+<div class="note g"><b>Deux réglages distincts :</b> le quota dit ce qu'un projet a <b>le droit</b> de demander ; la capacité dit ce que le cloud <b>peut</b> fournir. Les deux refus n'ont pas le même message d'erreur.</div>
+<div class="note"><b>Chiffres d'illustration.</b> Le rapport entre somme des quotas et capacité est un choix d'exploitation, à suivre dans le temps.</div>
+</div>
+</div>
+</section>
+
+<!-- 21 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>Deux générations de mécanismes</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 270">
+<rect x="20" y="10" width="540" height="250" rx="12" class="zone"/><text x="290" y="36" class="tc tl">Quotas « classiques » — par service</text>
+<g class="tc">
+<rect x="36" y="52" width="160" height="92" rx="8" class="b-red"/><text x="116" y="76" class="tb">Nova</text><text x="116" y="96" class="ts">ses limites,</text><text x="116" y="112" class="ts">dans sa base</text><text x="116" y="132" class="ts tb">instances, cœurs…</text>
+<rect x="210" y="52" width="160" height="92" rx="8" class="b-red"/><text x="290" y="76" class="tb">Cinder</text><text x="290" y="96" class="ts">ses limites,</text><text x="290" y="112" class="ts">dans sa base</text><text x="290" y="132" class="ts tb">volumes, Go…</text>
+<rect x="384" y="52" width="160" height="92" rx="8" class="b-red"/><text x="464" y="76" class="tb">Neutron</text><text x="464" y="96" class="ts">ses limites,</text><text x="464" y="112" class="ts">dans sa base</text><text x="464" y="132" class="ts tb">réseaux, ports…</text>
+<text x="290" y="174" class="ts">chaque service stocke, vérifie et expose ses quotas ;</text><text x="290" y="192" class="ts">trois API, trois jeux de valeurs par défaut</text><text x="290" y="220" class="ts tb">le plus répandu ; projets tous au même niveau</text><text x="290" y="240" class="ts">commande : openstack quota …</text>
+</g>
+<rect x="590" y="10" width="540" height="250" rx="12" class="zone"/><text x="860" y="36" class="tc tl">Limites unifiées — centralisées dans Keystone</text>
+<g class="tc">
+<rect x="606" y="52" width="508" height="52" rx="8" class="b-amber"/><text x="860" y="74" class="tb">Keystone stocke toutes les limites</text><text x="860" y="92" class="ts">par défaut, par domaine, par projet</text>
+<rect x="606" y="124" width="160" height="48" rx="8" class="b-red"/><text x="686" y="146" class="tb">Nova</text><text x="686" y="163" class="ts">compte et vérifie</text>
+<rect x="780" y="124" width="160" height="48" rx="8" class="b-red"/><text x="860" y="146" class="tb">Glance</text><text x="860" y="163" class="ts">compte et vérifie</text>
+<rect x="954" y="124" width="160" height="48" rx="8" class="b-red"/><text x="1034" y="146" class="tb">autres services</text><text x="1034" y="163" class="ts">à mesure qu'ils l'adoptent</text>
+<text x="860" y="200" class="ts">un seul endroit pour définir ; chaque service lit la limite</text><text x="860" y="218" class="ts tb">et connaît la hiérarchie des projets</text><text x="860" y="240" class="ts">commandes : openstack registered limit … , openstack limit …</text>
+</g>
+<path d="M686,104 V122 M860,104 V122 M1034,104 V122" class="la"/>
+</svg>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:22%"></th><th style="width:37%">Quotas classiques</th><th>Limites unifiées</th></tr></thead>
+<tbody>
+<tr><td>Où sont les valeurs</td><td>dans chaque service</td><td style="color:var(--ink);font-weight:400">dans Keystone</td></tr>
+<tr><td>Hiérarchie de projets</td><td>ignorée</td><td style="color:var(--ink);font-weight:400">exploitable, selon le modèle choisi</td></tr>
+<tr><td>Plafond par domaine</td><td>non</td><td style="color:var(--ink);font-weight:400">oui</td></tr>
+<tr><td>Adoption</td><td>tous les services</td><td style="color:var(--ink);font-weight:400">Glance ; Nova sur option ; les autres progressivement</td></tr>
+</tbody></table>
+<div class="note g"><b>Sur un cloud donné, les deux coexistent :</b> il faut savoir, service par service, lequel est actif. Les slides suivantes décrivent d'abord les quotas classiques, puis les limites unifiées.</div>
+</div>
+</section>
+
+<!-- 22 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>Quotas de calcul — Nova</h2></header>
+<div class="body"><div class="cols w64">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:27%">Quota</th><th style="width:43%">Ce qu'il plafonne</th><th>Défaut amont</th></tr></thead>
+<tbody>
+<tr><td><code>instances</code></td><td>nombre d'instances du projet</td><td style="color:var(--ink);font-weight:400">10</td></tr>
+<tr><td><code>cores</code></td><td>somme des cœurs virtuels des instances</td><td style="color:var(--ink);font-weight:400">20</td></tr>
+<tr><td><code>ram</code></td><td>somme de la mémoire, en mégaoctets</td><td style="color:var(--ink);font-weight:400">51 200</td></tr>
+<tr><td><code>key-pairs</code></td><td>paires de clés — <b>par utilisateur</b></td><td style="color:var(--ink);font-weight:400">100</td></tr>
+<tr><td><code>server-groups</code></td><td>groupes de serveurs (affinité)</td><td style="color:var(--ink);font-weight:400">10</td></tr>
+<tr><td><code>server-group-members</code></td><td>instances par groupe</td><td style="color:var(--ink);font-weight:400">10</td></tr>
+<tr><td><code>properties</code></td><td>métadonnées par instance</td><td style="color:var(--ink);font-weight:400">128</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Les trois premiers font tout le travail :</b> une instance est refusée dès que l'un d'eux serait dépassé.</li>
+<li><b>Le gabarit décide de la consommation :</b> une instance « 4 cœurs, 8 Gio » retire 1, 4 et 8192 des trois compteurs.</li>
+<li><b>Instance arrêtée :</b> elle compte toujours. Seule une instance « remisée et déchargée » ne consomme plus cœurs ni mémoire.</li>
+</ul>
+</div>
+<div class="col">
+<pre style="font-size:12px"><span class="m"># Quotas de calcul d'un projet</span>
+<span class="c">openstack quota show</span> --compute prod-web
+
+<span class="m"># Fixer</span>
+<span class="c">openstack quota set</span> prod-web \
+  --instances 40 --cores 160 --ram 327680</pre>
+<div class="note g"><b>Cohérence à vérifier :</b> 40 instances, 160 cœurs, 320 Gio correspondent à un gabarit moyen de 4 cœurs et 8 Gio. Des quotas incohérents entre eux rendent l'un des trois inutile.</div>
+<div class="note"><b>Ce qui n'est pas plafonné ici :</b> le disque éphémère des instances — sauf avec les limites unifiées — et les cartes graphiques ou autres ressources spéciales, qui se bornent par gabarits privés.</div>
+<div class="note b">Valeurs par défaut du code amont, données de mémoire : celles de votre cloud se lisent avec <code>openstack quota show --default</code>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 23 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>Quotas de stockage — Cinder et Glance</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Cinder : volumes</b></p>
+<table class="tbl tight os">
+<thead><tr><th style="width:36%">Quota</th><th style="width:40%">Ce qu'il plafonne</th><th>Défaut amont</th></tr></thead>
+<tbody>
+<tr><td><code>volumes</code></td><td>nombre de volumes</td><td style="color:var(--ink);font-weight:400">10</td></tr>
+<tr><td><code>gigabytes</code></td><td>taille cumulée des volumes <b>et</b> des instantanés</td><td style="color:var(--ink);font-weight:400">1000</td></tr>
+<tr><td><code>snapshots</code></td><td>nombre d'instantanés</td><td style="color:var(--ink);font-weight:400">10</td></tr>
+<tr><td><code>backups</code></td><td>nombre de sauvegardes</td><td style="color:var(--ink);font-weight:400">10</td></tr>
+<tr><td><code>backup-gigabytes</code></td><td>taille cumulée des sauvegardes</td><td style="color:var(--ink);font-weight:400">1000</td></tr>
+<tr><td><code>per-volume-gigabytes</code></td><td>taille maximale d'un volume</td><td style="color:var(--ink);font-weight:400">illimitée</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Par type de volume :</b> chaque type a en plus ses propres compteurs — utile pour rationner un stockage rapide et coûteux.</li>
+<li><b>Les instantanés comptent dans <code>gigabytes</code> :</b> une équipe qui en abuse se bloque elle-même.</li>
+</ul>
+</div>
+<div class="col">
+<pre style="font-size:12px"><span class="c">openstack quota show</span> --volume prod-web
+<span class="c">openstack quota set</span> prod-web \
+  --volumes 80 --gigabytes 4000 --snapshots 80
+
+<span class="m"># Quota propre à un type de volume</span>
+<span class="c">openstack quota set</span> prod-web \
+  --volume-type rapide --gigabytes 500</pre>
+<p><b>Glance : images</b></p>
+<table class="tbl tight">
+<thead><tr><th>Limite</th><th>Ce qu'elle plafonne</th></tr></thead>
+<tbody>
+<tr><td><code>image_size_total</code></td><td>espace total des images du projet, en Mio</td></tr>
+<tr><td><code>image_stage_total</code></td><td>espace des téléversements en cours</td></tr>
+<tr><td><code>image_count_total</code></td><td>nombre d'images</td></tr>
+<tr><td><code>image_count_uploading</code></td><td>téléversements simultanés</td></tr>
+</tbody></table>
+<div class="note g">Glance ne propose ses quotas par projet <b>que</b> par les limites unifiées : ils se règlent dans Keystone, pas avec <code>openstack quota set</code>.</div>
+<div class="note">Sur un stockage Ceph, les volumes sont alloués à la demande : le quota borne la taille <b>promise</b>, pas l'espace réellement écrit.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 24 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>Quotas réseau — Neutron</h2></header>
+<div class="body"><div class="cols w64">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:26%">Quota</th><th style="width:44%">Ce qu'il plafonne</th><th>Défaut amont</th></tr></thead>
+<tbody>
+<tr><td><code>networks</code></td><td>réseaux du projet</td><td style="color:var(--ink);font-weight:400">100</td></tr>
+<tr><td><code>subnets</code></td><td>sous-réseaux</td><td style="color:var(--ink);font-weight:400">100</td></tr>
+<tr><td><code>ports</code></td><td>ports : un par carte d'instance, plus ceux des routeurs, du DHCP, des répartiteurs</td><td style="color:var(--ink);font-weight:400">500</td></tr>
+<tr><td><code>routers</code></td><td>routeurs</td><td style="color:var(--ink);font-weight:400">10</td></tr>
+<tr><td><code>floating-ips</code></td><td>adresses flottantes — donc adresses <b>externes</b></td><td style="color:var(--ink);font-weight:400">50</td></tr>
+<tr><td><code>secgroups</code></td><td>groupes de sécurité</td><td style="color:var(--ink);font-weight:400">10</td></tr>
+<tr><td><code>secgroup-rules</code></td><td>règles, tous groupes confondus</td><td style="color:var(--ink);font-weight:400">100</td></tr>
+<tr><td><code>subnetpools</code>, <code>rbac-policies</code></td><td>pools de sous-réseaux, règles de partage</td><td style="color:var(--ink);font-weight:400">illimité, 10</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Le quota qui compte vraiment : les adresses flottantes.</b> Elles puisent dans la plage du réseau externe, ressource rare et commune à tous.</li>
+<li><b>Le quota qui bloque sans prévenir : les ports.</b> Une instance sans port disponible échoue à la création avec une erreur réseau, pas une erreur de calcul.</li>
+</ul>
+</div>
+<div class="col">
+<pre style="font-size:12px"><span class="c">openstack quota show</span> --network prod-web
+<span class="c">openstack quota set</span> prod-web \
+  --networks 10 --subnets 20 --routers 3 \
+  --ports 300 --floating-ips 8 \
+  --secgroups 30 --secgroup-rules 300</pre>
+<div class="note g"><b>Règle de cohérence :</b> prévoir au moins un port par instance autorisée, plus une marge pour routeurs, DHCP et répartiteurs. Avec 40 instances, 300 ports sont confortables ; 40 seraient un piège.</div>
+<div class="note"><b>Somme des adresses flottantes :</b> la somme des quotas de tous les projets ne devrait pas dépasser de beaucoup la taille de la plage externe ; c'est le seul quota que l'on évite de surallouer.</div>
+<div class="note b">L'équilibrage de charge a ses propres quotas, dans son propre service, lorsqu'il est activé.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 25 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>Comment un quota est vérifié</h2></header>
+<div class="body">
+<div class="fig"><svg viewBox="0 0 1150 371">
+<path d="M130,46 V367" class="nl" stroke-dasharray="4 5"/>
+<path d="M430,46 V367" class="nl" stroke-dasharray="4 5"/>
+<path d="M730,46 V367" class="nl" stroke-dasharray="4 5"/>
+<path d="M1030,46 V367" class="nl" stroke-dasharray="4 5"/>
+<rect x="10.0" y="4" width="240" height="40" rx="8" class="b-grey"/><text x="130" y="29" class="tc tb">Utilisateur</text>
+<rect x="310.0" y="4" width="240" height="40" rx="8" class="b-blue"/><text x="430" y="29" class="tc tb">API de Nova</text>
+<rect x="610.0" y="4" width="240" height="40" rx="8" class="b-violet"/><text x="730" y="29" class="tc tb">Placement, base de Nova</text>
+<rect x="910.0" y="4" width="240" height="40" rx="8" class="b-teal"/><text x="1030" y="29" class="tc tb">Cinder, Neutron</text>
+<path d="M140,78 H427" class="lr"/>
+<text x="280.0" y="72" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">POST /servers : 4 instances de 4 cœurs</text>
+<circle cx="130" cy="78" r="10" class="f-red"/><text x="130" y="82" class="tc tw tb" style="font-size:11px">1</text>
+<rect x="230.0" y="90" width="400" height="24" rx="6" class="b-grey"/><text x="442.0" y="107" class="tc" style="font-size:12px">demande : 4 instances, 16 cœurs, 32 Gio de mémoire</text>
+<circle cx="244.0" cy="105" r="10" class="f-red"/><text x="244.0" y="109" class="tc tw tb" style="font-size:11px">2</text>
+<path d="M440,132 H727" class="lr"/>
+<text x="580.0" y="126" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">consommation actuelle du projet ?</text>
+<circle cx="430" cy="132" r="10" class="f-red"/><text x="430" y="136" class="tc tw tb" style="font-size:11px">3</text>
+<path d="M720,159 H433" class="ln ld"/>
+<text x="580.0" y="153" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">30 cœurs déjà utilisés</text>
+<circle cx="730" cy="159" r="10" class="f-red"/><text x="730" y="163" class="tc tw tb" style="font-size:11px">4</text>
+<rect x="230.0" y="171" width="400" height="24" rx="6" class="b-grey"/><text x="442.0" y="188" class="tc" style="font-size:12px">30 + 16 = 46, limite 40 : dépassement</text>
+<circle cx="244.0" cy="186" r="10" class="f-red"/><text x="244.0" y="190" class="tc tw tb" style="font-size:11px">5</text>
+<path d="M420,213 H133" class="ln ld"/>
+<text x="280.0" y="207" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">403 Forbidden : Quota exceeded for cores</text>
+<circle cx="430" cy="213" r="10" class="f-red"/><text x="430" y="217" class="tc tw tb" style="font-size:11px">6</text>
+<path d="M140,240 H427" class="lr"/>
+<text x="280.0" y="234" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">nouvelle demande : 2 instances</text>
+<circle cx="130" cy="240" r="10" class="f-red"/><text x="130" y="244" class="tc tw tb" style="font-size:11px">7</text>
+<rect x="230.0" y="252" width="400" height="24" rx="6" class="b-grey"/><text x="442.0" y="269" class="tc" style="font-size:12px">30 + 8 = 38, limite 40 : acceptée, remise à l'ordonnanceur</text>
+<circle cx="244.0" cy="267" r="10" class="f-red"/><text x="244.0" y="271" class="tc tw tb" style="font-size:11px">8</text>
+<path d="M440,294 H1027" class="lr"/>
+<text x="730.0" y="288" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">création des ports et des volumes</text>
+<circle cx="430" cy="294" r="10" class="f-red"/><text x="430" y="298" class="tc tw tb" style="font-size:11px">9</text>
+<rect x="744" y="306" width="400" height="24" rx="6" class="b-grey"/><text x="956.0" y="323" class="tc" style="font-size:12px">chacun vérifie ses propres quotas : ports, volumes, Go</text>
+<circle cx="758" cy="321" r="10" class="f-red"/><text x="758" y="325" class="tc tw tb" style="font-size:11px">10</text>
+<path d="M420,348 H133" class="ln ld"/>
+<text x="280.0" y="342" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">202 Accepted : création en cours</text>
+<circle cx="430" cy="348" r="10" class="f-red"/><text x="430" y="352" class="tc tw tb" style="font-size:11px">11</text>
+</svg></div>
+<div class="cols nf">
+<div class="col">
+<ul class="pts sm">
+<li><b>La vérification se fait à l'entrée</b>, dans l'API du service, avant toute planification : un refus de quota ne laisse aucune trace d'instance.</li>
+<li><b>Le service compte lui-même la consommation</b> à chaque demande — dans ses bases, ou auprès de Placement pour les cœurs et la mémoire.</li>
+</ul>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Deux refus à distinguer :</b> « Quota exceeded », code 403, vient du quota ; « No valid host », instance en erreur, vient de la capacité.</li>
+<li><b>Opération composée :</b> créer une instance avec un volume et une adresse flottante interroge trois quotas, dans trois services.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 26 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>Lire les quotas et la consommation</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Prérequis : un rôle dans le projet, ou d'administration</span>
+
+<span class="m"># Les limites d'un projet, tous services</span>
+<span class="c">openstack quota show</span> prod-web
+
+<span class="m"># Limites ET consommation</span>
+<span class="c">openstack quota show</span> --usage prod-web
+
+<span class="m"># Les valeurs par défaut du cloud</span>
+<span class="c">openstack quota show</span> --default
+
+<span class="m"># Par famille</span>
+<span class="c">openstack quota show</span> --compute --usage prod-web
+<span class="c">openstack quota show</span> --volume  --usage prod-web
+<span class="c">openstack quota show</span> --network --usage prod-web
+
+<span class="m"># Vue « utilisateur » du projet courant</span>
+<span class="c">openstack limits show</span> --absolute
+
+<span class="m"># Projets dont les quotas diffèrent du défaut (administrateur)</span>
+<span class="c">openstack quota list</span> --compute
+<span class="c">openstack quota list</span> --network</pre>
+</div>
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Extrait type de « quota show --usage »</span>
++----------------+--------+--------+----------+
+| Resource       | In Use | Reserved | Limit  |
++----------------+--------+--------+----------+
+| cores          |    112 |      0 |      160 |
+| instances      |     28 |      0 |       40 |
+| ram            | 229376 |      0 |   327680 |
+| volumes        |     35 |      0 |       80 |
+| gigabytes      |   2150 |      0 |     4000 |
+| floating-ips   |      6 |      0 |        8 |
+| ports          |     74 |      0 |      300 |
++----------------+--------+--------+----------+</pre>
+<table class="tbl tight">
+<thead><tr><th>Colonne</th><th>Signification</th></tr></thead>
+<tbody>
+<tr><td>In Use</td><td>ce que possède le projet en ce moment</td></tr>
+<tr><td>Reserved</td><td>ce qui est engagé par des opérations en cours</td></tr>
+<tr><td>Limit</td><td>le plafond ; <code>-1</code> signifie illimité</td></tr>
+</tbody></table>
+<div class="note g"><b>Dans Horizon,</b> la page « Vue d'ensemble » d'un projet affiche les mêmes chiffres sous forme de jauges : c'est ce que consultent les utilisateurs.</div>
+<div class="note">Sortie reconstituée pour l'exemple ; la mise en forme exacte dépend de la version du client.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 27 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>Fixer et modifier un quota</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Prérequis : identifiants d'administrateur</span>
+<span class="c">source</span> admin-openrc
+PID=$(openstack project show prod-web --domain nord -f value -c id)
+
+<span class="m"># Tout en une commande : calcul, volumes, réseau</span>
+<span class="c">openstack quota set</span> $PID \
+  --instances 40 --cores 160 --ram 327680 \
+  --volumes 80 --gigabytes 4000 --snapshots 80 \
+  --networks 10 --subnets 20 --routers 3 --ports 300 \
+  --floating-ips 8 --secgroups 30 --secgroup-rules 300
+
+<span class="m"># Vérifier</span>
+<span class="c">openstack quota show</span> --usage $PID
+
+<span class="m"># Illimité — à éviter</span>
+<span class="c">openstack quota set</span> $PID --instances -1
+
+<span class="m"># Revenir aux valeurs par défaut</span>
+<span class="c">openstack quota delete</span> $PID</pre>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:40%">Situation</th><th>Comportement</th></tr></thead>
+<tbody>
+<tr><td>Quota relevé</td><td>effet immédiat pour les nouvelles demandes</td></tr>
+<tr><td>Quota abaissé sous la consommation</td><td>rien n'est supprimé ; toute nouvelle création est refusée jusqu'à repasser sous le plafond</td></tr>
+<tr><td>Quota à zéro</td><td>interdit ce type de ressource au projet</td></tr>
+<tr><td>Quota jamais fixé</td><td>le projet suit le défaut — et suivra ses changements</td></tr>
+<tr><td>Quota fixé explicitement</td><td>il ne suit plus le défaut</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Qui peut le faire :</b> l'administration du cloud. Un gestionnaire de domaine ou un membre de projet peut lire ses quotas, pas les changer.</li>
+<li><b>Toujours par identifiant</b> dans les scripts : le nom d'un projet n'est unique que dans son domaine.</li>
+<li><b>Abaisser pour interdire :</b> mettre <code>floating-ips</code> à 0 est la manière la plus simple d'empêcher un projet de s'exposer à l'extérieur.</li>
+</ul>
+<div class="note g">Tracer chaque changement : qui l'a demandé, pourquoi, pour combien de temps. Un quota relevé « provisoirement » ne redescend jamais tout seul.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 28 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>Les quotas par défaut : le réglage le plus important</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<div class="fig" style="flex:none">
+<svg viewBox="0 0 560 230">
+<g class="tc">
+<rect x="10" y="6" width="540" height="48" rx="9" class="b-grey"/><text x="280" y="27" class="tb">Nouveau projet, créé par un gestionnaire de domaine</text><text x="280" y="44" class="ts">aucun quota fixé</text>
+<rect x="10" y="88" width="170" height="60" rx="9" class="b-red"/><text x="95" y="112" class="tb">défaut de Nova</text><text x="95" y="132" class="ts">10 instances, 20 cœurs</text>
+<rect x="195" y="88" width="170" height="60" rx="9" class="b-red"/><text x="280" y="112" class="tb">défaut de Cinder</text><text x="280" y="132" class="ts">10 volumes, 1000 Go</text>
+<rect x="380" y="88" width="170" height="60" rx="9" class="b-red"/><text x="465" y="112" class="tb">défaut de Neutron</text><text x="465" y="132" class="ts">50 adresses flottantes</text>
+<rect x="10" y="180" width="540" height="44" rx="9" class="b-dark"/><text x="280" y="207" class="tw tb">× nombre de projets que le gestionnaire décide de créer</text>
+</g>
+<path d="M95,54 V86 M280,54 V86 M465,54 V86" class="lr"/><path d="M95,148 V178 M280,148 V178 M465,148 V178" class="nl"/>
+</svg>
+</div>
+<ul class="pts sm">
+<li><b>Créer un projet est une opération déléguée ; fixer un quota ne l'est pas.</b> Entre les deux, le projet vit avec le défaut.</li>
+<li><b>Un défaut généreux multiplie la capacité promise</b> par le nombre de projets, sans aucun contrôle.</li>
+<li><b>Défaut des adresses flottantes :</b> cinquante par projet épuisent une petite plage externe en un projet.</li>
+</ul>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:30%">Stratégie</th><th style="width:36%">Défaut</th><th>Effet</th></tr></thead>
+<tbody>
+<tr><td>Ouverte</td><td>valeurs amont</td><td style="color:var(--ink);font-weight:400">tout nouveau projet est utilisable ; capacité non maîtrisée</td></tr>
+<tr><td>Bac à sable</td><td>très bas : 2 instances, 4 cœurs, 0 adresse flottante</td><td style="color:var(--ink);font-weight:400">on peut essayer ; tout usage réel passe par une demande</td></tr>
+<tr><td>Fermée</td><td>zéro partout</td><td style="color:var(--ink);font-weight:400">rien ne fonctionne sans quota explicite ; contrôle total</td></tr>
+</tbody></table>
+<pre style="font-size:11.8px;flex:none"><span class="m"># Lire les défauts en vigueur</span>
+<span class="c">openstack quota show</span> --default
+
+<span class="m"># Les changer : défauts de calcul et de volumes</span>
+<span class="c">openstack quota set</span> --class default \
+  --instances 2 --cores 4 --ram 8192 \
+  --volumes 2 --gigabytes 40</pre>
+<div class="note"><b>Sur Sunbeam :</b> certains défauts — ceux de Neutron notamment — sont des options de configuration du service, donc du charm. À vérifier avant de compter sur la commande ci-dessus.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 29 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>Les limites unifiées : trois niveaux de valeurs</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 290">
+<g class="tc">
+<rect x="20" y="10" width="1110" height="70" rx="12" class="b-amber"/><text x="575" y="38" class="tl">① Limite enregistrée — le défaut, pour tous les projets</text><text x="575" y="62" class="ts">associe un type de ressource à un service : « compute · class:VCPU · 20 » ; créée par l'administration ; préalable obligatoire aux deux autres</text>
+<rect x="20" y="110" width="540" height="70" rx="12" class="b-violet"/><text x="290" y="138" class="tl">② Limite de domaine</text><text x="290" y="162" class="ts">remplace le défaut pour un domaine : « nord · class:VCPU · 400 »</text>
+<rect x="590" y="110" width="540" height="70" rx="12" class="b-blue"/><text x="860" y="138" class="tl">③ Limite de projet</text><text x="860" y="162" class="ts">remplace le défaut pour un projet : « prod-web · class:VCPU · 160 »</text>
+<rect x="20" y="210" width="1110" height="70" rx="12" class="b-red"/><text x="575" y="238" class="tl tr">Le service — Nova, Glance… — applique</text><text x="575" y="262" class="ts">à chaque demande : il lit la limite du projet, sinon le défaut ; compte la consommation ; accepte ou refuse</text>
+</g>
+<path d="M290,80 V108" class="la"/><path d="M860,80 V108" class="la"/><path d="M290,180 V208" class="lr"/><path d="M860,180 V208" class="lr"/>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<ul class="pts sm">
+<li><b>Keystone stocke et valide les limites ; il ne compte rien.</b> La consommation reste l'affaire de chaque service.</li>
+<li><b>Valeurs :</b> de 0 à un très grand nombre ; <code>-1</code> pour illimité.</li>
+<li><b>Abaisser sous la consommation</b> ne détruit rien : les nouvelles demandes sont refusées.</li>
+</ul>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Ressource (Nova)</th><th>Équivalent classique</th></tr></thead>
+<tbody>
+<tr><td><code>servers</code></td><td>instances</td></tr>
+<tr><td><code>class:VCPU</code></td><td>cores</td></tr>
+<tr><td><code>class:MEMORY_MB</code></td><td>ram</td></tr>
+<tr><td><code>class:DISK_GB</code></td><td>— nouveau : disque des instances</td></tr>
+<tr><td><code>server_key_pairs</code>, <code>server_groups</code>…</td><td>key-pairs, server-groups…</td></tr>
+</tbody></table>
+<div class="note g">Toute classe de ressource de Placement peut être plafonnée ainsi, cartes graphiques comprises.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 30 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>Limites unifiées : deux modèles d'application</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 290">
+<rect x="20" y="10" width="540" height="270" rx="12" class="zone"/><text x="290" y="36" class="tc tl">Modèle « flat » — à plat</text>
+<g class="tc">
+<rect x="190" y="52" width="200" height="56" rx="9" class="b-violet"/><text x="290" y="76" class="tb">Alpha</text><text x="290" y="96" class="ts">limite : 20 cœurs</text>
+<rect x="60" y="150" width="200" height="56" rx="9" class="bx"/><text x="160" y="174" class="tb">Beta — enfant</text><text x="160" y="194" class="ts">limite : 30 cœurs</text>
+<rect x="320" y="150" width="200" height="56" rx="9" class="bx"/><text x="420" y="174" class="tb">Charlie — enfant</text><text x="420" y="194" class="ts">limite : 30 cœurs</text>
+<text x="290" y="236" class="ts">chaque projet est jugé seul : la limite du parent</text><text x="290" y="254" class="ts">ne borne pas les enfants, qui peuvent le dépasser</text><text x="290" y="272" class="ts tb">total possible : 20 + 30 + 30 = 80 cœurs</text>
+</g>
+<path d="M250,108 L170,148" class="nl"/><path d="M330,108 L410,148" class="nl"/>
+<rect x="590" y="10" width="540" height="270" rx="12" class="zone"/><text x="860" y="36" class="tc tl">Modèle « strict_two_level » — deux niveaux stricts</text>
+<g class="tc">
+<rect x="760" y="52" width="200" height="56" rx="9" class="b-violet"/><text x="860" y="76" class="tb">Alpha</text><text x="860" y="96" class="ts">limite : 20 cœurs</text>
+<rect x="630" y="150" width="200" height="56" rx="9" class="bx"/><text x="730" y="174" class="tb">Beta — enfant</text><text x="730" y="194" class="ts">limite : 12 cœurs</text>
+<rect x="890" y="150" width="200" height="56" rx="9" class="bx"/><text x="990" y="174" class="tb">Charlie — enfant</text><text x="990" y="194" class="ts">pas de limite propre</text>
+<text x="860" y="236" class="ts">la consommation de tout l'arbre est plafonnée par le parent ;</text><text x="860" y="254" class="ts">aucun enfant ne peut dépasser la limite du parent</text><text x="860" y="272" class="ts tb">total possible : 20 cœurs — Charlie dispose de ce qui reste</text>
+</g>
+<path d="M820,108 L740,148" class="lr"/><path d="M900,108 L980,148" class="lr"/>
+</svg>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:22%"></th><th style="width:37%">flat</th><th>strict_two_level</th></tr></thead>
+<tbody>
+<tr><td>Rapport parent / enfant</td><td>aucun</td><td style="color:var(--ink);font-weight:400">le parent borne la somme de l'arbre</td></tr>
+<tr><td>Profondeur de l'arbre</td><td>quelconque</td><td style="color:var(--ink);font-weight:400"><b>deux niveaux au plus</b> : créer un petit-enfant est refusé</td></tr>
+<tr><td>Partage de capacité</td><td>manuel, limite par limite</td><td style="color:var(--ink);font-weight:400">automatique à l'intérieur de l'arbre</td></tr>
+<tr><td>Validation des valeurs</td><td>aucune</td><td style="color:var(--ink);font-weight:400">à la création et à la modification</td></tr>
+<tr><td>Usage type</td><td>projets indépendants</td><td style="color:var(--ink);font-weight:400">une enveloppe par équipe ou par domaine, répartie librement</td></tr>
+</tbody></table>
+<div class="note"><b>Un seul modèle pour tout le cloud,</b> choisi dans la configuration de Keystone ; en changer après coup peut invalider des limites existantes. Le modèle strict contraint aussi la forme des arbres de projets : à décider avant de les dessiner.</div>
+</div>
+</section>
+
+<!-- 31 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>Limites unifiées : commandes et points d'attention</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Prérequis : identifiants d'administrateur</span>
+<span class="c">source</span> admin-openrc
+
+<span class="m"># Quel modèle est en vigueur ? (ou keystone.conf, [unified_limit])</span>
+<span class="c">curl</span> -s -H "X-Auth-Token: $(openstack token issue -f value -c id)" \
+  $OS_AUTH_URL/limits/model
+<span class="c">openstack limit list</span>              <span class="m"># limites de projet existantes</span>
+<span class="c">openstack registered limit list</span>   <span class="m"># défauts enregistrés</span>
+
+<span class="m"># 1 · Enregistrer les défauts — un par ressource</span>
+<span class="c">openstack registered limit create</span> \
+  --service nova --default-limit 2  servers
+<span class="c">openstack registered limit create</span> \
+  --service nova --default-limit 4  class:VCPU
+<span class="c">openstack registered limit create</span> \
+  --service nova --default-limit 8192 class:MEMORY_MB
+
+<span class="m"># 2 · Relever la limite d'un projet</span>
+<span class="c">openstack limit create</span> --project $PID \
+  --service nova --resource-limit 160 class:VCPU
+
+<span class="m"># 3 · Modifier, supprimer</span>
+<span class="c">openstack limit set</span> --resource-limit 200 &lt;id de la limite&gt;
+<span class="c">openstack limit delete</span> &lt;id de la limite&gt;</pre>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:36%">Point d'attention</th><th>Détail</th></tr></thead>
+<tbody>
+<tr><td>Activation dans Nova</td><td>sur option : le pilote de quotas se choisit dans la configuration du service</td></tr>
+<tr><td>Ressource sans défaut enregistré</td><td>pour les ressources déclarées obligatoires — <code>servers</code> par défaut — la limite vaut alors <b>zéro</b> : tout est refusé</td></tr>
+<tr><td>Bascule depuis les quotas classiques</td><td>un outil de migration recopie les quotas de Nova dans Keystone</td></tr>
+<tr><td>Quotas par utilisateur</td><td>n'existent plus dans ce modèle</td></tr>
+<tr><td>Comptage</td><td>par Placement</td></tr>
+</tbody></table>
+<div class="note"><b>Sur Sunbeam :</b> le mécanisme actif dans chaque service dépend de la configuration posée par les charms. Vérifier quel pilote est en place : section <code>[quota]</code> de <code>nova.conf</code>, dans le pod du service.</div>
+<div class="note g"><b>Les deux jeux de commandes ne se mélangent pas :</b> <code>openstack quota set</code> agit sur les quotas classiques, <code>openstack limit …</code> sur les limites unifiées.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 32 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>Quota et capacité réelle</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 250">
+<g class="tc">
+<rect x="20" y="20" width="250" height="70" rx="10" class="b-dark"/><text x="145" y="46" class="tb tw">Matériel</text><text x="145" y="68" class="tw" style="font-size:12px">10 hôtes × 32 cœurs = 320 cœurs</text>
+<rect x="320" y="20" width="250" height="70" rx="10" class="b-grey"/><text x="445" y="46" class="tb">× taux de surallocation</text><text x="445" y="68" class="ts">par exemple 4 cœurs virtuels par cœur</text>
+<rect x="620" y="20" width="250" height="70" rx="10" class="b-blue"/><text x="745" y="46" class="tb">Capacité virtuelle</text><text x="745" y="68" class="ts">1280 cœurs virtuels</text>
+<rect x="920" y="20" width="210" height="70" rx="10" class="b-teal"/><text x="1025" y="46" class="tb">− réserve</text><text x="1025" y="68" class="ts">panne d'un hôte, maintenance</text>
+<rect x="20" y="130" width="1110" height="40" rx="8" class="b-blue"/><text x="575" y="155" class="tb">capacité virtuelle utilisable : environ 1150 cœurs virtuels</text>
+<rect x="20" y="186" width="1300" height="0" style="fill:none"/>
+<rect x="20" y="186" width="700" height="40" rx="8" class="b-green"/><text x="370" y="211" class="tb">consommation réelle : 700</text>
+<rect x="20" y="186" width="1110" height="40" rx="8" style="fill:none;stroke:#e4002b;stroke-width:2;stroke-dasharray:6 4"/>
+<text x="925" y="211" class="tb tr">somme des quotas : 1600 — au-delà de la capacité</text>
+</g>
+<text x="575" y="244" class="tc ts">chiffres d'illustration ; les taux de surallocation sont des options de Nova, posées par le déploiement</text>
+<path d="M270,55 H318" class="lr"/><path d="M570,55 H618" class="lr"/><path d="M870,55 H918" class="lr"/><path d="M745,90 V128" class="nl"/>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Ressource</th><th>Surallocation</th><th>Remarque</th></tr></thead>
+<tbody>
+<tr><td>Cœurs</td><td>courante</td><td>les instances n'utilisent pas tous leurs cœurs en permanence</td></tr>
+<tr><td>Mémoire</td><td>à éviter</td><td>une mémoire promise deux fois finit en instance tuée</td></tr>
+<tr><td>Disque sur Ceph</td><td>courante</td><td>allocation à la demande : surveiller l'espace réellement écrit</td></tr>
+<tr><td>Adresses externes</td><td>impossible</td><td>une adresse ne se partage pas</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Deux surallocations se cumulent :</b> celle du matériel (cœurs virtuels par cœur physique) et celle des quotas (somme des quotas par rapport à la capacité).</li>
+<li><b>Indicateurs à suivre :</b> consommation ÷ capacité, pour savoir quand acheter ; somme des quotas ÷ capacité, pour savoir ce que l'on a promis.</li>
+<li><b>Quand la capacité manque avant le quota :</b> l'instance est créée puis passe en erreur, « aucun hôte valide ». C'est une alerte d'exploitation, pas une erreur de l'utilisateur.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 33 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>Dimensionner les quotas d'un projet</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Méthode : partir du besoin, pas des valeurs par défaut</b></p>
+<table class="tbl tight">
+<thead><tr><th>Étape</th><th>Question</th></tr></thead>
+<tbody>
+<tr><td>1 · Inventaire</td><td>combien d'instances, de quel gabarit, en régime normal ?</td></tr>
+<tr><td>2 · Pointe</td><td>combien en plus lors d'un déploiement, d'un test de charge ?</td></tr>
+<tr><td>3 · Stockage</td><td>combien de volumes, de quelle taille ; quelle politique d'instantanés ?</td></tr>
+<tr><td>4 · Réseau</td><td>combien de réseaux, de points d'exposition externes ?</td></tr>
+<tr><td>5 · Marge</td><td>20 à 30 % au-dessus de la pointe</td></tr>
+<tr><td>6 · Cohérence</td><td>cœurs et mémoire correspondent-ils au nombre d'instances ? ports ≥ instances ?</td></tr>
+</tbody></table>
+<div class="note g"><b>Un déploiement par remplacement</b> — créer les nouvelles instances avant de supprimer les anciennes — double brièvement la consommation : c'est la pointe la plus souvent oubliée.</div>
+</div>
+<div class="col">
+<p><b>Exemple : une application web</b></p>
+<table class="tbl tight os">
+<thead><tr><th style="width:33%">Besoin</th><th style="width:34%">Calcul</th><th>Quota</th></tr></thead>
+<tbody>
+<tr><td>12 instances de 4 cœurs, 8 Gio</td><td>régime normal</td><td style="color:var(--ink);font-weight:400">—</td></tr>
+<tr><td>Déploiement par remplacement</td><td>12 × 2 = 24</td><td style="color:var(--ink);font-weight:400">—</td></tr>
+<tr><td>Marge de 25 %</td><td>24 × 1,25 = 30</td><td style="color:var(--ink);font-weight:400"><b>instances : 30</b></td></tr>
+<tr><td>Cœurs</td><td>30 × 4</td><td style="color:var(--ink);font-weight:400"><b>cores : 120</b></td></tr>
+<tr><td>Mémoire</td><td>30 × 8192</td><td style="color:var(--ink);font-weight:400"><b>ram : 245 760</b></td></tr>
+<tr><td>Un volume de 50 Go par instance</td><td>30 × 50, plus instantanés</td><td style="color:var(--ink);font-weight:400"><b>gigabytes : 3000</b></td></tr>
+<tr><td>Ports</td><td>30 instances, 2 répartiteurs, routeur, DHCP</td><td style="color:var(--ink);font-weight:400"><b>ports : 100</b></td></tr>
+<tr><td>Exposition</td><td>2 répartiteurs, 1 bastion</td><td style="color:var(--ink);font-weight:400"><b>floating-ips : 4</b></td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Quota trop juste :</b> déploiements bloqués, demandes de relèvement en urgence.</li>
+<li><b>Quota trop large :</b> il ne protège plus rien. Un quota jamais approché à 50 % est à revoir à la baisse.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 34 -->
+<section class="slide">
+<header><span class="kick">3 · Les quotas</span><h2>Pannes typiques liées aux quotas</h2></header>
+<div class="body">
+<table class="tbl os wrap">
+<thead><tr><th style="width:28%">Symptôme</th><th style="width:36%">Cause probable</th><th>Vérification</th></tr></thead>
+<tbody>
+<tr><td>« Quota exceeded for cores »</td><td>plafond de cœurs atteint, même s'il reste des instances</td><td style="color:var(--ink);font-weight:400"><code>openstack quota show --compute --usage</code></td></tr>
+<tr><td>instance en erreur, « No valid host »</td><td>ce n'est pas le quota : la capacité manque, ou aucun hôte ne convient au gabarit</td><td style="color:var(--ink);font-weight:400">état des hyperviseurs ; agrégats et gabarit</td></tr>
+<tr><td>instance en erreur à l'étape réseau</td><td>quota de ports atteint</td><td style="color:var(--ink);font-weight:400"><code>openstack quota show --network --usage</code></td></tr>
+<tr><td>impossible d'obtenir une adresse flottante</td><td>quota du projet atteint, ou plage externe épuisée</td><td style="color:var(--ink);font-weight:400">quota ; adresses libres du sous-réseau externe</td></tr>
+<tr><td>création de volume refusée alors qu'il reste des volumes</td><td>plafond en gigaoctets atteint, instantanés compris</td><td style="color:var(--ink);font-weight:400"><code>openstack quota show --volume --usage</code></td></tr>
+<tr><td>quota modifié, sans effet</td><td>mauvais projet — même nom, autre domaine — ou mauvais mécanisme : classique au lieu d'unifié</td><td style="color:var(--ink);font-weight:400">identifiant du projet ; pilote de quotas actif</td></tr>
+<tr><td>tout est refusé dans un projet neuf</td><td>défaut à zéro, ou ressource sans limite enregistrée avec les limites unifiées</td><td style="color:var(--ink);font-weight:400"><code>quota show --default</code> ; <code>registered limit list</code></td></tr>
+<tr><td>consommation affichée supérieure au réel</td><td>instances arrêtées, supprimées mais non purgées, redimensionnement en cours</td><td style="color:var(--ink);font-weight:400"><code>openstack server list --all</code> dans le projet</td></tr>
+<tr><td>déploiement automatisé qui échoue à mi-parcours</td><td>pointe de consommation pendant le remplacement des instances</td><td style="color:var(--ink);font-weight:400">marge prévue pour un déploiement par remplacement</td></tr>
+</tbody></table>
+<div class="note g"><b>Premier réflexe :</b> lire le message jusqu'au bout — il nomme la ressource en cause — puis comparer consommation et limite pour cette ressource précise, dans le bon service.</div>
+</div>
+</section>
+
+<!-- 35 -->
+<section class="slide dark sec">
+<div class="num">04</div>
+<h2>Organiser un système d'information cloisonné</h2>
+<p>Projets, hiérarchie et quotas sont des briques. Reste à décider comment les assembler pour que chaque équipe, chaque application, chaque environnement soit séparé des autres — et à compléter par le réseau et le matériel.</p>
+<ol><li>Quatre niveaux de cloisonnement</li><li>Les axes de découpage</li><li>Quatre modèles d'organisation</li><li>Comparaison et modèle recommandé</li><li>Cloisonner le réseau, le matériel</li><li>Services communs</li><li>Production et hors production</li><li>Nommage, étiquettes, scénario chiffré</li></ol>
+</section>
+
+<!-- 36 -->
+<section class="slide">
+<header><span class="kick">4 · Organiser un SI cloisonné</span><h2>Quatre niveaux de cloisonnement</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 300">
+<text x="330" y="20" class="tc tl">Ce qu'il sépare</text>
+<text x="655" y="20" class="tc tl">Mécanisme OpenStack</text>
+<text x="975" y="20" class="tc tl">Exemple de besoin</text>
+<rect x="20" y="32" width="1110" height="58" rx="10" class="zone"/>
+<rect x="20" y="32" width="150" height="58" rx="10" class="b-violet"/><text x="95" y="57" class="tc tb" style="font-size:13px">① Identité</text><text x="95" y="75" class="tc ts">le domaine</text>
+<text x="330" y="66" class="tc" style="font-size:12px">annuaires, noms, administration des comptes</text>
+<text x="655" y="66" class="tc" style="font-size:12px">domaine Keystone, source d'identité par domaine</text>
+<text x="975" y="66" class="tc" style="font-size:12px">deux organisations, deux annuaires</text>
+<rect x="20" y="98" width="1110" height="58" rx="10" class="zone"/>
+<rect x="20" y="98" width="150" height="58" rx="10" class="b-blue"/><text x="95" y="123" class="tc tb" style="font-size:13px">② Ressources</text><text x="95" y="141" class="tc ts">le projet</text>
+<text x="330" y="132" class="tc" style="font-size:12px">propriété, visibilité dans les API, plafonds</text>
+<text x="655" y="132" class="tc" style="font-size:12px">projet, rôles, quotas — appliqués par chaque service</text>
+<text x="975" y="132" class="tc" style="font-size:12px">deux applications, deux environnements</text>
+<rect x="20" y="164" width="1110" height="58" rx="10" class="zone"/>
+<rect x="20" y="164" width="150" height="58" rx="10" class="b-teal"/><text x="95" y="189" class="tc tb" style="font-size:13px">③ Réseau</text><text x="95" y="207" class="tc ts">les flux</text>
+<text x="330" y="198" class="tc" style="font-size:12px">ce qui peut communiquer avec quoi</text>
+<text x="655" y="198" class="tc" style="font-size:12px">réseaux par projet, routeurs, groupes de sécurité, RBAC</text>
+<text x="975" y="198" class="tc" style="font-size:12px">base de données non joignable d'Internet</text>
+<rect x="20" y="230" width="1110" height="58" rx="10" class="zone"/>
+<rect x="20" y="230" width="150" height="58" rx="10" class="b-amber"/><text x="95" y="255" class="tc tb" style="font-size:13px">④ Matériel</text><text x="95" y="273" class="tc ts">les hôtes</text>
+<text x="330" y="264" class="tc" style="font-size:12px">sur quelles machines tournent les charges</text>
+<text x="655" y="264" class="tc" style="font-size:12px">agrégats d'hôtes, zones, gabarits privés</text>
+<text x="975" y="264" class="tc" style="font-size:12px">exigence réglementaire, licences par hôte</text>
+<path d="M490,32 V290 M820,32 V290" class="nl" stroke-dasharray="2 6" opacity=".5"/>
+</svg></div>
+<div class="cols nf">
+<div class="note"><b>Les niveaux se cumulent, ils ne se remplacent pas.</b> Deux projets d'un même domaine sont isolés pour les ressources, mais partagent un annuaire ; deux projets isolés partagent les mêmes hyperviseurs tant qu'on ne dit rien de plus.</div>
+<div class="note g"><b>Le projet est le niveau obligatoire :</b> toute ressource appartient à un projet. Les trois autres se décident selon l'exigence — séparation d'annuaires, de flux, ou de machines physiques.</div>
+</div>
+</div>
+</section>
+
+<!-- 37 -->
+<section class="slide">
+<header><span class="kick">4 · Organiser un SI cloisonné</span><h2>Les axes de découpage</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:17%">Axe</th><th style="width:29%">Question posée</th><th style="width:24%">Ce qu'il sépare bien</th><th>Limite s'il est seul</th></tr></thead>
+<tbody>
+<tr><td>Organisation</td><td>qui paie, qui décide, qui administre ?</td><td>budgets, responsabilités, annuaires</td><td style="color:var(--ink);font-weight:400">une équipe mélange production et essais dans le même projet</td></tr>
+<tr><td>Application</td><td>quel système cette ressource fait-elle fonctionner ?</td><td>cycle de vie, propriétaire technique, flux réseau</td><td style="color:var(--ink);font-weight:400">les environnements d'une même application restent ensemble</td></tr>
+<tr><td>Environnement</td><td>production, recette, développement ?</td><td>droits d'accès, niveau d'exigence, quotas</td><td style="color:var(--ink);font-weight:400">toutes les applications de production partagent un seul plafond</td></tr>
+<tr><td>Sensibilité</td><td>données réglementées, exposition à Internet ?</td><td>audit, matériel dédié, chiffrement</td><td style="color:var(--ink);font-weight:400">ne dit rien de qui exploite</td></tr>
+</tbody></table>
+<div class="cols c3 nf">
+<div class="card cb"><h3>Un projet = une réponse unique</h3>Un bon projet a un seul propriétaire, un seul environnement, un seul niveau de sensibilité. Dès qu'une question appelle « ça dépend de la ressource », il faut deux projets.</div>
+<div class="card ca"><h3>Deux axes au moins</h3>En pratique on croise <b>application</b> et <b>environnement</b> ; l'organisation se place au-dessus — domaine ou branche de l'arbre.</div>
+<div class="card cv"><h3>Le test décisif</h3>« Si ce projet est compromis, ou si son quota est épuisé, qu'est-ce qui tombe avec lui ? » La réponse doit tenir en une ligne.</div>
+</div>
+</div>
+</section>
+
+<!-- 38 -->
+<section class="slide">
+<header><span class="kick">4 · Organiser un SI cloisonné</span><h2>Quatre modèles d'organisation</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 250">
+<rect x="20" y="6" width="264" height="238" rx="12" class="zone"/><text x="152" y="30" class="tc tl" style="font-size:12.5px">① Par équipe</text><text x="152" y="232" class="tc ts" style="font-size:10.8px">tout ce que fait l'équipe, au même endroit</text>
+<rect x="92" y="42" width="120" height="26" rx="5" class="b-dark"/><text x="152" y="59" class="tc tw" style="font-size:10.8px">domaine</text>
+<rect x="302" y="6" width="264" height="238" rx="12" class="zone"/><text x="434" y="30" class="tc tl" style="font-size:12.5px">② Application × environnement</text><text x="434" y="232" class="tc ts" style="font-size:10.8px">une case par couple, tout au même niveau</text>
+<rect x="374" y="42" width="120" height="26" rx="5" class="b-dark"/><text x="434" y="59" class="tc tw" style="font-size:10.8px">domaine</text>
+<rect x="584" y="6" width="264" height="238" rx="12" class="zone"/><text x="716" y="30" class="tc tl" style="font-size:12.5px">③ Arbre par environnement</text><text x="716" y="232" class="tc ts" style="font-size:10.8px">environnement en nœud, application en feuille</text>
+<rect x="656" y="42" width="120" height="26" rx="5" class="b-dark"/><text x="716" y="59" class="tc tw" style="font-size:10.8px">domaine</text>
+<rect x="866" y="6" width="264" height="238" rx="12" class="zone"/><text x="998" y="30" class="tc tl" style="font-size:12.5px">④ Arbre par application</text><text x="998" y="232" class="tc ts" style="font-size:10.8px">application en nœud, environnement en feuille</text>
+<rect x="938" y="42" width="120" height="26" rx="5" class="b-dark"/><text x="998" y="59" class="tc tw" style="font-size:10.8px">domaine</text>
+<path d="M152,68 V94.0 H70 V120" class="nl"/><path d="M152,68 V94.0 H152 V120" class="nl"/><path d="M152,68 V94.0 H234 V120" class="nl"/><rect x="32" y="120" width="76" height="26" rx="5" class="b-blue"/><text x="70.0" y="137" class="tc" style="font-size:10.8px">équipe-web</text><rect x="114" y="120" width="76" height="26" rx="5" class="b-blue"/><text x="152.0" y="137" class="tc" style="font-size:10.8px">équipe-bases</text><rect x="196" y="120" width="76" height="26" rx="5" class="b-blue"/><text x="234.0" y="137" class="tc" style="font-size:10.8px">équipe-data</text>
+<text x="152" y="176" class="tc ts">production, recette et essais</text><text x="152" y="192" class="tc ts">dans le même projet</text>
+<path d="M434,68 V86.0 H352 V104" class="nl"/><path d="M434,68 V86.0 H434 V104" class="nl"/><path d="M434,68 V86.0 H516 V104" class="nl"/>
+<rect x="314" y="104" width="76" height="26" rx="5" class="b-blue"/><text x="352.0" y="121" class="tc" style="font-size:10.8px">web-prod</text><rect x="396" y="104" width="76" height="26" rx="5" class="b-blue"/><text x="434.0" y="121" class="tc" style="font-size:10.8px">bases-prod</text><rect x="478" y="104" width="76" height="26" rx="5" class="b-blue"/><text x="516.0" y="121" class="tc" style="font-size:10.8px">data-prod</text><rect x="314" y="138" width="76" height="26" rx="5" class="b-blue"/><text x="352.0" y="155" class="tc" style="font-size:10.8px">web-rec</text><rect x="396" y="138" width="76" height="26" rx="5" class="b-blue"/><text x="434.0" y="155" class="tc" style="font-size:10.8px">bases-rec</text><rect x="478" y="138" width="76" height="26" rx="5" class="b-blue"/><text x="516.0" y="155" class="tc" style="font-size:10.8px">data-rec</text><rect x="314" y="172" width="76" height="26" rx="5" class="b-blue"/><text x="352.0" y="189" class="tc" style="font-size:10.8px">web-dev</text><rect x="396" y="172" width="76" height="26" rx="5" class="b-blue"/><text x="434.0" y="189" class="tc" style="font-size:10.8px">bases-dev</text><rect x="478" y="172" width="76" height="26" rx="5" class="b-blue"/><text x="516.0" y="189" class="tc" style="font-size:10.8px">data-dev</text>
+<path d="M716,68 V82.0 H654 V96" class="nl"/><path d="M716,68 V82.0 H778 V96" class="nl"/><rect x="610" y="96" width="88" height="26" rx="5" class="b-violet"/><text x="654.0" y="113" class="tc" style="font-size:10.8px">prod</text><rect x="734" y="96" width="88" height="26" rx="5" class="b-violet"/><text x="778.0" y="113" class="tc" style="font-size:10.8px">horsprod</text>
+<path d="M654,122 V131.0 H654 V140" class="nl"/><path d="M778,122 V131.0 H778 V140" class="nl"/>
+<rect x="610" y="140" width="88" height="26" rx="5" class="b-blue"/><text x="654.0" y="157" class="tc" style="font-size:10.8px">prod-web</text><rect x="610" y="170" width="88" height="26" rx="5" class="b-blue"/><text x="654.0" y="187" class="tc" style="font-size:10.8px">prod-bases</text><rect x="734" y="140" width="88" height="26" rx="5" class="b-blue"/><text x="778.0" y="157" class="tc" style="font-size:10.8px">rec-web</text><rect x="734" y="170" width="88" height="26" rx="5" class="b-blue"/><text x="778.0" y="187" class="tc" style="font-size:10.8px">dev-web</text>
+<path d="M998,68 V82.0 H936 V96" class="nl"/><path d="M998,68 V82.0 H1060 V96" class="nl"/><rect x="892" y="96" width="88" height="26" rx="5" class="b-violet"/><text x="936.0" y="113" class="tc" style="font-size:10.8px">web</text><rect x="1016" y="96" width="88" height="26" rx="5" class="b-violet"/><text x="1060.0" y="113" class="tc" style="font-size:10.8px">bases</text>
+<path d="M936,122 V131.0 H936 V140" class="nl"/><path d="M1060,122 V131.0 H1060 V140" class="nl"/>
+<rect x="892" y="140" width="88" height="26" rx="5" class="b-blue"/><text x="936.0" y="157" class="tc" style="font-size:10.8px">web-prod</text><rect x="892" y="170" width="88" height="26" rx="5" class="b-blue"/><text x="936.0" y="187" class="tc" style="font-size:10.8px">web-rec</text><rect x="1016" y="140" width="88" height="26" rx="5" class="b-blue"/><text x="1060.0" y="157" class="tc" style="font-size:10.8px">bases-prod</text><rect x="1016" y="170" width="88" height="26" rx="5" class="b-blue"/><text x="1060.0" y="187" class="tc" style="font-size:10.8px">bases-rec</text>
+</svg></div>
+<div class="cols c4 nf dense">
+<div class="card"><h3>① Par équipe</h3>Simple, vite en place. Convient à un cloud d'essai ; mélange les environnements.</div>
+<div class="card cb"><h3>② Application × environnement</h3>Cloisonnement fin, à plat. Les droits se posent projet par projet.</div>
+<div class="card ct"><h3>③ Arbre par environnement</h3>Un rôle hérité sur « production » couvre toute la production.</div>
+<div class="card cv"><h3>④ Arbre par application</h3>Un rôle hérité sur « web » donne tous les environnements de l'application.</div>
+</div>
+</div>
+</section>
+
+<!-- 39 -->
+<section class="slide">
+<header><span class="kick">4 · Organiser un SI cloisonné</span><h2>Comparer les quatre modèles</h2></header>
+<div class="body">
+<table class="tbl os xs">
+<thead><tr><th style="width:19%">Critère</th><th style="width:19%">① Par équipe</th><th style="width:20%">② Application × environnement</th><th style="width:21%">③ Arbre par environnement</th><th>④ Arbre par application</th></tr></thead>
+<tbody>
+<tr><td>Nombre de projets</td><td>faible</td><td>élevé</td><td>élevé, plus les nœuds</td><td>élevé, plus les nœuds</td></tr>
+<tr><td>Production isolée des essais</td><td class="n">non</td><td class="y">oui</td><td class="y">oui</td><td class="y">oui</td></tr>
+<tr><td>Incident limité à une application</td><td class="n">non</td><td class="y">oui</td><td class="y">oui</td><td class="y">oui</td></tr>
+<tr><td>Affectations de rôles à gérer</td><td>peu</td><td>beaucoup : une par projet</td><td>peu : héritées par environnement</td><td>peu : héritées par application</td></tr>
+<tr><td>Donner « toute la production » à l'exploitation</td><td>impossible</td><td>une affectation par projet</td><td class="y">une seule, héritée</td><td>une par projet de production</td></tr>
+<tr><td>Donner « toute l'application » à une équipe</td><td>—</td><td>une affectation par projet</td><td>une par projet de l'application</td><td class="y">une seule, héritée</td></tr>
+<tr><td>Plafond global par environnement</td><td class="n">non</td><td>somme tenue à la main</td><td class="y">oui, avec <code>strict_two_level</code></td><td>non</td></tr>
+<tr><td>Plafond global par application</td><td class="n">non</td><td>somme tenue à la main</td><td>non</td><td class="y">oui, avec <code>strict_two_level</code></td></tr>
+<tr><td>Risque principal</td><td>un essai consomme le quota de la production</td><td>dérive : droits oubliés, incohérents</td><td>un rôle hérité trop large en production</td><td>un développeur hérite de la production</td></tr>
+<tr><td>Convient à</td><td>laboratoire, équipe unique</td><td>petit nombre d'applications</td><td>exploitation centralisée</td><td>équipes produit autonomes</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Le choix entre ③ et ④ suit l'organisation :</b> qui a le plus besoin d'un droit transversal — l'exploitation sur un environnement, ou une équipe sur son application ?</div>
+<div class="note g"><b>Le parent étant immuable,</b> passer de ③ à ④ impose de recréer les projets. Le modèle se choisit avant la première création.</div>
+</div>
+</div>
+</section>
+
+<!-- 40 -->
+<section class="slide">
+<header><span class="kick">4 · Organiser un SI cloisonné</span><h2>Un modèle de départ : l'arbre par environnement</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 268">
+
+<path d="M575,52 V75.0 H410 V98" class="nl"/>
+<path d="M575,52 V75.0 H740 V98" class="nl"/>
+<path d="M575,52 V75.0 H575 V98" class="nl"/>
+<path d="M410,142 V169.0 H150 V196" class="nl"/>
+<path d="M410,142 V169.0 H325 V196" class="nl"/>
+<path d="M410,142 V169.0 H500 V196" class="nl"/>
+<path d="M740,142 V169.0 H675 V196" class="nl"/>
+<path d="M740,142 V169.0 H850 V196" class="nl"/>
+<path d="M740,142 V169.0 H1025 V196" class="nl"/>
+<rect x="465.0" y="8" width="220" height="44" rx="8" class="b-dark"/>
+<text x="575" y="35" class="tc tb tw" style="font-size:12.5px">domaine « nord »</text>
+<rect x="335.0" y="98" width="150" height="44" rx="8" class="b-violet"/>
+<text x="410" y="117" class="tc tb" style="font-size:12.5px">prod</text><text x="410" y="133" class="tc ts">nœud</text>
+<rect x="665.0" y="98" width="150" height="44" rx="8" class="b-violet"/>
+<text x="740" y="117" class="tc tb" style="font-size:12.5px">horsprod</text><text x="740" y="133" class="tc ts">nœud</text>
+<rect x="510.0" y="98" width="130" height="44" rx="8" class="b-teal"/>
+<text x="575" y="117" class="tc tb" style="font-size:12.5px">socle</text><text x="575" y="133" class="tc ts">16 cœurs · 2 adr.</text>
+<rect x="70.0" y="196" width="160" height="44" rx="8" class="b-blue"/>
+<text x="150" y="215" class="tc tb" style="font-size:12.5px">prod-web</text><text x="150" y="231" class="tc ts">120 cœurs · 4 adr.</text>
+<rect x="245.0" y="196" width="160" height="44" rx="8" class="b-blue"/>
+<text x="325" y="215" class="tc tb" style="font-size:12.5px">prod-bases</text><text x="325" y="231" class="tc ts">64 cœurs · 0 adr.</text>
+<rect x="420.0" y="196" width="160" height="44" rx="8" class="b-blue"/>
+<text x="500" y="215" class="tc tb" style="font-size:12.5px">prod-data</text><text x="500" y="231" class="tc ts">96 cœurs · 1 adr.</text>
+<rect x="595.0" y="196" width="160" height="44" rx="8" class="b-blue"/>
+<text x="675" y="215" class="tc tb" style="font-size:12.5px">rec-web</text><text x="675" y="231" class="tc ts">40 cœurs · 1 adr.</text>
+<rect x="770.0" y="196" width="160" height="44" rx="8" class="b-blue"/>
+<text x="850" y="215" class="tc tb" style="font-size:12.5px">dev-web</text><text x="850" y="231" class="tc ts">20 cœurs · 0 adr.</text>
+<rect x="945.0" y="196" width="160" height="44" rx="8" class="b-blue"/>
+<text x="1025" y="215" class="tc tb" style="font-size:12.5px">dev-data</text><text x="1025" y="231" class="tc ts">24 cœurs · 0 adr.</text>
+<g class="ts"><rect x="20" y="92" width="250" height="50" rx="8" class="b-amber"/><text x="145" y="113" class="tc tb">hérités sur « prod »</text><text x="145" y="131" class="tc">exploitation : member · audit : reader</text><path d="M270,117 H333" class="lr"/><rect x="880" y="92" width="250" height="50" rx="8" class="b-amber"/><text x="1005" y="113" class="tc tb">hérités sur « horsprod »</text><text x="1005" y="131" class="tc">audit : reader</text><path d="M880,117 H817" class="lr"/><text x="410" y="164" class="tc" style="paint-order:stroke;stroke:#fff;stroke-width:6px">quotas à 0 : aucun dépôt</text><text x="740" y="164" class="tc" style="paint-order:stroke;stroke:#fff;stroke-width:6px">quotas à 0 : aucun dépôt</text></g><text x="150" y="258" class="tc ts">direct : automate web</text><text x="325" y="258" class="tc ts">direct : adm. de bases</text><text x="500" y="258" class="tc ts">direct : automate data</text><text x="675" y="258" class="tc ts">direct : équipe web</text><text x="850" y="258" class="tc ts">direct : équipe web</text><text x="1025" y="258" class="tc ts">direct : équipe data</text>
+</svg></div>
+<div class="cols c3 nf">
+<div class="col"><ul class="pts sm">
+<li><b>Deux niveaux de projets, pas plus :</b> lisible, et compatible avec le modèle de limites <code>strict_two_level</code>.</li>
+<li><b>Les nœuds ne portent aucune ressource :</b> quotas à zéro, ils rangent et transmettent.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Rôles hérités sur les nœuds</b> pour les populations transversales : exploitation, audit, sécurité.</li>
+<li><b>Rôles directs sur les feuilles</b> pour les équipes applicatives.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Préfixe d'environnement dans le nom :</b> imposé par l'unicité des noms dans le domaine.</li>
+<li><b>Une branche « socle »</b> pour ce qui sert à tous : images, réseau commun, supervision.</li>
+</ul></div>
+</div>
+</div>
+</section>
+
+<!-- 41 -->
+<section class="slide">
+<header><span class="kick">4 · Organiser un SI cloisonné</span><h2>Cloisonner le réseau</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:36%">Mécanisme</th><th>Rôle dans le cloisonnement</th></tr></thead>
+<tbody>
+<tr><td>Réseau privé par projet</td><td>segment propre ; invisible des autres projets</td></tr>
+<tr><td>Routeur du projet</td><td>seule sortie vers l'extérieur ; pas de routeur, pas de sortie</td></tr>
+<tr><td>Groupes de sécurité</td><td>filtrage par instance ; tout ce qui entre est refusé par défaut</td></tr>
+<tr><td>Adresses flottantes</td><td>seule manière d'être joint de l'extérieur ; quota à 0 = projet non exposable</td></tr>
+<tr><td>Partage ciblé (RBAC)</td><td>ouvrir un réseau à un projet précis, pas à tous</td></tr>
+<tr><td>Réseau externe</td><td>créé par l'administration ; peut lui aussi être réservé à certains projets</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Deux projets ne se parlent pas par défaut :</b> il faut un routeur commun, un réseau partagé, ou passer par des adresses externes.</li>
+<li><b>Le groupe de sécurité « default »</b> autorise les instances du même groupe à se parler : à revoir dans les projets sensibles.</li>
+</ul>
+</div>
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Projet non exposable : aucune adresse flottante</span>
+<span class="c">openstack quota set</span> prod-bases --floating-ips 0
+
+<span class="m"># Partager le réseau « commun » du socle</span>
+<span class="m"># avec un seul projet, pas avec tout le cloud</span>
+<span class="c">openstack network rbac create</span> \
+  --type network --action access_as_shared \
+  --target-project prod-web  commun
+
+<span class="m"># Réserver un réseau externe à un projet</span>
+<span class="c">openstack network rbac create</span> \
+  --type network --action access_as_external \
+  --target-project prod-web  externe-prod
+
+<span class="m"># Qui a accès à quoi ?</span>
+<span class="c">openstack network rbac list</span> --long</pre>
+<div class="note g"><b>Éviter <code>--share</code> à la création d'un réseau :</b> il l'ouvre à tous les projets, présents et futurs. Le partage ciblé dit explicitement qui entre.</div>
+<div class="note b">Sur Sunbeam, le réseau externe est créé par <code>sunbeam configure</code> ; les réseaux de projets sont des réseaux virtuels portés par OVN.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 42 -->
+<section class="slide">
+<header><span class="kick">4 · Organiser un SI cloisonné</span><h2>Cloisonner le matériel</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Par défaut, tous les projets partagent tous les hyperviseurs.</b> Trois outils, tous réservés à l'administration, permettent d'aller plus loin :</p>
+<table class="tbl tight os">
+<thead><tr><th style="width:32%">Outil</th><th>Effet</th></tr></thead>
+<tbody>
+<tr><td>Agrégat d'hôtes</td><td>groupe nommé d'hyperviseurs, porteur de propriétés ; invisible des utilisateurs</td></tr>
+<tr><td>Zone de disponibilité</td><td>agrégat rendu visible : l'utilisateur la choisit à la création</td></tr>
+<tr><td>Agrégat réservé à des projets</td><td>ces hôtes n'acceptent que les projets listés</td></tr>
+<tr><td>Gabarit privé</td><td>gabarit visible des seuls projets autorisés ; peut cibler un agrégat par ses propriétés</td></tr>
+<tr><td>Type de volume privé</td><td>même principe pour une classe de stockage</td></tr>
+</tbody></table>
+<div class="note"><b>Réserver un agrégat ne suffit pas :</b> les hôtes refusent les autres projets, mais le projet réservataire peut encore être placé ailleurs. Pour une séparation dans les deux sens, lui donner uniquement des gabarits privés qui ciblent l'agrégat.</div>
+</div>
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Un agrégat pour la production sensible</span>
+<span class="c">openstack aggregate create</span> prod-sensible
+<span class="c">openstack aggregate add host</span> prod-sensible noeud-4
+<span class="c">openstack aggregate add host</span> prod-sensible noeud-5
+
+<span class="m"># Le réserver à un projet (identifiant)</span>
+<span class="c">openstack aggregate set</span> prod-sensible \
+  --property filter_tenant_id=$PID \
+  --property classe=sensible
+
+<span class="m"># Gabarit privé, qui cible l'agrégat</span>
+<span class="c">openstack flavor create</span> s.4c8g --private \
+  --vcpus 4 --ram 8192 --disk 40 \
+  --property aggregate_instance_extra_specs:classe=sensible
+<span class="c">openstack flavor set</span> s.4c8g --project $PID</pre>
+<div class="note g"><b>À vérifier sur votre déploiement :</b> ces propriétés n'ont d'effet que si les filtres correspondants de l'ordonnanceur sont actifs. Sur Sunbeam, la configuration de Nova est écrite par les charms : contrôler par un essai avant de s'y fier.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 43 -->
+<section class="slide">
+<header><span class="kick">4 · Organiser un SI cloisonné</span><h2>Les services communs : le projet « socle »</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Ce qui sert à tous ne doit appartenir à aucune application.</b> Un projet — ou une branche — tenu par l'équipe plateforme porte les ressources communes.</p>
+<table class="tbl tight os">
+<thead><tr><th style="width:34%">Ressource commune</th><th>Mode de mise à disposition</th></tr></thead>
+<tbody>
+<tr><td>Images de référence</td><td>visibilité « community » ou « shared », avec la liste des projets membres</td></tr>
+<tr><td>Réseau d'administration</td><td>partage ciblé par RBAC, projet par projet</td></tr>
+<tr><td>Bastion, supervision, journaux</td><td>instances du socle, jointes par le réseau commun</td></tr>
+<tr><td>Gabarits, types de volumes</td><td>publics, ou privés et attribués</td></tr>
+<tr><td>DNS, miroirs de paquets</td><td>instances du socle ; adresses publiées aux projets</td></tr>
+</tbody></table>
+<div class="note g"><b>Image « public » :</b> réservée à l'administration du cloud. Une équipe plateforme sans rôle <code>admin</code> publie en « community » ou partage nommément.</div>
+</div>
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Partager une image du socle avec un projet</span>
+<span class="c">openstack image set</span> --shared ubuntu-24.04-durcie
+<span class="c">openstack image add project</span> \
+  ubuntu-24.04-durcie prod-web
+
+<span class="m"># Côté projet destinataire : accepter</span>
+<span class="c">openstack image set</span> --accept &lt;id-image&gt;</pre>
+<ul class="pts sm">
+<li><b>Le socle est un point de passage :</b> un réseau commun relie tous les projets qui y sont raccordés. Y filtrer strictement, sinon il annule le cloisonnement.</li>
+<li><b>Un socle par niveau d'exigence :</b> la production et le hors-production ne partagent ni bastion ni réseau d'administration.</li>
+<li><b>Droits sur le socle :</b> l'équipe plateforme seule ; les autres consomment, ils ne modifient pas.</li>
+<li><b>Quotas du socle :</b> dimensionnés comme pour toute application — c'est un projet comme un autre.</li>
+</ul>
+<div class="note b">Le socle remplace avantageusement le réflexe « tout mettre dans le projet admin », qui mêle outils communs et pouvoirs d'administration.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 44 -->
+<section class="slide">
+<header><span class="kick">4 · Organiser un SI cloisonné</span><h2>Séparer production et hors production</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:19%">Dimension</th><th style="width:27%">Production</th><th style="width:27%">Hors production</th><th>Moyen technique</th></tr></thead>
+<tbody>
+<tr><td>Qui crée et supprime</td><td>exploitation, automates de déploiement</td><td>équipes de développement</td><td style="color:var(--ink);font-weight:400">groupes distincts, rôle <code>member</code></td></tr>
+<tr><td>Accès des développeurs</td><td>lecture seule</td><td>complet</td><td style="color:var(--ink);font-weight:400">rôle <code>reader</code> hérité sur la branche</td></tr>
+<tr><td>Quotas</td><td>calculés sur le besoin, marge comprise</td><td>serrés, révisés souvent</td><td style="color:var(--ink);font-weight:400">quotas par projet ; plafond de branche</td></tr>
+<tr><td>Exposition externe</td><td>points d'entrée identifiés</td><td>aucune, ou par bastion</td><td style="color:var(--ink);font-weight:400">quota d'adresses flottantes, réseau externe réservé</td></tr>
+<tr><td>Réseau</td><td>jamais partagé avec le hors-production</td><td>réseaux propres</td><td style="color:var(--ink);font-weight:400">pas de routeur ni de RBAC commun</td></tr>
+<tr><td>Matériel</td><td>hôtes dédiés si l'exigence le demande</td><td>hôtes mutualisés, surallocation plus forte</td><td style="color:var(--ink);font-weight:400">agrégats, gabarits privés</td></tr>
+<tr><td>Identifiants d'automates</td><td>propres à la production</td><td>propres au hors-production</td><td style="color:var(--ink);font-weight:400">identifiants d'application par projet</td></tr>
+<tr><td>Durée de vie des ressources</td><td>longue, tracée</td><td>courte, nettoyée régulièrement</td><td style="color:var(--ink);font-weight:400">étiquettes, revue périodique</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Le critère de réussite :</b> aucun compte, aucun réseau, aucun identifiant d'automate ne donne à la fois le droit d'écrire en production et hors production.</div>
+<div class="note g"><b>Exigence plus forte encore ?</b> Deux domaines, voire deux clouds. Le projet sépare les ressources ; il ne sépare ni le plan de contrôle ni les administrateurs.</div>
+</div>
+</div>
+</section>
+
+<!-- 45 -->
+<section class="slide">
+<header><span class="kick">4 · Organiser un SI cloisonné</span><h2>Conventions de nommage et étiquettes</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:27%">Objet</th><th style="width:38%">Convention</th><th>Exemple</th></tr></thead>
+<tbody>
+<tr><td>Nœud d'environnement</td><td>nom de l'environnement</td><td><code>prod</code>, <code>horsprod</code></td></tr>
+<tr><td>Projet feuille</td><td>environnement-application</td><td><code>prod-web</code>, <code>rec-web</code></td></tr>
+<tr><td>Groupe applicatif</td><td>projet-niveau d'accès</td><td><code>prod-web-dev</code>, <code>prod-web-lecture</code></td></tr>
+<tr><td>Groupe transversal</td><td>fonction-périmètre</td><td><code>exploitation-prod</code></td></tr>
+<tr><td>Réseau</td><td>projet-usage</td><td><code>prod-web-front</code></td></tr>
+<tr><td>Agrégat</td><td>environnement-classe</td><td><code>prod-sensible</code></td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Le nom porte ce qui ne change pas :</b> environnement et application. Le reste — propriétaire, centre de coût, échéance — va dans les étiquettes.</li>
+<li><b>Minuscules, tirets, pas d'espace :</b> les noms finissent dans des scripts.</li>
+<li><b>Le nom d'un projet peut être modifié,</b> son parent non : une erreur de nom se corrige, une erreur de branche se paie.</li>
+</ul>
+</div>
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Étiqueter à la création</span>
+<span class="c">openstack project create</span> prod-web \
+  --domain nord --parent prod \
+  --description "Site web — production" \
+  --tag env:prod --tag app:web \
+  --tag proprietaire:equipe-web --tag cout:cc-4410
+
+<span class="m"># Retrouver tous les projets de production</span>
+<span class="c">openstack project list</span> --tags env:prod
+
+<span class="m"># Tous ceux d'une équipe, hors production</span>
+<span class="c">openstack project list</span> \
+  --tags proprietaire:equipe-web --not-tags env:prod</pre>
+<table class="tbl tight">
+<thead><tr><th style="width:34%">Étiquette</th><th>Sert à</th></tr></thead>
+<tbody>
+<tr><td><code>env:</code></td><td>filtrer les revues, appliquer des gabarits de quotas</td></tr>
+<tr><td><code>app:</code></td><td>regrouper les environnements d'une application</td></tr>
+<tr><td><code>proprietaire:</code></td><td>savoir qui appeler ; revue des droits</td></tr>
+<tr><td><code>cout:</code></td><td>refacturation, rapports de consommation</td></tr>
+<tr><td><code>echeance:</code></td><td>repérer les projets temporaires à supprimer</td></tr>
+</tbody></table>
+</div>
+</div></div>
+</section>
+
+<!-- 46 -->
+<section class="slide">
+<header><span class="kick">4 · Organiser un SI cloisonné</span><h2>Scénario chiffré : une organisation, trois applications</h2></header>
+<div class="body">
+<table class="tbl os xs">
+<thead><tr><th style="width:15%">Projet</th><th style="width:10%">Parent</th><th style="width:8%">Instances</th><th style="width:7%">Cœurs</th><th style="width:9%">Mémoire</th><th style="width:9%">Volumes</th><th style="width:9%">Adr. flott.</th><th style="width:16%">Rôles directs</th><th>Rôles hérités reçus</th></tr></thead>
+<tbody>
+<tr><td><code>prod</code></td><td>—</td><td class="c">0</td><td class="c">0</td><td class="c">0</td><td class="c">0</td><td class="c">0</td><td>aucun</td><td>—</td></tr>
+<tr><td><code>prod-web</code></td><td><code>prod</code></td><td class="c">30</td><td class="c">120</td><td class="c">240 Gio</td><td class="c">3 000 Go</td><td class="c">4</td><td>automate de déploiement web</td><td rowspan="3">exploitation-prod : <code>member</code><br>audit : <code>reader</code><br>développeurs : <code>reader</code></td></tr>
+<tr><td><code>prod-bases</code></td><td><code>prod</code></td><td class="c">8</td><td class="c">64</td><td class="c">256 Gio</td><td class="c">6 000 Go</td><td class="c">0</td><td>administrateurs de bases</td></tr>
+<tr><td><code>prod-data</code></td><td><code>prod</code></td><td class="c">12</td><td class="c">96</td><td class="c">384 Gio</td><td class="c">10 000 Go</td><td class="c">1</td><td>automate de déploiement data</td></tr>
+<tr><td><code>horsprod</code></td><td>—</td><td class="c">0</td><td class="c">0</td><td class="c">0</td><td class="c">0</td><td class="c">0</td><td>aucun</td><td>—</td></tr>
+<tr><td><code>rec-web</code></td><td><code>horsprod</code></td><td class="c">10</td><td class="c">40</td><td class="c">80 Gio</td><td class="c">800 Go</td><td class="c">1</td><td>équipe web</td><td rowspan="3">audit : <code>reader</code><br>exploitation-prod : <code>reader</code></td></tr>
+<tr><td><code>dev-web</code></td><td><code>horsprod</code></td><td class="c">10</td><td class="c">20</td><td class="c">40 Gio</td><td class="c">400 Go</td><td class="c">0</td><td>équipe web</td></tr>
+<tr><td><code>dev-data</code></td><td><code>horsprod</code></td><td class="c">6</td><td class="c">24</td><td class="c">96 Gio</td><td class="c">2 000 Go</td><td class="c">0</td><td>équipe data</td></tr>
+<tr><td><code>socle</code></td><td>—</td><td class="c">6</td><td class="c">16</td><td class="c">32 Gio</td><td class="c">500 Go</td><td class="c">2</td><td>équipe plateforme</td><td>—</td></tr>
+<tr><td><b>Total alloué</b></td><td></td><td class="c"><b>82</b></td><td class="c"><b>380</b></td><td class="c"><b>1 128 Gio</b></td><td class="c"><b>22 700 Go</b></td><td class="c"><b>8</b></td><td colspan="2" style="color:var(--ink);font-weight:400">à rapprocher de la capacité réelle du cloud et de la plage d'adresses externes</td></tr>
+</tbody></table>
+<div class="cols c3 nf">
+<div class="note"><b>Lecture :</b> les nœuds <code>prod</code> et <code>horsprod</code> ont des quotas nuls — on n'y crée rien. Les bases n'ont aucune adresse flottante : elles ne sont pas exposables.</div>
+<div class="note g"><b>Les développeurs lisent la production</b> sans pouvoir y écrire ; l'exploitation lit le hors-production. Personne n'écrit des deux côtés.</div>
+<div class="note b"><b>Chiffres illustratifs,</b> construits pour l'exemple : à remplacer par l'inventaire réel et la méthode de dimensionnement vue plus haut.</div>
+</div>
+</div>
+</section>
+
+<!-- 47 -->
+<section class="slide dark sec">
+<div class="num">05</div>
+<h2>Mise en œuvre sur Sunbeam</h2>
+<p>Sunbeam installe et exploite le cloud ; l'organisation en projets, rôles et quotas se construit ensuite par l'API d'OpenStack, avec les identifiants d'administration qu'il fournit.</p>
+<ol><li>Pas à pas : l'arbre et les rôles</li><li>Pas à pas : quotas, réseau, vérification</li><li>Revue et suivi de consommation</li><li>Bonnes pratiques et erreurs fréquentes</li><li>Synthèse</li></ol>
+</section>
+
+<!-- 48 -->
+<section class="slide">
+<header><span class="kick">5 · Mise en œuvre</span><h2>Pas à pas (1) : l'arbre et les rôles</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Étape 0 — prérequis : cloud Sunbeam déployé,</span>
+<span class="m"># client openstack installé, domaine « nord » créé</span>
+<span class="c">sunbeam openrc</span> &gt; admin-openrc
+<span class="c">source</span> admin-openrc
+<span class="c">openstack domain show</span> nord -c id -c enabled
+
+<span class="m"># Étape 1 — les nœuds de l'arbre</span>
+<span class="k">for</span> n <span class="k">in</span> prod horsprod; <span class="k">do</span>
+  <span class="c">openstack project create</span> $n --domain nord \
+    --description "Branche $n" --tag role:noeud
+<span class="k">done</span>
+<span class="c">openstack project create</span> socle --domain nord \
+  --tag env:commun
+
+<span class="m"># Étape 2 — les feuilles : projet:parent:env:application</span>
+<span class="k">for</span> f <span class="k">in</span> prod-web:prod:prod:web prod-bases:prod:prod:bases \
+  prod-data:prod:prod:data rec-web:horsprod:rec:web \
+  dev-web:horsprod:dev:web dev-data:horsprod:dev:data; <span class="k">do</span>
+  IFS=: read p par env app &lt;&lt;&lt; "$f"
+  <span class="c">openstack project create</span> $p --domain nord \
+    --parent $par --tag env:$env --tag app:$app
+<span class="k">done</span></pre>
+</div>
+<div class="col">
+<pre style="font-size:11px"><span class="m"># Étape 3 — les groupes</span>
+<span class="k">for</span> g <span class="k">in</span> exploitation-prod audit developpeurs \
+         equipe-web equipe-data dba; <span class="k">do</span>
+  <span class="c">openstack group create</span> $g --domain nord
+<span class="k">done</span>
+
+<span class="m"># Étape 4 — rôles hérités sur les nœuds : groupe:rôle:nœud</span>
+<span class="k">for</span> a <span class="k">in</span> exploitation-prod:member:prod developpeurs:reader:prod \
+  audit:reader:prod audit:reader:horsprod \
+  exploitation-prod:reader:horsprod; <span class="k">do</span>
+  IFS=: read g r n &lt;&lt;&lt; "$a"
+  <span class="c">openstack role add</span> $r --inherited --group $g \
+    --group-domain nord --project $n --project-domain nord
+<span class="k">done</span>
+
+<span class="m"># Étape 5 — rôles directs sur les feuilles : groupe:projet</span>
+<span class="k">for</span> a <span class="k">in</span> equipe-web:rec-web equipe-web:dev-web \
+  equipe-data:dev-data dba:prod-bases; <span class="k">do</span>
+  IFS=: read g p &lt;&lt;&lt; "$a"
+  <span class="c">openstack role add</span> member --group $g --group-domain nord \
+    --project $p --project-domain nord
+<span class="k">done</span>
+
+<span class="m"># Contrôle : l'arbre, puis les droits effectifs</span>
+<span class="c">openstack project show</span> prod --domain nord --children
+<span class="c">openstack role assignment list</span> --effective \
+  --project prod-web --project-domain nord --names</pre>
+</div>
+</div>
+<div class="note g"><b>Si le domaine est raccordé à un annuaire</b> (<code>sunbeam ldap add-domain</code>), les groupes viennent de l'annuaire : on saute l'étape 3 et l'on affecte les rôles aux groupes existants. Les automates de prod-web et prod-data reçoivent un identifiant d'application (module 8), pas un groupe.</div>
+</div>
+</section>
+
+<!-- 49 -->
+<section class="slide">
+<header><span class="kick">5 · Mise en œuvre</span><h2>Pas à pas (2) : quotas, réseau, vérification</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Étape 6 — quotas nuls sur les nœuds</span>
+<span class="k">for</span> n <span class="k">in</span> prod horsprod; <span class="k">do</span>
+  ID=$(openstack project show $n --domain nord -f value -c id)
+  <span class="c">openstack quota set</span> $ID --instances 0 --cores 0 \
+    --ram 0 --volumes 0 --gigabytes 0 \
+    --networks 0 --routers 0 --floating-ips 0
+<span class="k">done</span>
+
+<span class="m"># Étape 7 — quotas des feuilles</span>
+ID=$(openstack project show prod-web --domain nord -f value -c id)
+<span class="c">openstack quota set</span> $ID \
+  --instances 30 --cores 120 --ram 245760 \
+  --volumes 60 --gigabytes 3000 --snapshots 60 \
+  --networks 4 --subnets 8 --routers 1 --ports 100 \
+  --floating-ips 4 --secgroups 20 --secgroup-rules 200
+
+ID=$(openstack project show prod-bases --domain nord -f value -c id)
+<span class="c">openstack quota set</span> $ID \
+  --instances 8 --cores 64 --ram 262144 \
+  --volumes 32 --gigabytes 6000 \
+  --networks 2 --routers 1 --ports 40 --floating-ips 0</pre>
+<div class="note g">Même schéma pour chaque feuille : les valeurs viennent du tableau de dimensionnement, jamais d'une copie du projet voisin.</div>
+</div>
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Étape 8 — réseau commun du socle, partagé au cas par cas</span>
+<span class="c">openstack network rbac create</span> --type network \
+  --action access_as_shared \
+  --target-project prod-web  commun
+
+<span class="m"># Étape 9 — vérifier les plafonds posés</span>
+<span class="c">openstack quota show</span> --usage $ID
+
+<span class="m"># Étape 10 — vérifier la cloison avec le compte de dana,</span>
+<span class="m"># membre de developpeurs et d'equipe-web (pas d'admin-openrc)</span>
+<span class="c">export</span> OS_USERNAME=dana OS_USER_DOMAIN_NAME=nord \
+  OS_PROJECT_DOMAIN_NAME=nord
+<span class="c">read</span> -s OS_PASSWORD &amp;&amp; <span class="c">export</span> OS_PASSWORD
+<span class="c">openstack</span> --os-project-name prod-web \
+  server create --flavor m1.small --image ubuntu essai
+<span class="m"># attendu : 403 — la politique refuse la création</span>
+<span class="c">openstack</span> --os-project-name dev-web server list
+<span class="m"># attendu : uniquement les instances de dev-web</span></pre>
+<table class="tbl tight os">
+<thead><tr><th style="width:44%">Essai</th><th>Résultat attendu</th></tr></thead>
+<tbody>
+<tr><td>Développeur : lister en production</td><td>autorisé — <code>reader</code> hérité</td></tr>
+<tr><td>Développeur : créer en production</td><td>refusé par la politique</td></tr>
+<tr><td>Créer une instance dans le nœud <code>prod</code></td><td>refusé par le quota</td></tr>
+<tr><td>Adresse flottante dans <code>prod-bases</code></td><td>refusée par le quota</td></tr>
+<tr><td>31<sup>e</sup> instance dans <code>prod-web</code></td><td>refusée par le quota</td></tr>
+</tbody></table>
+</div>
+</div></div>
+</section>
+
+<!-- 50 -->
+<section class="slide">
+<header><span class="kick">5 · Mise en œuvre</span><h2>Revue et suivi de consommation</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Consommation et plafonds de chaque projet de production</span>
+<span class="k">for</span> p <span class="k">in</span> $(openstack project list --tags env:prod \
+            -f value -c ID); <span class="k">do</span>
+  <span class="c">openstack quota show</span> --usage $p
+<span class="k">done</span>
+
+<span class="m"># Heures consommées sur une période, par projet</span>
+<span class="c">openstack usage list</span> --start 2026-09-01 --end 2026-10-01
+
+<span class="m"># Capacité réelle, côté hyperviseurs</span>
+<span class="c">openstack hypervisor list</span> --long
+
+<span class="m"># Qui a quoi : toutes les affectations d'une branche</span>
+<span class="c">openstack role assignment list</span> --names \
+  --project prod --project-domain nord --inherited</pre>
+<div class="note b">Ces relevés se prêtent à un script planifié : un tableau par mois suffit à repérer les dérives avant qu'elles ne deviennent des incidents.</div>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:36%">Constat</th><th>Décision</th></tr></thead>
+<tbody>
+<tr><td>Consommation &gt; 80 % du quota</td><td>relever avant le blocage, ou faire le ménage</td></tr>
+<tr><td>Consommation &lt; 30 % depuis trois mois</td><td>abaisser : la marge inutile se reprend</td></tr>
+<tr><td>Somme des quotas ≫ capacité</td><td>surallocation à assumer par écrit, ou à réduire</td></tr>
+<tr><td>Projet sans étiquette de propriétaire</td><td>retrouver le responsable, ou désactiver</td></tr>
+<tr><td>Projet sans ressource ni connexion</td><td>désactiver, puis supprimer après délai</td></tr>
+<tr><td>Rôle direct sur un nœud</td><td>vérifier qu'il est voulu : il ne sert qu'au nœud</td></tr>
+<tr><td>Utilisateur nommé plutôt qu'un groupe</td><td>remplacer par une appartenance à un groupe</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Fréquence :</b> consommation chaque mois ; droits chaque trimestre ; modèle d'organisation chaque année.</li>
+<li><b>Deux regards :</b> la plateforme vérifie la capacité, le propriétaire du projet confirme les droits.</li>
+<li><b>Avant de supprimer un projet :</b> vider ses ressources dans chaque service — Keystone ne le fait pas.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 51 -->
+<section class="slide">
+<header><span class="kick">5 · Mise en œuvre</span><h2>Bonnes pratiques et erreurs fréquentes</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>À faire</b></p>
+<ul class="pts sm">
+<li><b>Dessiner l'arbre avant de créer :</b> le parent est définitif.</li>
+<li><b>Un projet par application et par environnement,</b> même pour une petite application.</li>
+<li><b>Baisser les quotas par défaut</b> avant d'ouvrir le cloud : un projet neuf ne doit rien pouvoir consommer d'important.</li>
+<li><b>Affecter les rôles à des groupes,</b> jamais à des personnes.</li>
+<li><b>Réserver l'héritage aux populations transversales ;</b> les équipes applicatives reçoivent des rôles directs.</li>
+<li><b>Décrire l'organisation en code</b> — Terraform ou scripts versionnés : l'arbre, les rôles et les quotas se relisent et se rejouent.</li>
+<li><b>Tester la cloison</b> avec un compte ordinaire après chaque changement.</li>
+<li><b>Garder un projet de démonstration</b> à part : celui que crée <code>sunbeam configure</code> n'a rien à faire en production.</li>
+</ul>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:42%">Erreur fréquente</th><th>Conséquence</th></tr></thead>
+<tbody>
+<tr><td>Tout dans un seul projet par équipe</td><td>un essai épuise le quota de la production</td></tr>
+<tr><td>Travailler dans le projet <code>admin</code></td><td>ressources mêlées aux pouvoirs d'administration</td></tr>
+<tr><td>Croire que le parent voit ses enfants</td><td>droits manquants, ou accordés trop haut pour compenser</td></tr>
+<tr><td>Rôle hérité posé sur le domaine « pour simplifier »</td><td>tout nouveau projet est ouvert d'office</td></tr>
+<tr><td>Quotas illimités « provisoires »</td><td>plus aucune protection ; jamais rétablis</td></tr>
+<tr><td>Réseau créé avec <code>--share</code></td><td>tous les projets y accèdent</td></tr>
+<tr><td>Arbre à quatre ou cinq niveaux</td><td>droits effectifs illisibles ; limites hiérarchiques inutilisables</td></tr>
+</tbody></table>
+<div class="note"><b>Règle d'or :</b> chaque projet a un propriétaire, un usage et un plafond connus.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 52 -->
+<section class="slide">
+<header><span class="kick">Synthèse</span><h2>Ce qu'il faut retenir</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card cb"><h3>Le projet et l'arbre</h3>
+<ul class="pts sm"><li>Toute ressource appartient à un projet ; l'isolation est faite par chaque service.</li><li>L'arbre range et fait descendre des rôles ; il ne donne aucune visibilité du parent sur l'enfant.</li><li>Parent définitif, noms uniques dans le domaine.</li><li>Rôle hérité : s'applique en dessous, pas au nœud.</li></ul></div>
+<div class="card ca"><h3>Les quotas</h3>
+<ul class="pts sm"><li>Un plafond par projet, par ressource, par service.</li><li>Vérifiés à l'entrée de l'API ; ils ne réservent rien.</li><li>Les valeurs par défaut sont le réglage le plus important.</li><li>Limites unifiées : valeurs dans Keystone, modèle plat ou à deux niveaux.</li></ul></div>
+<div class="card cv"><h3>L'organisation</h3>
+<ul class="pts sm"><li>Quatre niveaux : domaine, projet, réseau, matériel.</li><li>Croiser application et environnement.</li><li>Arbre par environnement ou par application, selon qui a besoin du droit transversal.</li><li>Un socle pour le commun ; rien d'écrit des deux côtés de la cloison.</li></ul></div>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:30%">Question</th><th>Réponse courte</th></tr></thead>
+<tbody>
+<tr><td>Quand créer un projet ?</td><td>dès qu'une application, un environnement ou un niveau de sensibilité diffère</td></tr>
+<tr><td>Quand créer un sous-projet ?</td><td style="color:var(--ink);font-weight:400">quand un même droit doit couvrir plusieurs projets, ou qu'un plafond commun doit les coiffer</td></tr>
+<tr><td>Comment fixer un quota ?</td><td style="color:var(--ink);font-weight:400">besoin en pointe, plus 20 à 30 % ; cohérent entre calcul, stockage et réseau ; revu chaque mois</td></tr>
+<tr><td>Sur Sunbeam ?</td><td style="color:var(--ink);font-weight:400"><code>sunbeam openrc</code> pour les identifiants d'administration ; tout le reste par l'API d'OpenStack, de préférence en code versionné</td></tr>
+</tbody></table>
+<div class="note g"><b>Sources :</b> documentation de Keystone (limites unifiées, projets hiérarchiques), documentation de Nova (quotas, limites unifiées), documentation de Canonical OpenStack 2026.1 — consultées en octobre 2026. Les valeurs par défaut des quotas et les chiffres des exemples sont à vérifier sur votre déploiement.</div>
+</div>
+</section>
+
+</div>
+<div id="bar"></div>
+<div id="nav"><button id="bO" title="Vue d'ensemble (O)">▦</button><button id="bF" title="Plein écran (F)">⛶</button><button id="bP" title="Précédent (←)">←</button><button id="bN" title="Suivant (→)">→</button></div>
+<script>
+(function(){
+var stage=document.getElementById('stage'),bar=document.getElementById('bar'),body=document.body;
+var slides=Array.prototype.slice.call(document.querySelectorAll('.slide')),N=slides.length,cur=0;
+slides.forEach(function(s,i){
+  var f=document.createElement('div');f.className='foot';
+  f.innerHTML='<span>OpenStack · Module 10 — Projets, hiérarchie et quotas</span><span>'+(i+1)+' / '+N+'</span>';
+  s.appendChild(f);
+  s.addEventListener('click',function(){if(body.classList.contains('ov')){body.classList.remove('ov');go(i);fit();}});
+});
+function go(n){
+  cur=Math.max(0,Math.min(N-1,n));
+  slides.forEach(function(s,i){s.classList.toggle('active',i===cur);});
+  bar.style.width=((cur+1)/N*100)+'%';
+  try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+}
+function fit(){
+  if(body.classList.contains('ov')){
+    stage.style.transform='';
+    document.documentElement.style.setProperty('--z',Math.max(.1,(window.innerWidth-40-4*14-20)/5/1280));
+  }else{
+    stage.style.transform='scale('+Math.min(window.innerWidth/1280,window.innerHeight/720)+')';
+  }
+}
+function overview(){body.classList.toggle('ov');fit();if(body.classList.contains('ov')){slides[cur].scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}}
+function full(){if(document.fullscreenElement){document.exitFullscreen();}else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen();}}
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'||k===' '||k==='ArrowDown'){e.preventDefault();go(cur+1);}
+  else if(k==='ArrowLeft'||k==='PageUp'||k==='ArrowUp'){e.preventDefault();go(cur-1);}
+  else if(k==='Home'){go(0);}
+  else if(k==='End'){go(N-1);}
+  else if(k==='o'||k==='O'||k==='Escape'){if(k!=='Escape'||body.classList.contains('ov'))overview();}
+  else if(k==='f'||k==='F'){full();}
+});
+document.getElementById('bN').onclick=function(){go(cur+1);};
+document.getElementById('bP').onclick=function(){go(cur-1);};
+document.getElementById('bO').onclick=overview;
+document.getElementById('bF').onclick=full;
+var tx=null;
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){if(tx===null||body.classList.contains('ov'))return;var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1));tx=null;},{passive:true});
+window.addEventListener('resize',fit);
+window.addEventListener('hashchange',function(){var h=parseInt(location.hash.slice(1),10);if(h&&h-1!==cur)go(h-1);});
+var h=parseInt(location.hash.slice(1),10);
+go(h?h-1:0);fit();
+})();
+</script>
+</body>
+</html>

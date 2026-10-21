@@ -1,0 +1,1772 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenStack · Module 1 — Panorama</title>
+<style>
+:root{--ink:#0f172a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;--navy:#101a33;--red:#e4002b;--red2:#b3122f;--blue:#2563eb;--teal:#0d9488;--amber:#d97706;--violet:#7c3aed;--green:#16a34a;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;--z:.2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#070b17;overflow:hidden;font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:#fff;color:var(--ink);padding:38px 64px 46px;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide>header{border-left:5px solid var(--red);padding:2px 0 2px 18px;margin-bottom:18px;flex:none}
+.kick{display:block;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+h2{font-size:32px;line-height:1.15;letter-spacing:-.012em;font-weight:750}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;font-size:17.5px;line-height:1.45;color:var(--ink2)}
+.body b,.body strong{color:var(--ink);font-weight:680}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;min-height:0}
+.cols.c3{grid-template-columns:repeat(3,1fr);gap:18px}
+.cols.c4{grid-template-columns:repeat(4,1fr);gap:14px}
+.cols.c5{grid-template-columns:repeat(5,1fr);gap:12px}
+.cols.w64{grid-template-columns:1.45fr 1fr}
+.cols.w46{grid-template-columns:1fr 1.35fr}
+.cols.nf{flex:none}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+ul.pts{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.pts li{padding-left:22px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.52em;width:8px;height:8px;border-radius:2px;background:var(--red)}
+ul.pts.sm{gap:5px;font-size:15px;line-height:1.38}
+ul.pts.sm li{padding-left:17px}
+ul.pts.sm li::before{width:6px;height:6px;top:.5em}
+.card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--c,var(--red));border-radius:10px;padding:13px 16px;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:15px;line-height:1.4;min-width:0}
+.card h3{font-size:16.5px;color:var(--ink);margin-bottom:5px;line-height:1.2}
+.card .os{display:block;margin-top:7px;font-size:13px;color:var(--mut)}
+.card .os b{color:var(--red2)}
+.cb{--c:var(--blue)}.ct{--c:var(--teal)}.ca{--c:var(--amber)}.cv{--c:var(--violet)}.cg{--c:var(--green)}.cn{--c:var(--navy)}
+.note{background:#fff5f6;border-left:4px solid var(--red);padding:9px 16px;border-radius:0 8px 8px 0;font-size:15.5px;color:var(--ink);flex:none}
+.note.b{background:#eff5ff;border-color:var(--blue)}
+.note.g{background:#f1f5f9;border-color:#64748b}
+table.tbl{width:100%;border-collapse:collapse;font-size:14.5px;line-height:1.35}
+.tbl th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-size:13px;letter-spacing:.03em;font-weight:650}
+.tbl td{padding:6.5px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:nth-child(even) td{background:#f8fafc}
+.tbl td:first-child{font-weight:680;color:var(--ink);white-space:nowrap}
+.tbl.os td:nth-child(2){color:var(--red2);font-weight:650}
+.tbl.tight td{padding:5px 12px;font-size:14px}
+table.resp{width:100%;border-collapse:separate;border-spacing:5px 4px;font-size:14.5px;text-align:center}
+.resp thead th{font-size:15px;color:var(--ink);padding:2px 4px 6px;line-height:1.2}
+.resp thead small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+.resp tbody th{text-align:right;padding-right:12px;font-weight:650;color:var(--ink);white-space:nowrap;width:210px}
+.resp td{padding:6px;border-radius:6px;font-weight:600}
+.resp .u{background:#e3edff;color:#1d4ed8}
+.resp .p{background:#fde8ec;color:var(--red2)}
+code{font-family:var(--mono);font-size:.87em;background:#f1f5f9;padding:1px 6px;border-radius:4px;color:var(--ink)}
+pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;font:13.5px/1.5 var(--mono);white-space:pre;overflow:hidden}
+pre .c{color:#7dd3fc}pre .k{color:#fda4af}pre .m{color:#94a3b8}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:#fde8ec;color:var(--red2);letter-spacing:.03em}
+.fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:100%}
+.foot{position:absolute;left:64px;right:64px;bottom:15px;display:flex;justify-content:space-between;font-size:11.5px;color:#94a3b8;letter-spacing:.02em}
+/* dark slides */
+.slide.dark{background:radial-gradient(1100px 600px at 85% 15%,#1c2a55 0%,var(--navy) 55%,#0b1226 100%);color:#fff;justify-content:center}
+.dark .foot{color:#64748b}
+.dark .kick{color:#ff6b84}
+h1{font-size:68px;line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:10px 0 14px}
+.sub{font-size:27px;color:#cbd5e1;font-weight:400}
+.chips{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin-top:34px}
+.chips li{border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:7px 16px;font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.04)}
+.ref{margin-top:36px;font-size:14px;color:#94a3b8}
+.deco{position:absolute;right:0;top:0;width:1280px;height:720px;pointer-events:none}
+.tt{position:relative;max-width:760px}
+.sec .num{font-size:150px;font-weight:800;line-height:.9;color:transparent;-webkit-text-stroke:2px #ff4d6a;letter-spacing:-.04em}
+.sec h2{font-size:50px;margin:16px 0 12px;letter-spacing:-.02em}
+.sec p{font-size:20px;color:#cbd5e1;max-width:820px;line-height:1.45}
+.sec ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:9px 40px;margin-top:30px;max-width:980px;font-size:16.5px;color:#e2e8f0}
+.sec ol li{padding-left:20px;position:relative}
+.sec ol li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:3px;background:#ff4d6a}
+/* svg */
+svg{display:block}
+svg{font-size:14px}
+svg text{font-family:inherit;fill:#0f172a}
+svg g.ts text{fill:#475569}svg g.tw text{fill:#fff}
+.big .card{font-size:17px;padding:18px 16px;display:flex;flex-direction:column;line-height:1.42}.big .card h3{font-size:19px;margin-bottom:12px}.big .card .os{font-size:14.5px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line);line-height:1.4}
+.dense .card{font-size:14px;padding:10px 14px;line-height:1.36}.dense .card h3{font-size:15.5px;margin-bottom:3px}
+.tc{text-anchor:middle}.te{text-anchor:end}
+svg .tb{font-weight:700}svg .ts{font-size:12px;fill:#475569}svg .tl{font-size:17px;font-weight:750}svg .tw{fill:#fff}svg .tr{fill:#b3122f}
+svg .tm{font-family:var(--mono);font-size:12px}
+.bx{fill:#fff;stroke:#94a3b8;stroke-width:1.5}
+.b-red{fill:#fde8ec;stroke:#e4002b;stroke-width:1.5}
+.b-blue{fill:#e3edff;stroke:#2563eb;stroke-width:1.5}
+.b-teal{fill:#d8f3ee;stroke:#0d9488;stroke-width:1.5}
+.b-amber{fill:#fdf0d5;stroke:#d97706;stroke-width:1.5}
+.b-violet{fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5}
+.b-green{fill:#dcf5e3;stroke:#16a34a;stroke-width:1.5}
+.b-grey{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5}
+.b-dark{fill:#101a33;stroke:#101a33}
+.f-red{fill:#e4002b}
+.zone{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 4}
+.ln{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar)}
+.ln2{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar);marker-start:url(#ar)}
+.lr{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr)}
+.lr2{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr);marker-start:url(#arr)}
+.ld{stroke-dasharray:5 4}
+.nl{stroke:#94a3b8;stroke-width:1.5;fill:none}
+/* ui */
+#bar{position:fixed;left:0;bottom:0;height:3px;background:var(--red);width:0;transition:width .2s;z-index:5}
+#nav{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;display:flex;gap:6px;z-index:6;opacity:.07;transition:opacity .2s}
+#nav:hover{opacity:1}
+#nav button{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;font:600 13px/1 inherit;padding:7px 10px;cursor:pointer}
+#nav button:hover{background:var(--red);border-color:var(--red)}
+body.ov{overflow:auto}
+body.ov #stage{position:static;margin:0;width:auto;height:auto;transform:none!important;display:flex;flex-wrap:wrap;gap:14px;padding:20px}
+body.ov .slide{display:flex;position:relative;inset:auto;flex:none;width:1280px;height:720px;zoom:var(--z);cursor:pointer;border-radius:8px}
+body.ov .slide.active{outline:14px solid var(--red)}
+@page{size:1280px 720px;margin:0}
+@media print{
+html,body{height:auto;overflow:visible;background:#fff}
+#stage{position:static;margin:0;width:1280px;height:auto;transform:none!important;display:block}
+.slide{display:flex!important;position:relative;inset:auto;width:1280px;height:720px;break-after:page;page-break-after:always;zoom:1!important}
+#bar,#nav{display:none}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.kick .deep{display:inline-block;margin-left:12px;padding:2px 10px;border-radius:99px;background:#eff5ff;color:#1d4ed8;font-weight:650;font-size:11.5px;letter-spacing:.02em;text-transform:none;vertical-align:1px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e4002b"/></marker>
+</defs></svg>
+<div id="stage">
+
+<!-- 1 -->
+<section class="slide dark">
+<svg class="deco" viewBox="0 0 1280 720" aria-hidden="true"><g transform="translate(-60,0)">
+<g fill="none" stroke="#ff4d6a" stroke-width="2" opacity=".85">
+<path d="M900,470 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.16)"/>
+<path d="M900,400 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.24)"/>
+<path d="M900,330 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.34)"/>
+<path d="M900,260 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.5)"/>
+</g>
+<g stroke="#334a85" stroke-width="1" opacity=".6"><path d="M860,180 H1240 M860,570 H1240 M860,180 V570 M1240,180 V570" stroke-dasharray="3 7"/></g>
+<g font-size="12" fill="#94a3b8" font-weight="700" letter-spacing="2"><text x="1210" y="264" style="fill:#cbd5e1">API</text><text x="1210" y="334" style="fill:#cbd5e1">CALCUL</text><text x="1210" y="404" style="fill:#cbd5e1">RÉSEAU</text><text x="1210" y="474" style="fill:#cbd5e1">STOCKAGE</text></g>
+</g></svg>
+<div class="tt">
+<span class="kick">Comprendre OpenStack · module 1</span>
+<h1>Panorama d'OpenStack</h1>
+<p class="sub">Le cloud, le projet, les alternatives, l'architecture d'ensemble</p>
+<ul class="chips"><li>Cloud, IaaS et PaaS</li><li>VMware · OpenShift · clouds publics</li><li>Le projet OpenStack</li><li>Composants et interactions</li></ul>
+<p class="ref">Version de référence : OpenStack 2026.2 « Hibiscus » (30 septembre 2026)</p>
+</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Objectif et déroulé</h2></header>
+<div class="body">
+<div class="note"><b>Objectif :</b> comprendre comment les composants d'OpenStack fonctionnent et interagissent entre eux, et savoir situer OpenStack face aux autres solutions d'infrastructure.</div>
+<div class="cols">
+<div class="col">
+<p><b>À l'issue de ce module, vous saurez :</b></p>
+<ul class="pts">
+<li>Définir le cloud computing et distinguer <b>IaaS, PaaS, CaaS et SaaS</b> par le partage des responsabilités.</li>
+<li>Expliquer ce qu'est OpenStack, d'où il vient, qui le gouverne et comment il est publié.</li>
+<li><b>Comparer</b> OpenStack à VMware, à OpenShift et aux clouds publics, service par service.</li>
+<li>Décrire l'<b>architecture</b> : plan de contrôle, nœuds, API REST, bus de messages, bases de données.</li>
+<li>Présenter le rôle de chaque <b>service</b> (Keystone, Nova, Neutron, Cinder, Glance, Swift, Heat…).</li>
+<li>Dérouler pas à pas la <b>création d'une instance</b> à travers tous les services.</li>
+</ul>
+</div>
+<div class="col">
+<div class="card"><h3>1 · Positionnement du cloud</h3>Définition, modèles de service et de déploiement, virtualisation ou cloud, raisons d'un cloud privé.</div>
+<div class="card cb"><h3>2 · Le projet OpenStack</h3>Définition, histoire, gouvernance, cycle de publication, utilisateurs, distributions.</div>
+<div class="card ct"><h3>3 · OpenStack face aux alternatives</h3>VMware, OpenShift et Kubernetes, clouds publics, grille de choix.</div>
+<div class="card ca"><h3>4 · Architecture et composants</h3>Vue d'ensemble, socle technique, services un par un, flux complet, haute disponibilité.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 3 -->
+<section class="slide dark sec">
+<div class="num">01</div>
+<h2>Positionnement du cloud</h2>
+<p>Avant de parler d'OpenStack, il faut un vocabulaire commun : ce qu'est réellement un cloud, ce qui le distingue de la virtualisation, et qui est responsable de quoi.</p>
+<ol><li>Les cinq caractéristiques d'un cloud (NIST)</li><li>Du serveur physique au cloud</li><li>IaaS, PaaS, SaaS : partage des responsabilités</li><li>CaaS, FaaS : le continuum des services</li><li>Cloud public, privé, hybride</li><li>Virtualisation ou cloud ? « Pets » et « cattle »</li></ol>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+<header><span class="kick">1 · Positionnement du cloud</span><h2>Qu'est-ce qu'un cloud ? Les cinq caractéristiques du NIST</h2></header>
+<div class="body">
+<p>La définition de référence est celle du <b>NIST (SP 800-145)</b> : un modèle d'accès par le réseau, à la demande, à un pool partagé de ressources configurables, provisionnées et libérées rapidement avec un minimum d'intervention du fournisseur.</p>
+<div class="cols c5 big">
+<div class="card"><h3>Libre-service à la demande</h3>L'utilisateur provisionne seul, sans ticket ni intervention humaine.<span class="os"><b>OpenStack :</b> API REST, CLI, Horizon</span></div>
+<div class="card cb"><h3>Accès réseau étendu</h3>Les services sont accessibles par des protocoles standards, depuis n'importe quel client.<span class="os"><b>OpenStack :</b> endpoints HTTPS publiés dans le catalogue</span></div>
+<div class="card ct"><h3>Mise en commun des ressources</h3>Un même pool sert plusieurs clients isolés logiquement (multi-tenant).<span class="os"><b>OpenStack :</b> domaines, projets, réseaux isolés</span></div>
+<div class="card ca"><h3>Élasticité rapide</h3>Les ressources s'ajoutent et se retirent en quelques secondes, parfois automatiquement.<span class="os"><b>OpenStack :</b> création par API, autoscaling Heat</span></div>
+<div class="card cv"><h3>Service mesuré</h3>L'usage est compté, plafonné et restituable (facturation ou refacturation).<span class="os"><b>OpenStack :</b> quotas, Ceilometer, CloudKitty</span></div>
+</div>
+<div class="note g">Si l'une de ces cinq propriétés manque — typiquement le libre-service ou la mesure — on parle d'<b>hébergement</b> ou de <b>virtualisation</b>, pas de cloud. C'est le critère à garder en tête pour toutes les comparaisons qui suivent.</div>
+</div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+<header><span class="kick">1 · Positionnement du cloud</span><h2>Du serveur physique au cloud : trois générations d'infrastructure</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 490">
+<text x="190" y="28" class="tl tc">Serveurs physiques</text>
+<text x="575" y="28" class="tl tc">Virtualisation</text>
+<text x="960" y="28" class="tl tc">Cloud</text>
+<!-- col1 -->
+<g>
+<rect x="35" y="70" width="95" height="42" rx="6" class="b-blue"/><text x="82" y="96" class="tc">App A</text>
+<rect x="35" y="117" width="95" height="42" rx="6" class="b-grey"/><text x="82" y="143" class="tc">OS</text>
+<rect x="35" y="164" width="95" height="42" rx="6" class="b-dark"/><text x="82" y="190" class="tc tw">Serveur</text>
+<rect x="142" y="70" width="95" height="42" rx="6" class="b-blue"/><text x="189" y="96" class="tc">App B</text>
+<rect x="142" y="117" width="95" height="42" rx="6" class="b-grey"/><text x="189" y="143" class="tc">OS</text>
+<rect x="142" y="164" width="95" height="42" rx="6" class="b-dark"/><text x="189" y="190" class="tc tw">Serveur</text>
+<rect x="249" y="70" width="95" height="42" rx="6" class="b-blue"/><text x="296" y="96" class="tc">App C</text>
+<rect x="249" y="117" width="95" height="42" rx="6" class="b-grey"/><text x="296" y="143" class="tc">OS</text>
+<rect x="249" y="164" width="95" height="42" rx="6" class="b-dark"/><text x="296" y="190" class="tc tw">Serveur</text>
+</g>
+<path d="M360,140 H400" class="lr"/>
+<!-- col2 -->
+<g>
+<rect x="420" y="52" width="97" height="84" rx="8" class="zone"/><rect x="427" y="59" width="83" height="32" rx="5" class="b-blue"/><text x="468" y="80" class="tc">App A</text><rect x="427" y="96" width="83" height="32" rx="5" class="b-grey"/><text x="468" y="117" class="tc ts">OS invité</text>
+<rect x="527" y="52" width="97" height="84" rx="8" class="zone"/><rect x="534" y="59" width="83" height="32" rx="5" class="b-blue"/><text x="575" y="80" class="tc">App B</text><rect x="534" y="96" width="83" height="32" rx="5" class="b-grey"/><text x="575" y="117" class="tc ts">OS invité</text>
+<rect x="634" y="52" width="97" height="84" rx="8" class="zone"/><rect x="641" y="59" width="83" height="32" rx="5" class="b-blue"/><text x="682" y="80" class="tc">App C</text><rect x="641" y="96" width="83" height="32" rx="5" class="b-grey"/><text x="682" y="117" class="tc ts">OS invité</text>
+<rect x="420" y="144" width="311" height="30" rx="6" class="b-amber"/><text x="575" y="164" class="tc tb">Hyperviseur</text>
+<rect x="420" y="179" width="311" height="30" rx="6" class="b-dark"/><text x="575" y="199" class="tc tw">Serveur physique</text>
+</g>
+<path d="M747,140 H787" class="lr"/>
+<!-- col3 -->
+<g>
+<rect x="805" y="52" width="311" height="30" rx="6" class="b-red"/><text x="960" y="72" class="tc tb tr">API · portail libre-service</text>
+<rect x="805" y="87" width="311" height="30" rx="6" class="bx"/><text x="960" y="107" class="tc">Plan de contrôle : identité, quotas</text>
+<rect x="805" y="122" width="98" height="52" rx="6" class="b-blue"/><text x="854" y="153" class="tc tb">Calcul</text>
+<rect x="911" y="122" width="98" height="52" rx="6" class="b-teal"/><text x="960" y="153" class="tc tb">Réseau</text>
+<rect x="1017" y="122" width="99" height="52" rx="6" class="b-amber"/><text x="1066" y="153" class="tc tb">Stockage</text>
+<rect x="805" y="179" width="311" height="30" rx="6" class="b-dark"/><text x="960" y="199" class="tc tw">Parc de serveurs standard</text>
+</g>
+<line x1="20" y1="240" x2="1130" y2="240" class="nl"/>
+<g font-size="15">
+<g><rect x="35" y="268" width="8" height="8" rx="2" class="f-red"/><text x="52" y="277">Une application = un serveur dédié</text>
+<rect x="35" y="302" width="8" height="8" rx="2" class="f-red"/><text x="52" y="311">Taux d'utilisation faible (souvent &lt; 20 %)</text>
+<rect x="35" y="336" width="8" height="8" rx="2" class="f-red"/><text x="52" y="345">Achat, câblage, installation à chaque besoin</text>
+<rect x="35" y="370" width="8" height="8" rx="2" class="f-red"/><text x="52" y="379">Panne matérielle = panne applicative</text></g>
+<g><rect x="420" y="268" width="8" height="8" rx="2" class="f-red"/><text x="437" y="277">Consolidation : N machines virtuelles par hôte</text>
+<rect x="420" y="302" width="8" height="8" rx="2" class="f-red"/><text x="437" y="311">Pilotage par l'équipe infrastructure</text>
+<rect x="420" y="336" width="8" height="8" rx="2" class="f-red"/><text x="437" y="345">Demande par ticket, création manuelle</text>
+<rect x="420" y="370" width="8" height="8" rx="2" class="f-red"/><text x="437" y="379">Disponibilité assurée par l'infrastructure</text></g>
+<g><rect x="805" y="268" width="8" height="8" rx="2" class="f-red"/><text x="822" y="277">Libre-service par API, multi-tenant</text>
+<rect x="805" y="302" width="8" height="8" rx="2" class="f-red"/><text x="822" y="311">Pools abstraits, quotas, usage mesuré</text>
+<rect x="805" y="336" width="8" height="8" rx="2" class="f-red"/><text x="822" y="345">Infrastructure décrite par du code</text>
+<rect x="805" y="370" width="8" height="8" rx="2" class="f-red"/><text x="822" y="379">Résilience portée par l'application</text></g>
+</g>
+<rect x="35" y="415" width="309" height="50" rx="8" class="b-grey"/><text x="190" y="436" class="tc ts">Délai de mise à disposition</text><text x="190" y="456" class="tc tb">plusieurs semaines</text>
+<rect x="420" y="415" width="311" height="50" rx="8" class="b-grey"/><text x="575" y="436" class="tc ts">Délai de mise à disposition</text><text x="575" y="456" class="tc tb">quelques heures à quelques jours</text>
+<rect x="805" y="415" width="311" height="50" rx="8" class="b-red"/><text x="960" y="436" class="tc ts">Délai de mise à disposition</text><text x="960" y="456" class="tc tb tr">quelques secondes à quelques minutes</text>
+</svg>
+</div></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+<header><span class="kick">1 · Positionnement du cloud</span><h2>IaaS, PaaS, SaaS : qui gère quoi ?</h2></header>
+<div class="body">
+<table class="resp">
+<thead><tr><th></th><th>Sur site<small>infrastructure traditionnelle</small></th><th>IaaS<small>OpenStack, AWS EC2, Azure VM</small></th><th>PaaS<small>OpenShift, Azure App Service</small></th><th>SaaS<small>Microsoft 365, Salesforce</small></th></tr></thead>
+<tbody>
+<tr><th>Applications</th><td class="u">vous</td><td class="u">vous</td><td class="u">vous</td><td class="p">fournisseur</td></tr>
+<tr><th>Données</th><td class="u">vous</td><td class="u">vous</td><td class="u">vous</td><td class="p">fournisseur (hébergement)</td></tr>
+<tr><th>Environnement d'exécution</th><td class="u">vous</td><td class="u">vous</td><td class="p">fournisseur</td><td class="p">fournisseur</td></tr>
+<tr><th>Middleware</th><td class="u">vous</td><td class="u">vous</td><td class="p">fournisseur</td><td class="p">fournisseur</td></tr>
+<tr><th>Système d'exploitation</th><td class="u">vous</td><td class="u">vous</td><td class="p">fournisseur</td><td class="p">fournisseur</td></tr>
+<tr><th>Virtualisation</th><td class="u">vous</td><td class="p">fournisseur</td><td class="p">fournisseur</td><td class="p">fournisseur</td></tr>
+<tr><th>Serveurs</th><td class="u">vous</td><td class="p">fournisseur</td><td class="p">fournisseur</td><td class="p">fournisseur</td></tr>
+<tr><th>Stockage</th><td class="u">vous</td><td class="p">fournisseur</td><td class="p">fournisseur</td><td class="p">fournisseur</td></tr>
+<tr><th>Réseau physique</th><td class="u">vous</td><td class="p">fournisseur</td><td class="p">fournisseur</td><td class="p">fournisseur</td></tr>
+</tbody></table>
+<div class="note"><b>Point clé pour OpenStack :</b> dans un cloud privé, votre organisation tient les deux rôles. L'<b>équipe plateforme</b> est le « fournisseur » (elle exploite OpenStack et tout ce qui est en dessous) ; les <b>équipes projets</b> sont les « clients » qui consomment de l'IaaS en libre-service.</div>
+</div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+<header><span class="kick">1 · Positionnement du cloud</span><h2>L'IaaS en détail : l'infrastructure devient une API</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Infrastructure as a Service :</b> le fournisseur expose des ressources d'infrastructure <b>virtualisées et programmables</b>. Le client assemble lui-même ses machines, ses réseaux et son stockage, puis installe et exploite tout ce qui tourne dessus.</p>
+<ul class="pts">
+<li><b>Ce que vous obtenez :</b> machines virtuelles, réseaux privés, routeurs, adresses IP publiques, volumes, stockage objet, images système.</li>
+<li><b>Ce qui reste à votre charge :</b> système d'exploitation, correctifs, middleware, sauvegardes applicatives, sécurité de l'instance.</li>
+<li><b>Unité de consommation :</b> vCPU, Go de RAM, Go de disque, adresses IP, trafic — par heure ou à la seconde.</li>
+<li><b>Atout :</b> contrôle maximal, compatible avec presque toutes les applications existantes.</li>
+<li><b>Contrepartie :</b> charge d'exploitation la plus élevée des modèles cloud.</li>
+</ul>
+</div>
+<div class="col">
+<table class="tbl os">
+<thead><tr><th>Brique IaaS</th><th>Service OpenStack</th><th>Ressources exposées</th></tr></thead>
+<tbody>
+<tr><td>Calcul</td><td>Nova</td><td>Instances, gabarits (flavors), paires de clés</td></tr>
+<tr><td>Réseau</td><td>Neutron</td><td>Réseaux, sous-réseaux, routeurs, IP flottantes, groupes de sécurité</td></tr>
+<tr><td>Stockage bloc</td><td>Cinder</td><td>Volumes, instantanés, sauvegardes</td></tr>
+<tr><td>Stockage objet</td><td>Swift</td><td>Comptes, conteneurs, objets</td></tr>
+<tr><td>Images</td><td>Glance</td><td>Images système, instantanés d'instances</td></tr>
+<tr><td>Identité</td><td>Keystone</td><td>Utilisateurs, projets, rôles, catalogue</td></tr>
+</tbody></table>
+<div class="note b">Chaque brique IaaS d'OpenStack a son équivalent chez les clouds publics (EC2, VPC, EBS, S3…) : la correspondance complète est donnée en partie 3.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+<header><span class="kick">1 · Positionnement du cloud</span><h2>Le PaaS en détail : la plateforme gère l'exécution</h2></header>
+<div class="body">
+<div class="cols nf">
+<div class="col">
+<p><b>Platform as a Service :</b> le développeur fournit son <b>code</b> (ou une image de conteneur) ; la plateforme prend en charge la construction, le déploiement, le routage, la mise à l'échelle et la supervision.</p>
+<ul class="pts">
+<li><b>Vous gérez :</b> le code, sa configuration, les données.</li>
+<li><b>La plateforme gère :</b> OS, runtime, certificats, répartition de charge, redémarrages, montées de version.</li>
+<li><b>Exemples :</b> Red Hat OpenShift, Cloud Foundry, Heroku, Azure App Service, Google App Engine.</li>
+</ul>
+</div>
+<div class="col">
+<ul class="pts">
+<li><b>Services managés associés :</b> bases de données (DBaaS), files de messages, caches — consommés par API, sans administrer de serveur.</li>
+<li><b>Atout :</b> productivité, standardisation, délai de mise en production très court.</li>
+<li><b>Contrepartie :</b> cadre imposé (langages, modèle de déploiement), dépendance à la plateforme.</li>
+</ul>
+</div>
+</div>
+<div class="fig">
+<svg viewBox="0 0 1150 170">
+<rect x="10" y="45" width="150" height="70" rx="8" class="b-blue"/><text x="85" y="76" class="tc tb">Développeur</text><text x="85" y="96" class="tc ts">git push</text>
+<path d="M160,80 H210" class="ln"/>
+<rect x="210" y="20" width="930" height="120" rx="10" class="zone"/><text x="225" y="40" class="ts tb">Pris en charge par la plateforme (PaaS)</text>
+<rect x="230" y="55" width="150" height="65" rx="8" class="bx"/><text x="305" y="83" class="tc tb">Construction</text><text x="305" y="103" class="tc ts">build, tests, image</text>
+<path d="M380,87 H410" class="ln"/>
+<rect x="410" y="55" width="150" height="65" rx="8" class="bx"/><text x="485" y="83" class="tc tb">Registre</text><text x="485" y="103" class="tc ts">image versionnée</text>
+<path d="M560,87 H590" class="ln"/>
+<rect x="590" y="55" width="150" height="65" rx="8" class="bx"/><text x="665" y="83" class="tc tb">Déploiement</text><text x="665" y="103" class="tc ts">rolling update</text>
+<path d="M740,87 H770" class="ln"/>
+<rect x="770" y="55" width="150" height="65" rx="8" class="bx"/><text x="845" y="83" class="tc tb">Mise à l'échelle</text><text x="845" y="103" class="tc ts">réplicas, autoscaling</text>
+<path d="M920,87 H950" class="ln"/>
+<rect x="950" y="55" width="170" height="65" rx="8" class="b-teal"/><text x="1035" y="83" class="tc tb">Exposition</text><text x="1035" y="103" class="tc ts">route HTTPS, certificat</text>
+<text x="675" y="160" class="tc ts">En dessous : des machines, des réseaux et des volumes fournis par un IaaS — par exemple OpenStack.</text>
+</svg>
+</div>
+</div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+<header><span class="kick">1 · Positionnement du cloud</span><h2>IaaS, CaaS, PaaS, FaaS, SaaS : un continuum d'abstraction</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 480">
+<path d="M25,28 H1125" class="ln"/><text x="575" y="18" class="tc tb">Niveau d'abstraction et productivité croissants</text>
+<g>
+<rect x="25" y="55" width="200" height="255" rx="10" class="b-red"/><text x="125" y="88" class="tc tl tr">IaaS</text><text x="125" y="108" class="tc ts">Infrastructure as a Service</text>
+<rect x="255" y="55" width="200" height="255" rx="10" class="bx"/><text x="355" y="88" class="tc tl">CaaS</text><text x="355" y="108" class="tc ts">Containers as a Service</text>
+<rect x="485" y="55" width="200" height="255" rx="10" class="bx"/><text x="585" y="88" class="tc tl">PaaS</text><text x="585" y="108" class="tc ts">Platform as a Service</text>
+<rect x="715" y="55" width="200" height="255" rx="10" class="bx"/><text x="815" y="88" class="tc tl">FaaS</text><text x="815" y="108" class="tc ts">Functions as a Service</text>
+<rect x="945" y="55" width="200" height="255" rx="10" class="bx"/><text x="1045" y="88" class="tc tl">SaaS</text><text x="1045" y="108" class="tc ts">Software as a Service</text>
+</g>
+<g font-size="13.5">
+<text x="40" y="140" class="tb">Unité</text><text x="40" y="159">machine virtuelle, réseau,</text><text x="40" y="177">volume</text>
+<text x="40" y="208" class="tb">Vous gérez</text><text x="40" y="227">OS, middleware, runtime,</text><text x="40" y="245">application</text>
+<text x="40" y="276" class="tb">Exemples</text><text x="40" y="295">OpenStack, EC2, Azure VM</text>
+<text x="270" y="140" class="tb">Unité</text><text x="270" y="159">conteneur, pod</text>
+<text x="270" y="208" class="tb">Vous gérez</text><text x="270" y="227">images, manifestes,</text><text x="270" y="245">application</text>
+<text x="270" y="276" class="tb">Exemples</text><text x="270" y="295">Kubernetes, EKS, AKS, GKE</text>
+<text x="500" y="140" class="tb">Unité</text><text x="500" y="159">application</text>
+<text x="500" y="208" class="tb">Vous gérez</text><text x="500" y="227">code, configuration,</text><text x="500" y="245">données</text>
+<text x="500" y="276" class="tb">Exemples</text><text x="500" y="295">OpenShift, Cloud Foundry</text>
+<text x="730" y="140" class="tb">Unité</text><text x="730" y="159">fonction, événement</text>
+<text x="730" y="208" class="tb">Vous gérez</text><text x="730" y="227">le code de la fonction</text>
+<text x="730" y="276" class="tb">Exemples</text><text x="730" y="295">AWS Lambda, Knative</text>
+<text x="960" y="140" class="tb">Unité</text><text x="960" y="159">utilisateur, abonnement</text>
+<text x="960" y="208" class="tb">Vous gérez</text><text x="960" y="227">paramétrage, données</text>
+<text x="960" y="276" class="tb">Exemples</text><text x="960" y="295">Microsoft 365, Salesforce</text>
+</g>
+<path d="M1125,345 H25" class="ln"/><text x="575" y="368" class="tc tb">Contrôle, flexibilité et charge d'exploitation croissants</text>
+<path d="M125,312 V400" class="lr" style="marker-end:none;marker-start:url(#arr)"/>
+<rect x="25" y="400" width="430" height="62" rx="8" class="b-red"/><text x="240" y="426" class="tc tb tr">OpenStack se situe ici : c'est un IaaS</text><text x="240" y="447" class="tc ts">machines, réseaux et stockage à la demande</text>
+<path d="M455,431 H485" class="ln"/>
+<rect x="485" y="400" width="660" height="62" rx="8" class="b-grey"/><text x="815" y="426" class="tc tb">Les couches supérieures s'appuient sur un IaaS</text><text x="815" y="447" class="tc ts">Kubernetes via Magnum ou Cluster API, OpenShift sur OpenStack, bases managées via Trove</text>
+</svg>
+</div></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+<header><span class="kick">1 · Positionnement du cloud</span><h2>Modèles de déploiement : public, privé, hybride</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 235">
+<rect x="15" y="12" width="420" height="212" rx="12" class="zone"/><text x="35" y="38" class="tl">Cloud privé</text><text x="35" y="58" class="ts">Vos datacenters ou un hébergeur, infrastructure dédiée</text>
+<rect x="40" y="76" width="370" height="46" rx="8" class="b-red"/><text x="225" y="104" class="tc tb tr">OpenStack exploité par l'équipe plateforme</text>
+<rect x="40" y="136" width="115" height="40" rx="6" class="b-blue"/><text x="97" y="161" class="tc">Projet RH</text>
+<rect x="167" y="136" width="115" height="40" rx="6" class="b-blue"/><text x="224" y="161" class="tc">Projet Web</text>
+<rect x="294" y="136" width="116" height="40" rx="6" class="b-blue"/><text x="352" y="161" class="tc">Projet Data</text>
+<text x="225" y="204" class="tc ts">Un seul client : votre organisation (plusieurs projets internes)</text>
+<rect x="715" y="12" width="420" height="212" rx="12" class="zone"/><text x="735" y="38" class="tl">Cloud public</text><text x="735" y="58" class="ts">Datacenters du fournisseur, infrastructure mutualisée</text>
+<rect x="740" y="76" width="370" height="46" rx="8" class="b-dark"/><text x="925" y="104" class="tc tb tw">Régions et services du fournisseur</text>
+<rect x="740" y="136" width="115" height="40" rx="6" class="b-grey"/><text x="797" y="161" class="tc">Client A</text>
+<rect x="867" y="136" width="115" height="40" rx="6" class="b-blue"/><text x="924" y="161" class="tc tb">Vous</text>
+<rect x="994" y="136" width="116" height="40" rx="6" class="b-grey"/><text x="1052" y="161" class="tc">Client B</text>
+<text x="925" y="204" class="tc ts">Des milliers de clients isolés logiquement, paiement à l'usage</text>
+<path d="M440,118 H710" class="lr2"/>
+<text x="575" y="84" class="tc tl">Cloud hybride</text>
+<text x="575" y="104" class="tc ts">VPN ou interconnexion dédiée</text>
+<text x="575" y="142" class="tc ts">mêmes outils des deux côtés :</text>
+<text x="575" y="160" class="tc ts">Terraform, Ansible, Kubernetes</text>
+</svg>
+</div>
+<div class="cols c4 nf">
+<div class="card"><h3>Privé</h3>Infrastructure dédiée à une organisation. Maîtrise totale, investissement et exploitation à sa charge. <b>Terrain naturel d'OpenStack.</b></div>
+<div class="card cn"><h3>Public</h3>Ressources mutualisées, ouvertes à tous, facturées à l'usage. Certains clouds publics sont eux-mêmes bâtis sur OpenStack (OVHcloud, Infomaniak).</div>
+<div class="card cb"><h3>Hybride</h3>Combinaison d'un privé et d'un ou plusieurs publics, reliés et pilotés de façon cohérente : débordement, reprise d'activité, données sensibles en interne.</div>
+<div class="card ct"><h3>Communautaire, multi-cloud</h3>Cloud partagé entre organisations d'un même secteur (recherche, État). Multi-cloud : plusieurs fournisseurs pour limiter la dépendance.</div>
+</div>
+</div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+<header><span class="kick">1 · Positionnement du cloud</span><h2>Virtualisation ou cloud : ce qui change vraiment</h2></header>
+<div class="body">
+<p>Un hyperviseur ne fait pas un cloud. La virtualisation est une <b>technologie</b> ; le cloud est un <b>modèle de consommation</b> construit au-dessus, qui ajoute le libre-service, le multi-tenant et la mesure.</p>
+<table class="tbl">
+<thead><tr><th>Critère</th><th>Virtualisation classique</th><th>Cloud (IaaS)</th></tr></thead>
+<tbody>
+<tr><td>Interface principale</td><td>Console d'administration graphique</td><td>API REST, CLI, outils d'infrastructure as code</td></tr>
+<tr><td>Qui provisionne ?</td><td>L'administrateur, sur demande (ticket)</td><td>L'utilisateur final, en libre-service, dans la limite de ses quotas</td></tr>
+<tr><td>Cloisonnement</td><td>Clusters, dossiers, droits d'administration</td><td>Projets (tenants) isolés : réseaux, quotas et rôles par projet</td></tr>
+<tr><td>Réseau</td><td>VLAN créés par l'équipe réseau</td><td>Réseaux virtuels créés par l'utilisateur (overlay), routeurs, IP flottantes</td></tr>
+<tr><td>Mise à l'échelle</td><td>Verticale : on ajoute CPU et RAM à la machine</td><td>Horizontale : on ajoute des instances identiques</td></tr>
+<tr><td>Disponibilité</td><td>Assurée par l'infrastructure (HA, migration à chaud)</td><td>Conçue dans l'application (réplication, zones de disponibilité)</td></tr>
+<tr><td>Suivi de l'usage</td><td>Capacité globale du cluster</td><td>Mesure par projet, refacturation possible</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+<header><span class="kick">1 · Positionnement du cloud</span><h2>« Pets » et « cattle » : l'infrastructure devient du code</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl">
+<thead><tr><th></th><th>Pets (animaux de compagnie)</th><th>Cattle (bétail)</th></tr></thead>
+<tbody>
+<tr><td>Identité</td><td>Serveur nommé, unique</td><td>Instance numérotée, interchangeable</td></tr>
+<tr><td>En cas de panne</td><td>On répare</td><td>On détruit et on recrée</td></tr>
+<tr><td>Configuration</td><td>Manuelle, accumulée au fil du temps</td><td>Image + script, reproductible</td></tr>
+<tr><td>Évolution</td><td>Mise à jour en place</td><td>Remplacement par une nouvelle version</td></tr>
+<tr><td>État</td><td>Sur le disque local</td><td>Externalisé : volume, base, objet</td></tr>
+</tbody></table>
+<ul class="pts">
+<li>OpenStack sait héberger les deux, mais son modèle natif est le <b>cattle</b> : image, gabarit, <code>cloud-init</code>, disque éphémère.</li>
+<li>L'état durable vit dans <b>Cinder</b> (volumes) et <b>Swift</b> (objets), pas dans l'instance.</li>
+<li>Toute l'infrastructure se décrit en fichiers versionnés : Heat, Terraform ou OpenTofu, Ansible.</li>
+</ul>
+</div>
+<div class="col">
+<pre><span class="m"># Une instance complète en une commande, reproductible</span>
+<span class="c">openstack server create</span> web-01 \
+  <span class="k">--image</span>   ubuntu-24.04 \
+  <span class="k">--flavor</span>  m1.small \
+  <span class="k">--network</span> net-app \
+  <span class="k">--security-group</span> web \
+  <span class="k">--key-name</span> cle-deploiement \
+  <span class="k">--user-data</span> cloud-init.yaml
+
+<span class="m"># cloud-init.yaml : configuration au premier démarrage</span>
+#cloud-config
+packages: [nginx]
+runcmd:
+  - systemctl enable --now nginx</pre>
+<div class="note g">La même requête peut être émise par la CLI, par Horizon, par Terraform ou par un pipeline CI/CD : tous appellent la <b>même API REST</b>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+<header><span class="kick">1 · Positionnement du cloud</span><h2>Pourquoi construire un cloud privé ?</h2></header>
+<div class="body">
+<div class="cols c4 nf">
+<div class="card"><h3>Souveraineté et conformité</h3>Localisation et maîtrise juridique des données, exigences sectorielles (défense, santé, finance), qualification SecNumCloud, environnements déconnectés d'Internet.</div>
+<div class="card cb"><h3>Maîtrise des coûts</h3>Pour une charge stable et importante, une infrastructure amortie coûte souvent moins cher que la location à l'usage. Pas de frais de sortie de données.</div>
+<div class="card ct"><h3>Performance et matériel</h3>Latence maîtrisée, proximité des systèmes existants, matériel spécifique : GPU, SR-IOV, DPDK, bare metal, fonctions réseau télécoms (NFV).</div>
+<div class="card ca"><h3>Indépendance</h3>API ouvertes et documentées, code source disponible, pas d'éditeur unique : on peut changer de distribution ou de prestataire sans changer d'API.</div>
+</div>
+<div class="cols">
+<div class="col">
+<p><b>Ce que l'on gagne par rapport à la seule virtualisation</b></p>
+<ul class="pts">
+<li>Autonomie des équipes projets : plus de ticket pour une machine ou un réseau.</li>
+<li>Automatisation de bout en bout, intégrable aux chaînes CI/CD.</li>
+<li>Visibilité sur la consommation par projet grâce aux quotas et à la mesure.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Les contreparties à anticiper</b></p>
+<ul class="pts">
+<li>Une <b>équipe plateforme</b> compétente : Linux, réseau, stockage, automatisation.</li>
+<li>Des montées de version régulières et une supervision du plan de contrôle.</li>
+<li>Une capacité finie : il faut planifier les achats de matériel.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 14 -->
+<section class="slide dark sec">
+<div class="num">02</div>
+<h2>Le projet OpenStack</h2>
+<p>Un logiciel libre né en 2010, devenu l'un des plus grands projets open source au monde : ce qu'il est, qui le pilote, comment il évolue et comment on se le procure.</p>
+<ol><li>Définition : un système d'exploitation de cloud</li><li>Seize ans d'histoire</li><li>Gouvernance ouverte et « Four Opens »</li><li>Cycle de publication et versions SLURP</li><li>Qui l'utilise, à quelle échelle</li><li>Distributions et outils de déploiement</li></ol>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+<header><span class="kick">2 · Le projet OpenStack</span><h2>Qu'est-ce qu'OpenStack ?</h2></header>
+<div class="body"><div class="cols w46">
+<div class="col">
+<div class="note">Un ensemble de <b>logiciels libres</b> qui pilote de grands pools de calcul, de réseau et de stockage à l'échelle d'un datacenter, à travers des <b>API</b> et un tableau de bord, pour fournir un cloud <b>IaaS</b> privé ou public.</div>
+<ul class="pts">
+<li><b>Licence Apache 2.0</b>, sans édition « entreprise » fermée : tout le code est public.</li>
+<li>Écrit en <b>Python</b>, déployé sur <b>Linux</b>, sur du matériel standard.</li>
+<li><b>Modulaire :</b> une trentaine de services indépendants ; on n'installe que ceux dont on a besoin.</li>
+<li><b>Agnostique :</b> il ne virtualise rien lui-même, il <b>orchestre</b> des technologies existantes (KVM, Open vSwitch, OVN, Ceph, LVM, baies du marché) grâce à des pilotes.</li>
+<li>Surnommé « <b>système d'exploitation du cloud</b> » : comme un OS arbitre CPU, mémoire et disques d'une machine, OpenStack arbitre ceux d'un datacenter entre des projets.</li>
+</ul>
+</div>
+<div class="fig">
+<svg viewBox="0 0 640 470">
+<rect x="20" y="8" width="140" height="40" rx="6" class="b-blue"/><text x="90" y="33" class="tc">Horizon (web)</text>
+<rect x="173" y="8" width="140" height="40" rx="6" class="b-blue"/><text x="243" y="33" class="tc">CLI openstack</text>
+<rect x="326" y="8" width="140" height="40" rx="6" class="b-blue"/><text x="396" y="33" class="tc">SDK, API directe</text>
+<rect x="479" y="8" width="141" height="40" rx="6" class="b-blue"/><text x="549" y="33" class="tc">Terraform, Ansible</text>
+<path d="M320,50 V92" class="lr"/><text x="332" y="76" class="tb tr">API REST (HTTPS)</text>
+<rect x="20" y="95" width="600" height="165" rx="12" class="b-red"/><text x="40" y="121" class="tl tr">OpenStack — plan de contrôle</text>
+<g>
+<rect x="40" y="135" width="130" height="48" rx="6" class="bx"/><text x="105" y="156" class="tc tb">Keystone</text><text x="105" y="173" class="tc ts">identité</text>
+<rect x="183" y="135" width="130" height="48" rx="6" class="bx"/><text x="248" y="156" class="tc tb">Nova</text><text x="248" y="173" class="tc ts">calcul</text>
+<rect x="326" y="135" width="130" height="48" rx="6" class="bx"/><text x="391" y="156" class="tc tb">Neutron</text><text x="391" y="173" class="tc ts">réseau</text>
+<rect x="469" y="135" width="131" height="48" rx="6" class="bx"/><text x="534" y="156" class="tc tb">Cinder</text><text x="534" y="173" class="tc ts">stockage bloc</text>
+<rect x="40" y="195" width="130" height="48" rx="6" class="bx"/><text x="105" y="216" class="tc tb">Glance</text><text x="105" y="233" class="tc ts">images</text>
+<rect x="183" y="195" width="130" height="48" rx="6" class="bx"/><text x="248" y="216" class="tc tb">Swift</text><text x="248" y="233" class="tc ts">stockage objet</text>
+<rect x="326" y="195" width="130" height="48" rx="6" class="bx"/><text x="391" y="216" class="tc tb">Placement</text><text x="391" y="233" class="tc ts">inventaire</text>
+<rect x="469" y="195" width="131" height="48" rx="6" class="bx"/><text x="534" y="216" class="tc tb">Heat</text><text x="534" y="233" class="tc ts">orchestration</text>
+</g>
+<path d="M120,262 V308" class="ln"/><path d="M320,262 V308" class="ln"/><path d="M520,262 V308" class="ln"/>
+<text x="332" y="290" class="ts">pilotes (drivers)</text>
+<rect x="20" y="310" width="190" height="72" rx="8" class="b-blue"/><text x="115" y="340" class="tc tb">Calcul</text><text x="115" y="360" class="tc ts">hyperviseurs KVM, bare metal</text>
+<rect x="225" y="310" width="190" height="72" rx="8" class="b-teal"/><text x="320" y="340" class="tc tb">Réseau</text><text x="320" y="360" class="tc ts">OVN, Open vSwitch, switchs</text>
+<rect x="430" y="310" width="190" height="72" rx="8" class="b-amber"/><text x="525" y="340" class="tc tb">Stockage</text><text x="525" y="360" class="tc ts">Ceph, LVM, baies SAN/NAS</text>
+<rect x="20" y="400" width="600" height="48" rx="8" class="b-dark"/><text x="320" y="429" class="tc tw tb">Matériel standard : serveurs x86 ou ARM, commutateurs, disques</text>
+</svg>
+</div>
+</div></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+<header><span class="kick">2 · Le projet OpenStack</span><h2>Seize ans d'histoire en neuf jalons</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 300">
+<line x1="30" y1="150" x2="1120" y2="150" stroke="#101a33" stroke-width="3"/>
+<g>
+<circle cx="80" cy="150" r="9" class="f-red"/><line x1="80" y1="141" x2="80" y2="100" class="nl"/><text x="80" y="38" class="tc tl">2010</text><text x="80" y="58" class="tc ts">Rackspace et la NASA</text><text x="80" y="74" class="tc ts">lancent le projet ;</text><text x="80" y="90" class="tc ts">« Austin » : Nova et Swift</text>
+<circle cx="204" cy="150" r="9" class="f-red"/><line x1="204" y1="159" x2="204" y2="200" class="nl"/><text x="204" y="222" class="tc tl">2011</text><text x="204" y="242" class="tc ts">Glance (images)</text><text x="204" y="258" class="tc ts">rejoint le projet</text>
+<circle cx="328" cy="150" r="9" class="f-red"/><line x1="328" y1="141" x2="328" y2="100" class="nl"/><text x="328" y="38" class="tc tl">2012</text><text x="328" y="58" class="tc ts">OpenStack Foundation ;</text><text x="328" y="74" class="tc ts">Keystone, Horizon,</text><text x="328" y="90" class="tc ts">Neutron (ex-Quantum), Cinder</text>
+<circle cx="452" cy="150" r="9" class="f-red"/><line x1="452" y1="159" x2="452" y2="200" class="nl"/><text x="452" y="222" class="tc tl">2013</text><text x="452" y="242" class="tc ts">« Havana » : Heat</text><text x="452" y="258" class="tc ts">et Ceilometer</text>
+<circle cx="576" cy="150" r="9" class="f-red"/><line x1="576" y1="141" x2="576" y2="100" class="nl"/><text x="576" y="38" class="tc tl">2015</text><text x="576" y="58" class="tc ts">« Big Tent » :</text><text x="576" y="74" class="tc ts">ouverture à des dizaines</text><text x="576" y="90" class="tc ts">de projets</text>
+<circle cx="700" cy="150" r="9" class="f-red"/><line x1="700" y1="159" x2="700" y2="200" class="nl"/><text x="700" y="222" class="tc tl">2020</text><text x="700" y="242" class="tc ts">La fondation devient l'Open</text><text x="700" y="258" class="tc ts">Infrastructure Foundation</text>
+<circle cx="824" cy="150" r="9" class="f-red"/><line x1="824" y1="141" x2="824" y2="100" class="nl"/><text x="824" y="38" class="tc tl">2023</text><text x="824" y="58" class="tc ts">« 2023.1 Antelope » :</text><text x="824" y="74" class="tc ts">nommage AAAA.N</text><text x="824" y="90" class="tc ts">et versions SLURP</text>
+<circle cx="948" cy="150" r="9" class="f-red"/><line x1="948" y1="159" x2="948" y2="200" class="nl"/><text x="948" y="222" class="tc tl">2025</text><text x="948" y="242" class="tc ts">OpenInfra rejoint</text><text x="948" y="258" class="tc ts">la Linux Foundation</text>
+<circle cx="1072" cy="150" r="11" fill="#fff" stroke="#e4002b" stroke-width="4"/><line x1="1072" y1="139" x2="1072" y2="100" class="nl"/><text x="1072" y="38" class="tc tl tr">2026</text><text x="1072" y="58" class="tc ts">« 2026.2 Hibiscus »,</text><text x="1072" y="74" class="tc ts">34<tspan dy="-4" font-size="9">e</tspan><tspan dy="4"> version,</tspan></text><text x="1072" y="90" class="tc ts">30 septembre 2026</text>
+</g>
+</svg>
+</div>
+<div class="cols c3 nf">
+<div class="card"><h3>L'origine</h3>La NASA apporte le moteur de calcul (Nova), Rackspace son stockage objet (Swift). L'ambition : un cloud ouvert, sans dépendance à un fournisseur.</div>
+<div class="card cb"><h3>La maturité</h3>Après l'emballement médiatique des années 2015-2017, le projet se recentre sur un cœur stable. Les API principales n'ont plus connu de rupture depuis des années.</div>
+<div class="card ct"><h3>Aujourd'hui</h3>Regain d'intérêt porté par la souveraineté numérique, l'évolution des licences VMware et les besoins d'infrastructure pour l'IA (GPU, calcul confidentiel).</div>
+</div>
+</div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+<header><span class="kick">2 · Le projet OpenStack</span><h2>Gouvernance : un projet communautaire, sans éditeur unique</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 470">
+<rect x="130" y="5" width="300" height="46" rx="8" class="b-grey"/><text x="280" y="33" class="tc tb">Linux Foundation</text>
+<path d="M280,51 V76" class="ln"/>
+<rect x="60" y="78" width="440" height="66" rx="8" class="b-red"/><text x="280" y="105" class="tc tl tr">OpenInfra Foundation</text><text x="280" y="127" class="tc ts">marque, financement, juridique, événements, enquête utilisateurs</text>
+<path d="M280,144 V169" class="ln"/>
+<rect x="60" y="171" width="440" height="66" rx="8" class="b-blue"/><text x="280" y="198" class="tc tl">Technical Committee (TC)</text><text x="280" y="220" class="tc ts">élu par les contributeurs · cohérence technique entre projets</text>
+<path d="M280,237 V262" class="ln"/>
+<rect x="20" y="264" width="520" height="104" rx="10" class="zone"/><text x="36" y="285" class="ts tb">Équipes projet — un responsable élu (PTL) par équipe</text>
+<rect x="36" y="298" width="92" height="54" rx="6" class="bx"/><text x="82" y="330" class="tc tb">Nova</text>
+<rect x="138" y="298" width="92" height="54" rx="6" class="bx"/><text x="184" y="330" class="tc tb">Neutron</text>
+<rect x="240" y="298" width="92" height="54" rx="6" class="bx"/><text x="286" y="330" class="tc tb">Cinder</text>
+<rect x="342" y="298" width="92" height="54" rx="6" class="bx"/><text x="388" y="330" class="tc tb">Keystone</text>
+<rect x="444" y="298" width="80" height="54" rx="6" class="bx"/><text x="484" y="330" class="tc tb">…</text>
+<path d="M280,395 V370" class="ln"/>
+<rect x="20" y="397" width="520" height="66" rx="8" class="b-dark"/><text x="280" y="424" class="tc tw tb">Contributeurs : entreprises et individus</text><text x="280" y="446" class="tc tw" style="font-size:12px">revue de code sur Gerrit · intégration continue Zuul · hébergement OpenDev</text>
+</svg>
+</div>
+<div class="col">
+<p><b>Les « Four Opens »</b> — les quatre principes fondateurs :</p>
+<div class="cols" style="gap:12px;flex:none">
+<div class="card"><h3>Open Source</h3>Tout le code sous licence Apache 2.0, sans version réservée aux clients payants.</div>
+<div class="card cb"><h3>Open Design</h3>Les orientations se décident en public, lors des PTG (Project Teams Gathering).</div>
+<div class="card ct"><h3>Open Development</h3>Chaque modification passe par une revue de code publique et des tests automatiques.</div>
+<div class="card ca"><h3>Open Community</h3>Les responsables sont élus ; chacun peut contribuer, quel que soit son employeur.</div>
+</div>
+<ul class="pts">
+<li>Aucune entreprise ne contrôle la feuille de route : les éditeurs (Red Hat, Canonical, Mirantis…) <b>contribuent</b> et <b>distribuent</b>, ils ne possèdent pas le projet.</li>
+<li>Conséquence pratique : une même API chez tous les fournisseurs, vérifiée par des tests d'interopérabilité.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+<header><span class="kick">2 · Le projet OpenStack</span><h2>Cycle de publication : deux versions par an, une SLURP sur deux</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 250">
+<path d="M150,95 C 250,10 480,10 580,90" class="lr"/><text x="365" y="22" class="tc tb tr">Montée de version directe SLURP → SLURP</text>
+<path d="M600,95 C 700,10 930,10 1030,90" class="lr ld"/><text x="815" y="22" class="tc tb tr">Prochain saut annuel</text>
+<rect x="40" y="95" width="190" height="78" rx="10" class="b-red"/><text x="135" y="126" class="tc tl tr">2025.1 Epoxy</text><text x="135" y="148" class="tc ts">avril 2025</text>
+<rect x="265" y="95" width="190" height="78" rx="10" class="b-grey"/><text x="360" y="126" class="tc tl">2025.2 Flamingo</text><text x="360" y="148" class="tc ts">octobre 2025</text>
+<rect x="490" y="95" width="190" height="78" rx="10" class="b-red"/><text x="585" y="126" class="tc tl tr">2026.1 Gazpacho</text><text x="585" y="148" class="tc ts">avril 2026</text>
+<rect x="715" y="95" width="190" height="78" rx="10" class="b-grey" style="stroke:#101a33;stroke-width:3"/><text x="810" y="126" class="tc tl">2026.2 Hibiscus</text><text x="810" y="148" class="tc ts">30 septembre 2026</text><text x="810" y="199" class="tc tb" style="font-size:12px">version courante</text>
+<rect x="940" y="95" width="190" height="78" rx="10" class="b-red" style="stroke-dasharray:6 4"/><text x="1035" y="126" class="tc tl tr">2027.1 Indri</text><text x="1035" y="148" class="tc ts">prévue en mars 2027</text>
+<path d="M230,134 H263" class="ln"/><path d="M455,134 H488" class="ln"/><path d="M680,134 H713" class="ln"/><path d="M905,134 H938" class="ln ld"/>
+<rect x="100" y="183" width="70" height="22" rx="11" class="f-red"/><text x="135" y="199" class="tc tw tb" style="font-size:12px">SLURP</text>
+<rect x="550" y="183" width="70" height="22" rx="11" class="f-red"/><text x="585" y="199" class="tc tw tb" style="font-size:12px">SLURP</text>
+<rect x="1000" y="183" width="70" height="22" rx="11" class="f-red"/><text x="1035" y="199" class="tc tw tb" style="font-size:12px">SLURP</text>
+<text x="575" y="238" class="tc ts">Flèches grises : montée de version classique, une version à la fois, tous les six mois.</text>
+</svg>
+</div>
+<div class="cols c4 nf">
+<div class="card"><h3>Cadence</h3>Une version coordonnée tous les <b>six mois</b> environ, au printemps et à l'automne. Tous les services sont publiés ensemble et testés ensemble.</div>
+<div class="card cb"><h3>Nommage</h3>Depuis 2023 : <b>année.rang</b> suivi d'un nom par ordre alphabétique (Antelope, Bobcat, Caracal, Dalmatian, Epoxy, Flamingo, Gazpacho, Hibiscus).</div>
+<div class="card ct"><h3>SLURP</h3><i>Skip Level Upgrade Release Process</i> : les versions <b>.1</b> permettent de sauter la version intermédiaire, soit une seule montée de version par an.</div>
+<div class="card ca"><h3>Maintenance</h3>Chaque version reçoit des correctifs pendant environ <b>18 mois</b> (phase <i>Maintained</i>), puis passe en <i>Unmaintained</i> avant sa fin de vie.</div>
+</div>
+</div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+<header><span class="kick">2 · Le projet OpenStack</span><h2>Qui utilise OpenStack, et à quelle échelle ?</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card"><h3 style="font-size:34px;color:var(--red)">40 millions +</h3>de cœurs de calcul en production recensés dès 2022 par l'enquête utilisateurs de la fondation, en hausse de 60 % sur un an.</div>
+<div class="card cb"><h3 style="font-size:34px;color:var(--blue)">300 +</h3>datacenters de cloud public dans le monde reposent sur OpenStack, d'après la même enquête.</div>
+<div class="card ct"><h3 style="font-size:34px;color:var(--teal)">&gt; 1 million</h3>de cœurs chez plusieurs organisations à elles seules, parmi lesquelles Walmart, China Mobile, LINE et Workday.</div>
+</div>
+<table class="tbl">
+<thead><tr><th>Secteur</th><th>Exemples d'utilisateurs</th><th>Pourquoi OpenStack</th></tr></thead>
+<tbody>
+<tr><td>Recherche et calcul</td><td>CERN, universités, centres de calcul</td><td>Très grande échelle, mutualisation entre équipes, matériel hétérogène, budget maîtrisé</td></tr>
+<tr><td>Télécoms</td><td>China Mobile, Verizon, grands opérateurs européens</td><td>Virtualisation des fonctions réseau (NFV), cœur 4G/5G, performances réseau (SR-IOV, DPDK)</td></tr>
+<tr><td>Clouds publics</td><td>OVHcloud, Infomaniak, Open Telekom Cloud, Rackspace</td><td>Offre IaaS souveraine ou régionale, API standard connue du marché</td></tr>
+<tr><td>Distribution et services</td><td>Walmart, Workday, LINE, groupe Schwarz (Lidl)</td><td>Charges stables et massives, coûts prévisibles, indépendance vis-à-vis des hyperscalers</td></tr>
+<tr><td>Secteur public et défense</td><td>Administrations, industriels de défense</td><td>Souveraineté, code auditable, fonctionnement en réseau isolé</td></tr>
+</tbody></table>
+<div class="note g">OpenStack est souvent associé à Kubernetes : la pile <b>LOKI</b> (Linux, OpenStack, Kubernetes Infrastructure) est le standard d'infrastructure ouverte mis en avant par la fondation.</div>
+</div>
+</section>
+
+<!-- 20 -->
+<section class="slide">
+<header><span class="kick">2 · Le projet OpenStack</span><h2>Distributions et outils de déploiement</h2></header>
+<div class="body">
+<p>OpenStack « amont » est un ensemble de dépôts de code. Pour l'installer, on passe par un <b>outil de déploiement</b> communautaire ou par la <b>distribution</b> d'un éditeur, qui ajoute intégration, cycle de vie et support.</p>
+<table class="tbl">
+<thead><tr><th>Solution</th><th>Origine</th><th>Principe technique</th><th>Usage typique</th></tr></thead>
+<tbody>
+<tr><td>DevStack</td><td>Communauté</td><td>Scripts shell, installation depuis les sources sur une seule machine</td><td>Développement, découverte — jamais en production</td></tr>
+<tr><td>Kolla-Ansible</td><td>Communauté</td><td>Un conteneur par service (Docker ou Podman), orchestré par Ansible</td><td>Production, de quelques nœuds à plusieurs centaines</td></tr>
+<tr><td>OpenStack-Ansible</td><td>Communauté</td><td>Playbooks Ansible, services en conteneurs LXC ou directement sur l'hôte</td><td>Production, forte personnalisation</td></tr>
+<tr><td>OpenStack-Helm</td><td>Communauté</td><td>Charts Helm : le plan de contrôle tourne dans Kubernetes</td><td>Production pour équipes maîtrisant Kubernetes</td></tr>
+<tr><td>Canonical OpenStack</td><td>Canonical</td><td>Sunbeam : snaps, Juju et Kubernetes ; MAAS pour le matériel</td><td>Du poste de test au cloud multi-nœuds, support Ubuntu Pro</td></tr>
+<tr><td>Red Hat OpenStack Services on OpenShift</td><td>Red Hat</td><td>Plan de contrôle géré par des opérateurs sur OpenShift, computes sur RHEL</td><td>Entreprises et opérateurs déjà clients Red Hat</td></tr>
+<tr><td>Mirantis OpenStack for Kubernetes</td><td>Mirantis</td><td>OpenStack conteneurisé, cycle de vie piloté par Kubernetes</td><td>Clouds privés et opérateurs</td></tr>
+</tbody></table>
+<div class="note"><b>Tendance de fond :</b> le plan de contrôle est désormais <b>conteneurisé</b>, et de plus en plus souvent hébergé sur Kubernetes. Les API exposées aux utilisateurs restent strictement les mêmes quelle que soit la distribution.</div>
+</div>
+</section>
+
+<!-- 21 -->
+<section class="slide dark sec">
+<div class="num">03</div>
+<h2>OpenStack face aux alternatives</h2>
+<p>VMware, OpenShift, clouds publics : ces solutions ne répondent pas toutes à la même question. Comparer service par service permet de voir où elles se recouvrent et où elles se complètent.</p>
+<ol><li>VMware : couches et fonctions</li><li>VMware : deux philosophies</li><li>OpenShift : un autre étage de la pile</li><li>OpenStack et Kubernetes, complémentaires</li><li>Clouds publics : équivalences de services</li><li>Grille de choix</li></ol>
+</section>
+
+<!-- 22 -->
+<section class="slide">
+<header><span class="kick">3 · OpenStack face aux alternatives</span><h2>OpenStack et VMware : architectures comparées, couche par couche</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="-55 0 1205 480">
+<text x="365" y="24" class="tc tl">VMware Cloud Foundation</text>
+<text x="875" y="24" class="tc tl tr">OpenStack</text>
+<g class="te tb"><text x="135" y="76">Libre-service</text><text x="135" y="163">Plan de contrôle</text><text x="135" y="250">Réseau et stockage</text><text x="135" y="337">Hyperviseur</text><text x="135" y="424">Matériel</text></g>
+<g class="te ts"><text x="135" y="94">ce que voit l'utilisateur</text><text x="135" y="181">décisions, état, API</text><text x="135" y="268">virtualisés, programmables</text><text x="135" y="355">exécute les machines</text><text x="135" y="442">serveurs, disques, switchs</text></g>
+<!-- vmware -->
+<rect x="160" y="42" width="410" height="72" rx="8" class="b-grey"/><text x="365" y="74" class="tc tb">VCF Automation · vSphere Client</text><text x="365" y="95" class="tc ts">catalogue de services, console d'administration</text>
+<rect x="160" y="129" width="410" height="72" rx="8" class="b-grey"/><text x="365" y="161" class="tc tb">vCenter Server</text><text x="365" y="182" class="tc ts">inventaire, SSO, DRS, HA, modèles de machines</text>
+<rect x="160" y="216" width="198" height="72" rx="8" class="b-grey"/><text x="259" y="248" class="tc tb">NSX</text><text x="259" y="269" class="tc ts">réseaux logiques, pare-feu</text>
+<rect x="372" y="216" width="198" height="72" rx="8" class="b-grey"/><text x="471" y="248" class="tc tb">vSAN · VMFS</text><text x="471" y="269" class="tc ts">datastores</text>
+<rect x="160" y="303" width="410" height="72" rx="8" class="b-grey"/><text x="365" y="335" class="tc tb">ESXi</text><text x="365" y="356" class="tc ts">hyperviseur propriétaire</text>
+<rect x="160" y="390" width="410" height="72" rx="8" class="b-dark"/><text x="365" y="422" class="tc tb tw">Serveurs certifiés</text><text x="365" y="443" class="tc tw" style="font-size:12px">liste de compatibilité de l'éditeur</text>
+<!-- equivalence -->
+<g class="tc tl" style="fill:#94a3b8"><text x="620" y="84">≈</text><text x="620" y="171">≈</text><text x="620" y="258">≈</text><text x="620" y="345">≈</text><text x="620" y="432">≈</text></g>
+<!-- openstack -->
+<rect x="670" y="42" width="410" height="72" rx="8" class="b-red"/><text x="875" y="74" class="tc tb">Horizon · Skyline · CLI · API REST</text><text x="875" y="95" class="tc ts">même API pour l'humain et pour l'automate</text>
+<rect x="670" y="129" width="95" height="72" rx="8" class="b-red"/><text x="717" y="170" class="tc tb">Keystone</text>
+<rect x="775" y="129" width="95" height="72" rx="8" class="b-red"/><text x="822" y="170" class="tc tb">Nova</text>
+<rect x="880" y="129" width="95" height="72" rx="8" class="b-red"/><text x="927" y="170" class="tc tb">Placement</text>
+<rect x="985" y="129" width="95" height="72" rx="8" class="b-red"/><text x="1032" y="170" class="tc tb">Glance</text>
+<rect x="670" y="216" width="198" height="72" rx="8" class="b-red"/><text x="769" y="248" class="tc tb">Neutron</text><text x="769" y="269" class="tc ts">OVN, Open vSwitch</text>
+<rect x="882" y="216" width="198" height="72" rx="8" class="b-red"/><text x="981" y="248" class="tc tb">Cinder</text><text x="981" y="269" class="tc ts">Ceph, LVM, baies du marché</text>
+<rect x="670" y="303" width="410" height="72" rx="8" class="b-red"/><text x="875" y="335" class="tc tb">KVM / QEMU + libvirt</text><text x="875" y="356" class="tc ts">hyperviseur libre, intégré à Linux</text>
+<rect x="670" y="390" width="410" height="72" rx="8" class="b-dark"/><text x="875" y="422" class="tc tb tw">Matériel standard</text><text x="875" y="443" class="tc tw" style="font-size:12px">multi-constructeurs, x86 ou ARM</text>
+</svg>
+</div>
+<div class="note g">Les couches se correspondent presque une à une. La différence tient au <b>découpage</b> : un produit intégré d'un côté, des services indépendants reliés par des API de l'autre.</div>
+</div>
+</section>
+
+<!-- 23 -->
+<section class="slide">
+<header><span class="kick">3 · OpenStack face aux alternatives</span><h2>OpenStack et VMware : au-delà des couches de base</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th>Fonction</th><th>OpenStack</th><th>VMware (vSphere / VCF)</th><th>À savoir</th></tr></thead>
+<tbody>
+<tr><td>Modèles de VM</td><td>Glance</td><td>Templates, Content Library</td><td>Images qcow2 ou raw, préparées pour cloud-init</td></tr>
+<tr><td>Identité</td><td>Keystone</td><td>vCenter SSO</td><td>Domaines, projets, rôles ; fédération SAML / OIDC</td></tr>
+<tr><td>Orchestration</td><td>Heat, Terraform</td><td>VCF Automation, Terraform</td><td>Infrastructure décrite en fichiers versionnés</td></tr>
+<tr><td>Migration à chaud</td><td>Nova live migration</td><td>vMotion</td><td>Déclenchée par l'administrateur ou par un outil</td></tr>
+<tr><td>Équilibrage des hôtes</td><td>Watcher</td><td>DRS</td><td>Service optionnel dans OpenStack</td></tr>
+<tr><td>Redémarrage après panne</td><td>Masakari</td><td>vSphere HA</td><td>Service optionnel ; l'approche cloud privilégie la redondance applicative</td></tr>
+<tr><td>Répartition de charge</td><td>Octavia</td><td>NSX Advanced Load Balancer (Avi)</td><td>Load balancer à la demande, par projet</td></tr>
+<tr><td>Kubernetes</td><td>Magnum, Cluster API</td><td>vSphere Kubernetes Service</td><td>Clusters créés par API sur l'IaaS</td></tr>
+</tbody></table>
+<div class="note g">Les cinq couches de base — hyperviseur, gestion du calcul, réseau, stockage, libre-service — sont mises en regard sur la slide précédente. Ce tableau ne reprend que les fonctions qui s'y ajoutent.</div>
+</div>
+</section>
+
+<!-- 24 -->
+<section class="slide">
+<header><span class="kick">3 · OpenStack face aux alternatives</span><h2>OpenStack et VMware : deux philosophies</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Dimension</th><th>VMware vSphere / Cloud Foundation</th><th>OpenStack</th></tr></thead>
+<tbody>
+<tr><td>Nature</td><td>Produit propriétaire intégré, conçu par un éditeur unique</td><td>Projet libre modulaire, porté par une communauté et plusieurs distributeurs</td></tr>
+<tr><td>Modèle économique</td><td>Abonnement par cœur ; depuis le rachat par Broadcom (fin 2023), fin des licences perpétuelles et offres regroupées en bundles</td><td>Aucune licence ; le coût porte sur les compétences, l'exploitation et un éventuel contrat de support</td></tr>
+<tr><td>Public visé</td><td>Administrateurs d'infrastructure qui opèrent des machines pour le compte des métiers</td><td>Équipes projets autonomes qui consomment par API ; l'équipe plateforme opère le cloud</td></tr>
+<tr><td>Charges de travail</td><td>Applications traditionnelles, machines durables, haute disponibilité transparente</td><td>Applications conçues pour le cloud, instances jetables, automatisation ; sait aussi héberger du traditionnel</td></tr>
+<tr><td>Matériel</td><td>Liste de compatibilité matérielle à respecter</td><td>Matériel standard, multi-constructeurs ; choix libre du stockage et du réseau</td></tr>
+<tr><td>Exploitation</td><td>Expérience intégrée, outillage guidé, compétences répandues</td><td>Assemblage plus exigeant : Linux, réseau, stockage distribué, automatisation</td></tr>
+<tr><td>Multi-tenant</td><td>Ajouté par des produits complémentaires</td><td>Natif : projets, quotas, réseaux isolés dès l'origine</td></tr>
+</tbody></table>
+<div class="note"><b>Migrer de VMware vers OpenStack</b> ne se résume pas à convertir des disques (<code>virt-v2v</code> le fait très bien). Il faut aussi revoir les habitudes : réseau à la demande, sauvegardes, haute disponibilité, processus de demande.</div>
+</div>
+</section>
+
+<!-- 25 -->
+<section class="slide">
+<header><span class="kick">3 · OpenStack face aux alternatives</span><h2>OpenStack et OpenShift : deux étages différents de la pile</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 470">
+<rect x="150" y="5" width="260" height="40" rx="8" class="b-blue"/><text x="280" y="30" class="tc tb">Développeurs, pipelines CI/CD</text>
+<path d="M280,45 V68" class="ln"/>
+<rect x="60" y="70" width="440" height="70" rx="8" class="b-teal"/><text x="280" y="98" class="tc tb">Applications conteneurisées</text>
+<rect x="85" y="108" width="60" height="22" rx="5" class="bx"/><text x="115" y="124" class="tc ts">pod</text><rect x="155" y="108" width="60" height="22" rx="5" class="bx"/><text x="185" y="124" class="tc ts">pod</text><rect x="225" y="108" width="60" height="22" rx="5" class="bx"/><text x="255" y="124" class="tc ts">pod</text><rect x="295" y="108" width="60" height="22" rx="5" class="bx"/><text x="325" y="124" class="tc ts">pod</text><rect x="365" y="108" width="60" height="22" rx="5" class="bx"/><text x="395" y="124" class="tc ts">pod</text>
+<rect x="60" y="152" width="440" height="118" rx="8" class="b-violet"/><text x="280" y="180" class="tc tl">OpenShift (Kubernetes) — PaaS / CaaS</text><text x="280" y="200" class="tc ts">ordonnancement de conteneurs, routes, builds, opérateurs</text>
+<rect x="80" y="214" width="125" height="42" rx="6" class="bx"/><text x="142" y="240" class="tc">control plane ×3</text>
+<rect x="217" y="214" width="125" height="42" rx="6" class="bx"/><text x="279" y="240" class="tc">workers ×N</text>
+<rect x="354" y="214" width="126" height="42" rx="6" class="bx"/><text x="417" y="240" class="tc">nœuds infra</text>
+<path d="M142,256 V288" class="ln"/><path d="M279,256 V288" class="ln"/><path d="M417,256 V288" class="ln"/>
+<rect x="60" y="290" width="440" height="96" rx="8" class="b-red"/><text x="280" y="318" class="tc tl tr">OpenStack — IaaS</text><text x="280" y="340" class="tc ts">instances Nova · réseaux Neutron · volumes Cinder</text><text x="280" y="358" class="tc ts">load balancers Octavia · stockage objet Swift</text>
+<rect x="60" y="398" width="440" height="50" rx="8" class="b-dark"/><text x="280" y="428" class="tc tb tw">Matériel : serveurs, réseau, stockage</text>
+</svg>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th></th><th>OpenStack</th><th>OpenShift</th></tr></thead>
+<tbody>
+<tr><td>Modèle</td><td>IaaS</td><td>PaaS / CaaS</td></tr>
+<tr><td>Unité gérée</td><td>Machine virtuelle, réseau, volume</td><td>Conteneur, pod, application</td></tr>
+<tr><td>Public</td><td>Administrateurs système, équipes infrastructure</td><td>Développeurs, équipes applicatives</td></tr>
+<tr><td>Moteur</td><td>Services Python + KVM</td><td>Kubernetes + opérateurs</td></tr>
+<tr><td>Éditeur</td><td>Communauté, multi-distributeurs</td><td>Red Hat (amont libre : OKD)</td></tr>
+<tr><td>Isolation</td><td>Projet, réseau virtuel, hyperviseur</td><td>Namespace, NetworkPolicy, noyau partagé</td></tr>
+</tbody></table>
+<div class="note">Ce ne sont <b>pas des concurrents directs</b> : OpenShift a besoin de machines pour ses nœuds, OpenStack les lui fournit par API.</div>
+<div class="note g"><b>Zone de recouvrement :</b> OpenShift Virtualization (KubeVirt) exécute des VM dans des pods. Une option pour un parc de VM modeste géré avec les outils Kubernetes ; OpenStack reste plus complet pour un IaaS multi-tenant à grande échelle.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 26 -->
+<section class="slide">
+<header><span class="kick">3 · OpenStack face aux alternatives</span><h2>OpenStack et Kubernetes : trois façons de les combiner</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 400">
+<!-- A -->
+<rect x="10" y="5" width="360" height="390" rx="12" class="zone"/>
+<circle cx="42" cy="36" r="15" class="f-red"/><text x="42" y="42" class="tc tw tb">A</text><text x="68" y="42" class="tl">Kubernetes sur OpenStack</text>
+<text x="30" y="72" class="ts">Le cas le plus courant : les clusters tournent</text><text x="30" y="89" class="ts">dans des instances du cloud.</text>
+<rect x="30" y="108" width="320" height="50" rx="8" class="b-violet"/><text x="190" y="138" class="tc tb">Cluster Kubernetes</text>
+<rect x="30" y="170" width="98" height="52" rx="6" class="bx"/><text x="79" y="201" class="tc">instance</text>
+<rect x="141" y="170" width="98" height="52" rx="6" class="bx"/><text x="190" y="201" class="tc">instance</text>
+<rect x="252" y="170" width="98" height="52" rx="6" class="bx"/><text x="301" y="201" class="tc">instance</text>
+<rect x="30" y="234" width="320" height="50" rx="8" class="b-red"/><text x="190" y="264" class="tc tb tr">OpenStack (IaaS)</text>
+<text x="30" y="313" class="tb">Création :</text><text x="110" y="313">Magnum ou Cluster API</text>
+<text x="30" y="337" class="tb">Volumes :</text><text x="110" y="337">pilote CSI Cinder</text>
+<text x="30" y="361" class="tb">Services :</text><text x="110" y="361">LoadBalancer via Octavia</text>
+<text x="30" y="385" class="tb">Réseau :</text><text x="110" y="385">ports et sous-réseaux Neutron</text>
+<!-- B -->
+<rect x="395" y="5" width="360" height="390" rx="12" class="zone"/>
+<circle cx="427" cy="36" r="15" class="f-red"/><text x="427" y="42" class="tc tw tb">B</text><text x="453" y="42" class="tl">OpenStack sur Kubernetes</text>
+<text x="415" y="72" class="ts">Le plan de contrôle d'OpenStack est lui-même</text><text x="415" y="89" class="ts">déployé comme une application conteneurisée.</text>
+<rect x="415" y="108" width="320" height="50" rx="8" class="b-red"/><text x="575" y="138" class="tc tb tr">Plan de contrôle OpenStack</text>
+<rect x="415" y="170" width="98" height="52" rx="6" class="bx"/><text x="464" y="192" class="tc ts">pod</text><text x="464" y="210" class="tc tm">nova-api</text>
+<rect x="526" y="170" width="98" height="52" rx="6" class="bx"/><text x="575" y="192" class="tc ts">pod</text><text x="575" y="210" class="tc tm">keystone</text>
+<rect x="637" y="170" width="98" height="52" rx="6" class="bx"/><text x="686" y="192" class="tc ts">pod</text><text x="686" y="210" class="tc tm">neutron</text>
+<rect x="415" y="234" width="320" height="50" rx="8" class="b-violet"/><text x="575" y="264" class="tc tb">Kubernetes (socle d'exploitation)</text>
+<text x="415" y="313" class="tb">Outils :</text><text x="480" y="313">OpenStack-Helm, Sunbeam,</text><text x="480" y="331">RHOSO, Mirantis MOSK</text>
+<text x="415" y="361" class="tb">Intérêt :</text><text x="480" y="361">redémarrage automatique,</text><text x="480" y="379">mises à jour progressives</text>
+<!-- C -->
+<rect x="780" y="5" width="360" height="390" rx="12" class="zone"/>
+<circle cx="812" cy="36" r="15" class="f-red"/><text x="812" y="42" class="tc tw tb">C</text><text x="838" y="42" class="tl">Côte à côte sur bare metal</text>
+<text x="800" y="72" class="ts">Ironic fournit des serveurs physiques par API ;</text><text x="800" y="89" class="ts">Kubernetes s'y installe sans hyperviseur.</text>
+<rect x="800" y="108" width="153" height="50" rx="8" class="b-blue"/><text x="876" y="138" class="tc tb">Instances KVM</text>
+<rect x="967" y="108" width="153" height="50" rx="8" class="b-violet"/><text x="1043" y="138" class="tc tb">Kubernetes</text>
+<rect x="800" y="170" width="153" height="52" rx="6" class="bx"/><text x="876" y="201" class="tc">Nova + libvirt</text>
+<rect x="967" y="170" width="153" height="52" rx="6" class="b-amber"/><text x="1043" y="201" class="tc">Nova + Ironic</text>
+<rect x="800" y="234" width="320" height="50" rx="8" class="b-dark"/><text x="960" y="264" class="tc tb tw">Serveurs physiques</text>
+<text x="800" y="313" class="tb">Usages :</text><text x="870" y="313">GPU, calcul intensif, télécoms,</text><text x="870" y="331">bases de données exigeantes</text>
+<text x="800" y="361" class="tb">Intérêt :</text><text x="870" y="361">mêmes API, mêmes réseaux,</text><text x="870" y="379">mêmes quotas pour tout</text>
+</svg>
+</div>
+<div class="note">OpenStack gère l'<b>infrastructure</b> (machines, réseaux, disques) ; Kubernetes gère les <b>applications</b> (conteneurs). Dans la plupart des clouds privés, on trouve les deux, et souvent les schémas A et B simultanément.</div>
+</div>
+</section>
+
+<!-- 27 -->
+<section class="slide">
+<header><span class="kick">3 · OpenStack face aux alternatives</span><h2>OpenStack et clouds publics : équivalences de services</h2></header>
+<div class="body">
+<table class="tbl os tight">
+<thead><tr><th>Fonction</th><th>OpenStack</th><th>AWS</th><th>Microsoft Azure</th><th>Google Cloud</th></tr></thead>
+<tbody>
+<tr><td>Machines virtuelles</td><td>Nova</td><td>EC2</td><td>Virtual Machines</td><td>Compute Engine</td></tr>
+<tr><td>Réseau virtuel</td><td>Neutron</td><td>VPC</td><td>Virtual Network</td><td>VPC</td></tr>
+<tr><td>Stockage bloc</td><td>Cinder</td><td>EBS</td><td>Managed Disks</td><td>Persistent Disk</td></tr>
+<tr><td>Stockage objet</td><td>Swift</td><td>S3</td><td>Blob Storage</td><td>Cloud Storage</td></tr>
+<tr><td>Fichiers partagés</td><td>Manila</td><td>EFS, FSx</td><td>Azure Files</td><td>Filestore</td></tr>
+<tr><td>Images système</td><td>Glance</td><td>AMI</td><td>Images, Compute Gallery</td><td>Images</td></tr>
+<tr><td>Identité et accès</td><td>Keystone</td><td>IAM</td><td>Entra ID + RBAC</td><td>Cloud IAM</td></tr>
+<tr><td>Orchestration</td><td>Heat</td><td>CloudFormation</td><td>ARM, Bicep</td><td>Infrastructure Manager</td></tr>
+<tr><td>Répartition de charge</td><td>Octavia</td><td>Elastic Load Balancing</td><td>Load Balancer, Application Gateway</td><td>Cloud Load Balancing</td></tr>
+<tr><td>DNS</td><td>Designate</td><td>Route 53</td><td>Azure DNS</td><td>Cloud DNS</td></tr>
+<tr><td>Secrets et clés</td><td>Barbican</td><td>KMS, Secrets Manager</td><td>Key Vault</td><td>Cloud KMS, Secret Manager</td></tr>
+<tr><td>Kubernetes managé</td><td>Magnum</td><td>EKS</td><td>AKS</td><td>GKE</td></tr>
+<tr><td>Bases de données</td><td>Trove</td><td>RDS</td><td>Azure SQL, Azure Database</td><td>Cloud SQL</td></tr>
+<tr><td>Métriques et alarmes</td><td>Ceilometer, Aodh</td><td>CloudWatch</td><td>Azure Monitor</td><td>Cloud Monitoring</td></tr>
+</tbody></table>
+<div class="note g">Les concepts sont transposables d'un cloud à l'autre : qui maîtrise Nova, Neutron et Cinder comprend immédiatement EC2, VPC et EBS — et inversement.</div>
+</div>
+</section>
+
+<!-- 28 -->
+<section class="slide">
+<header><span class="kick">3 · OpenStack face aux alternatives</span><h2>OpenStack et clouds publics : deux modèles économiques et opérationnels</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Critère</th><th>Cloud public (hyperscaler)</th><th>OpenStack en cloud privé</th></tr></thead>
+<tbody>
+<tr><td>Modèle de coût</td><td>Dépense d'exploitation, paiement à l'usage, aucun investissement initial</td><td>Investissement matériel amorti + coût de l'équipe ; coût marginal faible une fois la capacité en place</td></tr>
+<tr><td>Rentabilité</td><td>Imbattable pour démarrer, pour les charges variables ou imprévisibles</td><td>Avantageuse pour des charges stables, volumineuses et durables</td></tr>
+<tr><td>Responsabilité</td><td>Le fournisseur exploite tout jusqu'à l'hyperviseur</td><td>Vous exploitez tout : datacenter, matériel, plan de contrôle, mises à jour</td></tr>
+<tr><td>Catalogue</td><td>Des centaines de services managés (bases, IA, analytique, serverless)</td><td>IaaS complet et quelques services de plateforme ; le reste se construit dessus</td></tr>
+<tr><td>Élasticité</td><td>Quasi illimitée, mondiale</td><td>Bornée par la capacité achetée ; à planifier</td></tr>
+<tr><td>Localisation des données</td><td>Régions du fournisseur, droit applicable à examiner</td><td>Là où vous le décidez, sous votre contrôle juridique</td></tr>
+<tr><td>Dépendance</td><td>API propriétaires, frais de sortie des données</td><td>API ouvertes, identiques chez tous les fournisseurs OpenStack</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Attention au faux débat :</b> OpenStack n'est pas « l'inverse » du cloud public. C'est une technologie, utilisée aussi pour bâtir des clouds publics (OVHcloud, Infomaniak, Open Telekom Cloud).</div>
+<div class="note b"><b>En pratique :</b> la plupart des organisations sont hybrides. Les outils d'infrastructure as code (Terraform, Ansible) pilotent les deux mondes avec la même démarche.</div>
+</div>
+</div>
+</section>
+
+<!-- 29 -->
+<section class="slide">
+<header><span class="kick">3 · OpenStack face aux alternatives</span><h2>Synthèse : quelle solution pour quel besoin ?</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th></th><th>OpenStack</th><th>VMware Cloud Foundation</th><th>OpenShift</th><th>Cloud public</th></tr></thead>
+<tbody>
+<tr><td>Nature</td><td>IaaS libre, privé ou public</td><td>Virtualisation et cloud privé propriétaires</td><td>Plateforme de conteneurs (PaaS / CaaS)</td><td>IaaS, PaaS et SaaS loués</td></tr>
+<tr><td>Unité de base</td><td>Instance, réseau, volume</td><td>Machine virtuelle</td><td>Conteneur, application</td><td>Tout, de la VM à la fonction</td></tr>
+<tr><td>Licence</td><td>Apache 2.0, gratuite</td><td>Abonnement par cœur</td><td>Abonnement (OKD libre)</td><td>Paiement à l'usage</td></tr>
+<tr><td>Compétences clés</td><td>Linux, réseau, stockage, automatisation</td><td>Administration vSphere</td><td>Kubernetes, conteneurs, CI/CD</td><td>Architecture cloud, FinOps</td></tr>
+<tr><td>Point fort</td><td>Ouverture, multi-tenant natif, coût à grande échelle</td><td>Intégration, maturité, confort d'exploitation</td><td>Productivité des développeurs</td><td>Vitesse, étendue du catalogue</td></tr>
+<tr><td>Point de vigilance</td><td>Exigeant à exploiter</td><td>Coût et dépendance à l'éditeur</td><td>Nécessite une infrastructure dessous</td><td>Coût à l'échelle, souveraineté</td></tr>
+<tr><td>Idéal pour</td><td>Cloud privé souverain, opérateurs, fournisseurs de cloud</td><td>Parc de VM traditionnelles déjà en place</td><td>Applications conteneurisées, microservices</td><td>Démarrage rapide, charges variables</td></tr>
+</tbody></table>
+<div class="note"><b>À retenir :</b> ces solutions se combinent plus qu'elles ne s'excluent. Un schéma très répandu : <b>OpenStack</b> pour l'IaaS privé, <b>Kubernetes ou OpenShift</b> par-dessus pour les applications, et le <b>cloud public</b> en complément pour le débordement ou les services managés.</div>
+</div>
+</section>
+
+<!-- 30 -->
+<section class="slide dark sec">
+<div class="num">04</div>
+<h2>Architecture et composants</h2>
+<p>Comment OpenStack est construit : un socle technique commun, des services spécialisés qui dialoguent par API, et un enchaînement précis lorsqu'un utilisateur demande une ressource.</p>
+<ol><li>Vue d'ensemble et types de nœuds</li><li>Socle commun : REST, RPC, base de données</li><li>Keystone, Glance, Nova, Placement</li><li>Neutron, Cinder, Swift</li><li>Horizon, CLI, Heat et services complémentaires</li><li>Création d'une instance, régions et haute disponibilité</li></ol>
+</section>
+
+<!-- 31 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants</span><h2>Vue d'ensemble : qui fournit quoi à une instance</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 485">
+<rect x="150" y="6" width="560" height="40" rx="8" class="b-blue"/><text x="430" y="31" class="tc tb">Horizon · Skyline · CLI · SDK · Terraform</text>
+<rect x="740" y="6" width="370" height="40" rx="8" class="b-violet"/><text x="925" y="31" class="tc"><tspan class="tb">Heat</tspan> — orchestre les autres services par leurs API</text>
+<path d="M575,46 V116" class="lr"/><text x="587" y="76" class="tb tr">API REST</text><text x="587" y="94" class="ts">chaque service expose la sienne</text>
+<!-- row A -->
+<rect x="40" y="120" width="210" height="65" rx="8" class="b-amber"/><text x="145" y="148" class="tc tl">Glance</text><text x="145" y="169" class="tc ts">catalogue d'images</text>
+<rect x="465" y="120" width="220" height="65" rx="8" class="b-red"/><text x="575" y="148" class="tc tl tr">Nova</text><text x="575" y="169" class="tc ts">cycle de vie des instances</text>
+<rect x="900" y="120" width="210" height="65" rx="8" class="b-teal"/><text x="1005" y="148" class="tc tl">Neutron</text><text x="1005" y="169" class="tc ts">réseaux virtuels</text>
+<path d="M250,152 H463" class="ln"/><text x="357" y="143" class="tc ts">fournit l'image de démarrage</text>
+<path d="M685,152 H898" class="ln"/><text x="792" y="143" class="tc ts">demande ports et adresses IP</text>
+<!-- placement -->
+<rect x="285" y="218" width="150" height="46" rx="8" class="bx"/><text x="360" y="238" class="tc tb">Placement</text><text x="360" y="255" class="tc ts">inventaire des hôtes</text>
+<path d="M480,187 L437,222" class="ln"/>
+<!-- row B -->
+<rect x="40" y="300" width="210" height="65" rx="8" class="b-amber"/><text x="145" y="328" class="tc tl">Swift</text><text x="145" y="349" class="tc ts">stockage objet</text>
+<rect x="465" y="300" width="220" height="65" rx="8" class="b-blue" style="stroke-width:3"/><text x="575" y="328" class="tc tl">Instance</text><text x="575" y="349" class="tc ts">machine virtuelle sur un hyperviseur</text>
+<rect x="900" y="300" width="210" height="65" rx="8" class="b-amber"/><text x="1005" y="328" class="tc tl">Cinder</text><text x="1005" y="349" class="tc ts">volumes persistants</text>
+<path d="M145,185 V298" class="ln"/><text x="155" y="246" class="ts">stocke les images</text>
+<path d="M545,185 V298" class="lr"/><text x="537" y="285" class="te ts">crée et pilote</text>
+<path d="M1005,185 V250 H625 V298" class="ln"/><text x="815" y="242" class="tc ts">raccorde l'instance au réseau</text>
+<path d="M900,332 H687" class="ln"/><text x="793" y="323" class="tc ts">attache les volumes</text>
+<path d="M1005,365 V402 H145 V367" class="ln ld"/><text x="575" y="394" class="tc ts">sauvegarde les volumes</text>
+<!-- keystone -->
+<rect x="40" y="428" width="1070" height="50" rx="8" class="b-dark"/><text x="575" y="449" class="tc tw tb">Keystone — identité</text><text x="575" y="468" class="tc tw" style="font-size:12px">authentifie chaque appel, porte les rôles par projet et publie le catalogue des points d'accès de tous les services</text>
+</svg>
+</div></div>
+</section>
+
+<!-- 32 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants<span class="deep">Approfondi au module 2</span></span><h2>Architecture physique : types de nœuds et réseaux</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 480">
+<!-- nodes -->
+<rect x="20" y="15" width="205" height="225" rx="10" class="b-red"/><text x="122" y="42" class="tc tl tr">Nœuds de contrôle</text><text x="122" y="60" class="tc ts">3 au minimum en production</text>
+<g class="ts"><text x="34" y="92">• API de tous les services</text><text x="34" y="114">• nova-scheduler, conductor</text><text x="34" y="136">• neutron-server, bases OVN</text><text x="34" y="158">• MariaDB Galera, RabbitMQ</text><text x="34" y="180">• Keystone, Horizon</text><text x="34" y="202">• HAProxy + adresse virtuelle</text></g>
+<rect x="240" y="15" width="205" height="225" rx="10" class="b-blue"/><text x="342" y="42" class="tc tl">Nœuds de calcul</text><text x="342" y="60" class="tc ts">de quelques-uns à des milliers</text>
+<g class="ts"><text x="254" y="92">• nova-compute</text><text x="254" y="114">• libvirt + KVM / QEMU</text><text x="254" y="136">• ovn-controller, Open vSwitch</text><text x="254" y="158">• connecteurs de stockage</text><text x="254" y="180">• instances des utilisateurs</text></g>
+<rect x="460" y="15" width="205" height="225" rx="10" class="b-teal"/><text x="562" y="42" class="tc tl">Passerelles réseau</text><text x="562" y="60" class="tc ts">souvent fusionnées au contrôle</text>
+<g class="ts"><text x="474" y="92">• sortie vers l'extérieur</text><text x="474" y="114">• NAT et IP flottantes</text><text x="474" y="136">• SNAT des routeurs</text><text x="474" y="158">• raccordement aux réseaux</text><text x="486" y="174">physiques (VLAN)</text></g>
+<rect x="680" y="15" width="205" height="225" rx="10" class="b-amber"/><text x="782" y="42" class="tc tl">Nœuds de stockage</text><text x="782" y="60" class="tc ts">grande densité de disques</text>
+<g class="ts"><text x="694" y="92">• Ceph : volumes, images,</text><text x="706" y="108">disques d'instances</text><text x="694" y="130">• ou Swift : objets</text><text x="694" y="152">• réplication entre nœuds</text><text x="694" y="174">• cinder-volume si LVM</text></g>
+<!-- networks -->
+<line x1="20" y1="280" x2="895" y2="280" stroke="#101a33" stroke-width="5"/>
+<line x1="20" y1="320" x2="895" y2="320" stroke="#e4002b" stroke-width="5"/>
+<line x1="20" y1="360" x2="895" y2="360" stroke="#2563eb" stroke-width="5"/>
+<line x1="20" y1="400" x2="895" y2="400" stroke="#d97706" stroke-width="5"/>
+<line x1="20" y1="440" x2="895" y2="440" stroke="#7c3aed" stroke-width="5"/>
+<text x="912" y="277" class="tb" style="fill:#101a33">Gestion · API interne</text><text x="912" y="294" class="ts">API internes, base, bus, OVSDB, SSH</text>
+<text x="912" y="317" class="tb tr">API publique</text><text x="912" y="334" class="ts">VIP externe : utilisateurs, Horizon</text>
+<text x="912" y="357" class="tb" style="fill:#1d4ed8">Overlay des projets</text><text x="912" y="374" class="ts">tunnels Geneve entre hyperviseurs</text>
+<text x="912" y="397" class="tb" style="fill:#b45309">Stockage</text><text x="912" y="414" class="ts">accès Ceph, iSCSI, réplication</text>
+<text x="912" y="437" class="tb" style="fill:#7c3aed">Externe · fournisseur</text><text x="912" y="454" class="ts">IP flottantes, réseaux VLAN</text>
+<g stroke-width="2.5" fill="none">
+<path d="M60,240 V280 M280,240 V280 M500,240 V280 M720,240 V280" stroke="#101a33"/>
+<path d="M100,240 V320" stroke="#e4002b"/>
+<path d="M320,240 V360 M540,240 V360" stroke="#2563eb"/>
+<path d="M140,240 V400 M360,240 V400 M760,240 V400" stroke="#d97706"/>
+<path d="M580,240 V440" stroke="#7c3aed"/>
+<path d="M400,240 V440" stroke="#7c3aed" stroke-dasharray="5 4"/>
+</g>
+<g><circle cx="60" cy="280" r="6" fill="#101a33"/><circle cx="280" cy="280" r="6" fill="#101a33"/><circle cx="500" cy="280" r="6" fill="#101a33"/><circle cx="720" cy="280" r="6" fill="#101a33"/>
+<circle cx="100" cy="320" r="6" fill="#e4002b"/>
+<circle cx="320" cy="360" r="6" fill="#2563eb"/><circle cx="540" cy="360" r="6" fill="#2563eb"/>
+<circle cx="140" cy="400" r="6" fill="#d97706"/><circle cx="360" cy="400" r="6" fill="#d97706"/><circle cx="760" cy="400" r="6" fill="#d97706"/>
+<circle cx="580" cy="440" r="6" fill="#7c3aed"/><circle cx="400" cy="440" r="6" fill="#fff" stroke="#7c3aed" stroke-width="2.5"/></g>
+</svg>
+</div>
+<div class="note g">Séparer les réseaux isole les flux sensibles (gestion, stockage) du trafic des utilisateurs. <b>Vue simplifiée :</b> hors bande, provisionnement et réplication du stockage sont détaillés au module 2. Pointillés : le calcul ne rejoint l'externe que si les IP flottantes sont distribuées. Dans un lab, tout peut cohabiter sur une machine.</div>
+</div>
+</section>
+
+<!-- 33 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants<span class="deep">Approfondi au module 2</span></span><h2>Deux modes de communication : REST entre services, RPC à l'intérieur</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 345">
+<rect x="350" y="62" width="370" height="278" rx="12" class="zone"/><rect x="790" y="62" width="350" height="278" rx="12" class="zone"/>
+<rect x="555" y="4" width="200" height="36" rx="8" class="b-dark"/><text x="655" y="27" class="tc tw tb">Keystone</text>
+<path d="M440,82 V22 H553" class="ln ld"/><path d="M890,82 V22 H757" class="ln ld"/>
+<text x="452" y="46" class="ts">valide le jeton</text><text x="878" y="46" class="te ts">valide le jeton</text>
+<rect x="10" y="85" width="115" height="46" rx="8" class="b-blue"/><text x="67" y="113" class="tc tb">Client</text>
+<path d="M125,108 H178" class="lr"/>
+<rect x="180" y="85" width="120" height="46" rx="8" class="bx"/><text x="240" y="105" class="tc tb">HAProxy</text><text x="240" y="122" class="tc ts">adresse virtuelle</text>
+<path d="M300,108 H378" class="lr"/><text x="325" y="99" class="tc ts tb tr">REST</text>
+<!-- nova -->
+<text x="365" y="330" class="tl">Service Nova</text>
+<rect x="380" y="85" width="130" height="46" rx="8" class="b-red"/><text x="445" y="113" class="tc tb">nova-api</text>
+<rect x="570" y="85" width="130" height="46" rx="8" class="b-grey"/><text x="635" y="105" class="tc tb">MariaDB</text><text x="635" y="122" class="tc ts">base « nova »</text>
+<path d="M510,108 H568" class="ln"/>
+<rect x="380" y="172" width="320" height="32" rx="16" class="b-amber"/><text x="540" y="193" class="tc tb">RabbitMQ — appels RPC (oslo.messaging)</text>
+<path d="M445,131 V170" class="ln2"/>
+<rect x="380" y="245" width="95" height="46" rx="8" class="bx"/><text x="427" y="273" class="tc">scheduler</text>
+<rect x="492" y="245" width="95" height="46" rx="8" class="bx"/><text x="539" y="273" class="tc">conductor</text>
+<rect x="604" y="245" width="96" height="46" rx="8" class="bx"/><text x="652" y="273" class="tc">compute</text>
+<path d="M427,243 V206" class="ln2"/><path d="M539,243 V206" class="ln2"/><path d="M652,243 V206" class="ln2"/>
+<!-- cinder -->
+<text x="805" y="330" class="tl">Service Cinder</text>
+<rect x="820" y="85" width="130" height="46" rx="8" class="b-red"/><text x="885" y="113" class="tc tb">cinder-api</text>
+<rect x="990" y="85" width="130" height="46" rx="8" class="b-grey"/><text x="1055" y="105" class="tc tb">MariaDB</text><text x="1055" y="122" class="tc ts">base « cinder »</text>
+<path d="M950,108 H988" class="ln"/>
+<rect x="820" y="172" width="300" height="32" rx="16" class="b-amber"/><text x="970" y="193" class="tc tb">RabbitMQ — appels RPC</text>
+<path d="M885,131 V170" class="ln2"/>
+<rect x="820" y="245" width="140" height="46" rx="8" class="bx"/><text x="890" y="273" class="tc">scheduler</text>
+<rect x="980" y="245" width="140" height="46" rx="8" class="bx"/><text x="1050" y="273" class="tc">volume</text>
+<path d="M890,243 V206" class="ln2"/><path d="M1050,243 V206" class="ln2"/>
+<!-- rest between -->
+<path d="M700,268 C 760,268 760,120 818,112" class="lr"/><text x="755" y="306" class="tc tb tr">REST</text><text x="755" y="323" class="tc ts">+ jeton</text>
+</svg>
+</div>
+<div class="cols c3 nf">
+<div class="card"><h3>Entre services : API REST</h3>Nova ne lit jamais la base de Cinder : il appelle <code>cinder-api</code> en HTTP, avec un jeton Keystone, comme le ferait n'importe quel client. Chaque service est donc remplaçable et testable isolément.</div>
+<div class="card ca"><h3>Dans un service : RPC asynchrone</h3>Les processus d'un même service échangent par le bus de messages. L'API répond immédiatement (« accepté ») ; le travail se poursuit en arrière-plan, d'où les états transitoires comme <code>BUILD</code>.</div>
+<div class="card cn"><h3>Un état par service</h3>Chaque service possède sa propre base de données et son propre schéma. Les processus sont sans état : on les multiplie derrière le répartiteur de charge pour la disponibilité et la montée en charge.</div>
+</div>
+</div>
+</section>
+
+<!-- 34 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants<span class="deep">Approfondi au module 3</span></span><h2>Le socle technique partagé par tous les services</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Brique</th><th>Technologie de référence</th><th>Rôle</th><th>Si elle tombe…</th></tr></thead>
+<tbody>
+<tr><td>Base de données</td><td>MariaDB + Galera (3 nœuds)</td><td>État de chaque service : instances, réseaux, volumes, utilisateurs</td><td>Plus aucune opération d'API possible</td></tr>
+<tr><td>Bus de messages</td><td>RabbitMQ (files à quorum)</td><td>Appels RPC internes et notifications, via la bibliothèque oslo.messaging</td><td>Les opérations restent bloquées en cours</td></tr>
+<tr><td>Cache</td><td>Memcached</td><td>Jetons validés, sessions Horizon, résultats fréquents</td><td>Ralentissement, charge accrue sur Keystone</td></tr>
+<tr><td>Répartiteur de charge</td><td>HAProxy + Keepalived ou Pacemaker</td><td>Adresse virtuelle unique devant les API, terminaison TLS, bascule</td><td>API inaccessibles depuis l'extérieur</td></tr>
+<tr><td>Serveur d'applications</td><td>Apache mod_wsgi ou uWSGI</td><td>Exécute le code Python des API</td><td>Le service concerné ne répond plus</td></tr>
+<tr><td>Synchronisation horaire</td><td>Chrony (NTP)</td><td>Horloge commune : validité des jetons, cohérence des clusters</td><td>Rejets d'authentification, incohérences</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="col">
+<p><b>Les bibliothèques Oslo</b> donnent le même comportement à tous les services :</p>
+<ul class="pts sm">
+<li><code>oslo.config</code> : fichiers <code>/etc/&lt;service&gt;/&lt;service&gt;.conf</code> au même format partout.</li>
+<li><code>oslo.policy</code> : règles d'autorisation par rôle, surchargeables.</li>
+<li><code>oslo.messaging</code>, <code>oslo.db</code>, <code>oslo.log</code> : bus, base, journaux.</li>
+</ul>
+</div>
+<div class="note"><b>Point essentiel :</b> une panne du plan de contrôle n'arrête pas les instances. Les machines virtuelles continuent de tourner et de communiquer ; on perd seulement la capacité à créer, modifier ou supprimer des ressources.</div>
+</div>
+</div>
+</section>
+
+<!-- 35 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants</span><h2>Keystone : identité, projets et rôles</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 450">
+<rect x="8" y="8" width="544" height="434" rx="12" class="zone"/><text x="26" y="34" class="tl">Domaine « entreprise »</text><text x="26" y="52" class="ts">espace de noms et périmètre d'administration</text>
+<text x="95" y="82" class="tc ts tb">Utilisateurs et groupes</text><text x="435" y="82" class="tc ts tb">Projets (hiérarchie possible)</text>
+<rect x="30" y="95" width="130" height="40" rx="8" class="b-blue"/><text x="95" y="120" class="tc">alice</text>
+<rect x="30" y="150" width="130" height="40" rx="8" class="b-blue"/><text x="95" y="175" class="tc">bob</text>
+<rect x="30" y="230" width="130" height="92" rx="8" class="b-violet"/><text x="95" y="252" class="tc tb">groupe ops</text><rect x="42" y="262" width="106" height="22" rx="5" class="bx"/><text x="95" y="278" class="tc ts">carla</text><rect x="42" y="290" width="106" height="22" rx="5" class="bx"/><text x="95" y="306" class="tc ts">david</text>
+<rect x="340" y="95" width="190" height="40" rx="8" class="b-amber"/><text x="435" y="120" class="tc tb">production</text>
+<path d="M360,135 V225 M360,170 H378 M360,225 H378" class="nl"/>
+<rect x="380" y="150" width="150" height="40" rx="8" class="b-amber"/><text x="455" y="175" class="tc">prod-web</text>
+<rect x="380" y="205" width="150" height="40" rx="8" class="b-amber"/><text x="455" y="230" class="tc">prod-data</text>
+<rect x="340" y="270" width="190" height="40" rx="8" class="b-amber"/><text x="435" y="295" class="tc tb">dev</text>
+<path d="M160,115 L378,165" class="lr"/><rect x="225" y="120" width="76" height="22" rx="11" class="f-red"/><text x="263" y="136" class="tc tw tb" style="font-size:12px">member</text>
+<path d="M160,172 L378,223" class="lr"/><rect x="225" y="188" width="76" height="22" rx="11" class="f-red"/><text x="263" y="204" class="tc tw tb" style="font-size:12px">reader</text>
+<path d="M160,290 H338" class="lr"/><rect x="212" y="279" width="76" height="22" rx="11" class="f-red"/><text x="250" y="295" class="tc tw tb" style="font-size:12px">admin</text>
+<rect x="30" y="350" width="500" height="74" rx="8" class="b-red"/><text x="280" y="378" class="tc tb tr">Affectation de rôle</text><text x="280" y="400" class="tc">(utilisateur ou groupe) + rôle + (projet, domaine ou système)</text>
+</svg>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Concept</th><th>Définition</th></tr></thead>
+<tbody>
+<tr><td>Domaine</td><td>Conteneur de plus haut niveau : regroupe utilisateurs, groupes et projets ; peut être relié à un annuaire LDAP propre</td></tr>
+<tr><td>Projet</td><td>Unité d'isolation et de quota (l'ancien « tenant ») : toute ressource appartient à un projet</td></tr>
+<tr><td>Rôle</td><td>Ensemble de droits ; rôles par défaut : <code>reader</code>, <code>member</code>, <code>admin</code>, chacun incluant le précédent</td></tr>
+<tr><td>Jeton</td><td>Preuve d'authentification à durée limitée (format Fernet), portée sur un projet</td></tr>
+<tr><td>Catalogue</td><td>Liste des services et de leurs points d'accès (public, interne, admin) par région</td></tr>
+<tr><td>Identifiant d'application</td><td>Secret dédié à un automate, limité à un projet, révocable sans toucher au mot de passe</td></tr>
+</tbody></table>
+<div class="note g">Keystone est le <b>premier service installé</b> et le seul dont tous les autres dépendent. Il peut déléguer l'authentification à un fournisseur externe (SAML, OpenID Connect).</div>
+</div>
+</div></div>
+</section>
+
+<!-- 36 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants<span class="deep">Approfondi au module 2</span></span><h2>Keystone : le parcours d'un jeton</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 470">
+<rect x="40" y="5" width="180" height="46" rx="8" class="b-blue"/><text x="130" y="33" class="tc tb">Client (CLI, Horizon…)</text>
+<rect x="485" y="5" width="180" height="46" rx="8" class="b-dark"/><text x="575" y="33" class="tc tb tw">Keystone</text>
+<rect x="900" y="5" width="210" height="46" rx="8" class="b-red"/><text x="1005" y="33" class="tc tb">nova-api (ou tout service)</text>
+<g stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4"><line x1="130" y1="51" x2="130" y2="460"/><line x1="575" y1="51" x2="575" y2="460"/><line x1="1005" y1="51" x2="1005" y2="460"/></g>
+<circle cx="150" cy="95" r="12" class="f-red"/><text x="150" y="100" class="tc tw tb">1</text>
+<path d="M165,95 H573" class="lr"/><text x="370" y="86" class="tc"><tspan class="tm">POST /v3/auth/tokens</tspan> — identifiants + portée (projet)</text>
+<circle cx="555" cy="150" r="12" class="f-red"/><text x="555" y="155" class="tc tw tb">2</text>
+<path d="M540,150 H132" class="ln ld"/><text x="335" y="141" class="tc">201 · jeton (<tspan class="tm">X-Subject-Token</tspan>) + rôles + catalogue</text>
+<circle cx="150" cy="210" r="12" class="f-red"/><text x="150" y="215" class="tc tw tb">3</text>
+<path d="M165,210 H1003" class="lr"/><text x="790" y="201" class="tc"><tspan class="tm">GET /v2.1/servers</tspan> — en-tête <tspan class="tm">X-Auth-Token</tspan></text>
+<circle cx="985" cy="265" r="12" class="f-red"/><text x="985" y="270" class="tc tw tb">4</text>
+<path d="M970,265 H577" class="lr"/><text x="775" y="256" class="tc">keystonemiddleware : ce jeton est-il valide ?</text>
+<circle cx="595" cy="315" r="12" class="f-red"/><text x="595" y="320" class="tc tw tb">5</text>
+<path d="M610,315 H1003" class="ln ld"/><text x="800" y="306" class="tc">oui : utilisateur, projet, rôles (réponse mise en cache)</text>
+<circle cx="1025" cy="365" r="12" class="f-red"/><text x="1025" y="370" class="tc tw tb">6</text>
+<path d="M1005,350 H1060 V385 H1008" class="lr"/><text x="992" y="350" class="te ts">oslo.policy : rôle suffisant ?</text>
+<circle cx="985" cy="430" r="12" class="f-red"/><text x="985" y="435" class="tc tw tb">7</text>
+<path d="M970,430 H132" class="ln ld"/><text x="350" y="421" class="tc">200 · liste des instances du projet</text>
+<rect x="20" y="255" width="375" height="118" rx="8" class="b-grey"/>
+<text x="34" y="278" class="tb">À retenir</text>
+<text x="34" y="300" class="ts">• Le client s'authentifie une fois, puis réutilise le jeton.</text>
+<text x="34" y="320" class="ts">• Le catalogue (étape 2) lui indique l'URL de chaque service.</text>
+<text x="34" y="340" class="ts">• Chaque service vérifie le jeton, puis ses propres règles.</text>
+<text x="34" y="360" class="ts">• Un jeton expiré ou hors projet : réponse 401 ou 403.</text>
+</svg>
+</div></div>
+</section>
+
+<!-- 37 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants<span class="deep">Approfondi au module 4</span></span><h2>Glance : le catalogue d'images</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Rôle :</b> enregistrer, décrire et distribuer les <b>images disque</b> à partir desquelles les instances démarrent. Glance ne lance rien : il sert de bibliothèque à Nova et à Cinder.</p>
+<ul class="pts">
+<li><b>Formats :</b> <code>qcow2</code> (compact, le plus courant), <code>raw</code> (recommandé avec Ceph), mais aussi <code>vmdk</code>, <code>iso</code>.</li>
+<li><b>Stockage (« stores ») :</b> système de fichiers, Ceph RBD, Swift, S3, Cinder ; plusieurs stores simultanés possibles.</li>
+<li><b>Métadonnées :</b> propriétés qui guident Nova (<code>hw_disk_bus</code>, <code>hw_firmware_type</code>, <code>os_distro</code>), taille minimale de disque et de RAM.</li>
+<li><b>Visibilité :</b> <code>public</code>, <code>private</code>, <code>shared</code> (partagée avec des projets choisis), <code>community</code>.</li>
+<li><b>Instantanés :</b> la capture d'une instance produit une nouvelle image dans Glance.</li>
+<li><b>Images « cloud » :</b> minimales, sans mot de passe, configurées au démarrage par <code>cloud-init</code> (clé SSH, nom d'hôte, scripts).</li>
+</ul>
+</div>
+<div class="fig">
+<svg viewBox="0 0 570 445">
+<rect x="10" y="20" width="140" height="50" rx="8" class="b-blue"/><text x="80" y="42" class="tc tb">Utilisateur</text><text x="80" y="59" class="tc ts">ou pipeline</text>
+<path d="M150,45 H198" class="lr"/><text x="174" y="35" class="tc ts tb tr">1</text>
+<rect x="200" y="20" width="180" height="50" rx="8" class="b-red"/><text x="290" y="42" class="tc tb">glance-api</text><text x="290" y="59" class="tc ts">métadonnées en base</text>
+<path d="M380,45 H418" class="lr"/><text x="399" y="35" class="tc ts tb tr">2</text>
+<rect x="420" y="8" width="130" height="200" rx="10" class="zone"/><text x="485" y="28" class="tc ts tb">Stores</text>
+<rect x="432" y="38" width="106" height="32" rx="6" class="b-amber"/><text x="485" y="59" class="tc">Ceph RBD</text>
+<rect x="432" y="78" width="106" height="32" rx="6" class="bx"/><text x="485" y="99" class="tc">Swift / S3</text>
+<rect x="432" y="118" width="106" height="32" rx="6" class="bx"/><text x="485" y="139" class="tc">Fichiers</text>
+<rect x="432" y="158" width="106" height="32" rx="6" class="bx"/><text x="485" y="179" class="tc">Cinder</text>
+<path d="M290,70 V248" class="lr"/><text x="278" y="165" class="te ts tb tr">3</text>
+<rect x="190" y="250" width="200" height="54" rx="8" class="bx"/><text x="290" y="273" class="tc tb">nova-compute</text><text x="290" y="291" class="tc ts">cache local des images</text>
+<path d="M290,304 V343" class="lr"/><text x="278" y="328" class="te ts tb tr">4</text>
+<rect x="190" y="345" width="200" height="54" rx="8" class="b-blue"/><text x="290" y="368" class="tc tb">Instance</text><text x="290" y="386" class="tc ts">disque créé depuis l'image</text>
+<path d="M550,54 H562 V372 H392" class="ln ld"/>
+<g class="ts"><text x="10" y="120">1 · téléversement de l'image</text><text x="10" y="140">2 · écriture dans le store</text><text x="10" y="160">3 · téléchargement par</text><text x="22" y="176">l'hyperviseur (une seule fois)</text><text x="10" y="196">4 · création du disque</text></g>
+<text x="285" y="425" class="tc ts">Pointillés : avec Ceph, le disque est un clone instantané de l'image,</text><text x="285" y="441" class="tc ts">sans aucun téléchargement (copy-on-write).</text>
+</svg>
+</div>
+</div></div>
+</section>
+
+<!-- 38 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants<span class="deep">Approfondi au module 4</span></span><h2>Nova : l'architecture du service de calcul</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 300">
+<rect x="120" y="14" width="555" height="278" rx="12" class="zone"/><text x="135" y="282" class="tl">Nœuds de contrôle</text>
+<rect x="735" y="14" width="405" height="278" rx="12" class="zone"/><text x="1125" y="282" class="tl te">Nœud de calcul (×N)</text>
+<rect x="5" y="130" width="90" height="50" rx="8" class="b-blue"/><text x="50" y="160" class="tc tb">Client</text>
+<path d="M95,155 H138" class="lr"/>
+<rect x="140" y="40" width="150" height="42" rx="8" class="b-grey"/><text x="215" y="58" class="tc tb">Base API</text><text x="215" y="74" class="tc ts">nova_api, cell0</text>
+<rect x="320" y="40" width="150" height="42" rx="8" class="bx"/><text x="395" y="58" class="tc tb">Placement</text><text x="395" y="74" class="tc ts">API REST distincte</text>
+<rect x="500" y="40" width="150" height="42" rx="8" class="b-grey"/><text x="575" y="58" class="tc tb">Base de cellule</text><text x="575" y="74" class="tc ts">nova (cell1)</text>
+<rect x="140" y="130" width="150" height="50" rx="8" class="b-red"/><text x="215" y="160" class="tc tb">nova-api</text>
+<rect x="320" y="130" width="150" height="50" rx="8" class="b-red"/><text x="395" y="160" class="tc tb">nova-scheduler</text>
+<rect x="500" y="130" width="150" height="50" rx="8" class="b-red"/><text x="575" y="160" class="tc tb">nova-conductor</text>
+<path d="M215,130 V84" class="ln"/><path d="M395,130 V84" class="ln"/><path d="M575,130 V84" class="ln"/>
+<rect x="755" y="130" width="140" height="50" rx="8" class="b-red"/><text x="825" y="160" class="tc tb">nova-compute</text>
+<path d="M895,155 H933" class="ln"/>
+<rect x="935" y="130" width="185" height="50" rx="8" class="b-amber"/><text x="1027" y="151" class="tc tb">libvirt</text><text x="1027" y="168" class="tc ts">KVM / QEMU</text>
+<path d="M1027,130 V84" class="ln"/>
+<rect x="935" y="40" width="55" height="42" rx="6" class="b-blue"/><text x="962" y="66" class="tc">VM</text>
+<rect x="1000" y="40" width="55" height="42" rx="6" class="b-blue"/><text x="1027" y="66" class="tc">VM</text>
+<rect x="1065" y="40" width="55" height="42" rx="6" class="b-blue"/><text x="1092" y="66" class="tc">VM</text>
+<rect x="140" y="222" width="980" height="32" rx="16" class="b-amber"/><text x="630" y="243" class="tc tb">RabbitMQ — bus de messages de la cellule (RPC)</text>
+<path d="M215,180 V220" class="ln2"/><path d="M395,180 V220" class="ln2"/><path d="M575,180 V220" class="ln2"/><path d="M825,180 V220" class="ln2"/>
+</svg>
+</div>
+<div class="cols c4 nf">
+<div class="card"><h3>nova-api</h3>Reçoit les requêtes REST, vérifie jeton, droits et quotas, enregistre l'instance et répond aussitôt. Point d'entrée unique du service.</div>
+<div class="card cb"><h3>nova-scheduler</h3>Choisit l'hôte : interroge Placement pour les candidats, applique des <b>filtres</b> puis des <b>pondérations</b>.</div>
+<div class="card ct"><h3>nova-conductor</h3>Coordonne les opérations longues et fait l'intermédiaire avec la base : les nœuds de calcul n'y accèdent jamais directement.</div>
+<div class="card ca"><h3>nova-compute</h3>Un par hyperviseur. Traduit les ordres en appels au pilote : libvirt / KVM (référence), VMware vCenter, Ironic (bare metal).</div>
+</div>
+<div class="note g"><b>Cellules (cells v2) :</b> chaque cellule possède sa base et son bus. Ajouter des cellules permet de dépasser plusieurs milliers d'hyperviseurs sans saturer une base unique ; c'est invisible pour l'utilisateur.</div>
+</div>
+</section>
+
+<!-- 39 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants<span class="deep">Approfondi au module 4</span></span><h2>Nova et Placement : concepts et choix de l'hôte</h2></header>
+<div class="body">
+<div class="cols nf">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Concept Nova</th><th>Définition</th></tr></thead>
+<tbody>
+<tr><td>Instance (server)</td><td>Machine virtuelle, ou serveur physique avec Ironic</td></tr>
+<tr><td>Gabarit (flavor)</td><td>Profil de ressources : vCPU, RAM, disque, et propriétés (GPU, CPU dédiés, pages larges)</td></tr>
+<tr><td>Paire de clés</td><td>Clé SSH publique injectée au premier démarrage</td></tr>
+<tr><td>Groupe de serveurs</td><td>Règle d'affinité ou d'anti-affinité entre instances</td></tr>
+<tr><td>Disque éphémère</td><td>Disque local lié à la vie de l'instance : il disparaît avec elle</td></tr>
+<tr><td>Opérations</td><td>Arrêt, redimensionnement, migration à chaud, évacuation, mise en veille (shelve), secours (rescue), instantané</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<p><b>Placement</b> tient la comptabilité des ressources du cloud, indépendamment de Nova :</p>
+<ul class="pts sm">
+<li><b>Fournisseurs de ressources :</b> chaque hyperviseur, pool de stockage partagé ou carte GPU.</li>
+<li><b>Inventaires :</b> quantités par classe (<code>VCPU</code>, <code>MEMORY_MB</code>, <code>DISK_GB</code>, <code>VGPU</code>…), avec ratio de surallocation.</li>
+<li><b>Caractéristiques (traits) :</b> capacités qualitatives, par exemple <code>HW_CPU_X86_AVX2</code> ou <code>COMPUTE_STATUS_DISABLED</code>.</li>
+<li><b>Allocations :</b> ce que chaque instance consomme, et sur quel fournisseur.</li>
+</ul>
+<div class="note b">La surallocation (plus de vCPU promis que de cœurs physiques) se règle par hôte : <code>cpu_allocation_ratio</code>, <code>ram_allocation_ratio</code>.</div>
+</div>
+</div>
+<div class="fig">
+<svg viewBox="0 0 1150 125">
+<rect x="10" y="20" width="190" height="80" rx="8" class="b-grey"/><text x="105" y="52" class="tc tb">Tous les hôtes</text><text x="105" y="74" class="tc ts">par exemple 500 hyperviseurs</text>
+<path d="M200,60 H243" class="ln"/>
+<rect x="245" y="20" width="200" height="80" rx="8" class="bx"/><text x="345" y="46" class="tc tb">1 · Placement</text><text x="345" y="66" class="tc ts">ressources et traits suffisants</text><text x="345" y="84" class="tc ts">→ 120 candidats</text>
+<path d="M445,60 H488" class="ln"/>
+<rect x="490" y="20" width="200" height="80" rx="8" class="bx"/><text x="590" y="46" class="tc tb">2 · Filtres</text><text x="590" y="66" class="tc ts">zone, anti-affinité, image, état</text><text x="590" y="84" class="tc ts">→ 35 hôtes valides</text>
+<path d="M690,60 H733" class="ln"/>
+<rect x="735" y="20" width="200" height="80" rx="8" class="bx"/><text x="835" y="46" class="tc tb">3 · Pondérations</text><text x="835" y="66" class="tc ts">RAM libre, CPU, charge d'E/S</text><text x="835" y="84" class="tc ts">→ classement</text>
+<path d="M935,60 H978" class="lr"/>
+<rect x="980" y="20" width="160" height="80" rx="8" class="b-red"/><text x="1060" y="52" class="tc tb tr">Hôte retenu</text><text x="1060" y="74" class="tc ts">ressources réservées</text>
+</svg>
+</div>
+</div>
+</section>
+
+<!-- 40 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants<span class="deep">Approfondi au module 4</span></span><h2>Neutron : les objets du réseau virtuel</h2></header>
+<div class="body">
+<p><b>Rôle :</b> offrir le « réseau en libre-service ». Chaque projet crée ses propres réseaux, routeurs et règles de filtrage, isolés de ceux des autres, sans intervention de l'équipe réseau.</p>
+<table class="tbl">
+<thead><tr><th>Objet</th><th>Définition</th><th>Équivalent dans un réseau physique</th></tr></thead>
+<tbody>
+<tr><td>Réseau (network)</td><td>Domaine de diffusion de niveau 2, isolé ; de type interne au projet ou « fournisseur »</td><td>Un VLAN</td></tr>
+<tr><td>Sous-réseau (subnet)</td><td>Plage d'adresses IPv4 ou IPv6 associée à un réseau, avec passerelle, DHCP et DNS</td><td>Un plan d'adressage et son serveur DHCP</td></tr>
+<tr><td>Port</td><td>Point de raccordement : une adresse MAC, une ou plusieurs IP, des groupes de sécurité</td><td>Une prise sur un commutateur</td></tr>
+<tr><td>Routeur</td><td>Relie des sous-réseaux entre eux et vers l'extérieur ; assure la traduction d'adresses</td><td>Un routeur avec NAT</td></tr>
+<tr><td>IP flottante</td><td>Adresse du réseau externe associée à la demande à un port privé (NAT 1:1)</td><td>Une adresse publique redirigée</td></tr>
+<tr><td>Groupe de sécurité</td><td>Règles de filtrage à état appliquées à un port ; tout trafic entrant est refusé par défaut</td><td>Un pare-feu placé devant chaque machine</td></tr>
+<tr><td>Réseau fournisseur</td><td>Réseau créé par l'administrateur, adossé à un VLAN ou à un réseau physique existant</td><td>Le réseau du datacenter</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note b"><b>Types de segmentation :</b> <code>flat</code> et <code>vlan</code> s'appuient sur le réseau physique ; <code>geneve</code> et <code>vxlan</code> encapsulent le trafic des projets dans des tunnels entre hyperviseurs (overlay).</div>
+<div class="note g"><b>Services additionnels :</b> DHCP, DNS interne, service de métadonnées (<code>169.254.169.254</code>), qualité de service, trunks VLAN, VPN, BGP.</div>
+</div>
+</div>
+</section>
+
+<!-- 41 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants<span class="deep">Approfondi aux modules 2 et 4</span></span><h2>Neutron : topologie d'un projet et mise en œuvre avec OVN</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 470">
+<text x="320" y="18" class="tc tl">Vue logique : ce que crée l'utilisateur</text>
+<rect x="30" y="32" width="580" height="30" rx="6" class="f-red"/><text x="320" y="52" class="tc tw tb">Réseau externe (fournisseur) — 203.0.113.0/24</text>
+<path d="M320,62 V108" class="nl"/>
+<rect x="235" y="110" width="170" height="54" rx="8" class="bx" style="stroke-width:2.5"/><text x="320" y="133" class="tc tb">Routeur du projet</text><text x="320" y="151" class="tc ts">SNAT + IP flottantes</text>
+<text x="222" y="128" class="te ts tb tr">IP flottante 203.0.113.25</text><text x="222" y="146" class="te ts">traduite vers web-01 (10.0.1.12)</text>
+<path d="M280,164 V200 H165 V228" class="nl"/><path d="M360,164 V200 H475 V228" class="nl"/>
+<rect x="30" y="230" width="270" height="28" rx="6" fill="#2563eb"/><text x="165" y="249" class="tc tw tb">net-app · 10.0.1.0/24</text>
+<rect x="340" y="230" width="270" height="28" rx="6" fill="#0d9488"/><text x="475" y="249" class="tc tw tb">net-db · 10.0.2.0/24</text>
+<path d="M95,258 V330 M230,258 V330 M475,258 V330" class="nl"/>
+<circle cx="95" cy="294" r="7" fill="#fff" stroke="#e4002b" stroke-width="2.5"/><circle cx="230" cy="294" r="7" fill="#fff" stroke="#e4002b" stroke-width="2.5"/><circle cx="475" cy="294" r="7" fill="#fff" stroke="#e4002b" stroke-width="2.5"/>
+<text x="490" y="291" class="ts tb tr">port</text><text x="490" y="307" class="ts">+ groupe de sécurité</text>
+<rect x="40" y="332" width="110" height="56" rx="8" class="b-blue"/><text x="95" y="356" class="tc tb">web-01</text><text x="95" y="374" class="tc ts">10.0.1.12</text>
+<rect x="175" y="332" width="110" height="56" rx="8" class="b-blue"/><text x="230" y="356" class="tc tb">web-02</text><text x="230" y="374" class="tc ts">10.0.1.13</text>
+<rect x="420" y="332" width="110" height="56" rx="8" class="b-teal"/><text x="475" y="356" class="tc tb">db-01</text><text x="475" y="374" class="tc ts">10.0.2.20</text>
+<text x="30" y="422" class="ts">• Deux réseaux d'un même projet ne communiquent qu'à travers un routeur.</text>
+<text x="30" y="442" class="ts">• Deux projets peuvent utiliser les mêmes plages d'adresses sans conflit.</text>
+<text x="30" y="462" class="ts">• Sans IP flottante, une instance sort par le routeur (SNAT) mais n'est pas joignable de l'extérieur.</text>
+<line x1="650" y1="10" x2="650" y2="460" class="nl" stroke-dasharray="4 5"/>
+<text x="910" y="18" class="tc tl">Mise en œuvre de référence : ML2 + OVN</text>
+<rect x="690" y="32" width="440" height="54" rx="8" class="b-red"/><text x="910" y="55" class="tc tb">neutron-server</text><text x="910" y="73" class="tc ts">API REST · plugin ML2 · pilote OVN</text>
+<path d="M910,86 V112" class="ln"/>
+<rect x="690" y="114" width="440" height="50" rx="8" class="b-grey"/><text x="910" y="135" class="tc tb">Base OVN « Northbound »</text><text x="910" y="153" class="tc ts">réseau logique : commutateurs, routeurs, règles</text>
+<path d="M910,164 V186" class="ln"/>
+<rect x="820" y="188" width="180" height="36" rx="8" class="bx"/><text x="910" y="211" class="tc tb">ovn-northd</text>
+<path d="M910,224 V246" class="ln"/>
+<rect x="690" y="248" width="440" height="50" rx="8" class="b-grey"/><text x="910" y="269" class="tc tb">Base OVN « Southbound »</text><text x="910" y="287" class="tc ts">flux logiques, localisation de chaque port</text>
+<path d="M795,298 V330" class="ln"/><path d="M1025,298 V330" class="ln"/>
+<rect x="690" y="332" width="210" height="64" rx="8" class="b-blue"/><text x="795" y="354" class="tc tb">Hyperviseur A</text><text x="795" y="371" class="tc ts">ovn-controller</text><text x="795" y="387" class="tc ts">Open vSwitch (br-int)</text>
+<rect x="920" y="332" width="210" height="64" rx="8" class="b-blue"/><text x="1025" y="354" class="tc tb">Hyperviseur B</text><text x="1025" y="371" class="tc ts">ovn-controller</text><text x="1025" y="387" class="tc ts">Open vSwitch (br-int)</text>
+<path d="M795,398 C795,440 1025,440 1025,398" class="lr2"/><text x="910" y="452" class="tc ts tb tr">tunnels Geneve entre hyperviseurs</text>
+</svg>
+</div>
+<div class="note g">Avec OVN, routage, DHCP, NAT et groupes de sécurité sont <b>distribués</b> sur chaque hyperviseur, sans agent dédié. L'ancienne mise en œuvre (ML2 + Open vSwitch avec agents L3, DHCP et métadonnées) reste répandue dans les clouds existants.</div>
+</div>
+</section>
+
+<!-- 42 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants<span class="deep">Approfondi au module 4</span></span><h2>Cinder : le stockage bloc persistant</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 240">
+<rect x="10" y="35" width="130" height="54" rx="8" class="b-blue"/><text x="75" y="58" class="tc tb">Client</text><text x="75" y="76" class="tc ts">ou Nova</text>
+<path d="M140,62 H183" class="lr"/><text x="161" y="52" class="tc ts tr">REST</text>
+<rect x="185" y="35" width="150" height="54" rx="8" class="b-red"/><text x="260" y="67" class="tc tb">cinder-api</text>
+<path d="M335,62 H378" class="ln"/><text x="356" y="52" class="tc ts">RPC</text>
+<rect x="380" y="35" width="160" height="54" rx="8" class="b-red"/><text x="460" y="58" class="tc tb">cinder-scheduler</text><text x="460" y="76" class="tc ts">choisit le backend</text>
+<path d="M540,62 H583" class="ln"/><text x="561" y="52" class="tc ts">RPC</text>
+<rect x="585" y="35" width="160" height="54" rx="8" class="b-red"/><text x="665" y="58" class="tc tb">cinder-volume</text><text x="665" y="76" class="tc ts">pilote du backend</text>
+<path d="M745,62 H798" class="ln"/>
+<rect x="800" y="20" width="180" height="84" rx="8" class="b-amber"/><text x="890" y="48" class="tc tb">Backend de stockage</text><text x="890" y="68" class="tc ts">Ceph RBD · LVM</text><text x="890" y="85" class="tc ts">baies NetApp, Pure, Dell…</text>
+<path d="M260,89 V180 H583" class="ln"/>
+<rect x="585" y="153" width="160" height="54" rx="8" class="b-red"/><text x="665" y="176" class="tc tb">cinder-backup</text><text x="665" y="194" class="tc ts">service optionnel</text>
+<path d="M745,180 H798" class="ln"/>
+<rect x="800" y="140" width="180" height="80" rx="8" class="b-grey"/><text x="890" y="170" class="tc tb">Dépôt de sauvegarde</text><text x="890" y="190" class="tc ts">Swift · Ceph · S3 · NFS</text>
+<rect x="1030" y="20" width="110" height="200" rx="8" class="zone"/><text x="1085" y="44" class="tc tb">Hyperviseur</text>
+<rect x="1042" y="58" width="86" height="40" rx="6" class="b-blue"/><text x="1085" y="83" class="tc">instance</text>
+<text x="1085" y="130" class="tc ts">connexion par</text><text x="1085" y="146" class="tc ts">os-brick :</text><text x="1085" y="166" class="tc ts">iSCSI, RBD,</text><text x="1085" y="182" class="tc ts">FC, NVMe-oF</text>
+<path d="M980,78 H1040" class="lr2"/><text x="1022" y="127" class="te ts tb tr">chemin des données ↑</text>
+</svg>
+</div>
+<div class="cols nf">
+<table class="tbl tight">
+<thead><tr><th>Concept</th><th>Définition</th></tr></thead>
+<tbody>
+<tr><td>Volume</td><td>Disque virtuel persistant, attaché à une instance, indépendant de sa durée de vie</td></tr>
+<tr><td>Type de volume</td><td>Classe de service : backend visé, performances (QoS), chiffrement, réplication</td></tr>
+<tr><td>Instantané</td><td>Image d'un volume à un instant donné, conservée sur le même backend</td></tr>
+<tr><td>Sauvegarde</td><td>Copie complète ou incrémentale vers un dépôt distinct</td></tr>
+<tr><td>Démarrage sur volume</td><td>Le disque système est un volume : l'instance survit à la perte de son hôte</td></tr>
+</tbody></table>
+<div class="col">
+<div class="note"><b>Cinder est hors du chemin des données.</b> Il crée le volume et transmet les informations de connexion ; ensuite l'hyperviseur dialogue directement avec le backend. Un arrêt de Cinder n'interrompt pas les E/S en cours.</div>
+<ul class="pts sm">
+<li>Opérations : extension à chaud, changement de type, migration entre backends, transfert entre projets.</li>
+<li>Attachement multiple possible pour les applications en cluster.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 43 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants</span><h2>Swift : le stockage objet distribué</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 250">
+<rect x="10" y="100" width="120" height="54" rx="8" class="b-blue"/><text x="70" y="123" class="tc tb">Client</text><text x="70" y="141" class="tc ts">HTTP / HTTPS</text>
+<path d="M130,127 H188" class="lr"/>
+<rect x="190" y="85" width="190" height="84" rx="8" class="b-red"/><text x="285" y="113" class="tc tb">proxy-server (×N)</text><text x="285" y="133" class="tc ts">authentifie via Keystone,</text><text x="285" y="150" class="tc ts">consulte l'anneau (ring)</text>
+<path d="M285,85 V20 H555 V38" class="ln"/><path d="M555,20 H785 V38" class="ln"/><path d="M785,20 H1015 V38" class="ln"/>
+<text x="670" y="13" class="tc ts tb">chaque objet est écrit en 3 réplicas, dans 3 zones distinctes</text>
+<g>
+<rect x="450" y="40" width="210" height="205" rx="10" class="zone"/><text x="555" y="62" class="tc tb">Zone 1</text>
+<rect x="470" y="74" width="170" height="30" rx="6" class="bx"/><text x="555" y="94" class="tc tm">account-server</text>
+<rect x="470" y="110" width="170" height="30" rx="6" class="bx"/><text x="555" y="130" class="tc tm">container-server</text>
+<rect x="470" y="146" width="170" height="30" rx="6" class="b-amber"/><text x="555" y="166" class="tc tm">object-server</text>
+<text x="555" y="200" class="tc ts">disques XFS</text><text x="555" y="220" class="tc ts">replicator · auditor · updater</text>
+</g>
+<g>
+<rect x="680" y="40" width="210" height="205" rx="10" class="zone"/><text x="785" y="62" class="tc tb">Zone 2</text>
+<rect x="700" y="74" width="170" height="30" rx="6" class="bx"/><text x="785" y="94" class="tc tm">account-server</text>
+<rect x="700" y="110" width="170" height="30" rx="6" class="bx"/><text x="785" y="130" class="tc tm">container-server</text>
+<rect x="700" y="146" width="170" height="30" rx="6" class="b-amber"/><text x="785" y="166" class="tc tm">object-server</text>
+<text x="785" y="200" class="tc ts">disques XFS</text><text x="785" y="220" class="tc ts">replicator · auditor · updater</text>
+</g>
+<g>
+<rect x="910" y="40" width="210" height="205" rx="10" class="zone"/><text x="1015" y="62" class="tc tb">Zone 3</text>
+<rect x="930" y="74" width="170" height="30" rx="6" class="bx"/><text x="1015" y="94" class="tc tm">account-server</text>
+<rect x="930" y="110" width="170" height="30" rx="6" class="bx"/><text x="1015" y="130" class="tc tm">container-server</text>
+<rect x="930" y="146" width="170" height="30" rx="6" class="b-amber"/><text x="1015" y="166" class="tc tm">object-server</text>
+<text x="1015" y="200" class="tc ts">disques XFS</text><text x="1015" y="220" class="tc ts">replicator · auditor · updater</text>
+</g>
+</svg>
+</div>
+<div class="cols nf">
+<table class="tbl tight">
+<thead><tr><th>Concept</th><th>Définition</th></tr></thead>
+<tbody>
+<tr><td>Compte</td><td>Espace de stockage d'un projet Keystone</td></tr>
+<tr><td>Conteneur</td><td>Regroupement d'objets (équivalent d'un bucket S3) ; porte les droits d'accès</td></tr>
+<tr><td>Objet</td><td>Donnée + métadonnées, lue et écrite en entier par HTTP</td></tr>
+<tr><td>Anneau (ring)</td><td>Table qui associe chaque objet à ses disques par hachage du nom</td></tr>
+</tbody></table>
+<div class="col">
+<ul class="pts sm">
+<li>Adresse d'un objet : <code>/v1/AUTH_&lt;projet&gt;/&lt;conteneur&gt;/&lt;objet&gt;</code>.</li>
+<li><b>Aucun point central :</b> pas de base de données maîtresse ; la capacité croît en ajoutant des nœuds.</li>
+<li><b>Cohérence à terme :</b> la disponibilité prime ; les réplicas convergent en arrière-plan.</li>
+<li>Réplication ×3 ou <b>codage à effacement</b> pour réduire le coût au Go.</li>
+<li>API compatible <b>S3</b> via le middleware <code>s3api</code>.</li>
+<li>Alternative fréquente : <b>Ceph RGW</b>, qui expose les mêmes API Swift et S3.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 44 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants</span><h2>Quatre types de stockage, quatre usages</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th></th><th>Éphémère</th><th>Bloc</th><th>Objet</th><th>Fichiers partagés</th></tr></thead>
+<tbody>
+<tr><td>Service</td><td>Nova</td><td>Cinder</td><td>Swift</td><td>Manila</td></tr>
+<tr><td>Ce que voit l'utilisateur</td><td>Le disque de l'instance</td><td>Un disque supplémentaire (<code>/dev/vdb</code>)</td><td>Une URL HTTP</td><td>Un partage réseau à monter</td></tr>
+<tr><td>Durée de vie</td><td>Celle de l'instance</td><td>Indépendante, jusqu'à suppression</td><td>Indépendante</td><td>Indépendante</td></tr>
+<tr><td>Accès</td><td>Une seule instance</td><td>Une instance (plusieurs en option)</td><td>Tout client HTTP, de partout</td><td>Plusieurs instances en même temps</td></tr>
+<tr><td>Protocole</td><td>Disque virtuel local ou Ceph</td><td>iSCSI, RBD, Fibre Channel, NVMe-oF</td><td>API REST Swift ou S3</td><td>NFS, CephFS, SMB</td></tr>
+<tr><td>Modification</td><td>Lecture et écriture par blocs</td><td>Lecture et écriture par blocs</td><td>Objet remplacé en entier</td><td>Lecture et écriture par fichiers</td></tr>
+<tr><td>Usages types</td><td>Système, cache, données temporaires</td><td>Bases de données, disque système durable</td><td>Sauvegardes, médias, journaux, images</td><td>Répertoires communs, applications existantes</td></tr>
+<tr><td>Équivalent AWS</td><td>Instance store</td><td>EBS</td><td>S3</td><td>EFS</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Piège classique :</b> supprimer une instance supprime son disque éphémère. Toute donnée à conserver doit être placée sur un volume Cinder, dans Swift ou sur un partage Manila.</div>
+<div class="note g"><b>Ceph, le backend unificateur :</b> un même cluster Ceph peut servir Glance (images), Cinder (volumes), Nova (disques éphémères), Manila (CephFS) et l'API objet (RGW).</div>
+</div>
+</div>
+</section>
+
+<!-- 45 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants</span><h2>Accéder au cloud : Horizon, CLI, SDK et outils d'automatisation</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Interface</th><th>Description</th></tr></thead>
+<tbody>
+<tr><td>Horizon</td><td>Tableau de bord web historique (Django) : vues « Projet », « Admin », « Identité »</td></tr>
+<tr><td>Skyline</td><td>Tableau de bord moderne, plus réactif, alternative à Horizon</td></tr>
+<tr><td>CLI <code>openstack</code></td><td>Client unifié (python-openstackclient) : une commande pour tous les services</td></tr>
+<tr><td>openstacksdk</td><td>Bibliothèque Python officielle ; Gophercloud pour Go</td></tr>
+<tr><td>Terraform, OpenTofu</td><td>Fournisseur <code>openstack</code> : infrastructure déclarative et versionnée</td></tr>
+<tr><td>Ansible</td><td>Collection <code>openstack.cloud</code> : modules pour chaque ressource</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li>Toutes ces interfaces sont de simples <b>clients de la même API REST</b> : ce qu'Horizon sait faire, un script sait le faire.</li>
+<li>Les <b>microversions</b> permettent à l'API d'évoluer sans casser les anciens clients : le client annonce la version qu'il comprend.</li>
+<li>L'option <code>--debug</code> de la CLI affiche chaque appel HTTP : idéale pour comprendre les échanges entre services.</li>
+</ul>
+</div>
+<div class="col">
+<pre><span class="m"># ~/.config/openstack/clouds.yaml</span>
+clouds:
+  formation:
+    auth_type: v3applicationcredential
+    auth:
+      auth_url: https://cloud.example.org:5000/v3
+      application_credential_id: 7f3c2a91d4e84b6fa0c5
+      application_credential_secret: Zq8vT2mLx4RkPw9s
+    region_name: RegionOne
+    interface: public</pre>
+<pre><span class="c">export</span> OS_CLOUD=formation
+
+<span class="c">openstack</span> catalog list          <span class="m"># services et points d'accès</span>
+<span class="c">openstack</span> server list           <span class="m"># instances du projet</span>
+<span class="c">openstack</span> network create net-app
+<span class="c">openstack</span> <span class="k">--debug</span> image list    <span class="m"># détaille les appels REST</span></pre>
+</div>
+</div></div>
+</section>
+
+<!-- 46 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants</span><h2>Heat : l'orchestration par modèles</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Rôle :</b> créer, mettre à jour et supprimer un ensemble cohérent de ressources — une <b>pile</b> (stack) — décrit dans un <b>modèle</b> texte au format HOT (YAML).</p>
+<ul class="pts">
+<li><b>Déclaratif :</b> on décrit l'état voulu ; Heat calcule l'ordre de création à partir des dépendances entre ressources.</li>
+<li><b>Types de ressources :</b> <code>OS::Nova::Server</code>, <code>OS::Neutron::Net</code>, <code>OS::Cinder::Volume</code>, <code>OS::Octavia::LoadBalancer</code>…</li>
+<li><b>Paramètres et sorties :</b> un même modèle sert à plusieurs environnements.</li>
+<li><b>Mise à l'échelle automatique :</b> groupes d'instances pilotés par des alarmes Aodh.</li>
+<li><b>Architecture :</b> <code>heat-api</code> reçoit le modèle, <code>heat-engine</code> appelle les API des autres services.</li>
+</ul>
+<div class="note b"><b>Heat ou Terraform ?</b> Heat est intégré et s'exécute côté cloud ; Terraform et OpenTofu sont multi-clouds et dominent aujourd'hui côté utilisateurs. Heat reste très utilisé par les services internes, notamment Magnum.</div>
+</div>
+<div class="col">
+<pre><span class="k">heat_template_version</span>: 2021-04-16
+<span class="k">parameters</span>:
+  image: {type: string, default: ubuntu-24.04}
+<span class="k">resources</span>:
+  reseau:
+    type: <span class="c">OS::Neutron::Net</span>
+  sous_reseau:
+    type: <span class="c">OS::Neutron::Subnet</span>
+    properties:
+      network: {get_resource: reseau}
+      cidr: 10.0.1.0/24
+  serveur:
+    type: <span class="c">OS::Nova::Server</span>
+    depends_on: sous_reseau
+    properties:
+      image: {get_param: image}
+      flavor: m1.small
+      networks:
+        - network: {get_resource: reseau}
+<span class="k">outputs</span>:
+  adresse:
+    value: {get_attr: [serveur, first_address]}</pre>
+<pre><span class="c">openstack</span> stack create <span class="k">-t</span> pile.yaml demo</pre>
+</div>
+</div></div>
+</section>
+
+<!-- 47 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants</span><h2>Les services complémentaires</h2></header>
+<div class="body">
+<div class="cols c4 nf dense">
+<div class="card"><h3>Octavia</h3>Répartition de charge à la demande : écouteurs, pools, sondes de santé. S'appuie sur des instances dédiées (amphores) ou sur OVN.</div>
+<div class="card"><h3>Designate</h3>DNS en libre-service : zones et enregistrements par projet, création automatique d'entrées pour les instances et les IP flottantes.</div>
+<div class="card"><h3>Barbican</h3>Coffre-fort : secrets, clés de chiffrement et certificats, utilisés par Cinder (volumes chiffrés), Octavia (TLS) et Nova.</div>
+<div class="card"><h3>Manila</h3>Systèmes de fichiers partagés (NFS, CephFS, SMB) montables par plusieurs instances simultanément.</div>
+<div class="card cb"><h3>Magnum</h3>Clusters Kubernetes à la demande, créés par API sur des instances du projet ; s'appuie sur Heat ou Cluster API.</div>
+<div class="card cb"><h3>Ironic</h3>Bare metal : provisionne des serveurs physiques (IPMI, Redfish, PXE) avec la même API Nova que pour les machines virtuelles.</div>
+<div class="card cb"><h3>Zun</h3>Conteneurs individuels lancés par API, sans cluster Kubernetes à gérer.</div>
+<div class="card cb"><h3>Trove</h3>Bases de données managées (MySQL, MariaDB, PostgreSQL) : création, sauvegarde, réplication.</div>
+<div class="card ct"><h3>Ceilometer, Gnocchi, Aodh</h3>Télémétrie : collecte des mesures, stockage en séries temporelles, alarmes déclenchant des actions.</div>
+<div class="card ct"><h3>CloudKitty</h3>Valorisation de l'usage : transforme les mesures en coûts par projet pour la facturation ou la refacturation interne.</div>
+<div class="card ct"><h3>Masakari</h3>Haute disponibilité des instances : détecte la panne d'un hôte ou d'une VM et relance ailleurs.</div>
+<div class="card ct"><h3>Watcher, Blazar, Cyborg</h3>Optimisation du placement, réservation de ressources à l'avance, gestion des accélérateurs (GPU, FPGA).</div>
+</div>
+<div class="note g">Tous suivent le même patron : une API REST enregistrée dans le catalogue Keystone, une base, des processus reliés par le bus de messages. <b>On n'active que ce dont on a besoin</b> : le noyau minimal est Keystone, Glance, Placement, Nova et Neutron.</div>
+</div>
+</section>
+
+<!-- 48 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants<span class="deep">Approfondi aux modules 2 et 4</span></span><h2>Tout assembler : la création d'une instance, étape par étape</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 480">
+<g style="font-size:11.5px" class="tc tb">
+<rect x="6" y="5" width="78" height="38" rx="6" class="b-blue"/><text x="45" y="29">Client</text>
+<rect x="90" y="5" width="78" height="38" rx="6" class="b-dark"/><text x="129" y="29" class="tw">Keystone</text>
+<rect x="174" y="5" width="78" height="38" rx="6" class="b-red"/><text x="213" y="29">nova-api</text>
+<rect x="258" y="5" width="78" height="38" rx="6" class="b-red"/><text x="297" y="29">conductor</text>
+<rect x="342" y="5" width="78" height="38" rx="6" class="b-red"/><text x="381" y="29">scheduler</text>
+<rect x="426" y="5" width="78" height="38" rx="6" class="bx"/><text x="465" y="29">Placement</text>
+<rect x="508" y="5" width="82" height="38" rx="6" class="b-red"/><text x="549" y="29">compute</text>
+<rect x="594" y="5" width="78" height="38" rx="6" class="b-amber"/><text x="633" y="29">Glance</text>
+<rect x="678" y="5" width="78" height="38" rx="6" class="b-teal"/><text x="717" y="29">Neutron</text>
+<rect x="762" y="5" width="78" height="38" rx="6" class="b-amber"/><text x="801" y="29">Cinder</text>
+</g>
+<g stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4">
+<line x1="45" y1="43" x2="45" y2="470"/><line x1="129" y1="43" x2="129" y2="470"/><line x1="213" y1="43" x2="213" y2="470"/><line x1="297" y1="43" x2="297" y2="470"/><line x1="381" y1="43" x2="381" y2="470"/><line x1="465" y1="43" x2="465" y2="470"/><line x1="549" y1="43" x2="549" y2="470"/><line x1="633" y1="43" x2="633" y2="470"/><line x1="717" y1="43" x2="717" y2="470"/><line x1="801" y1="43" x2="801" y2="470"/>
+</g>
+<path d="M45,78 H127" class="lr2"/>
+<path d="M45,116 H211" class="lr"/>
+<path d="M213,154 H295" class="lr"/>
+<path d="M297,192 H379" class="lr"/><path d="M381,216 H463" class="lr2"/>
+<path d="M297,256 H547" class="lr"/>
+<path d="M549,294 H715" class="lr2"/>
+<path d="M549,332 H799" class="lr2"/>
+<path d="M549,370 H631" class="lr2"/>
+<path d="M549,398 H590 V422 H552" class="lr"/>
+<path d="M717,452 H215" class="ln ld"/>
+<g class="tc tw tb" style="font-size:12px">
+<circle cx="86" cy="78" r="11" class="f-red"/><text x="86" y="82">1</text>
+<circle cx="129" cy="116" r="11" class="f-red"/><text x="129" y="120">2</text>
+<circle cx="255" cy="154" r="11" class="f-red"/><text x="255" y="158">3</text>
+<circle cx="339" cy="192" r="11" class="f-red"/><text x="339" y="196">4</text>
+<circle cx="423" cy="256" r="11" class="f-red"/><text x="423" y="260">5</text>
+<circle cx="633" cy="294" r="11" class="f-red"/><text x="633" y="298">6</text>
+<circle cx="675" cy="332" r="11" class="f-red"/><text x="675" y="336">7</text>
+<circle cx="591" cy="370" r="11" class="f-red"/><text x="591" y="374">8</text>
+<circle cx="606" cy="410" r="11" class="f-red"/><text x="606" y="414">9</text>
+<circle cx="465" cy="452" r="11" class="f-red"/><text x="465" y="456" style="font-size:11px">10</text>
+</g>
+<rect x="858" y="5" width="287" height="470" rx="10" class="b-grey"/>
+<g style="font-size:12px">
+<text x="870" y="27" class="tb tr">1</text><text x="890" y="27">Authentification : jeton et catalogue.</text>
+<text x="870" y="62" class="tb tr">2</text><text x="890" y="62"><tspan class="tm">POST /servers</tspan> : image, gabarit, réseau.</text>
+<text x="870" y="97" class="tb tr">3</text><text x="890" y="97">Jeton, droits et quotas vérifiés ; instance</text><text x="890" y="113">enregistrée à l'état BUILD ; réponse 202.</text>
+<text x="870" y="148" class="tb tr">4</text><text x="890" y="148">Le scheduler interroge Placement, filtre,</text><text x="890" y="164">pondère et réserve les ressources.</text>
+<text x="870" y="199" class="tb tr">5</text><text x="890" y="199">Ordre de construction envoyé à l'hôte</text><text x="890" y="215">retenu, par le bus de messages.</text>
+<text x="870" y="250" class="tb tr">6</text><text x="890" y="250">Création et liaison du port : adresse</text><text x="890" y="266">MAC, IP, groupes de sécurité.</text>
+<text x="870" y="292" class="tb tr">7</text><text x="890" y="292">Attachement du volume, en cas de</text><text x="890" y="308">démarrage sur volume.</text>
+<text x="870" y="336" class="tb tr">8</text><text x="890" y="336">Récupération de l'image (ou clone Ceph).</text>
+<text x="870" y="387" class="tb tr">9</text><text x="890" y="387">libvirt définit et démarre la machine KVM.</text>
+<text x="866" y="422" class="tb tr">10</text><text x="890" y="422">Neutron signale que le port est actif :</text><text x="890" y="438">l'instance passe à l'état ACTIVE.</text>
+<text x="870" y="464" class="ts">Rouge : appels · pointillés : notification</text>
+</g>
+</svg>
+</div>
+<div class="note">Une simple création d'instance mobilise <b>six services</b> et les deux modes de communication : REST entre services (étapes 1, 2, 4, 6, 7, 8, 10) et RPC à l'intérieur de Nova (étapes 3, 4, 5). C'est le meilleur fil conducteur pour diagnostiquer une erreur.</div>
+</div>
+</section>
+
+<!-- 49 -->
+<section class="slide">
+<header><span class="kick">4 · Architecture et composants<span class="deep">Approfondi au module 2</span></span><h2>Passer à l'échelle : régions, zones, agrégats, cellules</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 455">
+<rect x="8" y="8" width="544" height="318" rx="12" class="zone"/><text x="26" y="33" class="tl">Région « RegionOne »</text><text x="26" y="51" class="ts">un déploiement complet : ses API, sa base, son bus de messages</text>
+<rect x="24" y="66" width="250" height="204" rx="10" class="bx" style="stroke-dasharray:6 4"/><text x="149" y="88" class="tc tb">Zone de disponibilité az-nord</text>
+<rect x="290" y="66" width="246" height="204" rx="10" class="bx" style="stroke-dasharray:6 4"/><text x="413" y="88" class="tc tb">Zone de disponibilité az-sud</text>
+<rect x="40" y="102" width="105" height="42" rx="6" class="b-blue"/><text x="92" y="128" class="tc">hôte 1</text>
+<rect x="153" y="102" width="105" height="42" rx="6" class="b-blue"/><text x="205" y="128" class="tc">hôte 2</text>
+<rect x="40" y="152" width="105" height="42" rx="6" class="b-amber"/><text x="92" y="178" class="tc">hôte 3</text>
+<rect x="153" y="152" width="105" height="42" rx="6" class="b-amber"/><text x="205" y="178" class="tc">hôte 4</text>
+<rect x="306" y="102" width="103" height="42" rx="6" class="b-blue"/><text x="357" y="128" class="tc">hôte 5</text>
+<rect x="417" y="102" width="103" height="42" rx="6" class="b-blue"/><text x="468" y="128" class="tc">hôte 6</text>
+<rect x="306" y="152" width="103" height="42" rx="6" class="b-amber"/><text x="357" y="178" class="tc">hôte 7</text>
+<rect x="417" y="152" width="103" height="42" rx="6" class="b-amber"/><text x="468" y="178" class="tc">hôte 8</text>
+<text x="149" y="222" class="tc ts">cellule cell1</text><text x="413" y="222" class="tc ts">cellule cell2</text>
+<text x="149" y="242" class="tc ts">(base et bus dédiés)</text><text x="413" y="242" class="tc ts">(base et bus dédiés)</text>
+<rect x="24" y="286" width="18" height="18" rx="4" class="b-amber"/><text x="50" y="300" class="ts">agrégat d'hôtes « gpu » : hôtes 3, 4, 7 et 8, réservés aux gabarits GPU</text>
+<rect x="8" y="340" width="544" height="46" rx="8" class="b-dark"/><text x="280" y="368" class="tc tw tb">Keystone et Horizon — partageables entre régions</text>
+<rect x="8" y="398" width="544" height="48" rx="12" class="zone"/><text x="280" y="427" class="tc tb">Région « RegionTwo » — autre site, points d'accès distincts</text>
+</svg>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Niveau</th><th>Visible par</th><th>À quoi il sert</th></tr></thead>
+<tbody>
+<tr><td>Région</td><td>Utilisateur</td><td>Séparer des sites : chaque région a ses propres services et points d'accès</td></tr>
+<tr><td>Zone de disponibilité</td><td>Utilisateur</td><td>Isoler les pannes (salle, alimentation) ; choisie à la création de l'instance</td></tr>
+<tr><td>Agrégat d'hôtes</td><td>Administrateur</td><td>Regrouper des hôtes par caractéristique (GPU, SSD, licence) et y diriger certains gabarits</td></tr>
+<tr><td>Cellule</td><td>Administrateur</td><td>Répartir la charge de la base et du bus pour gérer des milliers d'hôtes</td></tr>
+</tbody></table>
+<p><b>Haute disponibilité du plan de contrôle :</b></p>
+<ul class="pts sm">
+<li><b>Trois nœuds de contrôle</b> au minimum, pour conserver un quorum.</li>
+<li>API sans état, répliquées derrière <b>HAProxy</b> et une adresse virtuelle.</li>
+<li>Base <b>MariaDB Galera</b> (réplication synchrone) ; <b>RabbitMQ</b> en cluster avec files à quorum.</li>
+<li>Côté données : Ceph répliqué ×3, zones de disponibilité, éventuellement Masakari.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 50 -->
+<section class="slide">
+<header><span class="kick">Synthèse</span><h2>À retenir</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card"><h3>1 · Un cloud, c'est un modèle</h3>Libre-service, accès réseau, ressources mutualisées, élasticité, usage mesuré. La virtualisation seule n'en fait pas un.</div>
+<div class="card"><h3>2 · OpenStack est un IaaS libre</h3>Il orchestre calcul, réseau et stockage existants par des pilotes, sous licence Apache 2.0, avec une gouvernance communautaire.</div>
+<div class="card"><h3>3 · Il se combine aux autres</h3>Équivalent ouvert de la pile VMware, socle pour Kubernetes et OpenShift, mêmes concepts que les clouds publics.</div>
+<div class="card cb"><h3>4 · Des services indépendants</h3>Chacun a son API REST, sa base et ses processus. REST entre services, RPC par le bus de messages à l'intérieur.</div>
+<div class="card cb"><h3>5 · Keystone au centre</h3>Chaque appel porte un jeton lié à un projet ; les rôles décident des droits ; le catalogue indique où joindre chaque service.</div>
+<div class="card cb"><h3>6 · Contrôle et données séparés</h3>Une panne du plan de contrôle bloque les opérations, pas les instances, ni leurs réseaux, ni leurs volumes.</div>
+</div>
+<table class="tbl os tight">
+<thead><tr><th>Besoin</th><th>Service</th><th>En une phrase</th></tr></thead>
+<tbody>
+<tr><td>Qui suis-je, qu'ai-je le droit de faire ?</td><td>Keystone</td><td>Authentifie, autorise par projet, publie le catalogue</td></tr>
+<tr><td>Démarrer une machine</td><td>Nova + Placement</td><td>Choisit un hôte et pilote l'hyperviseur</td></tr>
+<tr><td>À partir de quel système ?</td><td>Glance</td><td>Conserve et distribue les images</td></tr>
+<tr><td>La connecter</td><td>Neutron</td><td>Réseaux, routeurs, IP flottantes, groupes de sécurité</td></tr>
+<tr><td>Conserver ses données</td><td>Cinder, Swift, Manila</td><td>Volumes, objets, fichiers partagés</td></tr>
+<tr><td>Tout automatiser</td><td>Heat, CLI, Terraform</td><td>La même API REST pour tous les outils</td></tr>
+</tbody></table>
+</div>
+</section>
+
+</div>
+<div id="bar"></div>
+<div id="nav"><button id="bO" title="Vue d'ensemble (O)">▦</button><button id="bF" title="Plein écran (F)">⛶</button><button id="bP" title="Précédent (←)">←</button><button id="bN" title="Suivant (→)">→</button></div>
+<script>
+(function(){
+var stage=document.getElementById('stage'),bar=document.getElementById('bar'),body=document.body;
+var slides=Array.prototype.slice.call(document.querySelectorAll('.slide')),N=slides.length,cur=0;
+slides.forEach(function(s,i){
+  var f=document.createElement('div');f.className='foot';
+  f.innerHTML='<span>OpenStack · Module 1 — Panorama</span><span>'+(i+1)+' / '+N+'</span>';
+  s.appendChild(f);
+  s.addEventListener('click',function(){if(body.classList.contains('ov')){body.classList.remove('ov');go(i);fit();}});
+});
+function go(n){
+  cur=Math.max(0,Math.min(N-1,n));
+  slides.forEach(function(s,i){s.classList.toggle('active',i===cur);});
+  bar.style.width=((cur+1)/N*100)+'%';
+  try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+}
+function fit(){
+  if(body.classList.contains('ov')){
+    stage.style.transform='';
+    document.documentElement.style.setProperty('--z',Math.max(.1,(window.innerWidth-40-4*14-20)/5/1280));
+  }else{
+    stage.style.transform='scale('+Math.min(window.innerWidth/1280,window.innerHeight/720)+')';
+  }
+}
+function overview(){body.classList.toggle('ov');fit();if(body.classList.contains('ov')){slides[cur].scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}}
+function full(){if(document.fullscreenElement){document.exitFullscreen();}else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen();}}
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'||k===' '||k==='ArrowDown'){e.preventDefault();go(cur+1);}
+  else if(k==='ArrowLeft'||k==='PageUp'||k==='ArrowUp'){e.preventDefault();go(cur-1);}
+  else if(k==='Home'){go(0);}
+  else if(k==='End'){go(N-1);}
+  else if(k==='o'||k==='O'||k==='Escape'){if(k!=='Escape'||body.classList.contains('ov'))overview();}
+  else if(k==='f'||k==='F'){full();}
+});
+document.getElementById('bN').onclick=function(){go(cur+1);};
+document.getElementById('bP').onclick=function(){go(cur-1);};
+document.getElementById('bO').onclick=overview;
+document.getElementById('bF').onclick=full;
+var tx=null;
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){if(tx===null||body.classList.contains('ov'))return;var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1));tx=null;},{passive:true});
+window.addEventListener('resize',fit);
+window.addEventListener('hashchange',function(){var h=parseInt(location.hash.slice(1),10);if(h&&h-1!==cur)go(h-1);});
+var h=parseInt(location.hash.slice(1),10);
+go(h?h-1:0);fit();
+})();
+</script>
+</body>
+</html>

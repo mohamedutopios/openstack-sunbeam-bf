@@ -1,0 +1,8 @@
+{
+  "realm": "lab",
+  "enabled": true,
+  "displayName": "Laboratoire OpenStack",
+  "sslRequired": "all",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false
+}

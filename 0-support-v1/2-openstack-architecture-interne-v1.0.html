@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenStack — architecture interne</title>
+<style>
+:root{--ink:#0f172a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;--navy:#101a33;--red:#e4002b;--red2:#b3122f;--blue:#2563eb;--teal:#0d9488;--amber:#d97706;--violet:#7c3aed;--green:#16a34a;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;--z:.2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#070b17;overflow:hidden;font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:#fff;color:var(--ink);padding:38px 64px 46px;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide>header{border-left:5px solid var(--red);padding:2px 0 2px 18px;margin-bottom:18px;flex:none}
+.kick{display:block;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+h2{font-size:32px;line-height:1.15;letter-spacing:-.012em;font-weight:750}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;font-size:17.5px;line-height:1.45;color:var(--ink2)}
+.body b,.body strong{color:var(--ink);font-weight:680}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;min-height:0}
+.cols.c3{grid-template-columns:repeat(3,1fr);gap:18px}
+.cols.c4{grid-template-columns:repeat(4,1fr);gap:14px}
+.cols.c5{grid-template-columns:repeat(5,1fr);gap:12px}
+.cols.w64{grid-template-columns:1.45fr 1fr}
+.cols.w46{grid-template-columns:1fr 1.35fr}
+.cols.nf{flex:none}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+ul.pts{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.pts li{padding-left:22px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.52em;width:8px;height:8px;border-radius:2px;background:var(--red)}
+ul.pts.sm{gap:5px;font-size:15px;line-height:1.38}
+ul.pts.sm li{padding-left:17px}
+ul.pts.sm li::before{width:6px;height:6px;top:.5em}
+.card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--c,var(--red));border-radius:10px;padding:13px 16px;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:15px;line-height:1.4;min-width:0}
+.card h3{font-size:16.5px;color:var(--ink);margin-bottom:5px;line-height:1.2}
+.card .os{display:block;margin-top:7px;font-size:13px;color:var(--mut)}
+.card .os b{color:var(--red2)}
+.cb{--c:var(--blue)}.ct{--c:var(--teal)}.ca{--c:var(--amber)}.cv{--c:var(--violet)}.cg{--c:var(--green)}.cn{--c:var(--navy)}
+.note{background:#fff5f6;border-left:4px solid var(--red);padding:9px 16px;border-radius:0 8px 8px 0;font-size:15.5px;color:var(--ink);flex:none}
+.note.b{background:#eff5ff;border-color:var(--blue)}
+.note.g{background:#f1f5f9;border-color:#64748b}
+table.tbl{width:100%;border-collapse:collapse;font-size:14.5px;line-height:1.35}
+.tbl th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-size:13px;letter-spacing:.03em;font-weight:650}
+.tbl td{padding:6.5px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:nth-child(even) td{background:#f8fafc}
+.tbl td:first-child{font-weight:680;color:var(--ink);white-space:nowrap}
+.tbl.os td:nth-child(2){color:var(--red2);font-weight:650}
+.tbl.tight td{padding:5px 12px;font-size:14px}
+table.resp{width:100%;border-collapse:separate;border-spacing:5px 4px;font-size:14.5px;text-align:center}
+.resp thead th{font-size:15px;color:var(--ink);padding:2px 4px 6px;line-height:1.2}
+.resp thead small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+.resp tbody th{text-align:right;padding-right:12px;font-weight:650;color:var(--ink);white-space:nowrap;width:210px}
+.resp td{padding:6px;border-radius:6px;font-weight:600}
+.resp .u{background:#e3edff;color:#1d4ed8}
+.resp .p{background:#fde8ec;color:var(--red2)}
+code{font-family:var(--mono);font-size:.87em;background:#f1f5f9;padding:1px 6px;border-radius:4px;color:var(--ink)}
+pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;font:13.5px/1.5 var(--mono);white-space:pre;overflow:hidden}
+pre .c{color:#7dd3fc}pre .k{color:#fda4af}pre .m{color:#94a3b8}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:#fde8ec;color:var(--red2);letter-spacing:.03em}
+.fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:100%}
+.foot{position:absolute;left:64px;right:64px;bottom:15px;display:flex;justify-content:space-between;font-size:11.5px;color:#94a3b8;letter-spacing:.02em}
+/* dark slides */
+.slide.dark{background:radial-gradient(1100px 600px at 85% 15%,#1c2a55 0%,var(--navy) 55%,#0b1226 100%);color:#fff;justify-content:center}
+.dark .foot{color:#64748b}
+.dark .kick{color:#ff6b84}
+h1{font-size:68px;line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:10px 0 14px}
+.sub{font-size:27px;color:#cbd5e1;font-weight:400}
+.chips{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin-top:34px}
+.chips li{border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:7px 16px;font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.04)}
+.ref{margin-top:36px;font-size:14px;color:#94a3b8}
+.deco{position:absolute;right:0;top:0;width:1280px;height:720px;pointer-events:none}
+.tt{position:relative;max-width:760px}
+.sec .num{font-size:150px;font-weight:800;line-height:.9;color:transparent;-webkit-text-stroke:2px #ff4d6a;letter-spacing:-.04em}
+.sec h2{font-size:50px;margin:16px 0 12px;letter-spacing:-.02em}
+.sec p{font-size:20px;color:#cbd5e1;max-width:820px;line-height:1.45}
+.sec ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:9px 40px;margin-top:30px;max-width:980px;font-size:16.5px;color:#e2e8f0}
+.sec ol li{padding-left:20px;position:relative}
+.sec ol li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:3px;background:#ff4d6a}
+/* svg */
+svg{display:block}
+svg{font-size:14px}
+svg text{font-family:inherit;fill:#0f172a}
+svg g.ts text{fill:#475569}svg g.tw text{fill:#fff}
+.big .card{font-size:17px;padding:18px 16px;display:flex;flex-direction:column;line-height:1.42}.big .card h3{font-size:19px;margin-bottom:12px}.big .card .os{font-size:14.5px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line);line-height:1.4}
+.dense .card{font-size:14px;padding:10px 14px;line-height:1.36}.dense .card h3{font-size:15.5px;margin-bottom:3px}
+.tc{text-anchor:middle}.te{text-anchor:end}
+svg .tb{font-weight:700}svg .ts{font-size:12px;fill:#475569}svg .tl{font-size:17px;font-weight:750}svg .tw{fill:#fff}svg .tr{fill:#b3122f}
+svg .tm{font-family:var(--mono);font-size:12px}
+.bx{fill:#fff;stroke:#94a3b8;stroke-width:1.5}
+.b-red{fill:#fde8ec;stroke:#e4002b;stroke-width:1.5}
+.b-blue{fill:#e3edff;stroke:#2563eb;stroke-width:1.5}
+.b-teal{fill:#d8f3ee;stroke:#0d9488;stroke-width:1.5}
+.b-amber{fill:#fdf0d5;stroke:#d97706;stroke-width:1.5}
+.b-violet{fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5}
+.b-green{fill:#dcf5e3;stroke:#16a34a;stroke-width:1.5}
+.b-grey{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5}
+.b-dark{fill:#101a33;stroke:#101a33}
+.f-red{fill:#e4002b}
+.zone{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 4}
+.ln{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar)}
+.ln2{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar);marker-start:url(#ar)}
+.lr{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr)}
+.lr2{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr);marker-start:url(#arr)}
+.ld{stroke-dasharray:5 4}
+.nl{stroke:#94a3b8;stroke-width:1.5;fill:none}
+/* ui */
+#bar{position:fixed;left:0;bottom:0;height:3px;background:var(--red);width:0;transition:width .2s;z-index:5}
+#nav{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;display:flex;gap:6px;z-index:6;opacity:.07;transition:opacity .2s}
+#nav:hover{opacity:1}
+#nav button{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;font:600 13px/1 inherit;padding:7px 10px;cursor:pointer}
+#nav button:hover{background:var(--red);border-color:var(--red)}
+body.ov{overflow:auto}
+body.ov #stage{position:static;margin:0;width:auto;height:auto;transform:none!important;display:flex;flex-wrap:wrap;gap:14px;padding:20px}
+body.ov .slide{display:flex;position:relative;inset:auto;flex:none;width:1280px;height:720px;zoom:var(--z);cursor:pointer;border-radius:8px}
+body.ov .slide.active{outline:14px solid var(--red)}
+@page{size:1280px 720px;margin:0}
+@media print{
+html,body{height:auto;overflow:visible;background:#fff}
+#stage{position:static;margin:0;width:1280px;height:auto;transform:none!important;display:block}
+.slide{display:flex!important;position:relative;inset:auto;width:1280px;height:720px;break-after:page;page-break-after:always;zoom:1!important}
+#bar,#nav{display:none}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.la{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA)}.la2{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA);marker-start:url(#arA)}
+.lt{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT)}.lt2{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT);marker-start:url(#arT)}
+.lb{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB)}.lb2{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB);marker-start:url(#arB)}
+svg text.fa,svg .fa{fill:#b45309}svg text.ft,svg .ft{fill:#0f766e}svg text.fb,svg .fb{fill:#1d4ed8}
+.tbl td.c,.tbl th.c{text-align:center}.tbl td.y{color:#16a34a;font-weight:800}.tbl td.n{color:#cbd5e1}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e4002b"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+<marker id="arT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker>
+<marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+</defs></svg>
+<div id="stage">
+
+<!-- 1 -->
+<section class="slide dark">
+<svg class="deco" viewBox="0 0 1280 720" aria-hidden="true"><g transform="translate(-60,0)">
+<g fill="none" stroke="#ff4d6a" stroke-width="2" opacity=".85">
+<path d="M900,470 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.16)"/>
+<path d="M900,400 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.24)"/>
+<path d="M900,330 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.34)"/>
+<path d="M900,260 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.5)"/>
+</g>
+<g stroke="#334a85" stroke-width="1" opacity=".6"><path d="M860,180 H1240 M860,570 H1240 M860,180 V570 M1240,180 V570" stroke-dasharray="3 7"/></g>
+<g font-weight="700" letter-spacing="2" style="font-size:12px"><text x="1210" y="264" style="fill:#cbd5e1">API</text><text x="1210" y="334" style="fill:#cbd5e1">BUS</text><text x="1210" y="404" style="fill:#cbd5e1">NŒUDS</text><text x="1210" y="474" style="fill:#cbd5e1">RÉSEAUX</text></g>
+</g></svg>
+<div class="tt">
+<span class="kick">Support de formation</span>
+<h1>Architecture interne d'OpenStack</h1>
+<p class="sub">Rôle des nœuds, communication entre composants, segmentation réseau du plan de contrôle</p>
+<ul class="chips"><li>Contrôle · calcul · passerelle · stockage</li><li>API REST et bus de messages</li><li>Réseaux du plan de contrôle</li></ul>
+<p class="ref">Version de référence : OpenStack 2026.2 « Hibiscus » · mise en œuvre réseau de référence : ML2/OVN</p>
+</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Objectif et déroulé</h2></header>
+<div class="body">
+<div class="note"><b>Objectif :</b> savoir lire un déploiement OpenStack de l'intérieur — quel processus tourne sur quel nœud, par quel protocole il dialogue avec les autres, et sur quel réseau ce dialogue circule.</div>
+<div class="cols">
+<div class="col">
+<p><b>À l'issue de ce module, vous saurez :</b></p>
+<ul class="pts">
+<li>Décrire le contenu d'un nœud de <b>contrôle</b>, de <b>calcul</b>, de <b>passerelle</b> et de <b>stockage</b>, processus par processus.</li>
+<li>Distinguer les quatre protocoles internes : <b>REST</b>, <b>AMQP (RPC)</b>, <b>SQL</b> et <b>OVSDB</b>, et dire qui utilise lequel.</li>
+<li>Suivre une requête API de la VIP jusqu'à la base, puis un appel RPC de file en file.</li>
+<li>Expliquer les échanges Nova ↔ Neutron et Nova ↔ Cinder.</li>
+<li>Nommer les <b>réseaux</b> d'un déploiement, dire quels nœuds y sont raccordés et quels ports y circulent.</li>
+<li>Relier une panne à l'étage qui la provoque.</li>
+</ul>
+</div>
+<div class="col">
+<div class="card"><h3>1 · Rôle des nœuds</h3>Plan de contrôle et plan de données, anatomie de chaque type de nœud, répartition des services, topologies, comportement en cas de panne.</div>
+<div class="card cb"><h3>2 · Communication entre composants</h3>Requête API, points d'accès, jetons de service, AMQP et oslo.messaging, conductor, base de données, RabbitMQ, OVN, séquences inter-services, diagnostic.</div>
+<div class="card ct"><h3>3 · Segmentation réseau du plan de contrôle</h3>Domaines de sécurité, réseaux et VLAN, VIP interne et externe, matrice de flux, chiffrement, câblage, MTU, traduction en configuration.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 3 -->
+<section class="slide dark sec">
+<div class="num">01</div>
+<h2>Rôle des nœuds</h2>
+<p>Un « nœud » est un serveur physique auquel on attribue un rôle. Ce rôle détermine les processus qu'il héberge, les réseaux auxquels il est raccordé et ce que l'on perd s'il tombe.</p>
+<ol><li>Plan de contrôle, plan de données, plan de gestion</li><li>Les familles de nœuds</li><li>Anatomie d'un nœud de contrôle</li><li>Anatomie d'un nœud de calcul</li><li>Passerelles réseau et nœuds de stockage</li><li>Répartition des services, topologies, pannes</li></ol>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+<header><span class="kick">1 · Rôle des nœuds</span><h2>Plan de contrôle, plan de données : deux circuits distincts</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 320">
+<rect x="150" y="8" width="850" height="124" rx="12" class="zone"/><text x="168" y="32" class="tl tr">Plan de contrôle — décide, enregistre, ordonne</text>
+<rect x="150" y="192" width="850" height="124" rx="12" class="zone"/><text x="168" y="216" class="tl">Plan de données — exécute et transporte</text>
+<rect x="170" y="46" width="150" height="70" rx="8" class="b-red"/><text x="245" y="77" class="tc tb">API REST</text><text x="245" y="96" class="tc ts">derrière HAProxy</text>
+<rect x="335" y="46" width="150" height="70" rx="8" class="b-red"/><text x="410" y="77" class="tc tb">Ordonnanceurs</text><text x="410" y="96" class="tc ts">et conductors</text>
+<rect x="500" y="46" width="150" height="70" rx="8" class="b-grey"/><text x="575" y="77" class="tc tb">Base de données</text><text x="575" y="96" class="tc ts">MariaDB Galera</text>
+<rect x="665" y="46" width="150" height="70" rx="8" class="b-amber"/><text x="740" y="77" class="tc tb">Bus de messages</text><text x="740" y="96" class="tc ts">RabbitMQ</text>
+<rect x="830" y="46" width="150" height="70" rx="8" class="b-teal"/><text x="905" y="77" class="tc tb">neutron-server</text><text x="905" y="96" class="tc ts">bases OVN NB / SB</text>
+<rect x="170" y="230" width="150" height="70" rx="8" class="b-blue"/><text x="245" y="261" class="tc tb">Hyperviseurs</text><text x="245" y="280" class="tc ts">machines KVM</text>
+<rect x="335" y="230" width="150" height="70" rx="8" class="b-teal"/><text x="410" y="261" class="tc tb">Open vSwitch</text><text x="410" y="280" class="tc ts">flux installés</text>
+<rect x="500" y="230" width="150" height="70" rx="8" class="b-teal"/><text x="575" y="261" class="tc tb">Tunnels Geneve</text><text x="575" y="280" class="tc ts">entre hôtes</text>
+<rect x="665" y="230" width="150" height="70" rx="8" class="b-teal"/><text x="740" y="261" class="tc tb">Passerelles</text><text x="740" y="280" class="tc ts">NAT, IP flottantes</text>
+<rect x="830" y="230" width="150" height="70" rx="8" class="b-amber"/><text x="905" y="261" class="tc tb">E/S de stockage</text><text x="905" y="280" class="tc ts">RBD, iSCSI</text>
+<path d="M410,134 V190" class="lr"/><text x="422" y="158" class="tb tr">ordres</text><text x="422" y="175" class="ts">RPC (AMQP), OVSDB</text>
+<path d="M740,190 V134" class="ln"/><text x="752" y="158" class="tb">états</text><text x="752" y="175" class="ts">heartbeats, événements, inventaires</text>
+<rect x="5" y="46" width="118" height="70" rx="8" class="b-blue"/><text x="64" y="77" class="tc tb">Clients</text><text x="64" y="96" class="tc ts">de l'API</text>
+<path d="M123,81 H148" class="lr"/>
+<rect x="5" y="230" width="118" height="70" rx="8" class="b-blue"/><text x="64" y="261" class="tc tb">Utilisateurs</text><text x="64" y="280" class="tc ts">des applications</text>
+<path d="M123,265 H148" class="lb2"/>
+<text x="1012" y="66" class="ts">Requêtes rares,</text><text x="1012" y="82" class="ts">courtes, critiques.</text><text x="1012" y="104" class="ts tb">Si indisponible :</text><text x="1012" y="120" class="ts">plus de changement.</text>
+<text x="1012" y="250" class="ts">Trafic continu,</text><text x="1012" y="266" class="ts">à fort débit.</text><text x="1012" y="288" class="ts tb">Si indisponible :</text><text x="1012" y="304" class="ts">service interrompu.</text>
+</svg>
+</div>
+<div class="cols c3 nf">
+<div class="card"><h3>Plan de contrôle</h3>Tout ce qui reçoit une demande, la valide, choisit où la réaliser et en conserve l'état. Il vit sur les <b>nœuds de contrôle</b> et ne voit jamais passer le trafic des instances.</div>
+<div class="card cb"><h3>Plan de données</h3>Ce qui fait tourner les instances et achemine leurs paquets et leurs E/S. Il vit sur les <b>nœuds de calcul, de passerelle et de stockage</b> et continue de fonctionner sans le plan de contrôle.</div>
+<div class="card cn"><h3>Plan de gestion</h3>Ce qui sert à exploiter le cloud lui-même : déploiement, accès SSH, supervision, journaux, pilotage matériel (IPMI). Il doit rester joignable quand tout le reste est en panne.</div>
+</div>
+</div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+<header><span class="kick">1 · Rôle des nœuds</span><h2>Les familles de nœuds</h2></header>
+<div class="body">
+<div class="cols c5 big">
+<div class="card"><h3>Contrôle</h3>API, ordonnanceurs, conductors, base de données, bus de messages, bases OVN, HAProxy.<span class="os"><b>Nombre :</b> 3 (toujours impair)<br><b>Perte :</b> plus d'opérations si le quorum disparaît</span></div>
+<div class="card cb"><h3>Calcul</h3>Hyperviseur KVM, nova-compute, ovn-controller, connecteurs de stockage. Héberge les instances.<span class="os"><b>Nombre :</b> de 1 à plusieurs milliers<br><b>Perte :</b> les instances de cet hôte</span></div>
+<div class="card ct"><h3>Passerelle réseau</h3>Sortie vers les réseaux externes, NAT, IP flottantes. Souvent fusionnée avec les nœuds de contrôle.<span class="os"><b>Nombre :</b> 2 au minimum<br><b>Perte :</b> bascule du trafic nord-sud</span></div>
+<div class="card ca"><h3>Stockage</h3>Ceph (MON, MGR, OSD) ou Swift, ou cinder-volume avec LVM. Porte volumes, images et objets.<span class="os"><b>Nombre :</b> 3 au minimum pour Ceph<br><b>Perte :</b> cluster dégradé, sans coupure</span></div>
+<div class="card cn"><h3>Annexes</h3>Déploiement, bastion, supervision, journaux. Hors du chemin des requêtes des utilisateurs.<span class="os"><b>Nombre :</b> 1 à 3<br><b>Perte :</b> plus de visibilité ni de changement</span></div>
+</div>
+<div class="note g">Un rôle est <b>logique</b> : on peut en cumuler plusieurs sur une même machine (contrôle + passerelle, calcul + OSD en hyperconvergé) ou au contraire les éclater (base et bus sur des nœuds dédiés). Ce qui compte est de savoir quels processus et quels réseaux chaque machine porte.</div>
+</div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+<header><span class="kick">1 · Rôle des nœuds</span><h2>Anatomie d'un nœud de contrôle</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 480">
+<rect x="455" y="2" width="240" height="28" rx="6" class="b-blue"/><text x="575" y="21" class="tc tb">Clients et autres nœuds</text>
+<rect x="20" y="42" width="1110" height="434" rx="14" class="zone"/>
+<text x="40" y="66" class="tl">Nœud de contrôle (×3, identiques)</text>
+<path d="M575,30 V78" class="lr"/>
+<rect x="40" y="80" width="1070" height="42" rx="8" class="b-dark"/><text x="575" y="106" class="tc tw tb">HAProxy + Keepalived — VIP interne et VIP externe, terminaison TLS, contrôle de santé des API</text>
+<text x="40" y="144" class="ts tb">API REST — sans état, actives sur les trois nœuds</text>
+<g class="tc">
+<rect x="40" y="152" width="125" height="52" rx="7" class="b-red"/><text x="102" y="174" class="tb">keystone</text><text x="102" y="192" class="ts">5000</text>
+<rect x="175" y="152" width="125" height="52" rx="7" class="b-red"/><text x="237" y="174" class="tb">nova-api</text><text x="237" y="192" class="ts">8774</text>
+<rect x="310" y="152" width="125" height="52" rx="7" class="b-red"/><text x="372" y="174" class="tb">placement-api</text><text x="372" y="192" class="ts">8778</text>
+<rect x="445" y="152" width="125" height="52" rx="7" class="b-red"/><text x="507" y="174" class="tb">neutron-server</text><text x="507" y="192" class="ts">9696</text>
+<rect x="580" y="152" width="125" height="52" rx="7" class="b-red"/><text x="642" y="174" class="tb">cinder-api</text><text x="642" y="192" class="ts">8776</text>
+<rect x="715" y="152" width="125" height="52" rx="7" class="b-red"/><text x="777" y="174" class="tb">glance-api</text><text x="777" y="192" class="ts">9292</text>
+<rect x="850" y="152" width="125" height="52" rx="7" class="b-red"/><text x="912" y="174" class="tb">heat-api</text><text x="912" y="192" class="ts">8004</text>
+<rect x="985" y="152" width="125" height="52" rx="7" class="b-red"/><text x="1047" y="174" class="tb">horizon</text><text x="1047" y="192" class="ts">80 / 443</text>
+</g>
+<text x="40" y="228" class="ts tb">Processus internes — aucune API exposée aux utilisateurs</text>
+<g class="tc tb" style="font-size:13px">
+<rect x="40" y="236" width="142" height="44" rx="7" class="bx"/><text x="111" y="263">nova-scheduler</text>
+<rect x="195" y="236" width="142" height="44" rx="7" class="bx"/><text x="266" y="263">nova-conductor</text>
+<rect x="349" y="236" width="142" height="44" rx="7" class="bx"/><text x="420" y="263">nova-novncproxy</text>
+<rect x="504" y="236" width="142" height="44" rx="7" class="bx"/><text x="575" y="263">cinder-scheduler</text>
+<rect x="659" y="236" width="142" height="44" rx="7" class="bx"/><text x="730" y="263">cinder-volume *</text>
+<rect x="813" y="236" width="142" height="44" rx="7" class="bx"/><text x="884" y="263">heat-engine</text>
+<rect x="968" y="236" width="142" height="44" rx="7" class="bx"/><text x="1039" y="263">ovn-northd</text>
+</g>
+<text x="40" y="304" class="ts tb">Services d'état et d'infrastructure — en cluster entre les trois nœuds</text>
+<g class="tc">
+<rect x="40" y="312" width="256" height="56" rx="7" class="b-grey"/><text x="168" y="336" class="tb">MariaDB + Galera</text><text x="168" y="355" class="ts">3306 · réplication 4567</text>
+<rect x="311" y="312" width="256" height="56" rx="7" class="b-amber"/><text x="439" y="336" class="tb">RabbitMQ</text><text x="439" y="355" class="ts">5672 · cluster 4369, 25672</text>
+<rect x="582" y="312" width="256" height="56" rx="7" class="b-teal"/><text x="710" y="336" class="tb">Bases OVN NB / SB</text><text x="710" y="355" class="ts">6641, 6642 · Raft 6643, 6644</text>
+<rect x="854" y="312" width="256" height="56" rx="7" class="b-grey"/><text x="982" y="336" class="tb">Memcached</text><text x="982" y="355" class="ts">11211 · sans réplication</text>
+</g>
+<rect x="40" y="386" width="1070" height="38" rx="8" class="b-grey"/><text x="575" y="410" class="tc">Linux · moteur de conteneurs (Docker ou Podman) · chrony · agents de supervision et de journalisation</text>
+<text x="40" y="452" class="ts">* cinder-volume tourne sur les contrôleurs quand le backend est distant (Ceph, baie) ; avec LVM, il vit sur le nœud qui porte les disques.</text>
+</svg>
+</div></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+<header><span class="kick">1 · Rôle des nœuds</span><h2>Nœud de contrôle : état, redondance et mode de fonctionnement</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Composant</th><th>Porte un état ?</th><th>Mode en haute disponibilité</th><th>Mécanisme</th><th>À surveiller</th></tr></thead>
+<tbody>
+<tr><td>API (nova, neutron, cinder…)</td><td>Non</td><td>Actif / actif</td><td>HAProxy répartit, retire un nœud qui échoue au contrôle de santé</td><td>Nombre de workers WSGI, temps de réponse</td></tr>
+<tr><td>Scheduler, conductor, engine</td><td>Non</td><td>Actif / actif</td><td>Consommateurs concurrents d'une même file RabbitMQ</td><td>Profondeur des files</td></tr>
+<tr><td>cinder-volume</td><td>Non, mais exclusif</td><td>Actif / passif ou actif / actif selon le pilote</td><td>Verrous distribués (coordination tooz : etcd, Redis)</td><td>Un seul actif par backend sans coordination</td></tr>
+<tr><td>ovn-northd</td><td>Non</td><td>Actif / passif</td><td>Verrou pris dans la base Southbound</td><td>Un seul actif à la fois</td></tr>
+<tr><td>Bases OVN NB / SB</td><td>Oui</td><td>Cluster Raft, 3 membres</td><td>Un leader élu ; quorum de 2</td><td>Leader, retard de réplication</td></tr>
+<tr><td>MariaDB Galera</td><td>Oui</td><td>Multi-maître synchrone, 3 membres</td><td>Écritures dirigées vers un seul nœud par HAProxy ; quorum de 2</td><td><code>wsrep_cluster_size</code>, état <code>Synced</code></td></tr>
+<tr><td>RabbitMQ</td><td>Oui (files)</td><td>Cluster, files à quorum (Raft)</td><td>Les clients listent les trois nœuds et se reconnectent seuls</td><td>Partitions, files sans consommateur</td></tr>
+<tr><td>Memcached</td><td>Cache seulement</td><td>Instances indépendantes</td><td>Les clients connaissent la liste complète des serveurs</td><td>Perte = ralentissement, jamais perte de données</td></tr>
+<tr><td>HAProxy + Keepalived</td><td>Non</td><td>Actif / passif pour les VIP</td><td>VRRP : un seul nœud porte les adresses virtuelles</td><td>Bascule de VIP, double maître</td></tr>
+</tbody></table>
+<div class="note"><b>Pourquoi trois nœuds :</b> Galera, RabbitMQ et OVN décident à la majorité. Avec trois membres, on tolère la perte d'un nœud ; avec deux, la moindre coupure réseau bloque tout le monde (« split-brain » évité au prix de l'arrêt).</div>
+</div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+<header><span class="kick">1 · Rôle des nœuds</span><h2>Anatomie d'un nœud de calcul</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 650 470">
+<rect x="140" y="8" width="370" height="454" rx="14" class="zone"/><text x="156" y="33" class="tl">Nœud de calcul</text>
+<g class="tc">
+<rect x="156" y="46" width="104" height="46" rx="7" class="b-blue"/><text x="208" y="66" class="tb">VM</text><text x="208" y="83" class="ts">qemu-kvm</text>
+<rect x="273" y="46" width="104" height="46" rx="7" class="b-blue"/><text x="325" y="66" class="tb">VM</text><text x="325" y="83" class="ts">qemu-kvm</text>
+<rect x="390" y="46" width="104" height="46" rx="7" class="b-blue"/><text x="442" y="66" class="tb">VM</text><text x="442" y="83" class="ts">qemu-kvm</text>
+<rect x="156" y="114" width="128" height="42" rx="7" class="b-red"/><text x="220" y="140" class="tb">nova-compute</text>
+<rect x="304" y="114" width="190" height="42" rx="7" class="b-amber"/><text x="399" y="140" class="tb">libvirt (virtqemud)</text>
+<rect x="156" y="174" width="338" height="38" rx="7" class="bx"/><text x="325" y="198">os-brick : iscsid, multipathd, librbd</text>
+<rect x="156" y="230" width="160" height="42" rx="7" class="b-teal"/><text x="236" y="256" class="tb">ovn-controller</text>
+<rect x="334" y="230" width="160" height="42" rx="7" class="b-teal"/><text x="414" y="256" class="tb" style="font-size:13px">ovn-metadata-agent</text>
+<rect x="156" y="290" width="338" height="38" rx="7" class="b-teal"/><text x="325" y="314" class="tb">Open vSwitch — br-int (ports des VM)</text>
+<rect x="156" y="346" width="338" height="38" rx="7" class="b-grey"/><text x="325" y="370">Noyau Linux : KVM, openvswitch, Geneve</text>
+<rect x="156" y="402" width="338" height="42" rx="7" class="b-dark"/><text x="325" y="428" class="tw tb">Cartes réseau : gestion · overlay · stockage</text>
+</g>
+<path d="M284,135 H302" class="ln"/><path d="M399,114 V94" class="ln"/>
+<path d="M236,272 V288" class="ln"/><path d="M220,156 V172" class="ln"/>
+<g class="tc">
+<rect x="4" y="50" width="112" height="40" rx="7" class="b-red"/><text x="60" y="67" class="tb" style="font-size:12.5px">API (VIP interne)</text><text x="60" y="82" class="ts">REST</text>
+<rect x="4" y="115" width="112" height="40" rx="7" class="b-amber"/><text x="60" y="132" class="tb">RabbitMQ</text><text x="60" y="147" class="ts">AMQP 5672</text>
+<rect x="4" y="231" width="112" height="40" rx="7" class="b-teal"/><text x="60" y="248" class="tb">OVN SB</text><text x="60" y="263" class="ts">OVSDB 6642</text>
+<rect x="534" y="173" width="112" height="40" rx="7" class="b-amber"/><text x="590" y="190" class="tb">Stockage</text><text x="590" y="205" class="ts">RBD, iSCSI</text>
+<rect x="534" y="289" width="112" height="40" rx="7" class="b-blue"/><text x="590" y="306" class="tb">Autres hôtes</text><text x="590" y="321" class="ts">Geneve UDP 6081</text>
+</g>
+<path d="M154,125 L118,78" class="lr"/><path d="M118,135 H154" class="la2"/><path d="M118,251 H154" class="lt2"/>
+<path d="M496,193 H532" class="la2"/><path d="M496,309 H532" class="lb2"/>
+</svg>
+</div>
+<div class="col">
+<p><b>Ce qu'il fait</b></p>
+<ul class="pts sm">
+<li><b>nova-compute</b> reçoit ses ordres par RPC et les traduit en appels libvirt.</li>
+<li><b>libvirt</b> lance un processus <code>qemu-kvm</code> par instance.</li>
+<li><b>os-brick</b> connecte les volumes (RBD, iSCSI, FC, NVMe-oF).</li>
+<li><b>ovn-controller</b> programme les flux d'Open vSwitch à partir de la base Southbound.</li>
+<li><b>ovn-metadata-agent</b> relaie les requêtes <code>169.254.169.254</code> des instances.</li>
+</ul>
+<p><b>Ce qu'il ne fait pas</b></p>
+<ul class="pts sm">
+<li>Aucun accès direct à la base de données : il passe par <b>nova-conductor</b>.</li>
+<li>Aucune API exposée aux utilisateurs.</li>
+</ul>
+<div class="note b"><b>Ports entrants :</b> 22 (SSH), 16509 / 16514 (libvirt), 49152–49215 (migration QEMU), 5900–5999 (consoles VNC), UDP 6081 (Geneve).</div>
+</div>
+</div></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+<header><span class="kick">1 · Rôle des nœuds</span><h2>Passerelle réseau : chassis OVN ou nœud à agents</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 300">
+<rect x="10" y="8" width="555" height="286" rx="12" class="zone"/><text x="28" y="34" class="tl tr">ML2/OVN — chassis passerelle</text>
+<rect x="28" y="52" width="170" height="44" rx="7" class="b-teal"/><text x="113" y="79" class="tc tb">ovn-controller</text>
+<path d="M330,74 H200" class="lt"/><text x="340" y="70" class="tb ft">OVSDB 6642</text><text x="340" y="86" class="ts">depuis la base Southbound</text>
+<rect x="28" y="118" width="330" height="36" rx="7" class="b-teal"/><text x="193" y="141" class="tc tb">br-int — flux de routage et de NAT</text>
+<rect x="382" y="118" width="165" height="36" rx="7" class="b-amber"/><text x="464" y="141" class="tc tb">br-ex → externe</text>
+<path d="M358,136 H380" class="ln2"/><path d="M113,96 V116" class="ln"/>
+<g class="ts"><text x="28" y="186">• Aucun agent Neutron ni espace de noms : tout est fait par des flux OVS.</text>
+<text x="28" y="208">• Rôle activé par l'option ovn-cms-options=enable-chassis-as-gw.</text>
+<text x="28" y="230">• Chaque routeur est planifié sur plusieurs chassis, par priorité ;</text><text x="38" y="246">BFD détecte la panne et le suivant prend le relais.</text>
+<text x="28" y="268">• Avec le routage distribué, les IP flottantes sortent directement</text><text x="38" y="284">par l'hyperviseur ; seul le SNAT passe par la passerelle.</text></g>
+<rect x="585" y="8" width="555" height="286" rx="12" class="zone"/><text x="603" y="34" class="tl">ML2/Open vSwitch — nœud réseau à agents</text>
+<g class="tc tb" style="font-size:11.5px">
+<rect x="603" y="52" width="122" height="44" rx="7" class="bx"/><text x="664" y="79">agent OVS</text>
+<rect x="736" y="52" width="122" height="44" rx="7" class="bx"/><text x="797" y="79">agent L3</text>
+<rect x="869" y="52" width="122" height="44" rx="7" class="bx"/><text x="930" y="79">agent DHCP</text>
+<rect x="1002" y="52" width="122" height="44" rx="7" class="bx"/><text x="1063" y="79">agent métadonnées</text>
+</g>
+<rect x="603" y="118" width="170" height="36" rx="7" class="b-teal"/><text x="688" y="141" class="tc tb">br-int</text>
+<rect x="786" y="118" width="160" height="36" rx="7" class="b-teal"/><text x="866" y="141" class="tc tb">br-tun</text>
+<rect x="959" y="118" width="165" height="36" rx="7" class="b-amber"/><text x="1041" y="141" class="tc tb">br-ex → externe</text>
+<g class="ts"><text x="603" y="186">• Agents pilotés par neutron-server à travers RabbitMQ (RPC).</text>
+<text x="603" y="208">• Agent L3 : un espace de noms qrouter-… par routeur (iptables, keepalived).</text>
+<text x="603" y="230">• Agent DHCP : un espace de noms qdhcp-… et un dnsmasq par réseau.</text>
+<text x="603" y="252">• Nœud critique : sans routage distribué (DVR), tout le trafic nord-sud</text><text x="613" y="268">et inter-réseaux y transite.</text></g>
+</svg>
+</div>
+<div class="cols nf">
+<div class="note"><b>Dans les deux cas</b>, la passerelle est le point où un réseau de projet (overlay) rejoint un réseau physique. Elle doit donc être raccordée à la fois au réseau <b>overlay</b> et au réseau <b>externe</b>.</div>
+<div class="note g"><b>Choix courant :</b> fusionner ce rôle avec les nœuds de contrôle pour les petits clouds, le dédier dès que le débit nord-sud devient important ou que l'on veut isoler la charge.</div>
+</div>
+</div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+<header><span class="kick">1 · Rôle des nœuds</span><h2>Nœuds de stockage : Ceph et Swift</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 315">
+<rect x="10" y="6" width="690" height="304" rx="12" class="zone"/><text x="28" y="31" class="tl">Cluster Ceph</text>
+<rect x="720" y="6" width="420" height="304" rx="12" class="zone"/><text x="738" y="31" class="tl">Cluster Swift (optionnel)</text>
+<g class="tc">
+<rect x="30" y="44" width="110" height="50" rx="7" class="b-red"/><text x="85" y="66" class="tb">MON</text><text x="85" y="84" class="ts">carte, quorum</text>
+<rect x="150" y="44" width="110" height="50" rx="7" class="b-red"/><text x="205" y="66" class="tb">MON</text><text x="205" y="84" class="ts">carte, quorum</text>
+<rect x="270" y="44" width="110" height="50" rx="7" class="b-red"/><text x="325" y="66" class="tb">MON</text><text x="325" y="84" class="ts">carte, quorum</text>
+<rect x="395" y="44" width="130" height="50" rx="7" class="bx"/><text x="460" y="66" class="tb">MGR ×2</text><text x="460" y="84" class="ts">métriques, modules</text>
+<rect x="540" y="44" width="140" height="50" rx="7" class="bx"/><text x="610" y="66" class="tb">RGW · MDS</text><text x="610" y="84" class="ts">objet, CephFS (option)</text>
+<rect x="30" y="112" width="155" height="92" rx="7" class="b-amber"/><text x="107" y="134" class="tb">Nœud OSD 1</text>
+<rect x="195" y="112" width="155" height="92" rx="7" class="b-amber"/><text x="272" y="134" class="tb">Nœud OSD 2</text>
+<rect x="360" y="112" width="155" height="92" rx="7" class="b-amber"/><text x="437" y="134" class="tb">Nœud OSD 3</text>
+<rect x="525" y="112" width="155" height="92" rx="7" class="b-amber"/><text x="602" y="134" class="tb">Nœud OSD n</text>
+</g>
+<g class="tc ts">
+<rect x="40" y="146" width="40" height="24" rx="4" class="bx"/><text x="60" y="163">osd</text><rect x="87" y="146" width="40" height="24" rx="4" class="bx"/><text x="107" y="163">osd</text><rect x="134" y="146" width="40" height="24" rx="4" class="bx"/><text x="154" y="163">osd</text>
+<rect x="205" y="146" width="40" height="24" rx="4" class="bx"/><text x="225" y="163">osd</text><rect x="252" y="146" width="40" height="24" rx="4" class="bx"/><text x="272" y="163">osd</text><rect x="299" y="146" width="40" height="24" rx="4" class="bx"/><text x="319" y="163">osd</text>
+<rect x="370" y="146" width="40" height="24" rx="4" class="bx"/><text x="390" y="163">osd</text><rect x="417" y="146" width="40" height="24" rx="4" class="bx"/><text x="437" y="163">osd</text><rect x="464" y="146" width="40" height="24" rx="4" class="bx"/><text x="484" y="163">osd</text>
+<rect x="535" y="146" width="40" height="24" rx="4" class="bx"/><text x="555" y="163">osd</text><rect x="582" y="146" width="40" height="24" rx="4" class="bx"/><text x="602" y="163">osd</text><rect x="629" y="146" width="40" height="24" rx="4" class="bx"/><text x="649" y="163">osd</text>
+<text x="107" y="192">1 démon par disque</text><text x="272" y="192">1 démon par disque</text><text x="437" y="192">1 démon par disque</text><text x="602" y="192">1 démon par disque</text>
+</g>
+<rect x="30" y="222" width="650" height="30" rx="6" class="b-blue"/><text x="355" y="242" class="tc tb" style="font-size:13px">Réseau public Ceph — clients (Nova, Cinder, Glance) ↔ MON et OSD</text>
+<rect x="30" y="264" width="650" height="30" rx="6" class="b-grey"/><text x="355" y="284" class="tc tb" style="font-size:13px">Réseau cluster Ceph — réplication et rééquilibrage entre OSD</text>
+<g class="tc">
+<rect x="740" y="44" width="185" height="50" rx="7" class="b-red"/><text x="832" y="66" class="tb">proxy-server</text><text x="832" y="84" class="ts">API 8080</text>
+<rect x="935" y="44" width="185" height="50" rx="7" class="b-red"/><text x="1027" y="66" class="tb">proxy-server</text><text x="1027" y="84" class="ts">API 8080</text>
+<rect x="740" y="112" width="120" height="92" rx="7" class="b-amber"/><text x="800" y="134" class="tb">Zone 1</text>
+<rect x="870" y="112" width="120" height="92" rx="7" class="b-amber"/><text x="930" y="134" class="tb">Zone 2</text>
+<rect x="1000" y="112" width="120" height="92" rx="7" class="b-amber"/><text x="1060" y="134" class="tb">Zone 3</text>
+</g>
+<g class="tc ts"><text x="800" y="156">account</text><text x="800" y="173">container</text><text x="800" y="190">object</text><text x="930" y="156">account</text><text x="930" y="173">container</text><text x="930" y="190">object</text><text x="1060" y="156">account</text><text x="1060" y="173">container</text><text x="1060" y="190">object</text></g>
+<rect x="740" y="222" width="380" height="30" rx="6" class="b-blue"/><text x="930" y="242" class="tc tb" style="font-size:13px">Réseau de stockage — proxys ↔ nœuds</text>
+<rect x="740" y="264" width="380" height="30" rx="6" class="b-grey"/><text x="930" y="284" class="tc tb" style="font-size:13px">Réseau de réplication</text>
+</svg>
+</div>
+<div class="cols nf">
+<table class="tbl tight">
+<thead><tr><th>Service OpenStack</th><th>Ce qu'il place dans Ceph</th><th>Pool habituel</th></tr></thead>
+<tbody>
+<tr><td>Glance</td><td>Images (format raw conseillé)</td><td><code>images</code></td></tr>
+<tr><td>Cinder</td><td>Volumes et sauvegardes</td><td><code>volumes</code>, <code>backups</code></td></tr>
+<tr><td>Nova</td><td>Disques éphémères des instances</td><td><code>vms</code></td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li>Les <b>MON</b> tiennent la carte du cluster : trois, pour le quorum ; souvent hébergés sur les contrôleurs dans un petit cloud.</li>
+<li>Les clients parlent <b>directement aux OSD</b> : les nœuds de calcul doivent donc joindre le réseau public Ceph.</li>
+<li>Avec <b>LVM</b>, pas de cluster : <code>cinder-volume</code> tourne sur le nœud qui porte les disques et exporte en iSCSI.</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+<header><span class="kick">1 · Rôle des nœuds</span><h2>Les nœuds annexes : indispensables à l'exploitation</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card cn"><h3>Nœud de déploiement</h3>Porte l'outil (Kolla-Ansible, OpenStack-Ansible, Juju), l'inventaire, les fichiers de configuration et les secrets. Atteint tous les nœuds en SSH par le réseau de gestion. <b>À sauvegarder</b> : sans lui, plus de reconfiguration ni de montée de version.</div>
+<div class="card cn"><h3>Bastion</h3>Point d'entrée unique des administrateurs vers le réseau de gestion : authentification forte, journal des sessions. Aucun autre chemin ne doit mener au SSH des nœuds.</div>
+<div class="card cn"><h3>Supervision et journaux</h3>Prometheus et ses exporteurs, Grafana, collecte centralisée des journaux (Fluentd ou Vector vers OpenSearch). Placés hors des contrôleurs pour rester lisibles quand ceux-ci souffrent.</div>
+<div class="card cb"><h3>Base et bus dédiés</h3>À grande échelle, MariaDB et RabbitMQ quittent les contrôleurs pour des machines dédiées, puis se multiplient par cellule Nova. Les API restent seules sur les contrôleurs.</div>
+<div class="card cb"><h3>Registre et dépôts locaux</h3>Registre d'images de conteneurs et miroirs de paquets : obligatoires en environnement déconnecté d'Internet, utiles partout pour des déploiements reproductibles.</div>
+<div class="card cb"><h3>Services d'infrastructure</h3>NTP, DNS, éventuellement PXE et DHCP d'installation (MAAS, Ironic, Bifrost). Tous les nœuds en dépendent dès le démarrage.</div>
+</div>
+<div class="note g">Aucun de ces nœuds n'est sur le chemin d'une requête d'utilisateur : leur panne ne coupe ni les API ni les instances. Elle prive en revanche l'équipe de ses outils — au pire moment si elle coïncide avec un incident.</div>
+</div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+<header><span class="kick">1 · Rôle des nœuds</span><h2>Répartition des services par type de nœud</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Processus</th><th class="c">Contrôle</th><th class="c">Calcul</th><th class="c">Passerelle</th><th class="c">Stockage</th><th>Remarque</th></tr></thead>
+<tbody>
+<tr><td>HAProxy, Keepalived</td><td class="c y">●</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td><td>Portent les deux adresses virtuelles</td></tr>
+<tr><td>MariaDB, RabbitMQ, Memcached</td><td class="c y">●</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td><td>Nœuds dédiés à grande échelle</td></tr>
+<tr><td>keystone, glance-api, placement-api</td><td class="c y">●</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td><td>REST et SQL uniquement, pas de bus</td></tr>
+<tr><td>nova-api, scheduler, conductor, novncproxy</td><td class="c y">●</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td><td></td></tr>
+<tr><td>nova-compute, libvirt</td><td class="c n">—</td><td class="c y">●</td><td class="c n">—</td><td class="c n">—</td><td>Un nova-compute par hyperviseur</td></tr>
+<tr><td>neutron-server, ovn-northd, bases OVN</td><td class="c y">●</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td><td></td></tr>
+<tr><td>ovn-controller, Open vSwitch</td><td class="c n">—</td><td class="c y">●</td><td class="c y">●</td><td class="c n">—</td><td>Sur tout nœud qui commute du trafic d'instances</td></tr>
+<tr><td>ovn-metadata-agent</td><td class="c n">—</td><td class="c y">●</td><td class="c n">—</td><td class="c n">—</td><td></td></tr>
+<tr><td>cinder-api, cinder-scheduler</td><td class="c y">●</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td><td></td></tr>
+<tr><td>cinder-volume, cinder-backup</td><td class="c y">●</td><td class="c n">—</td><td class="c n">—</td><td class="c">○</td><td>Sur le nœud de stockage avec LVM</td></tr>
+<tr><td>Ceph MON, MGR</td><td class="c">○</td><td class="c n">—</td><td class="c n">—</td><td class="c y">●</td><td>Sur les contrôleurs dans un petit cloud</td></tr>
+<tr><td>Ceph OSD</td><td class="c n">—</td><td class="c">○</td><td class="c n">—</td><td class="c y">●</td><td>Sur le calcul en hyperconvergé</td></tr>
+<tr><td>heat-api, heat-engine, horizon</td><td class="c y">●</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td><td></td></tr>
+</tbody></table>
+<div class="note g"><b>●</b> emplacement habituel · <b>○</b> variante courante. Vérification sur un déploiement réel : <code>openstack compute service list</code>, <code>openstack volume service list</code>, <code>openstack network agent list</code>.</div>
+</div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+<header><span class="kick">1 · Rôle des nœuds</span><h2>Trois topologies de référence</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 370">
+<rect x="10" y="6" width="360" height="358" rx="12" class="zone"/><rect x="395" y="6" width="360" height="358" rx="12" class="zone"/><rect x="780" y="6" width="360" height="358" rx="12" class="zone"/>
+<circle cx="42" cy="36" r="15" class="f-red"/><text x="42" y="42" class="tc tw tb">A</text><text x="68" y="42" class="tl">Tout-en-un</text><text x="30" y="72" class="ts">Lab, démonstration, développement</text>
+<rect x="40" y="96" width="300" height="150" rx="10" class="b-red"/><text x="190" y="140" class="tc tl tr">1 machine</text><text x="190" y="168" class="tc">contrôle + calcul</text><text x="190" y="190" class="tc">+ passerelle + stockage</text>
+<g class="ts"><text x="30" y="278">• DevStack, Kolla all-in-one, Sunbeam mono-nœud</text><text x="30" y="300">• Aucune haute disponibilité</text><text x="30" y="322">• Les mêmes processus et les mêmes API</text><text x="40" y="338">qu'en production</text></g>
+<circle cx="427" cy="36" r="15" class="f-red"/><text x="427" y="42" class="tc tw tb">B</text><text x="453" y="42" class="tl">Standard : 3 + N</text><text x="415" y="72" class="ts">Production courante</text>
+<g class="tc" style="font-size:12.5px">
+<rect x="415" y="92" width="102" height="48" rx="7" class="b-red"/><text x="466" y="112" class="tb">contrôle</text><text x="466" y="129" class="ts">+ passerelle</text>
+<rect x="524" y="92" width="102" height="48" rx="7" class="b-red"/><text x="575" y="112" class="tb">contrôle</text><text x="575" y="129" class="ts">+ passerelle</text>
+<rect x="633" y="92" width="102" height="48" rx="7" class="b-red"/><text x="684" y="112" class="tb">contrôle</text><text x="684" y="129" class="ts">+ passerelle</text>
+<rect x="415" y="150" width="58" height="42" rx="6" class="b-blue"/><text x="444" y="176">calcul</text>
+<rect x="480" y="150" width="58" height="42" rx="6" class="b-blue"/><text x="509" y="176">calcul</text>
+<rect x="546" y="150" width="58" height="42" rx="6" class="b-blue"/><text x="575" y="176">calcul</text>
+<rect x="611" y="150" width="58" height="42" rx="6" class="b-blue"/><text x="640" y="176">calcul</text>
+<rect x="677" y="150" width="58" height="42" rx="6" class="b-blue"/><text x="706" y="176">… N</text>
+<rect x="415" y="202" width="102" height="44" rx="7" class="b-amber"/><text x="466" y="229" class="tb">stockage</text>
+<rect x="524" y="202" width="102" height="44" rx="7" class="b-amber"/><text x="575" y="229" class="tb">stockage</text>
+<rect x="633" y="202" width="102" height="44" rx="7" class="b-amber"/><text x="684" y="229" class="tb">stockage</text>
+</g>
+<g class="ts"><text x="415" y="278">• Galera, RabbitMQ, OVN : quorum à trois</text><text x="415" y="300">• Calcul et stockage croissent séparément</text><text x="415" y="322">• Convient jusqu'à quelques centaines</text><text x="425" y="338">d'hyperviseurs</text></g>
+<circle cx="812" cy="36" r="15" class="f-red"/><text x="812" y="42" class="tc tw tb">C</text><text x="838" y="42" class="tl">Grande échelle</text><text x="800" y="72" class="ts">Plusieurs centaines d'hyperviseurs et au-delà</text>
+<g class="tc" style="font-size:12.5px">
+<rect x="800" y="92" width="102" height="48" rx="7" class="b-red"/><text x="851" y="121" class="tb">API ×3+</text>
+<rect x="909" y="92" width="102" height="48" rx="7" class="b-grey"/><text x="960" y="121" class="tb">base ×3</text>
+<rect x="1018" y="92" width="102" height="48" rx="7" class="b-amber"/><text x="1069" y="121" class="tb">bus ×3</text>
+<rect x="800" y="150" width="156" height="42" rx="6" class="b-teal"/><text x="878" y="176" class="tb">passerelles dédiées</text>
+<rect x="964" y="150" width="156" height="42" rx="6" class="bx"/><text x="1042" y="176" class="tb">cellule : base + bus</text>
+<rect x="800" y="202" width="156" height="44" rx="7" class="b-blue"/><text x="878" y="229" class="tb">calcul par cellule</text>
+<rect x="964" y="202" width="156" height="44" rx="7" class="b-amber"/><text x="1042" y="229" class="tb">stockage dédié</text>
+</g>
+<g class="ts"><text x="800" y="278">• Chaque rôle sur ses propres machines</text><text x="800" y="300">• Cellules Nova : une base et un bus</text><text x="810" y="316">par groupe d'hyperviseurs</text><text x="800" y="338">• Régions multiples si plusieurs sites</text></g>
+</svg>
+</div>
+<div class="note g"><b>Variante hyperconvergée :</b> chaque nœud de calcul porte aussi des OSD Ceph. Moins de machines, mais calcul et stockage se disputent CPU, mémoire et réseau, et une panne de nœud touche les deux à la fois.</div>
+</div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+<header><span class="kick">1 · Rôle des nœuds</span><h2>Que se passe-t-il quand un nœud tombe ?</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Nœud perdu</th><th>Effet immédiat</th><th>Ce qui continue de fonctionner</th><th>Reprise</th></tr></thead>
+<tbody>
+<tr><td>1 contrôleur sur 3</td><td>Les VIP basculent en quelques secondes ; quelques requêtes en cours échouent</td><td>Toutes les API ; Galera, RabbitMQ et OVN gardent leur quorum</td><td>Automatique ; réparer puis réintégrer le nœud</td></tr>
+<tr><td>2 contrôleurs sur 3</td><td>Perte de quorum : base et bus se mettent en retrait, les API ne répondent plus</td><td>Les instances, leurs réseaux et leurs volumes</td><td>Manuelle : rétablir le quorum (amorçage Galera)</td></tr>
+<tr><td>1 nœud de calcul</td><td>Ses instances s'arrêtent ; le service passe « down » après 60 s</td><td>Tout le reste du cloud</td><td>Évacuation vers un autre hôte (manuelle ou Masakari) si le disque est partagé ou sur volume</td></tr>
+<tr><td>1 passerelle sur 2</td><td>Brève coupure du trafic nord-sud des routeurs qu'elle portait</td><td>Trafic entre instances (est-ouest), autres routeurs</td><td>Automatique : BFD, bascule vers le chassis suivant</td></tr>
+<tr><td>1 nœud OSD Ceph</td><td>Cluster « dégradé », puis reconstruction des réplicas</td><td>Toutes les E/S, avec une latence accrue</td><td>Automatique tant que les réplicas restants suffisent</td></tr>
+<tr><td>Nœud de déploiement</td><td>Aucun effet sur le cloud en service</td><td>Tout</td><td>Restaurer inventaire, configuration et secrets</td></tr>
+</tbody></table>
+<div class="note"><b>Règle à retenir :</b> la perte du plan de contrôle fige le cloud dans son état ; elle ne l'éteint pas. À l'inverse, la perte d'un nœud du plan de données touche immédiatement des charges utilisateur — d'où l'intérêt de répartir les instances par zones de disponibilité et groupes d'anti-affinité.</div>
+</div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+<header><span class="kick">1 · Rôle des nœuds</span><h2>Dimensionner chaque rôle : la ressource qui limite</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Rôle</th><th>Ressource critique</th><th>Ce qui la consomme</th><th>Règle pratique</th></tr></thead>
+<tbody>
+<tr><td>Contrôle</td><td>Mémoire et latence disque</td><td>Workers des API (un par cœur par défaut), MariaDB, RabbitMQ</td><td>Disques SSD ou NVMe pour la base ; borner le nombre de workers par service</td></tr>
+<tr><td>Calcul</td><td>Cœurs et mémoire vendables</td><td>Les instances, plus la part réservée à l'hôte</td><td>Fixer <code>cpu_allocation_ratio</code>, <code>ram_allocation_ratio</code> et <code>reserved_host_memory_mb</code></td></tr>
+<tr><td>Passerelle</td><td>Débit réseau et CPU de commutation</td><td>NAT et routage du trafic nord-sud</td><td>Interfaces 25 GbE ou plus, DPDK si le débit l'exige</td></tr>
+<tr><td>Stockage Ceph</td><td>Disques, mémoire par OSD, réseau</td><td>Réplication ×3, reconstructions après panne</td><td>Prévoir de la mémoire pour chaque OSD ; réseau cluster dédié et rapide</td></tr>
+<tr><td>Base et bus dédiés</td><td>Latence disque, nombre de connexions</td><td>Chaque processus de service ouvre ses propres connexions</td><td>Surveiller <code>max_connections</code> et la profondeur des files</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="col">
+<p><b>Trois questions à se poser pour un nœud de calcul</b></p>
+<ul class="pts sm">
+<li>Quel taux de surallocation CPU la charge tolère-t-elle ? Aucun pour du temps réel ou du NFV (CPU dédiés).</li>
+<li>Combien de mémoire garder pour l'hôte : noyau, OVS, OSD éventuels ?</li>
+<li>Le disque éphémère est-il local ou sur Ceph ? Cela décide de la migration à chaud.</li>
+</ul>
+</div>
+<div class="note b"><b>Côté contrôle, la charge suit le nombre d'hyperviseurs</b>, pas le nombre d'instances : chaque nova-compute envoie ses rapports périodiques, chaque ovn-controller garde une connexion ouverte vers la base Southbound.</div>
+</div>
+</div>
+</section>
+
+<!-- 16 -->
+<section class="slide dark sec">
+<div class="num">02</div>
+<h2>Communication entre composants</h2>
+<p>Quatre protocoles se partagent le plan de contrôle. Savoir lequel relie deux processus, c'est savoir où chercher quand une opération reste bloquée.</p>
+<ol><li>La carte des protocoles : REST, AMQP, SQL, OVSDB</li><li>Anatomie d'une requête API, points d'accès, jetons</li><li>AMQP et oslo.messaging : call, cast, fanout</li><li>Conductor, base de données, RabbitMQ en cluster</li><li>OVN, puis Nova ↔ Neutron et Nova ↔ Cinder</li><li>Heartbeats, identifiant de requête, diagnostic</li></ol>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>La carte des protocoles : qui parle quoi</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 480">
+<rect x="62" y="14" width="66" height="54" rx="7" class="b-blue"/>
+<text x="95" y="45" class="tc tb" style="font-size:10.5px">Client</text>
+<rect x="130" y="14" width="66" height="54" rx="7" class="b-dark"/>
+<text x="163" y="37" class="tc tb tw" style="font-size:10.5px">HAProxy</text><text x="163" y="52" class="tc tb tw" style="font-size:10.5px">VIP</text>
+<rect x="198" y="14" width="66" height="54" rx="7" class="bx"/>
+<text x="231" y="45" class="tc tb" style="font-size:10.5px">keystone</text>
+<rect x="266" y="14" width="66" height="54" rx="7" class="bx"/>
+<text x="299" y="37" class="tc tb" style="font-size:10.5px">nova-</text><text x="299" y="52" class="tc tb" style="font-size:10.5px">api</text>
+<rect x="334" y="14" width="66" height="54" rx="7" class="bx"/>
+<text x="367" y="37" class="tc tb" style="font-size:10.5px">nova-</text><text x="367" y="52" class="tc tb" style="font-size:10.5px">scheduler</text>
+<rect x="402" y="14" width="66" height="54" rx="7" class="bx"/>
+<text x="435" y="37" class="tc tb" style="font-size:10.5px">nova-</text><text x="435" y="52" class="tc tb" style="font-size:10.5px">conductor</text>
+<rect x="470" y="14" width="66" height="54" rx="7" class="b-blue"/>
+<text x="503" y="37" class="tc tb" style="font-size:10.5px">nova-</text><text x="503" y="52" class="tc tb" style="font-size:10.5px">compute</text>
+<rect x="538" y="14" width="66" height="54" rx="7" class="bx"/>
+<text x="571" y="45" class="tc tb" style="font-size:10.5px">placement</text>
+<rect x="606" y="14" width="66" height="54" rx="7" class="bx"/>
+<text x="639" y="37" class="tc tb" style="font-size:10.5px">glance-</text><text x="639" y="52" class="tc tb" style="font-size:10.5px">api</text>
+<rect x="674" y="14" width="66" height="54" rx="7" class="bx"/>
+<text x="707" y="37" class="tc tb" style="font-size:10.5px">cinder-</text><text x="707" y="52" class="tc tb" style="font-size:10.5px">api</text>
+<rect x="742" y="14" width="66" height="54" rx="7" class="bx"/>
+<text x="775" y="37" class="tc tb" style="font-size:10.5px">cinder-</text><text x="775" y="52" class="tc tb" style="font-size:10.5px">volume</text>
+<rect x="810" y="14" width="66" height="54" rx="7" class="bx"/>
+<text x="843" y="37" class="tc tb" style="font-size:10.5px">neutron-</text><text x="843" y="52" class="tc tb" style="font-size:10.5px">server</text>
+<rect x="878" y="14" width="66" height="54" rx="7" class="bx"/>
+<text x="911" y="37" class="tc tb" style="font-size:10.5px">ovn-</text><text x="911" y="52" class="tc tb" style="font-size:10.5px">northd</text>
+<rect x="946" y="14" width="66" height="54" rx="7" class="b-blue"/>
+<text x="979" y="37" class="tc tb" style="font-size:10.5px">ovn-</text><text x="979" y="52" class="tc tb" style="font-size:10.5px">controller</text>
+<line x1="20" y1="150" x2="1006" y2="150" stroke="#e4002b" stroke-width="5"/>
+<text x="20" y="140" class="tb" style="fill:#e4002b;font-size:13px">REST</text>
+<rect x="1008" y="125" width="136" height="50" rx="8" class="b-red"/><text x="1076" y="147" class="tc tb" style="font-size:12.5px">REST / HTTPS</text><text x="1076" y="164" class="tc ts">par la VIP interne</text>
+<path d="M142,68 V150" stroke="#e4002b" stroke-width="2" fill="none"/>
+<circle cx="142" cy="150" r="6.5" fill="#e4002b" stroke="#e4002b" stroke-width="2.5"/>
+<path d="M210,68 V150" stroke="#e4002b" stroke-width="2" fill="none"/>
+<circle cx="210" cy="150" r="6.5" fill="#e4002b" stroke="#e4002b" stroke-width="2.5"/>
+<path d="M278,68 V150" stroke="#e4002b" stroke-width="2" fill="none"/>
+<circle cx="278" cy="150" r="6.5" fill="#e4002b" stroke="#e4002b" stroke-width="2.5"/>
+<path d="M550,68 V150" stroke="#e4002b" stroke-width="2" fill="none"/>
+<circle cx="550" cy="150" r="6.5" fill="#e4002b" stroke="#e4002b" stroke-width="2.5"/>
+<path d="M618,68 V150" stroke="#e4002b" stroke-width="2" fill="none"/>
+<circle cx="618" cy="150" r="6.5" fill="#e4002b" stroke="#e4002b" stroke-width="2.5"/>
+<path d="M686,68 V150" stroke="#e4002b" stroke-width="2" fill="none"/>
+<circle cx="686" cy="150" r="6.5" fill="#e4002b" stroke="#e4002b" stroke-width="2.5"/>
+<path d="M822,68 V150" stroke="#e4002b" stroke-width="2" fill="none"/>
+<circle cx="822" cy="150" r="6.5" fill="#e4002b" stroke="#e4002b" stroke-width="2.5"/>
+<path d="M74,68 V150" stroke="#e4002b" stroke-width="2" fill="none"/>
+<circle cx="74" cy="150" r="6.5" fill="#fff" stroke="#e4002b" stroke-width="2.5"/>
+<path d="M346,68 V150" stroke="#e4002b" stroke-width="2" fill="none"/>
+<circle cx="346" cy="150" r="6.5" fill="#fff" stroke="#e4002b" stroke-width="2.5"/>
+<path d="M414,68 V150" stroke="#e4002b" stroke-width="2" fill="none"/>
+<circle cx="414" cy="150" r="6.5" fill="#fff" stroke="#e4002b" stroke-width="2.5"/>
+<path d="M482,68 V150" stroke="#e4002b" stroke-width="2" fill="none"/>
+<circle cx="482" cy="150" r="6.5" fill="#fff" stroke="#e4002b" stroke-width="2.5"/>
+<path d="M754,68 V150" stroke="#e4002b" stroke-width="2" fill="none"/>
+<circle cx="754" cy="150" r="6.5" fill="#fff" stroke="#e4002b" stroke-width="2.5"/>
+<line x1="20" y1="222" x2="1006" y2="222" stroke="#d97706" stroke-width="5"/>
+<text x="20" y="212" class="tb" style="fill:#d97706;font-size:13px">AMQP</text>
+<rect x="1008" y="197" width="136" height="50" rx="8" class="b-amber"/><text x="1076" y="219" class="tc tb" style="font-size:12.5px">RabbitMQ</text><text x="1076" y="236" class="tc ts">AMQP 5672</text>
+<path d="M292,68 V222" stroke="#d97706" stroke-width="2" fill="none"/>
+<circle cx="292" cy="222" r="6.5" fill="#d97706" stroke="#d97706" stroke-width="2.5"/>
+<path d="M360,68 V222" stroke="#d97706" stroke-width="2" fill="none"/>
+<circle cx="360" cy="222" r="6.5" fill="#d97706" stroke="#d97706" stroke-width="2.5"/>
+<path d="M428,68 V222" stroke="#d97706" stroke-width="2" fill="none"/>
+<circle cx="428" cy="222" r="6.5" fill="#d97706" stroke="#d97706" stroke-width="2.5"/>
+<path d="M496,68 V222" stroke="#d97706" stroke-width="2" fill="none"/>
+<circle cx="496" cy="222" r="6.5" fill="#d97706" stroke="#d97706" stroke-width="2.5"/>
+<path d="M700,68 V222" stroke="#d97706" stroke-width="2" fill="none"/>
+<circle cx="700" cy="222" r="6.5" fill="#d97706" stroke="#d97706" stroke-width="2.5"/>
+<path d="M768,68 V222" stroke="#d97706" stroke-width="2" fill="none"/>
+<circle cx="768" cy="222" r="6.5" fill="#d97706" stroke="#d97706" stroke-width="2.5"/>
+<path d="M836,68 V222" stroke="#d97706" stroke-width="2" fill="none"/>
+<circle cx="836" cy="222" r="6.5" fill="#d97706" stroke="#d97706" stroke-width="2.5"/>
+<line x1="20" y1="294" x2="1006" y2="294" stroke="#475569" stroke-width="5"/>
+<text x="20" y="284" class="tb" style="fill:#475569;font-size:13px">SQL</text>
+<rect x="1008" y="269" width="136" height="50" rx="8" class="b-grey"/><text x="1076" y="291" class="tc tb" style="font-size:12.5px">MariaDB Galera</text><text x="1076" y="308" class="tc ts">SQL 3306</text>
+<path d="M238,68 V294" stroke="#475569" stroke-width="2" fill="none"/>
+<circle cx="238" cy="294" r="6.5" fill="#475569" stroke="#475569" stroke-width="2.5"/>
+<path d="M306,68 V294" stroke="#475569" stroke-width="2" fill="none"/>
+<circle cx="306" cy="294" r="6.5" fill="#475569" stroke="#475569" stroke-width="2.5"/>
+<path d="M374,68 V294" stroke="#475569" stroke-width="2" fill="none"/>
+<circle cx="374" cy="294" r="6.5" fill="#475569" stroke="#475569" stroke-width="2.5"/>
+<path d="M442,68 V294" stroke="#475569" stroke-width="2" fill="none"/>
+<circle cx="442" cy="294" r="6.5" fill="#475569" stroke="#475569" stroke-width="2.5"/>
+<path d="M578,68 V294" stroke="#475569" stroke-width="2" fill="none"/>
+<circle cx="578" cy="294" r="6.5" fill="#475569" stroke="#475569" stroke-width="2.5"/>
+<path d="M646,68 V294" stroke="#475569" stroke-width="2" fill="none"/>
+<circle cx="646" cy="294" r="6.5" fill="#475569" stroke="#475569" stroke-width="2.5"/>
+<path d="M714,68 V294" stroke="#475569" stroke-width="2" fill="none"/>
+<circle cx="714" cy="294" r="6.5" fill="#475569" stroke="#475569" stroke-width="2.5"/>
+<path d="M782,68 V294" stroke="#475569" stroke-width="2" fill="none"/>
+<circle cx="782" cy="294" r="6.5" fill="#475569" stroke="#475569" stroke-width="2.5"/>
+<path d="M850,68 V294" stroke="#475569" stroke-width="2" fill="none"/>
+<circle cx="850" cy="294" r="6.5" fill="#475569" stroke="#475569" stroke-width="2.5"/>
+<line x1="20" y1="366" x2="1006" y2="366" stroke="#0d9488" stroke-width="5"/>
+<text x="20" y="356" class="tb" style="fill:#0d9488;font-size:13px">OVSDB</text>
+<rect x="1008" y="341" width="136" height="50" rx="8" class="b-teal"/><text x="1076" y="363" class="tc tb" style="font-size:12.5px">Bases OVN</text><text x="1076" y="380" class="tc ts">OVSDB 6641, 6642</text>
+<path d="M864,68 V366" stroke="#0d9488" stroke-width="2" fill="none"/>
+<circle cx="864" cy="366" r="6.5" fill="#0d9488" stroke="#0d9488" stroke-width="2.5"/>
+<path d="M932,68 V366" stroke="#0d9488" stroke-width="2" fill="none"/>
+<circle cx="932" cy="366" r="6.5" fill="#0d9488" stroke="#0d9488" stroke-width="2.5"/>
+<path d="M1000,68 V366" stroke="#0d9488" stroke-width="2" fill="none"/>
+<circle cx="1000" cy="366" r="6.5" fill="#0d9488" stroke="#0d9488" stroke-width="2.5"/>
+<g class="ts">
+<circle cx="28" cy="408" r="6.5" fill="#e4002b" stroke="#e4002b" stroke-width="2.5"/><text x="44" y="412">écoute des requêtes REST</text>
+<circle cx="218" cy="408" r="6.5" fill="#fff" stroke="#e4002b" stroke-width="2.5"/><text x="234" y="412">client REST uniquement</text>
+<rect x="400" y="400" width="16" height="16" rx="3" class="b-blue"/><text x="424" y="412">processus situé sur les nœuds de calcul</text>
+<text x="20" y="440"><tspan class="tb">nova-compute</tspan> : REST et AMQP seulement — jamais de SQL, tout passe par nova-conductor.</text>
+<text x="20" y="458"><tspan class="tb">keystone, placement, glance-api</tspan> : REST et SQL seulement — aucun bus de messages.</text>
+<text x="20" y="476"><tspan class="tb">ovn-northd, ovn-controller</tspan> : OVSDB seulement — neutron-server fait le lien entre les deux mondes.</text>
+</g></svg>
+</div></div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Anatomie d'une requête API</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 250">
+<rect x="500" y="8" width="640" height="112" rx="12" class="zone"/><text x="516" y="30" class="ts tb">Chaîne de middlewares (api-paste.ini)</text>
+<rect x="10" y="44" width="110" height="60" rx="8" class="b-blue"/><text x="65" y="70" class="tc tb">Client</text><text x="65" y="89" class="tc ts">HTTPS</text>
+<path d="M120,74 H148" class="lr"/>
+<rect x="150" y="44" width="150" height="60" rx="8" class="b-dark"/><text x="225" y="70" class="tc tw tb">HAProxy (VIP)</text><text x="225" y="89" class="tc tw" style="font-size:12px">TLS, répartition</text>
+<path d="M300,74 H328" class="lr"/>
+<rect x="330" y="44" width="150" height="60" rx="8" class="b-grey"/><text x="405" y="70" class="tc tb">Serveur WSGI</text><text x="405" y="89" class="tc ts">Apache ou uWSGI</text>
+<path d="M480,74 H512" class="lr"/>
+<g class="tc tb" style="font-size:12px">
+<rect x="514" y="44" width="116" height="60" rx="7" class="bx"/><text x="572" y="70">http_proxy</text><text x="572" y="86">_to_wsgi</text>
+<rect x="638" y="44" width="116" height="60" rx="7" class="bx"/><text x="696" y="78">request_id</text>
+<rect x="762" y="44" width="116" height="60" rx="7" class="bx"/><text x="820" y="78">sizelimit</text>
+<rect x="886" y="44" width="116" height="60" rx="7" class="b-red"/><text x="944" y="78">authtoken</text>
+<rect x="1010" y="44" width="116" height="60" rx="7" class="bx"/><text x="1068" y="70">keystone</text><text x="1068" y="86">context</text>
+</g>
+<path d="M1068,120 V145 H115 V168" class="lr"/>
+<rect x="10" y="170" width="210" height="62" rx="8" class="b-red"/><text x="115" y="197" class="tc tb">Routage</text><text x="115" y="216" class="tc ts">URL, méthode, microversion</text>
+<path d="M220,201 H248" class="lr"/>
+<rect x="250" y="170" width="210" height="62" rx="8" class="b-red"/><text x="355" y="197" class="tc tb">Validation</text><text x="355" y="216" class="tc ts">corps JSON contre un schéma</text>
+<path d="M460,201 H488" class="lr"/>
+<rect x="490" y="170" width="210" height="62" rx="8" class="b-red"/><text x="595" y="197" class="tc tb">oslo.policy</text><text x="595" y="216" class="tc ts">règle de l'action ↔ rôles du jeton</text>
+<path d="M700,201 H728" class="lr"/>
+<rect x="730" y="170" width="190" height="62" rx="8" class="b-red"/><text x="825" y="197" class="tc tb">Logique métier</text><text x="825" y="216" class="tc ts">quotas, état de la ressource</text>
+<path d="M920,188 H968" class="ln"/><path d="M920,216 H968" class="la"/>
+<rect x="970" y="166" width="170" height="32" rx="7" class="b-grey"/><text x="1055" y="187" class="tc tb">MariaDB : écriture</text>
+<rect x="970" y="206" width="170" height="32" rx="7" class="b-amber"/><text x="1055" y="227" class="tc tb">RabbitMQ : cast</text>
+</svg>
+</div>
+<table class="tbl tight">
+<thead><tr><th>Étage</th><th>Ce qu'il fait</th><th>Erreur renvoyée s'il échoue</th></tr></thead>
+<tbody>
+<tr><td>HAProxy</td><td>Termine TLS, choisit un contrôleur sain, ajoute <code>X-Forwarded-For</code> et <code>X-Forwarded-Proto</code></td><td><b>503</b> : aucun backend disponible</td></tr>
+<tr><td>request_id</td><td>Crée l'identifiant <code>req-…</code>, renvoyé dans <code>X-OpenStack-Request-ID</code></td><td>—</td></tr>
+<tr><td>sizelimit</td><td>Refuse un corps de requête trop volumineux</td><td><b>413</b></td></tr>
+<tr><td>authtoken</td><td>Valide le jeton auprès de Keystone (résultat mis en cache dans Memcached)</td><td><b>401</b> ; 503 si Keystone est injoignable</td></tr>
+<tr><td>Routage, validation</td><td>Associe l'URL à une action, vérifie la microversion et la forme du corps</td><td><b>404</b>, <b>406</b>, <b>400</b></td></tr>
+<tr><td>oslo.policy</td><td>Compare la règle de l'action aux rôles et au projet du jeton</td><td><b>403</b></td></tr>
+<tr><td>Logique métier</td><td>Vérifie quotas et état, écrit en base, émet le RPC, répond sans attendre la fin</td><td><b>409</b> (conflit d'état), sinon <b>202</b></td></tr>
+</tbody></table>
+</div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Points d'accès : public, interne, admin</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 450">
+<rect x="150" y="150" width="260" height="150" rx="12" class="b-dark"/><text x="280" y="176" class="tc tw tb">Catalogue Keystone</text><text x="280" y="196" class="tc tw" style="font-size:12px">service « compute » · région RegionOne</text>
+<rect x="166" y="208" width="228" height="24" rx="5" class="b-red"/><text x="280" y="225" class="tc tb" style="font-size:12px">public</text>
+<rect x="166" y="238" width="228" height="24" rx="5" class="b-blue"/><text x="280" y="255" class="tc tb" style="font-size:12px">internal</text>
+<rect x="166" y="268" width="228" height="24" rx="5" class="b-grey"/><text x="280" y="285" class="tc tb" style="font-size:12px">admin</text>
+<rect x="20" y="10" width="220" height="50" rx="8" class="b-blue"/><text x="130" y="32" class="tc tb">Utilisateurs, CLI, Horizon</text><text x="130" y="50" class="tc ts">depuis l'extérieur du cloud</text>
+<rect x="320" y="10" width="220" height="50" rx="8" class="b-red"/><text x="430" y="32" class="tc tb">VIP externe</text><text x="430" y="50" class="tc tm">cloud.example.org:8774</text>
+<path d="M240,35 H318" class="lr"/>
+<path d="M130,60 V125 H200 V148" class="ln ld"/><text x="140" y="100" class="ts">1 · lit le catalogue,</text><text x="140" y="116" class="ts">choisit « public »</text>
+<rect x="20" y="390" width="220" height="50" rx="8" class="bx"/><text x="130" y="412" class="tc tb">Services et nœuds du cloud</text><text x="130" y="430" class="tc ts">nova, neutron, cinder, heat…</text>
+<rect x="320" y="390" width="220" height="50" rx="8" class="b-blue"/><text x="430" y="412" class="tc tb">VIP interne</text><text x="430" y="430" class="tc tm">int.cloud.lan:8774</text>
+<path d="M240,415 H318" class="lb"/>
+<path d="M130,390 V325 H200 V302" class="ln ld"/><text x="140" y="346" class="ts">1 · lit le catalogue,</text><text x="140" y="362" class="ts">choisit « internal »</text>
+<text x="430" y="86" class="tc ts">réseau API publique, TLS obligatoire</text>
+<text x="430" y="376" class="tc ts">réseau de gestion, jamais routé dehors</text>
+</svg>
+</div>
+<div class="col">
+<pre><span class="c">$ openstack</span> endpoint list <span class="k">--service</span> compute <span class="k">-c</span> Interface <span class="k">-c</span> URL
++-----------+----------------------------------------+
+| Interface | URL                                    |
++-----------+----------------------------------------+
+| public    | https://cloud.example.org:8774/v2.1    |
+| internal  | https://int.cloud.lan:8774/v2.1        |
+| admin     | https://int.cloud.lan:8774/v2.1        |
++-----------+----------------------------------------+</pre>
+<pre><span class="m"># nova.conf — Nova appelle les autres services en interne</span>
+<span class="k">[neutron]</span>
+valid_interfaces = internal
+region_name = RegionOne
+<span class="k">[glance]</span>
+valid_interfaces = internal
+<span class="k">[placement]</span>
+valid_interfaces = internal
+<span class="k">[cinder]</span>
+catalog_info = volumev3::internalURL</pre>
+<ul class="pts sm">
+<li>Un service ne connaît <b>aucune adresse en dur</b> : il la demande au catalogue, à chaque nouveau jeton.</li>
+<li>L'interface <b>admin</b> n'a plus de rôle propre : elle pointe en général sur la même URL que l'interne.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 20 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Les ports à connaître</h2></header>
+<div class="body">
+<div class="cols c3">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>API principales</th><th>Port</th></tr></thead>
+<tbody>
+<tr><td>Keystone</td><td>5000</td></tr>
+<tr><td>Nova</td><td>8774</td></tr>
+<tr><td>Nova, métadonnées</td><td>8775</td></tr>
+<tr><td>Placement</td><td>8778</td></tr>
+<tr><td>Neutron</td><td>9696</td></tr>
+<tr><td>Cinder</td><td>8776</td></tr>
+<tr><td>Glance</td><td>9292</td></tr>
+<tr><td>Swift (proxy)</td><td>8080</td></tr>
+<tr><td>Horizon</td><td>80, 443</td></tr>
+<tr><td>Console noVNC</td><td>6080</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>API complémentaires</th><th>Port</th></tr></thead>
+<tbody>
+<tr><td>Heat</td><td>8004</td></tr>
+<tr><td>Octavia</td><td>9876</td></tr>
+<tr><td>Barbican</td><td>9311</td></tr>
+<tr><td>Designate</td><td>9001</td></tr>
+<tr><td>Manila</td><td>8786</td></tr>
+<tr><td>Magnum</td><td>9511</td></tr>
+<tr><td>Ironic</td><td>6385</td></tr>
+</tbody></table>
+<div class="note g">Ce sont les valeurs par défaut. Derrière HAProxy, un déploiement peut tout publier sur 443 avec un chemin ou un nom par service : le catalogue fait foi.</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Infrastructure et données</th><th>Port</th></tr></thead>
+<tbody>
+<tr><td>MariaDB</td><td>3306</td></tr>
+<tr><td>Galera</td><td>4567, 4568, 4444</td></tr>
+<tr><td>RabbitMQ</td><td>5672 (TLS 5671)</td></tr>
+<tr><td>RabbitMQ, cluster</td><td>4369, 25672</td></tr>
+<tr><td>Memcached</td><td>11211</td></tr>
+<tr><td>OVN NB, SB</td><td>6641, 6642</td></tr>
+<tr><td>OVN, Raft</td><td>6643, 6644</td></tr>
+<tr><td>Geneve, VXLAN</td><td>UDP 6081, 4789</td></tr>
+<tr><td>libvirt</td><td>16509 (TLS 16514)</td></tr>
+<tr><td>Migration QEMU</td><td>49152–49215</td></tr>
+<tr><td>Consoles VNC</td><td>5900–5999</td></tr>
+<tr><td>Ceph MON</td><td>3300, 6789</td></tr>
+<tr><td>Ceph OSD</td><td>6800–7300</td></tr>
+</tbody></table>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 21 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Authentification entre services : jeton d'utilisateur et jeton de service</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 700 450">
+<g class="tc tb" style="font-size:13px">
+<rect x="10" y="5" width="120" height="38" rx="7" class="b-blue"/><text x="70" y="29">Utilisateur</text>
+<rect x="200" y="5" width="120" height="38" rx="7" class="b-red"/><text x="260" y="29">nova-api</text>
+<rect x="390" y="5" width="120" height="38" rx="7" class="b-dark"/><text x="450" y="29" class="tw">Keystone</text>
+<rect x="570" y="5" width="120" height="38" rx="7" class="b-red"/><text x="630" y="29">cinder-api</text>
+</g>
+<g stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4"><line x1="70" y1="43" x2="70" y2="440"/><line x1="260" y1="43" x2="260" y2="440"/><line x1="450" y1="43" x2="450" y2="440"/><line x1="630" y1="43" x2="630" y2="440"/></g>
+<path d="M70,90 H258" class="lr"/><text x="176" y="81" class="tc ts">jeton T_utilisateur</text>
+<path d="M262,140 H448" class="lr2"/><text x="364" y="131" class="tc ts">valide T_utilisateur</text>
+<path d="M262,190 H448" class="lr2"/><text x="364" y="181" class="tc ts">obtient son jeton T_nova</text>
+<path d="M260,250 H628" class="lr"/><text x="445" y="226" class="tc ts tb tr">X-Auth-Token : T_utilisateur</text><text x="445" y="242" class="tc ts tb tr">X-Service-Token : T_nova</text>
+<path d="M628,300 H452" class="lr2"/><text x="540" y="291" class="tc ts">valide les deux jetons</text>
+<path d="M630,330 H672 V362 H633" class="lr"/><text x="620" y="342" class="te ts">politique : l'appelant</text><text x="620" y="358" class="te ts">porte-t-il le rôle « service » ?</text>
+<path d="M628,410 H262" class="ln ld"/><text x="445" y="401" class="tc ts">201 · réponse à Nova</text>
+<g class="tc tw tb" style="font-size:12px"><circle cx="84" cy="90" r="11" class="f-red"/><text x="84" y="94">1</text><circle cx="274" cy="140" r="11" class="f-red"/><text x="274" y="144">2</text><circle cx="274" cy="190" r="11" class="f-red"/><text x="274" y="194">3</text><circle cx="274" cy="250" r="11" class="f-red"/><text x="274" y="254">4</text><circle cx="616" cy="300" r="11" class="f-red"/><text x="616" y="304">5</text><circle cx="652" cy="330" r="11" class="f-red"/><text x="652" y="334">6</text><circle cx="616" cy="410" r="11" class="f-red"/><text x="616" y="414">7</text></g>
+</svg>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li>Le jeton de l'utilisateur dit <b>pour qui</b> l'action est faite (utilisateur, projet, rôles).</li>
+<li>Le jeton de service dit <b>qui relaie</b> la demande : un compte technique portant le rôle <code>service</code>.</li>
+<li>Si le jeton de l'utilisateur expire pendant une opération longue (migration, instantané), l'appel reste accepté grâce au jeton de service.</li>
+<li>Certaines actions de Cinder sont réservées aux appels portant ce rôle : sans jeton de service, l'attachement de volumes échoue.</li>
+</ul>
+<pre><span class="m"># nova.conf — côté appelant</span>
+<span class="k">[service_user]</span>
+send_service_user_token = true
+auth_type = password
+username = nova
+project_name = service
+
+<span class="m"># cinder.conf — côté appelé</span>
+<span class="k">[keystone_authtoken]</span>
+service_token_roles = service
+service_token_roles_required = true</pre>
+</div>
+</div></div>
+</section>
+
+<!-- 22 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Qui appelle qui en REST</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Appelant</th><th>Appelé</th><th>Pour faire quoi</th><th>Appel caractéristique</th></tr></thead>
+<tbody>
+<tr><td>Tous les services</td><td>Keystone</td><td>Valider les jetons reçus, obtenir leur propre jeton, lire le catalogue</td><td><code>GET /v3/auth/tokens</code></td></tr>
+<tr><td>Nova</td><td>Placement</td><td>Chercher les hôtes candidats, réserver puis libérer les ressources, publier les inventaires</td><td><code>GET /allocation_candidates</code></td></tr>
+<tr><td>Nova</td><td>Glance</td><td>Lire les propriétés d'une image, la télécharger, téléverser un instantané</td><td><code>GET /v2/images/{id}/file</code></td></tr>
+<tr><td>Nova</td><td>Neutron</td><td>Créer ou lier les ports, lire réseaux et groupes de sécurité</td><td><code>PUT /v2.0/ports/{id}</code></td></tr>
+<tr><td>Nova</td><td>Cinder</td><td>Réserver, connecter et détacher les volumes</td><td><code>POST /v3/attachments</code></td></tr>
+<tr><td>Neutron</td><td>Nova</td><td>Signaler qu'un port est prêt ou qu'un réseau a changé</td><td><code>POST /os-server-external-events</code></td></tr>
+<tr><td>Neutron</td><td>Placement</td><td>Déclarer la bande passante garantie (QoS) et les segments de réseaux routés</td><td><code>PUT /resource_providers/…</code></td></tr>
+<tr><td>Cinder</td><td>Glance</td><td>Créer un volume à partir d'une image, exporter un volume en image</td><td><code>GET /v2/images/{id}</code></td></tr>
+<tr><td>Cinder</td><td>Nova</td><td>Étendre un volume attaché, coordonner certains instantanés</td><td><code>POST /os-server-external-events</code></td></tr>
+<tr><td>Cinder, Nova, Octavia</td><td>Barbican</td><td>Récupérer clés de chiffrement et certificats</td><td><code>GET /v1/secrets/{id}</code></td></tr>
+<tr><td>Heat, Magnum, Octavia</td><td>Nova, Neutron, Cinder…</td><td>Créer les ressources décrites, comme le ferait un utilisateur</td><td>API publiques des services</td></tr>
+</tbody></table>
+<div class="note"><b>Constantes :</b> l'appelant découvre l'URL dans le catalogue (interface <code>internal</code>), présente un jeton, et ne touche jamais à la base de l'autre service. Une panne de Keystone ou de la VIP interne paralyse donc tous ces échanges d'un coup.</div>
+</div>
+</section>
+
+<!-- 23 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>AMQP en cinq notions</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 270">
+<rect x="10" y="100" width="170" height="64" rx="8" class="b-red"/><text x="95" y="127" class="tc tb">nova-conductor</text><text x="95" y="146" class="tc ts">producteur</text>
+<path d="M180,132 H348" class="lr"/><text x="264" y="108" class="tc ts">publie avec la clé</text><text x="264" y="124" class="tc tm tr">compute.cmp01</text>
+<rect x="350" y="80" width="170" height="104" rx="10" class="b-amber"/><text x="435" y="122" class="tc tb">échange « nova »</text><text x="435" y="142" class="tc ts">type topic</text>
+<rect x="680" y="14" width="200" height="50" rx="8" class="bx"/><text x="780" y="36" class="tc tb">file compute</text><text x="780" y="54" class="tc ts">partagée par tous les hôtes</text>
+<rect x="680" y="107" width="200" height="50" rx="8" class="b-red"/><text x="780" y="129" class="tc tb">file compute.cmp01</text><text x="780" y="147" class="tc ts">propre à l'hôte cmp01</text>
+<rect x="680" y="200" width="200" height="50" rx="8" class="bx"/><text x="780" y="222" class="tc tb">file compute.cmp02</text><text x="780" y="240" class="tc ts">propre à l'hôte cmp02</text>
+<path d="M520,105 L678,42" class="ln ld"/><path d="M520,132 H678" class="lr"/><path d="M520,160 L678,222" class="ln ld"/>
+<text x="588" y="50" class="te ts">liaison : compute</text><text x="599" y="123" class="tc tm tb tr">compute.cmp01</text><text x="588" y="226" class="te ts">liaison : compute.cmp02</text>
+<rect x="970" y="60" width="170" height="60" rx="8" class="b-blue"/><text x="1055" y="86" class="tc tb">nova-compute</text><text x="1055" y="105" class="tc ts">sur cmp01</text>
+<rect x="970" y="160" width="170" height="60" rx="8" class="b-blue"/><text x="1055" y="186" class="tc tb">nova-compute</text><text x="1055" y="205" class="tc ts">sur cmp02</text>
+<path d="M880,30 L968,72" class="ln ld"/><path d="M880,48 L968,172" class="ln ld"/>
+<path d="M880,132 L968,100" class="lr"/><path d="M880,225 L968,200" class="ln ld"/>
+<text x="925" y="20" class="tc ts">à tour de rôle</text>
+</svg>
+</div>
+<table class="tbl tight">
+<thead><tr><th>Notion</th><th>Définition</th><th>Dans OpenStack</th></tr></thead>
+<tbody>
+<tr><td>Échange (exchange)</td><td>Point d'entrée du courtier : reçoit les messages et les aiguille, sans les conserver</td><td>Un échange de type <i>topic</i> par service (<code>nova</code>, <code>cinder</code>, <code>neutron</code>…), des échanges <i>fanout</i> et <i>direct</i></td></tr>
+<tr><td>File (queue)</td><td>Tampon où les messages attendent un consommateur</td><td>Une file par rôle, une par hôte, une par diffusion, une par réponse</td></tr>
+<tr><td>Liaison (binding)</td><td>Règle reliant un échange à une file selon la clé de routage</td><td>Créée par le service lui-même à son démarrage</td></tr>
+<tr><td>Clé de routage</td><td>Étiquette posée sur le message par l'émetteur</td><td>Le nom du rôle (<code>scheduler</code>) ou rôle + hôte (<code>compute.cmp01</code>)</td></tr>
+<tr><td>Consommateur</td><td>Processus abonné à une file ; il acquitte chaque message traité</td><td>Plusieurs consommateurs sur une même file = répartition de charge</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<!-- 24 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>oslo.messaging : call, cast, fanout</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 250">
+<rect x="10" y="6" width="365" height="238" rx="12" class="zone"/><rect x="392" y="6" width="365" height="238" rx="12" class="zone"/><rect x="775" y="6" width="365" height="238" rx="12" class="zone"/>
+<text x="28" y="32" class="tl tr">call — appel avec réponse</text>
+<rect x="28" y="62" width="90" height="46" rx="7" class="b-red"/><text x="73" y="90" class="tc tb">A</text>
+<rect x="148" y="62" width="100" height="46" rx="7" class="b-amber"/><text x="198" y="82" class="tc tb" style="font-size:12.5px">file du rôle</text><text x="198" y="98" class="tc ts">scheduler</text>
+<rect x="278" y="62" width="80" height="46" rx="7" class="b-blue"/><text x="318" y="90" class="tc tb">B</text>
+<path d="M118,85 H146" class="lr"/><path d="M248,85 H276" class="lr"/>
+<rect x="148" y="138" width="100" height="46" rx="7" class="b-amber"/><text x="198" y="158" class="tc tb" style="font-size:12.5px">file de réponse</text><text x="198" y="174" class="tc ts">reply_…</text>
+<path d="M318,108 V161 H250" class="ln ld"/><path d="M146,161 H73 V110" class="ln ld"/>
+<text x="28" y="212" class="ts">A attend la réponse, au plus</text><text x="28" y="228" class="ts">rpc_response_timeout (60 s par défaut).</text>
+<text x="410" y="32" class="tl">cast — ordre sans réponse</text>
+<rect x="410" y="62" width="90" height="46" rx="7" class="b-red"/><text x="455" y="90" class="tc tb">A</text>
+<rect x="530" y="62" width="100" height="46" rx="7" class="b-amber"/><text x="580" y="82" class="tc tb" style="font-size:12.5px">file de l'hôte</text><text x="580" y="98" class="tc ts">compute.cmp01</text>
+<rect x="660" y="62" width="80" height="46" rx="7" class="b-blue"/><text x="700" y="90" class="tc tb">B</text>
+<path d="M500,85 H528" class="lr"/><path d="M630,85 H658" class="lr"/>
+<text x="410" y="150" class="ts">A poursuit aussitôt. Le résultat se lira</text><text x="410" y="166" class="ts">plus tard dans l'état de la ressource</text><text x="410" y="182" class="ts">(BUILD → ACTIVE ou ERROR).</text>
+<text x="410" y="212" class="ts">C'est le mode des opérations longues :</text><text x="410" y="228" class="ts">création, migration, attachement.</text>
+<text x="793" y="32" class="tl">fanout — diffusion à tous</text>
+<rect x="793" y="92" width="80" height="46" rx="7" class="b-red"/><text x="833" y="120" class="tc tb">A</text>
+<rect x="903" y="92" width="100" height="46" rx="7" class="b-amber"/><text x="953" y="112" class="tc tb" style="font-size:12.5px">échange</text><text x="953" y="128" class="tc ts">fanout</text>
+<path d="M873,115 H901" class="lr"/>
+<rect x="1043" y="50" width="80" height="34" rx="7" class="b-blue"/><text x="1083" y="72" class="tc tb">B1</text>
+<rect x="1043" y="98" width="80" height="34" rx="7" class="b-blue"/><text x="1083" y="120" class="tc tb">B2</text>
+<rect x="1043" y="146" width="80" height="34" rx="7" class="b-blue"/><text x="1083" y="168" class="tc tb">B3</text>
+<path d="M1003,105 L1041,70" class="lr"/><path d="M1003,115 H1041" class="lr"/><path d="M1003,125 L1041,160" class="lr"/>
+<text x="793" y="212" class="ts">Chaque abonné reçoit sa propre copie,</text><text x="793" y="228" class="ts">dans une file qui lui est réservée.</text>
+</svg>
+</div>
+<table class="tbl tight">
+<thead><tr><th>Mode</th><th>Bloquant ?</th><th>Destinataires</th><th>En cas de destinataire absent</th><th>Exemple</th></tr></thead>
+<tbody>
+<tr><td>call</td><td>Oui</td><td>Un seul, pris à tour de rôle ou ciblé par hôte</td><td>Exception <code>MessagingTimeout</code> chez l'appelant</td><td>conductor → scheduler : <code>select_destinations</code></td></tr>
+<tr><td>cast</td><td>Non</td><td>Un seul</td><td>Le message attend dans la file ; l'opération paraît figée</td><td>conductor → compute : <code>build_and_run_instance</code></td></tr>
+<tr><td>fanout</td><td>Non</td><td>Tous les abonnés du moment</td><td>Les absents ne recevront jamais le message</td><td>cinder-volume → tous les cinder-scheduler : capacités du backend</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<!-- 25 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Les files créées par un service, vues depuis RabbitMQ</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 450">
+<rect x="5" y="5" width="550" height="440" rx="12" class="zone"/><text x="22" y="30" class="tl">nova-compute démarre sur cmp01 : il déclare…</text>
+<rect x="22" y="52" width="150" height="150" rx="10" class="b-amber"/><text x="97" y="118" class="tc tb">échange nova</text><text x="97" y="138" class="tc ts">topic</text>
+<rect x="250" y="52" width="290" height="62" rx="8" class="bx"/><text x="264" y="76" class="tm tb">compute</text><text x="264" y="96" class="ts">file commune : un hôte quelconque la sert</text>
+<rect x="250" y="140" width="290" height="62" rx="8" class="b-red"/><text x="264" y="164" class="tm tb">compute.cmp01</text><text x="264" y="184" class="ts">file ciblée : ordres destinés à cet hôte</text>
+<path d="M172,95 H248" class="ln"/><path d="M172,165 H248" class="lr"/>
+<rect x="22" y="232" width="150" height="62" rx="10" class="b-amber"/><text x="97" y="258" class="tc tb" style="font-size:12.5px">compute_fanout</text><text x="97" y="278" class="tc ts">fanout</text>
+<rect x="250" y="232" width="290" height="62" rx="8" class="bx"/><text x="264" y="256" class="tm tb">compute_fanout_5c1e…</text><text x="264" y="276" class="ts">file de diffusion, propre à ce processus</text>
+<path d="M172,263 H248" class="ln"/>
+<rect x="22" y="324" width="150" height="62" rx="10" class="b-amber"/><text x="97" y="350" class="tc tb" style="font-size:12.5px">reply_8f2a…</text><text x="97" y="370" class="tc ts">direct</text>
+<rect x="250" y="324" width="290" height="62" rx="8" class="bx"/><text x="264" y="348" class="tm tb">reply_8f2a…</text><text x="264" y="368" class="ts">réponses à ses propres appels (au conductor)</text>
+<path d="M172,355 H248" class="ln"/>
+<text x="22" y="420" class="ts">Aucune de ces files n'est créée par l'administrateur : chaque service</text><text x="22" y="436" class="ts">déclare les siennes en se connectant, puis s'y abonne.</text>
+</svg>
+</div>
+<div class="col">
+<pre><span class="c">$ rabbitmqctl</span> list_queues name messages consumers
+compute                            0     12
+compute.cmp01                      0      1
+compute.cmp02                      0      1
+compute_fanout_5c1e…               0      1
+conductor                          0      3
+scheduler                          0      3
+cinder-scheduler                   0      3
+cinder-volume.ctl01@ceph           0      1
+reply_8f2a…                        0      1
+<span class="k">versioned_notifications.info    4812      0</span></pre>
+<ul class="pts sm">
+<li><b>messages = 0</b> partout : les consommateurs suivent le rythme.</li>
+<li><b>messages qui montent, consommateurs ≥ 1</b> : destinataire saturé ou bloqué.</li>
+<li><b>consommateurs = 0</b> : le service est arrêté ou ne parvient plus à se connecter ; ses ordres s'accumulent.</li>
+<li>Dernière ligne : des <b>notifications</b> émises sans que personne ne les lise. La file grossit indéfiniment — piège classique, traité plus loin.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 26 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Séquence d'un appel RPC « call »</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 725 450">
+<g class="tc tb" style="font-size:11.5px">
+<rect x="5" y="5" width="130" height="38" rx="7" class="b-red"/><text x="70" y="29">nova-conductor</text>
+<rect x="150" y="5" width="130" height="38" rx="7" class="b-amber"/><text x="215" y="29">file reply_ab12</text>
+<rect x="305" y="5" width="130" height="38" rx="7" class="b-amber"/><text x="370" y="29">échange « nova »</text>
+<rect x="455" y="5" width="130" height="38" rx="7" class="b-amber"/><text x="520" y="29">file « scheduler »</text>
+<rect x="592" y="5" width="128" height="38" rx="7" class="b-blue"/><text x="656" y="29">nova-scheduler</text>
+</g>
+<g stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4"><line x1="70" y1="43" x2="70" y2="400"/><line x1="215" y1="43" x2="215" y2="400"/><line x1="370" y1="43" x2="370" y2="400"/><line x1="520" y1="43" x2="520" y2="400"/><line x1="656" y1="43" x2="656" y2="400"/></g>
+<path d="M70,92 H368" class="lr"/><text x="230" y="83" class="tc ts">publie · clé de routage « scheduler »</text>
+<path d="M370,138 H518" class="lr"/><text x="445" y="129" class="tc ts">routage</text>
+<path d="M520,184 H654" class="lr"/><text x="600" y="175" class="tc ts">livraison</text>
+<path d="M654,226 H522" class="ln ld"/><text x="588" y="217" class="tc ts">acquittement</text>
+<path d="M656,252 H612 V284 H653" class="lr"/><text x="602" y="264" class="te ts">exécute</text><text x="602" y="280" class="te ts tm">select_destinations</text>
+<path d="M656,332 H217" class="lr"/><text x="436" y="323" class="tc ts">réponse vers reply_ab12, même _msg_id</text>
+<path d="M215,378 H72" class="lr"/><text x="143" y="369" class="tc ts">consommation</text>
+<g class="tc tw tb" style="font-size:12px"><circle cx="84" cy="92" r="11" class="f-red"/><text x="84" y="96">1</text><circle cx="384" cy="138" r="11" class="f-red"/><text x="384" y="142">2</text><circle cx="534" cy="184" r="11" class="f-red"/><text x="534" y="188">3</text><circle cx="642" cy="226" r="11" class="f-red"/><text x="642" y="230">4</text><circle cx="634" cy="252" r="11" class="f-red"/><text x="634" y="256">5</text><circle cx="642" cy="332" r="11" class="f-red"/><text x="642" y="336">6</text><circle cx="201" cy="378" r="11" class="f-red"/><text x="201" y="382">7</text></g>
+<text x="8" y="426" class="ts">Sans réponse sous rpc_response_timeout : exception MessagingTimeout chez l'appelant.</text>
+<text x="8" y="444" class="ts">Trois nova-scheduler abonnés à la même file : RabbitMQ les sert à tour de rôle.</text>
+</svg>
+</div>
+<div class="col">
+<pre><span class="m"># Message publié à l'étape 1 (simplifié)</span>
+{
+  <span class="k">"method"</span>: "select_destinations",
+  <span class="k">"args"</span>: { "spec_obj": {…}, … },
+  <span class="k">"version"</span>: "4.5",
+  <span class="k">"_msg_id"</span>: "c0a1f3…",
+  <span class="k">"_reply_q"</span>: "reply_ab12…",
+  <span class="k">"_context_request_id"</span>: "req-5f1c2b7e…",
+  <span class="k">"_context_project_id"</span>: "c3d4…",
+  <span class="k">"_context_user_id"</span>: "a1b2…"
+}</pre>
+<ul class="pts sm">
+<li><code>method</code> et <code>args</code> : la fonction distante à exécuter.</li>
+<li><code>version</code> : version de l'interface RPC ; elle permet à des services de versions différentes de cohabiter pendant une montée de version.</li>
+<li><code>_msg_id</code> et <code>_reply_q</code> : de quoi renvoyer la réponse au bon appelant.</li>
+<li><code>_context_*</code> : identité et identifiant de requête, transportés d'un processus à l'autre.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 27 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Les files à reconnaître, service par service</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Service</th><th>Processus abonné</th><th>File (topic)</th><th>Ce qui y arrive</th></tr></thead>
+<tbody>
+<tr><td>Nova</td><td>nova-scheduler</td><td><code>scheduler</code></td><td>Demandes de placement émises par les conductors</td></tr>
+<tr><td>Nova</td><td>nova-conductor</td><td><code>conductor</code></td><td>Tâches longues venues de l'API, accès base demandés par les computes</td></tr>
+<tr><td>Nova</td><td>nova-compute</td><td><code>compute</code>, <code>compute.&lt;hôte&gt;</code></td><td>Création, arrêt, migration, attachement, événements externes</td></tr>
+<tr><td>Cinder</td><td>cinder-scheduler</td><td><code>cinder-scheduler</code></td><td>Demandes de création à placer ; capacités des backends (fanout)</td></tr>
+<tr><td>Cinder</td><td>cinder-volume</td><td><code>cinder-volume.&lt;hôte&gt;@&lt;backend&gt;</code></td><td>Création, extension, instantané, connexion d'un volume</td></tr>
+<tr><td>Neutron (ML2/OVS)</td><td>neutron-server</td><td><code>q-plugin</code>, <code>q-reports-plugin</code></td><td>Demandes et rapports d'état des agents</td></tr>
+<tr><td>Neutron (ML2/OVS)</td><td>agents L2, L3, DHCP</td><td><code>q-agent-notifier-…</code>, <code>l3_agent.&lt;hôte&gt;</code>, <code>dhcp_agent.&lt;hôte&gt;</code></td><td>Mises à jour de ports, routeurs, réseaux</td></tr>
+<tr><td>Heat</td><td>heat-engine</td><td><code>engine</code></td><td>Opérations sur les piles reçues par heat-api</td></tr>
+<tr><td>Tous</td><td>l'appelant lui-même</td><td><code>reply_&lt;uuid&gt;</code></td><td>Réponses à ses appels « call »</td></tr>
+<tr><td>Tous (si activé)</td><td>Ceilometer et autres</td><td><code>notifications.info</code>, <code>versioned_notifications.info</code></td><td>Événements métier, à sens unique</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Aucun bus de messages</b> pour Keystone, Glance, Placement et Swift : ces services ne font que du REST et du SQL (ou du stockage). Inutile d'y chercher un problème RabbitMQ.</div>
+<div class="note b"><b>Avec ML2/OVN</b>, neutron-server ne pilote plus d'agents par RPC : il écrit dans la base Northbound. Les files <code>q-*</code> disparaissent presque toutes.</div>
+</div>
+</div>
+</section>
+
+<!-- 28 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Les notifications : un second flux, à sens unique</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 440">
+<g class="tc">
+<rect x="10" y="20" width="130" height="44" rx="7" class="b-red"/><text x="75" y="47" class="tb">nova</text>
+<rect x="10" y="78" width="130" height="44" rx="7" class="b-red"/><text x="75" y="105" class="tb">neutron</text>
+<rect x="10" y="136" width="130" height="44" rx="7" class="b-red"/><text x="75" y="163" class="tb">cinder</text>
+<rect x="10" y="194" width="130" height="44" rx="7" class="b-red"/><text x="75" y="221" class="tb">autres services</text>
+<rect x="215" y="78" width="140" height="102" rx="10" class="b-amber"/><text x="285" y="118" class="tb">file</text><text x="285" y="138" class="tm">notifications.info</text><text x="285" y="158" class="ts">dans RabbitMQ</text>
+<rect x="420" y="20" width="130" height="44" rx="7" class="b-blue"/><text x="485" y="40" class="tb">Ceilometer</text><text x="485" y="56" class="ts">mesures d'usage</text>
+<rect x="420" y="78" width="130" height="44" rx="7" class="b-blue"/><text x="485" y="98" class="tb">Designate</text><text x="485" y="114" class="ts">entrées DNS</text>
+<rect x="420" y="136" width="130" height="44" rx="7" class="b-blue"/><text x="485" y="156" class="tb">Watcher</text><text x="485" y="172" class="ts">optimisation</text>
+<rect x="420" y="194" width="130" height="44" rx="7" class="b-blue"/><text x="485" y="214" class="tb">Audit, SIEM</text><text x="485" y="230" class="ts">traçabilité</text>
+</g>
+<path d="M140,42 L213,100" class="la"/><path d="M140,100 L213,118" class="la"/><path d="M140,158 L213,140" class="la"/><path d="M140,216 L213,160" class="la"/>
+<path d="M355,100 L418,42" class="la"/><path d="M355,118 L418,100" class="la"/><path d="M355,140 L418,158" class="la"/><path d="M355,160 L418,216" class="la"/>
+<rect x="10" y="268" width="540" height="162" rx="10" class="b-grey"/>
+<text x="26" y="292" class="tb">Exemple d'événement émis par Nova</text>
+<text x="26" y="316" class="tm">event_type : compute.instance.create.end</text>
+<text x="26" y="336" class="tm">publisher_id : compute.cmp01</text>
+<text x="26" y="356" class="tm">payload : instance_id, tenant_id, flavor, host, state…</text>
+<text x="26" y="384" class="ts">Chaque étape d'une opération produit un événement « .start » puis « .end »</text><text x="26" y="402" class="ts">(ou « .error »). L'émetteur n'attend rien en retour et ignore</text><text x="26" y="420" class="ts">qui écoute.</text>
+</svg>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th></th><th>RPC</th><th>Notification</th></tr></thead>
+<tbody>
+<tr><td>But</td><td>Faire exécuter une action</td><td>Informer qu'une action a eu lieu</td></tr>
+<tr><td>Destinataire</td><td>Un processus du même service</td><td>Tout consommateur externe</td></tr>
+<tr><td>Si personne n'écoute</td><td>L'opération échoue ou attend</td><td>Les messages s'empilent</td></tr>
+</tbody></table>
+<pre><span class="k">[oslo_messaging_notifications]</span>
+driver = messagingv2   <span class="m"># noop pour ne rien émettre</span>
+topics = notifications
+<span class="m"># bus distinct possible, pour isoler la charge :</span>
+transport_url = rabbit://notif:***@mq-notif:5672//
+
+<span class="k">[notifications]</span>         <span class="m"># nova.conf</span>
+notification_format = unversioned</pre>
+<div class="note"><b>Piège :</b> activer les notifications sans consommateur remplit RabbitMQ jusqu'à saturer sa mémoire, et c'est alors le RPC qui s'arrête. Sans Ceilometer ni équivalent : <code>driver = noop</code>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 29 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Le motif « conductor » : aucun hyperviseur ne touche à la base</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 700 430">
+<rect x="10" y="10" width="200" height="410" rx="12" class="zone"/><text x="26" y="34" class="tl">Nœuds de calcul</text>
+<rect x="250" y="10" width="440" height="410" rx="12" class="zone"/><text x="266" y="34" class="tl">Nœuds de contrôle</text>
+<g class="tc">
+<rect x="30" y="60" width="160" height="50" rx="8" class="b-red"/><text x="110" y="82" class="tb">nova-compute</text><text x="110" y="100" class="ts">cmp01</text>
+<rect x="30" y="130" width="160" height="50" rx="8" class="b-red"/><text x="110" y="152" class="tb">nova-compute</text><text x="110" y="170" class="ts">cmp02</text>
+<rect x="30" y="200" width="160" height="50" rx="8" class="b-red"/><text x="110" y="222" class="tb">nova-compute</text><text x="110" y="240" class="ts">cmp… n</text>
+<rect x="270" y="110" width="120" height="90" rx="10" class="b-amber"/><text x="330" y="150" class="tb">RabbitMQ</text><text x="330" y="170" class="ts">file conductor</text>
+<rect x="430" y="60" width="120" height="50" rx="8" class="b-red"/><text x="490" y="82" class="tb" style="font-size:13px">nova-conductor</text><text x="490" y="100" class="ts">ctl01</text>
+<rect x="430" y="130" width="120" height="50" rx="8" class="b-red"/><text x="490" y="152" class="tb" style="font-size:13px">nova-conductor</text><text x="490" y="170" class="ts">ctl02</text>
+<rect x="430" y="200" width="120" height="50" rx="8" class="b-red"/><text x="490" y="222" class="tb" style="font-size:13px">nova-conductor</text><text x="490" y="240" class="ts">ctl03</text>
+<rect x="590" y="110" width="90" height="90" rx="10" class="b-grey"/><text x="635" y="150" class="tb">MariaDB</text><text x="635" y="170" class="ts">base nova</text>
+</g>
+<path d="M190,85 L268,140" class="la2"/><path d="M190,155 H268" class="la2"/><path d="M190,225 L268,170" class="la2"/>
+<path d="M390,140 L428,85" class="la2"/><path d="M390,155 H428" class="la2"/><path d="M390,170 L428,225" class="la2"/>
+<path d="M550,85 L588,140" class="ln"/><path d="M550,155 H588" class="ln"/><path d="M550,225 L588,170" class="ln"/>
+<text x="230" y="72" class="tc ts fa" style="font-weight:700">RPC</text><text x="570" y="72" class="tc ts tb">SQL</text>
+<path d="M110,290 V350 H633 V204" stroke="#94a3b8" stroke-width="1.7" stroke-dasharray="5 4" fill="none"/>
+<circle cx="370" cy="350" r="17" fill="#fff" stroke="#e4002b" stroke-width="3"/><path d="M361,341 L379,359 M379,341 L361,359" stroke="#e4002b" stroke-width="3"/>
+<text x="370" y="390" class="tc ts tb tr">accès direct interdit : aucun identifiant de base sur les hyperviseurs</text>
+<path d="M110,252 V290" stroke="#94a3b8" stroke-width="1.7" stroke-dasharray="5 4" fill="none"/>
+</svg>
+</div>
+<div class="col">
+<p><b>Quatre raisons d'être</b></p>
+<ul class="pts sm">
+<li><b>Sécurité :</b> un hyperviseur exécute du code de locataires ; s'il est compromis, il ne détient aucun mot de passe de base de données.</li>
+<li><b>Montées de version :</b> le conductor traduit les objets entre versions ; des nova-compute anciens cohabitent avec un contrôle déjà mis à jour.</li>
+<li><b>Mise à l'échelle :</b> quelques conductors mutualisent les connexions SQL de milliers d'hyperviseurs.</li>
+<li><b>Orchestration :</b> il enchaîne les étapes des opérations longues (création, redimensionnement, migration) entre scheduler et computes.</li>
+</ul>
+<div class="note b"><b>Avec les cellules :</b> un « super-conductor » au niveau de l'API répartit vers le conductor de chaque cellule, qui possède sa base et son bus.</div>
+<div class="note g">Cinder n'applique pas ce motif : <code>cinder-volume</code> accède directement à sa base. Il tourne donc sur des nœuds de confiance.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 30 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>La base de données : une par service, un seul nœud en écriture</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 700 430">
+<g class="tc">
+<rect x="10" y="30" width="150" height="40" rx="7" class="b-red"/><text x="85" y="55" class="tb">keystone</text>
+<rect x="10" y="80" width="150" height="40" rx="7" class="b-red"/><text x="85" y="105" class="tb">nova-api, conductor</text>
+<rect x="10" y="130" width="150" height="40" rx="7" class="b-red"/><text x="85" y="155" class="tb">neutron-server</text>
+<rect x="10" y="180" width="150" height="40" rx="7" class="b-red"/><text x="85" y="205" class="tb">cinder, glance…</text>
+<rect x="225" y="85" width="150" height="80" rx="10" class="b-dark"/><text x="300" y="118" class="tw tb">HAProxy</text><text x="300" y="138" class="tw" style="font-size:12px">VIP interne : 3306</text>
+<rect x="460" y="20" width="225" height="62" rx="8" class="b-red"/><text x="572" y="45" class="tb">MariaDB ctl01 — actif</text><text x="572" y="64" class="ts">reçoit toutes les écritures</text>
+<rect x="460" y="100" width="225" height="62" rx="8" class="b-grey"/><text x="572" y="125" class="tb">MariaDB ctl02 — secours</text><text x="572" y="144" class="ts">à jour, prêt à prendre le relais</text>
+<rect x="460" y="180" width="225" height="62" rx="8" class="b-grey"/><text x="572" y="205" class="tb">MariaDB ctl03 — secours</text><text x="572" y="224" class="ts">à jour, prêt à prendre le relais</text>
+</g>
+<path d="M160,50 L223,105" class="ln"/><path d="M160,100 L223,118" class="ln"/><path d="M160,150 L223,132" class="ln"/><path d="M160,200 L223,148" class="ln"/>
+<path d="M375,112 L458,54" class="lr"/><path d="M375,125 H458" class="ln ld"/><path d="M375,138 L458,206" class="ln ld"/>
+<path d="M655,82 V98" class="ln2"/><path d="M655,162 V178" class="ln2"/>
+<text x="664" y="94" class="ts" style="font-size:10.5px">4567</text><text x="664" y="174" class="ts" style="font-size:10.5px">4567</text>
+<text x="376" y="66" class="ts tb tr">écritures</text><text x="386" y="186" class="ts">secours</text>
+<rect x="10" y="270" width="675" height="150" rx="10" class="b-grey"/>
+<text x="26" y="294" class="tb">Un schéma par service, un compte par service</text>
+<g class="tm"><text x="26" y="320">keystone</text><text x="150" y="320">nova_api</text><text x="274" y="320">nova_cell0</text><text x="398" y="320">nova</text><text x="522" y="320">placement</text>
+<text x="26" y="344">neutron</text><text x="150" y="344">cinder</text><text x="274" y="344">glance</text><text x="398" y="344">heat</text><text x="522" y="344">octavia…</text></g>
+<text x="26" y="376" class="ts">Réplication Galera : une transaction n'est validée que lorsqu'elle est certifiée par la majorité.</text>
+<text x="26" y="396" class="ts">Écrire sur plusieurs nœuds à la fois provoque des conflits de certification, vus comme des</text><text x="26" y="412" class="ts">« deadlocks » par les services : d'où le nœud d'écriture unique imposé par HAProxy.</text>
+</svg>
+</div>
+<div class="col">
+<pre style="font-size:12px"><span class="k">[database]</span>            <span class="m"># nova.conf</span>
+connection = mysql+pymysql://nova:***@vip-int/nova
+max_pool_size = 5
+max_overflow = 50
+connection_recycle_time = 600
+
+<span class="k">[api_database]</span>
+connection = mysql+pymysql://nova:***@vip-int/nova_api</pre>
+<ul class="pts sm">
+<li><b>oslo.db</b> (SQLAlchemy) gère le pool de connexions et rejoue une requête après un « deadlock ».</li>
+<li>Chaque processus et chaque worker ouvre son propre pool : le total doit rester sous <code>max_connections</code>.</li>
+<li>Les schémas évoluent à chaque montée de version : <code>nova-manage db sync</code>, <code>neutron-db-manage upgrade</code>…</li>
+<li>Les lignes supprimées sont seulement marquées : il faut les archiver régulièrement (<code>nova-manage db archive_deleted_rows</code>).</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 31 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>RabbitMQ en cluster : files à quorum et connexions directes</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 440">
+<rect x="10" y="165" width="150" height="80" rx="8" class="b-red"/><text x="85" y="198" class="tc tb">Service OpenStack</text><text x="85" y="218" class="tc ts">connaît les 3 nœuds</text>
+<g class="tc">
+<rect x="290" y="20" width="260" height="100" rx="10" class="b-amber"/><text x="420" y="44" class="tb">rabbit@ctl01</text>
+<rect x="306" y="56" width="228" height="48" rx="6" class="b-red"/><text x="420" y="77" class="tm tb">compute.cmp01</text><text x="420" y="95" class="ts tb tr">leader</text>
+<rect x="290" y="150" width="260" height="100" rx="10" class="b-amber"/><text x="420" y="174" class="tb">rabbit@ctl02</text>
+<rect x="306" y="186" width="228" height="48" rx="6" class="bx"/><text x="420" y="207" class="tm tb">compute.cmp01</text><text x="420" y="225" class="ts">réplique</text>
+<rect x="290" y="280" width="260" height="100" rx="10" class="b-amber"/><text x="420" y="304" class="tb">rabbit@ctl03</text>
+<rect x="306" y="316" width="228" height="48" rx="6" class="bx"/><text x="420" y="337" class="tm tb">compute.cmp01</text><text x="420" y="355" class="ts">réplique</text>
+</g>
+<path d="M160,190 L288,75" class="la"/><path d="M160,205 H288" class="la ld"/><path d="M160,220 L288,325" class="la ld"/>
+<text x="66" y="140" class="ts tb fa">connexion active</text><text x="176" y="296" class="ts">secours</text>
+<path d="M420,120 V148" class="ln2"/><path d="M420,250 V278" class="ln2"/><text x="432" y="139" class="ts">Raft</text><text x="432" y="269" class="ts">Raft</text>
+<text x="10" y="410" class="ts">Un message publié n'est confirmé qu'une fois écrit sur la majorité des nœuds.</text>
+<text x="10" y="428" class="ts">Si le leader disparaît, une réplique est élue : la file survit sans perte.</text>
+</svg>
+</div>
+<div class="col">
+<pre><span class="k">[DEFAULT]</span>
+transport_url = rabbit://openstack:***@10.20.0.11:5672,
+    openstack:***@10.20.0.12:5672,
+    openstack:***@10.20.0.13:5672//
+
+<span class="k">[oslo_messaging_rabbit]</span>
+rabbit_quorum_queue = true
+heartbeat_timeout_threshold = 60
+ssl = true</pre>
+<ul class="pts sm">
+<li>Les services se connectent <b>directement</b> aux nœuds RabbitMQ, sans passer par HAProxy : la bibliothèque gère elle-même la reconnexion.</li>
+<li><b>Files à quorum :</b> répliquées par Raft, elles remplacent les anciennes files en miroir, supprimées des versions récentes de RabbitMQ.</li>
+<li><b>Battements AMQP :</b> une connexion muette au-delà du seuil est fermée puis rétablie ; un pare-feu qui coupe les connexions inactives produit les mêmes symptômes.</li>
+<li><b>Partition réseau :</b> avec <code>pause_minority</code>, le nœud isolé se met en retrait plutôt que de diverger.</li>
+<li>À surveiller : mémoire, nombre de connexions, files dont la profondeur croît.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 32 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Neutron avec OVN : OVSDB plutôt qu'AMQP</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 300">
+<rect x="10" y="8" width="925" height="286" rx="12" class="zone"/><text x="28" y="33" class="tl">Nœuds de contrôle</text>
+<rect x="955" y="8" width="185" height="286" rx="12" class="zone"/><text x="1047" y="33" class="tc tl">Chaque chassis</text>
+<g class="tc">
+<rect x="28" y="86" width="180" height="72" rx="8" class="b-red"/><text x="118" y="115" class="tb">neutron-server</text><text x="118" y="135" class="ts">ML2 + pilote OVN</text>
+<rect x="280" y="86" width="180" height="72" rx="8" class="b-teal"/><text x="370" y="115" class="tb">Base Northbound</text><text x="370" y="135" class="ts">6641 · réseau logique voulu</text>
+<rect x="528" y="95" width="140" height="54" rx="8" class="bx"/><text x="598" y="127" class="tb">ovn-northd</text>
+<rect x="736" y="86" width="180" height="72" rx="8" class="b-teal"/><text x="826" y="115" class="tb">Base Southbound</text><text x="826" y="135" class="ts">6642 · flux logiques, liaisons</text>
+<rect x="972" y="52" width="151" height="50" rx="8" class="b-teal"/><text x="1047" y="82" class="tb">ovn-controller</text>
+<rect x="972" y="142" width="151" height="50" rx="8" class="bx"/><text x="1047" y="163" class="tb">ovs-vswitchd</text><text x="1047" y="181" class="ts">flux OpenFlow</text>
+<rect x="972" y="232" width="151" height="46" rx="8" class="b-grey"/><text x="1047" y="253" class="tb">noyau</text><text x="1047" y="270" class="ts">commutation, Geneve</text>
+</g>
+<path d="M208,122 H278" class="lt"/><path d="M460,122 H526" class="lt"/><path d="M668,122 H734" class="lt"/>
+<path d="M916,110 L970,84" class="lt2"/><path d="M1047,102 V140" class="ln"/><path d="M1047,192 V230" class="ln"/>
+<g class="tc ts"><text x="243" y="112">1 · écrit</text><text x="494" y="112">2 · lit</text><text x="702" y="112">3 · publie</text></g>
+<text x="926" y="56" class="te ts">4 · chaque chassis s'abonne</text><text x="926" y="72" class="te ts">à ce qui le concerne</text>
+<path d="M826,160 V226 H118 V160" class="lt ld"/><text x="472" y="218" class="tc ts">5 · neutron-server lit l'état réel des ports dans la base Southbound (port « up » sur tel chassis)</text>
+<text x="472" y="254" class="tc ts tb ft">Connexions OVSDB persistantes : les changements sont poussés aux abonnés, sans interrogation périodique.</text>
+<text x="472" y="274" class="tc ts">Les bases NB et SB sont répliquées par Raft entre les trois contrôleurs (ports 6643 et 6644).</text>
+</svg>
+</div>
+<table class="tbl tight">
+<thead><tr><th></th><th>ML2/OVN (référence)</th><th>ML2/Open vSwitch (historique)</th></tr></thead>
+<tbody>
+<tr><td>Transport des ordres</td><td>OVSDB, de base en base ; chaque chassis s'abonne à la base Southbound</td><td>RPC AMQP : neutron-server ↔ agents, à travers RabbitMQ</td></tr>
+<tr><td>Processus sur les hôtes</td><td>ovn-controller, ovn-metadata-agent</td><td>Agents OVS, L3, DHCP, métadonnées</td></tr>
+<tr><td>Où vit l'état réseau</td><td>Base Neutron (référence) + bases NB / SB (traduction)</td><td>Base Neutron + état local de chaque agent</td></tr>
+<tr><td>Dépendance à RabbitMQ</td><td>Faible : un bus en panne ne fige pas le réseau</td><td>Forte : sans bus, plus aucune mise à jour des agents</td></tr>
+<tr><td>Point de vigilance</td><td>Cohérence entre base Neutron et base NB (outil de synchronisation)</td><td>Charge RPC qui croît avec le nombre d'agents et de ports</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<!-- 33 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Nova ↔ Neutron : l'événement qui libère le démarrage</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 420">
+<g class="tc tb">
+<rect x="35" y="5" width="190" height="38" rx="7" class="b-red"/><text x="130" y="29">nova-compute (cmp01)</text>
+<rect x="335" y="5" width="190" height="38" rx="7" class="b-teal"/><text x="430" y="29">neutron-server</text>
+<rect x="605" y="5" width="190" height="38" rx="7" class="b-teal"/><text x="700" y="29">OVN (SB, ovn-controller)</text>
+<rect x="885" y="5" width="190" height="38" rx="7" class="b-red"/><text x="980" y="29">nova-api</text>
+</g>
+<g stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4"><line x1="130" y1="43" x2="130" y2="372"/><line x1="430" y1="43" x2="430" y2="372"/><line x1="700" y1="43" x2="700" y2="372"/><line x1="980" y1="43" x2="980" y2="372"/></g>
+<path d="M130,84 H428" class="lr"/><text x="295" y="75" class="tc ts"><tspan class="tm">PUT /v2.0/ports/{id}</tspan> · hôte = cmp01</text>
+<path d="M428,122 H132" class="ln ld"/><text x="285" y="113" class="tc ts">200 · port lié, encore à l'état DOWN</text>
+<path d="M130,146 H172 V180 H133" class="lr"/><text x="182" y="158" class="ts">branche l'interface sur br-int,</text><text x="182" y="174" class="ts">crée la VM en pause et attend</text>
+<path d="M698,216 H432" class="lt"/><text x="552" y="207" class="tc ts">port « up » dans la base Southbound</text>
+<text x="712" y="200" class="ts">ovn-controller a installé</text><text x="712" y="216" class="ts">les flux du port</text>
+<path d="M430,262 H978" class="lr"/><text x="705" y="253" class="tc ts"><tspan class="tm">POST /v2.1/os-server-external-events</tspan> · network-vif-plugged</text>
+<path d="M978,308 H132" class="la"/><text x="555" y="299" class="tc ts fa" style="font-weight:700">RPC cast vers la file compute.cmp01 · external_instance_event</text>
+<path d="M130,330 H172 V362 H133" class="lr"/><text x="182" y="342" class="ts">reprend la VM :</text><text x="182" y="358" class="ts tb">instance ACTIVE</text>
+<g class="tc tw tb" style="font-size:12px"><circle cx="144" cy="84" r="11" class="f-red"/><text x="144" y="88">1</text><circle cx="416" cy="122" r="11" class="f-red"/><text x="416" y="126">2</text><circle cx="152" cy="146" r="11" class="f-red"/><text x="152" y="150">3</text><circle cx="686" cy="216" r="11" class="f-red"/><text x="686" y="220">4</text><circle cx="444" cy="262" r="11" class="f-red"/><text x="444" y="266">5</text><circle cx="966" cy="308" r="11" class="f-red"/><text x="966" y="312">6</text><circle cx="152" cy="330" r="11" class="f-red"/><text x="152" y="334">7</text></g>
+<text x="575" y="400" class="tc ts">Trois protocoles en une seule opération : REST (1, 2, 5), OVSDB (4), RPC (6).</text>
+</svg>
+</div>
+<div class="cols nf">
+<div class="note"><b>Si l'événement n'arrive pas</b> dans le délai <code>vif_plugging_timeout</code> (300 s par défaut), l'instance passe en ERROR avec « Virtual Interface creation failed ». Causes habituelles : ovn-controller arrêté sur l'hôte, Neutron incapable de joindre l'API Nova.</div>
+<div class="note b"><b>Neutron a donc besoin d'un compte et d'un accès à Nova :</b> section <code>[nova]</code> de <code>neutron.conf</code>, interface <code>internal</code>. C'est l'un des rares appels « à rebours » de l'architecture.</div>
+</div>
+</div>
+</section>
+
+<!-- 34 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Nova ↔ Cinder : attacher un volume</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 450">
+<g class="tc tb">
+<rect x="15" y="5" width="170" height="38" rx="7" class="b-red"/><text x="100" y="29">nova-api</text>
+<rect x="255" y="5" width="170" height="38" rx="7" class="b-red"/><text x="340" y="29">nova-compute</text>
+<rect x="515" y="5" width="170" height="38" rx="7" class="b-amber"/><text x="600" y="29">cinder-api</text>
+<rect x="765" y="5" width="170" height="38" rx="7" class="b-amber"/><text x="850" y="29">cinder-volume</text>
+<rect x="985" y="5" width="150" height="38" rx="7" class="b-grey"/><text x="1060" y="29">Backend</text>
+</g>
+<g stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4"><line x1="100" y1="43" x2="100" y2="440"/><line x1="340" y1="43" x2="340" y2="440"/><line x1="600" y1="43" x2="600" y2="440"/><line x1="850" y1="43" x2="850" y2="440"/><line x1="1060" y1="43" x2="1060" y2="440"/></g>
+<path d="M100,82 H598" class="lr"/><text x="470" y="73" class="tc ts"><tspan class="tm">POST /v3/attachments</tspan> · volume réservé</text>
+<path d="M100,120 H338" class="la"/><text x="225" y="111" class="tc ts fa" style="font-weight:700">RPC cast attach_volume</text>
+<path d="M340,140 H382 V172 H343" class="lr"/><text x="392" y="152" class="ts">os-brick : décrit l'hôte</text><text x="392" y="168" class="ts">(IQN, nom, multipath)</text>
+<path d="M340,210 H598" class="lr"/><text x="475" y="201" class="tc ts"><tspan class="tm">PUT</tspan> attachement + connecteur</text>
+<path d="M600,248 H848" class="la"/><text x="725" y="239" class="tc ts fa" style="font-weight:700">RPC call initialize_connection</text>
+<path d="M850,286 H1058" class="lr"/><text x="955" y="277" class="tc ts">export, droits d'accès</text>
+<path d="M598,324 H342" class="ln ld"/><text x="458" y="315" class="tc ts">connexion : type rbd ou iscsi, cible</text>
+<path d="M340,344 H382 V376 H343" class="lr"/><text x="392" y="356" class="ts">os-brick connecte le volume,</text><text x="392" y="372" class="ts">libvirt l'ajoute à la VM</text>
+<path d="M342,404 H1058" class="lb2"/><text x="780" y="395" class="tc ts tb fb">chemin des données : l'hyperviseur parle directement au backend</text>
+<path d="M340,432 H598" class="lr"/><text x="470" y="424" class="tc ts"><tspan class="tm">os-complete</tspan> → volume « in-use »</text>
+<g class="tc tw tb" style="font-size:12px"><circle cx="114" cy="82" r="11" class="f-red"/><text x="114" y="86">1</text><circle cx="114" cy="120" r="11" class="f-red"/><text x="114" y="124">2</text><circle cx="362" cy="140" r="11" class="f-red"/><text x="362" y="144">3</text><circle cx="354" cy="210" r="11" class="f-red"/><text x="354" y="214">4</text><circle cx="614" cy="248" r="11" class="f-red"/><text x="614" y="252">5</text><circle cx="864" cy="286" r="11" class="f-red"/><text x="864" y="290">6</text><circle cx="586" cy="324" r="11" class="f-red"/><text x="586" y="328">7</text><circle cx="362" cy="344" r="11" class="f-red"/><text x="362" y="348">8</text><circle cx="354" cy="432" r="11" class="f-red"/><text x="354" y="436">9</text></g>
+</svg>
+</div>
+<div class="note"><b>Lecture :</b> Nova ne sait rien du stockage. Il décrit l'hôte à Cinder (étape 4), Cinder répond comment s'y connecter (étape 7), puis s'efface. Entre services : REST ; à l'intérieur de chaque service : RPC ; pour les données : le protocole du backend, sans intermédiaire.</div>
+</div>
+</section>
+
+<!-- 35 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Battements de cœur : comment le cloud sait qu'un service est vivant</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Composant</th><th>Mécanisme</th><th>Paramètres (valeurs par défaut)</th><th>Commande de contrôle</th></tr></thead>
+<tbody>
+<tr><td>Services Nova</td><td>Chaque processus met à jour sa ligne dans la table <code>services</code> (les computes via le conductor)</td><td><code>report_interval = 10</code> · <code>service_down_time = 60</code></td><td><code>openstack compute service list</code></td></tr>
+<tr><td>Services Cinder</td><td>Même principe, écriture directe en base</td><td><code>report_interval = 10</code> · <code>service_down_time = 60</code></td><td><code>openstack volume service list</code></td></tr>
+<tr><td>Agents Neutron (ML2/OVS)</td><td>Rapport d'état envoyé par RPC à neutron-server</td><td><code>report_interval = 30</code> · <code>agent_down_time = 75</code></td><td><code>openstack network agent list</code></td></tr>
+<tr><td>Chassis OVN</td><td>Chaque ovn-controller horodate sa ligne dans la base Southbound</td><td>—</td><td><code>openstack network agent list</code>, <code>ovn-sbctl show</code></td></tr>
+<tr><td>Connexions RabbitMQ</td><td>Battements AMQP entre client et courtier</td><td><code>heartbeat_timeout_threshold = 60</code></td><td><code>rabbitmqctl list_connections</code></td></tr>
+<tr><td>API derrière HAProxy</td><td>Contrôle de santé HTTP périodique de chaque backend</td><td>Selon la configuration HAProxy</td><td>Page de statistiques HAProxy</td></tr>
+<tr><td>Galera</td><td>Appartenance au cluster, état de synchronisation</td><td>—</td><td><code>SHOW STATUS LIKE 'wsrep_%'</code></td></tr>
+</tbody></table>
+<div class="cols nf">
+<pre style="font-size:12.5px"><span class="c">$ openstack</span> compute service list
++----------------+-------+---------+-------+
+| Binary         | Host  | Status  | State |
++----------------+-------+---------+-------+
+| nova-scheduler | ctl01 | enabled | up    |
+| nova-conductor | ctl01 | enabled | up    |
+| nova-compute   | cmp01 | enabled | up    |
+| nova-compute   | cmp02 | enabled | <span class="k">down</span>  |
++----------------+-------+---------+-------+</pre>
+<ul class="pts sm">
+<li><b>State</b> (up / down) est <b>déduit</b> : dernier battement plus vieux que <code>service_down_time</code>.</li>
+<li><b>Status</b> (enabled / disabled) est un <b>choix de l'administrateur</b>. Le scheduler ignore les hôtes « down » ou « disabled ».</li>
+<li>Un service « down » alors que son processus tourne : il n'arrive plus à écrire son battement — bus, base ou horloge.</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- 36 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Suivre une requête d'un service à l'autre</h2></header>
+<div class="body">
+<div class="fig" style="flex:none;height:150px">
+<svg viewBox="0 0 1150 150">
+<rect x="10" y="40" width="130" height="60" rx="8" class="b-blue"/><text x="75" y="75" class="tc tb">Client</text>
+<path d="M140,70 H218" class="lr"/><text x="179" y="60" class="tc ts tr">REST</text>
+<rect x="220" y="30" width="210" height="80" rx="8" class="b-red"/><text x="325" y="58" class="tc tb">nova-api</text><text x="325" y="80" class="tc tm">req-5f1c…</text><text x="325" y="98" class="tc ts">identifiant créé ici</text>
+<path d="M430,70 H508" class="la"/><text x="469" y="60" class="tc ts fa" style="font-weight:700">RPC</text>
+<rect x="510" y="30" width="210" height="80" rx="8" class="b-red"/><text x="615" y="58" class="tc tb">nova-compute</text><text x="615" y="80" class="tc tm">req-5f1c…</text><text x="615" y="98" class="tc ts">même identifiant (contexte RPC)</text>
+<path d="M720,70 H798" class="lr"/><text x="759" y="60" class="tc ts tr">REST</text>
+<rect x="800" y="30" width="340" height="80" rx="8" class="b-teal"/><text x="970" y="58" class="tc tb">neutron-server</text><text x="970" y="80" class="tc tm">req-77aa… · global : req-5f1c…</text><text x="970" y="98" class="tc ts">nouvel identifiant local + identifiant d'origine</text>
+<text x="575" y="138" class="tc ts">À l'intérieur d'un service, l'identifiant ne change pas. En changeant de service, il devient l'« identifiant global ».</text>
+</svg>
+</div>
+<pre><span class="m"># 1. Récupérer l'identifiant renvoyé au client</span>
+<span class="c">$ openstack</span> <span class="k">--debug</span> server create … 2&gt;&amp;1 | grep -i x-openstack-request-id
+x-openstack-request-id: <span class="k">req-5f1c2b7e-9c41-4d0a-b7c2-3a1e6d0f8a11</span>
+
+<span class="m"># 2. nova-api.log, sur un contrôleur</span>
+INFO nova.osapi_compute.wsgi.server [<span class="k">req-5f1c2b7e-…</span> - a1b2… c3d4…] "POST /v2.1/servers" status: 202
+
+<span class="m"># 3. nova-compute.log, sur l'hyperviseur choisi — même identifiant</span>
+INFO nova.compute.manager [<span class="k">req-5f1c2b7e-…</span> - a1b2… c3d4…] [instance: 9d0e…] Creating image(s)
+
+<span class="m"># 4. neutron-server.log — identifiant local, puis identifiant global</span>
+INFO neutron.wsgi [req-77aa0c5d-… <span class="k">req-5f1c2b7e-…</span> a1b2… c3d4…] "POST /v2.0/ports" status: 201</pre>
+<div class="note g"><b>Méthode :</b> centraliser les journaux de tous les nœuds, puis filtrer sur l'identifiant de requête. On reconstitue ainsi tout le parcours d'une opération, protocole après protocole, sans se connecter à chaque machine.</div>
+</div>
+</section>
+
+<!-- 37 -->
+<section class="slide">
+<header><span class="kick">2 · Communication entre composants</span><h2>Du symptôme au protocole en cause</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Symptôme</th><th>Protocole</th><th>Cause probable</th><th>Premier contrôle</th></tr></thead>
+<tbody>
+<tr><td>503 sur une API</td><td>REST</td><td>HAProxy ne voit plus aucun backend sain, ou le service ne joint plus Keystone</td><td>Statistiques HAProxy, journal de l'API</td></tr>
+<tr><td>401 par intermittence</td><td>REST</td><td>Horloges désynchronisées ; clés Fernet différentes d'un contrôleur à l'autre</td><td><code>chronyc tracking</code>, dépôt de clés Keystone</td></tr>
+<tr><td><code>MessagingTimeout</code></td><td>AMQP</td><td>Destinataire arrêté ou saturé ; file sans consommateur ; partition RabbitMQ</td><td><code>rabbitmqctl list_queues</code>, liste des services</td></tr>
+<tr><td>Instance figée en BUILD ou « scheduling »</td><td>AMQP</td><td>Cast resté dans une file : conductor, scheduler ou compute absent</td><td><code>openstack compute service list</code></td></tr>
+<tr><td>Services « down » alors que les processus tournent</td><td>AMQP / SQL</td><td>Battements qui n'arrivent plus en base</td><td>RabbitMQ, Galera, horloge de l'hôte</td></tr>
+<tr><td><code>DBDeadlock</code>, <code>DBConnectionError</code></td><td>SQL</td><td>Écritures sur plusieurs nœuds Galera ; quorum perdu ; trop de connexions</td><td><code>wsrep_cluster_size</code>, <code>max_connections</code></td></tr>
+<tr><td>« Virtual Interface creation failed »</td><td>OVSDB + REST</td><td>ovn-controller arrêté sur l'hôte, ou Neutron ne joint pas l'API Nova</td><td><code>ovn-sbctl show</code>, section <code>[nova]</code> de neutron.conf</td></tr>
+<tr><td>Port qui reste DOWN</td><td>OVSDB</td><td>Chassis non enregistré, base Southbound injoignable depuis l'hôte</td><td><code>ovs-vsctl get open . external_ids</code></td></tr>
+<tr><td>« No valid host was found »</td><td>—</td><td>Pas un problème de communication : aucun hôte ne satisfait la demande</td><td>Placement, filtres du scheduler, quotas</td></tr>
+</tbody></table>
+<div class="note"><b>Réflexe :</b> identifier d'abord <b>entre quels processus</b> l'opération s'est arrêtée (identifiant de requête dans les journaux), puis <b>quel protocole</b> les relie. La cause se trouve presque toujours dans l'un de quatre endroits : VIP et Keystone, RabbitMQ, Galera, bases OVN.</div>
+</div>
+</section>
+
+<!-- 38 -->
+<section class="slide dark sec">
+<div class="num">03</div>
+<h2>Segmentation réseau du plan de contrôle</h2>
+<p>Les flux décrits jusqu'ici ne circulent pas sur un réseau unique. Chaque famille de flux a le sien, pour des raisons de sécurité, de performance et de limitation des pannes.</p>
+<ol><li>Les quatre domaines de sécurité</li><li>Les réseaux d'un déploiement</li><li>Quel nœud sur quel réseau</li><li>VIP interne, VIP externe, chiffrement</li><li>Câblage, matrice de flux, MTU</li><li>Traduction en configuration</li></ol>
+</section>
+
+<!-- 39 -->
+<section class="slide">
+<header><span class="kick">3 · Segmentation réseau</span><h2>Pourquoi segmenter : quatre domaines de sécurité</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 700 440">
+<rect x="10" y="10" width="335" height="205" rx="12" class="b-red"/><text x="26" y="36" class="tl tr">Domaine public</text>
+<g class="ts"><text x="26" y="60">Internet, réseau d'entreprise</text><text x="26" y="78">Utilisateurs de l'API et d'Horizon</text><text x="26" y="104" class="tb">Confiance : aucune</text></g>
+<rect x="355" y="10" width="335" height="205" rx="12" class="b-blue"/><text x="674" y="36" class="tl te">Domaine invité</text>
+<g class="ts te"><text x="674" y="60">Trafic des instances</text><text x="674" y="78">Réseaux de projets et fournisseurs</text><text x="674" y="104" class="tb">Confiance : aucune (locataires)</text></g>
+<rect x="10" y="225" width="335" height="205" rx="12" class="b-grey"/><text x="26" y="414" class="tl">Domaine de gestion</text>
+<g class="ts"><text x="26" y="350">API internes, RabbitMQ, MariaDB,</text><text x="26" y="368">OVSDB, SSH, supervision</text><text x="26" y="392" class="tb">Confiance : élevée</text></g>
+<rect x="355" y="225" width="335" height="205" rx="12" class="b-amber"/><text x="674" y="414" class="tl te">Domaine des données</text>
+<g class="ts te"><text x="674" y="350">Stockage : Ceph, iSCSI,</text><text x="674" y="368">réplication, sauvegardes</text><text x="674" y="392" class="tb">Confiance : élevée</text></g>
+<g class="tc tb" style="font-size:13px">
+<rect x="50" y="198" width="190" height="44" rx="8" class="b-dark"/><text x="145" y="218" class="tw">HAProxy, API</text><text x="145" y="234" class="tw" style="font-size:11px;font-weight:400">pont public ↔ gestion</text>
+<rect x="258" y="130" width="184" height="44" rx="8" class="b-dark"/><text x="350" y="150" class="tw">Passerelle réseau</text><text x="350" y="166" class="tw" style="font-size:11px;font-weight:400">pont invité ↔ public</text>
+<rect x="258" y="198" width="184" height="44" rx="8" class="b-dark"/><text x="350" y="218" class="tw">Hyperviseur</text><text x="350" y="234" class="tw" style="font-size:11px;font-weight:400">invité ↔ gestion ↔ données</text>
+<rect x="258" y="266" width="184" height="44" rx="8" class="b-dark"/><text x="350" y="286" class="tw">Nœud de stockage</text><text x="350" y="302" class="tw" style="font-size:11px;font-weight:400">pont gestion ↔ données</text>
+</g>
+</svg>
+</div>
+<div class="col">
+<p>Le guide de sécurité d'OpenStack distingue quatre <b>domaines</b>, de niveaux de confiance différents. Les composants à cheval sur deux domaines — les <b>ponts</b> — sont les points à durcir en priorité.</p>
+<ul class="pts sm">
+<li><b>Sécurité :</b> une instance compromise ne doit jamais atteindre RabbitMQ, MariaDB ou le SSH des nœuds. Sur un réseau unique, rien ne l'en empêcherait.</li>
+<li><b>Performance :</b> une reconstruction Ceph ou une migration à chaud sature un lien ; les battements de Galera et de RabbitMQ ne doivent pas en pâtir.</li>
+<li><b>Limitation des pannes :</b> une tempête de diffusion sur un réseau de projet ne doit pas faire tomber le plan de contrôle.</li>
+<li><b>Exploitation :</b> un réseau par usage rend les règles de pare-feu lisibles et les captures de trafic exploitables.</li>
+</ul>
+<div class="note">Segmenter, c'est attribuer un <b>VLAN et un sous-réseau par famille de flux</b>, puis ne raccorder chaque nœud qu'aux réseaux dont son rôle a besoin.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 40 -->
+<section class="slide">
+<header><span class="kick">3 · Segmentation réseau</span><h2>Les réseaux d'un déploiement</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Réseau</th><th>Plan</th><th>Ce qui y circule</th><th>Nœuds raccordés</th><th>Exemple</th></tr></thead>
+<tbody>
+<tr><td>Hors bande</td><td>Gestion</td><td>Pilotage matériel : IPMI, Redfish, console série</td><td>Carte BMC de chaque serveur, déploiement</td><td>VLAN 10 · 10.10.0.0/24</td></tr>
+<tr><td>Provisionnement</td><td>Gestion</td><td>Démarrage PXE et installation du système</td><td>Tous, à l'installation</td><td>VLAN 11 · 10.11.0.0/24</td></tr>
+<tr><td>Gestion · API interne</td><td>Contrôle</td><td>API internes, RabbitMQ, MariaDB, Memcached, OVSDB, SSH, supervision</td><td>Tous</td><td>VLAN 20 · 10.20.0.0/24</td></tr>
+<tr><td>API publique</td><td>Contrôle</td><td>VIP externe en HTTPS : API, Horizon, consoles</td><td>Contrôleurs (HAProxy) uniquement</td><td>VLAN 30 · 192.0.2.0/24</td></tr>
+<tr><td>Overlay</td><td>Données</td><td>Tunnels Geneve ou VXLAN transportant les réseaux de projets</td><td>Calcul, passerelles</td><td>VLAN 40 · 10.40.0.0/24 · MTU 9000</td></tr>
+<tr><td>Stockage — accès</td><td>Données</td><td>Clients vers Ceph (réseau public), iSCSI, NFS</td><td>Calcul, contrôle, stockage</td><td>VLAN 50 · 10.50.0.0/24 · MTU 9000</td></tr>
+<tr><td>Stockage — réplication</td><td>Données</td><td>Réplication et reconstruction entre OSD (réseau cluster)</td><td>Stockage uniquement</td><td>VLAN 51 · 10.51.0.0/24 · MTU 9000</td></tr>
+<tr><td>Externe · fournisseur</td><td>Données</td><td>IP flottantes, réseaux fournisseurs en VLAN</td><td>Passerelles ; calcul si routage distribué</td><td>Trunk VLAN 100–199, sans adresse sur l'hôte</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Le plan de contrôle circule sur deux réseaux :</b> « gestion · API interne » pour tous les échanges entre composants, et « API publique » pour l'entrée des utilisateurs. Les réseaux hors bande et de provisionnement servent à administrer les machines elles-mêmes.</div>
+<div class="note g"><b>Les noms varient selon l'outil</b> (management, internal API, tunnel, storage, storage management…), pas les rôles. Dans un lab, tout peut tenir sur un ou deux réseaux ; la séparation reste logique.</div>
+</div>
+</div>
+</section>
+
+<!-- 41 -->
+<section class="slide">
+<header><span class="kick">3 · Segmentation réseau</span><h2>Quel nœud sur quel réseau</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 470">
+<line x1="258" y1="150" x2="1135" y2="150" stroke="#94a3b8" stroke-width="4"/>
+<text x="246" y="149" class="te tb" style="fill:#94a3b8;font-size:13.5px">Hors bande (BMC)</text><text x="246" y="164" class="te ts">IPMI, Redfish</text>
+<line x1="258" y1="192" x2="1135" y2="192" stroke="#64748b" stroke-width="4"/>
+<text x="246" y="191" class="te tb" style="fill:#64748b;font-size:13.5px">Provisionnement</text><text x="246" y="206" class="te ts">PXE, installation</text>
+<line x1="258" y1="234" x2="1135" y2="234" stroke="#101a33" stroke-width="6"/>
+<text x="246" y="233" class="te tb" style="fill:#101a33;font-size:13.5px">Gestion · API interne</text><text x="246" y="248" class="te ts">API, RabbitMQ, SQL, OVSDB, SSH</text>
+<line x1="258" y1="276" x2="1135" y2="276" stroke="#e4002b" stroke-width="6"/>
+<text x="246" y="275" class="te tb" style="fill:#e4002b;font-size:13.5px">API publique</text><text x="246" y="290" class="te ts">VIP externe, Horizon</text>
+<line x1="258" y1="318" x2="1135" y2="318" stroke="#2563eb" stroke-width="4"/>
+<text x="246" y="317" class="te tb" style="fill:#2563eb;font-size:13.5px">Overlay</text><text x="246" y="332" class="te ts">tunnels Geneve</text>
+<line x1="258" y1="360" x2="1135" y2="360" stroke="#d97706" stroke-width="4"/>
+<text x="246" y="359" class="te tb" style="fill:#d97706;font-size:13.5px">Stockage — accès</text><text x="246" y="374" class="te ts">Ceph public, iSCSI</text>
+<line x1="258" y1="402" x2="1135" y2="402" stroke="#92400e" stroke-width="4"/>
+<text x="246" y="401" class="te tb" style="fill:#92400e;font-size:13.5px">Stockage — réplication</text><text x="246" y="416" class="te ts">Ceph cluster</text>
+<line x1="258" y1="444" x2="1135" y2="444" stroke="#7c3aed" stroke-width="4"/>
+<text x="246" y="443" class="te tb" style="fill:#7c3aed;font-size:13.5px">Externe · fournisseur</text><text x="246" y="458" class="te ts">IP flottantes, VLAN</text>
+<rect x="270" y="10" width="160" height="78" rx="9" class="bx"/><text x="350" y="44" class="tc tb">Déploiement, bastion</text><text x="350" y="64" class="tc ts">Ansible, SSH</text>
+<path d="M287,88 V150" stroke="#94a3b8" stroke-width="2.5" fill="none"/><circle cx="287" cy="150" r="6" fill="#94a3b8"/>
+<path d="M305,88 V192" stroke="#64748b" stroke-width="2.5" fill="none"/><circle cx="305" cy="192" r="6" fill="#64748b"/>
+<path d="M323,88 V234" stroke="#101a33" stroke-width="2.5" fill="none"/><circle cx="323" cy="234" r="6" fill="#101a33"/>
+<rect x="444" y="10" width="160" height="78" rx="9" class="b-red"/><text x="524" y="44" class="tc tb">Contrôle ×3</text><text x="524" y="64" class="tc ts">API, base, bus, VIP</text>
+<path d="M461,88 V150" stroke="#94a3b8" stroke-width="2.5" fill="none"/><circle cx="461" cy="150" r="6" fill="#94a3b8"/>
+<path d="M479,88 V192" stroke="#64748b" stroke-width="2.5" fill="none"/><circle cx="479" cy="192" r="6" fill="#64748b"/>
+<path d="M497,88 V234" stroke="#101a33" stroke-width="2.5" fill="none"/><circle cx="497" cy="234" r="6" fill="#101a33"/>
+<path d="M515,88 V276" stroke="#e4002b" stroke-width="2.5" fill="none"/><circle cx="515" cy="276" r="6" fill="#e4002b"/>
+<path d="M551,88 V360" stroke="#d97706" stroke-width="2.5" fill="none"/><circle cx="551" cy="360" r="6" fill="#d97706"/>
+<rect x="618" y="10" width="160" height="78" rx="9" class="b-blue"/><text x="698" y="44" class="tc tb">Calcul ×N</text><text x="698" y="64" class="tc ts">hyperviseur, OVS</text>
+<path d="M635,88 V150" stroke="#94a3b8" stroke-width="2.5" fill="none"/><circle cx="635" cy="150" r="6" fill="#94a3b8"/>
+<path d="M653,88 V192" stroke="#64748b" stroke-width="2.5" fill="none"/><circle cx="653" cy="192" r="6" fill="#64748b"/>
+<path d="M671,88 V234" stroke="#101a33" stroke-width="2.5" fill="none"/><circle cx="671" cy="234" r="6" fill="#101a33"/>
+<path d="M707,88 V318" stroke="#2563eb" stroke-width="2.5" fill="none"/><circle cx="707" cy="318" r="6" fill="#2563eb"/>
+<path d="M725,88 V360" stroke="#d97706" stroke-width="2.5" fill="none"/><circle cx="725" cy="360" r="6" fill="#d97706"/>
+<rect x="792" y="10" width="160" height="78" rx="9" class="b-teal"/><text x="872" y="44" class="tc tb">Passerelle ×2</text><text x="872" y="64" class="tc ts">NAT, routage externe</text>
+<path d="M809,88 V150" stroke="#94a3b8" stroke-width="2.5" fill="none"/><circle cx="809" cy="150" r="6" fill="#94a3b8"/>
+<path d="M827,88 V192" stroke="#64748b" stroke-width="2.5" fill="none"/><circle cx="827" cy="192" r="6" fill="#64748b"/>
+<path d="M845,88 V234" stroke="#101a33" stroke-width="2.5" fill="none"/><circle cx="845" cy="234" r="6" fill="#101a33"/>
+<path d="M881,88 V318" stroke="#2563eb" stroke-width="2.5" fill="none"/><circle cx="881" cy="318" r="6" fill="#2563eb"/>
+<path d="M935,88 V444" stroke="#7c3aed" stroke-width="2.5" fill="none"/><circle cx="935" cy="444" r="6" fill="#7c3aed"/>
+<rect x="966" y="10" width="160" height="78" rx="9" class="b-amber"/><text x="1046" y="44" class="tc tb">Stockage ×3+</text><text x="1046" y="64" class="tc ts">Ceph MON, OSD</text>
+<path d="M983,88 V150" stroke="#94a3b8" stroke-width="2.5" fill="none"/><circle cx="983" cy="150" r="6" fill="#94a3b8"/>
+<path d="M1001,88 V192" stroke="#64748b" stroke-width="2.5" fill="none"/><circle cx="1001" cy="192" r="6" fill="#64748b"/>
+<path d="M1019,88 V234" stroke="#101a33" stroke-width="2.5" fill="none"/><circle cx="1019" cy="234" r="6" fill="#101a33"/>
+<path d="M1073,88 V360" stroke="#d97706" stroke-width="2.5" fill="none"/><circle cx="1073" cy="360" r="6" fill="#d97706"/>
+<path d="M1091,88 V402" stroke="#92400e" stroke-width="2.5" fill="none"/><circle cx="1091" cy="402" r="6" fill="#92400e"/>
+<rect x="6" y="214" width="6" height="84" rx="3" fill="#e4002b"/><text transform="rotate(-90 28 256)" x="28" y="256" class="tc ts tb tr">plan de contrôle</text>
+</svg>
+</div>
+<div class="note g">Un nœud n'est raccordé qu'aux réseaux nécessaires à son rôle : un nœud de calcul n'a <b>aucune patte</b> sur l'API publique ni sur la réplication du stockage ; un nœud de stockage ne voit ni l'overlay ni l'extérieur. Seuls les contrôleurs touchent au domaine public.</div>
+</div>
+</section>
+
+<!-- 42 -->
+<section class="slide">
+<header><span class="kick">3 · Segmentation réseau</span><h2>Les flux du plan de contrôle sur le réseau de gestion</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 470">
+<rect x="10" y="20" width="230" height="440" rx="12" class="zone"/><text x="26" y="45" class="tl">Nœud de calcul</text>
+<rect x="740" y="20" width="400" height="440" rx="12" class="zone"/><text x="756" y="45" class="tl">Nœuds de contrôle (×3)</text>
+<g class="tc">
+<rect x="30" y="62" width="190" height="56" rx="8" class="b-red"/><text x="125" y="95" class="tb">nova-compute</text>
+<rect x="30" y="250" width="190" height="44" rx="8" class="b-teal"/><text x="125" y="277" class="tb">ovn-controller</text>
+<rect x="30" y="330" width="190" height="44" rx="8" class="b-amber"/><text x="125" y="357" class="tb">libvirt, QEMU</text>
+<rect x="400" y="52" width="180" height="60" rx="8" class="b-dark"/><text x="490" y="78" class="tw tb">VIP interne (HAProxy)</text><text x="490" y="97" class="tw" style="font-size:12px">10.20.0.10</text>
+<rect x="760" y="60" width="360" height="44" rx="8" class="b-red"/><text x="940" y="87" class="tb">API : keystone, nova, neutron, cinder, glance…</text>
+<rect x="760" y="122" width="360" height="44" rx="8" class="b-grey"/><text x="940" y="149" class="tb">MariaDB Galera</text>
+<rect x="760" y="192" width="360" height="44" rx="8" class="b-amber"/><text x="940" y="219" class="tb">RabbitMQ</text>
+<rect x="760" y="252" width="360" height="44" rx="8" class="b-teal"/><text x="940" y="279" class="tb">Base OVN Southbound</text>
+<rect x="760" y="330" width="360" height="44" rx="8" class="b-red"/><text x="940" y="357" class="tb">nova-novncproxy</text>
+</g>
+<path d="M220,82 H398" class="lr"/><text x="318" y="73" class="tc ts tb tr">REST (ports des API)</text>
+<path d="M580,82 H758" class="lr"/><text x="669" y="73" class="tc ts tb tr">vers un backend sain</text>
+<path d="M580,104 L758,140" class="ln"/><text x="655" y="140" class="tc ts tb">SQL 3306</text>
+<path d="M220,106 H300 V214 H758" class="la2"/><text x="530" y="205" class="tc ts tb fa">AMQP 5672 · directement vers les trois nœuds</text>
+<path d="M220,272 H758" class="lt2"/><text x="490" y="263" class="tc ts tb ft">OVSDB 6642 · directement vers les trois nœuds</text>
+<path d="M758,352 H222" class="lb"/><text x="490" y="343" class="tc ts tb fb">VNC 5900–5999 · du proxy de console vers l'hyperviseur</text>
+<circle cx="340" cy="150" r="13" fill="#fff" stroke="#e4002b" stroke-width="2.5"/><path d="M333,143 L347,157 M347,143 L333,157" stroke="#e4002b" stroke-width="2.5"/>
+<text x="362" y="147" class="ts tb tr">aucun flux SQL</text><text x="362" y="163" class="ts tb tr">depuis le calcul</text>
+<g class="ts"><text x="26" y="406">↔ autres hyperviseurs :</text><text x="26" y="424">migration à chaud 16514,</text><text x="26" y="442">49152–49215</text></g>
+<g class="ts"><text x="756" y="406">Entre contrôleurs : Galera 4567 · RabbitMQ 4369, 25672</text><text x="756" y="424">OVN Raft 6643, 6644 · VRRP (Keepalived) · Memcached 11211</text><text x="756" y="442">HAProxy → backends API et MariaDB</text></g>
+<text x="490" y="410" class="tc ts">Tous ces flux empruntent le même réseau : « gestion · API interne ».</text><text x="490" y="428" class="tc ts">Seuls REST et SQL passent par la VIP ; AMQP et OVSDB</text><text x="490" y="446" class="tc ts">gèrent eux-mêmes la liste des trois nœuds.</text>
+</svg>
+</div></div>
+</section>
+
+<!-- 43 -->
+<section class="slide">
+<header><span class="kick">3 · Segmentation réseau</span><h2>VIP interne et VIP externe : deux entrées pour les mêmes API</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 330">
+<rect x="230" y="8" width="340" height="316" rx="12" class="zone"/><text x="246" y="32" class="tl">ctl01 — Keepalived MASTER</text>
+<g class="tc">
+<rect x="10" y="50" width="170" height="56" rx="8" class="b-blue"/><text x="95" y="74" class="tb">Utilisateurs</text><text x="95" y="93" class="ts">Internet, intranet</text>
+<rect x="10" y="232" width="170" height="56" rx="8" class="bx"/><text x="95" y="256" class="tb">Services et nœuds</text><text x="95" y="275" class="ts">du cloud</text>
+<rect x="250" y="46" width="300" height="64" rx="8" class="b-red"/><text x="400" y="72" class="tb tr">VIP externe 192.0.2.10</text><text x="400" y="92" class="ts">réseau API publique · TLS, certificat public</text>
+<rect x="250" y="134" width="300" height="72" rx="8" class="b-dark"/><text x="400" y="160" class="tw tb">HAProxy</text><text x="400" y="180" class="tw" style="font-size:12px">frontends par VIP → backend commun par API</text><text x="400" y="196" class="tw" style="font-size:12px">contrôle de santé de chaque contrôleur</text>
+<rect x="250" y="228" width="300" height="64" rx="8" class="b-blue"/><text x="400" y="254" class="tb">VIP interne 10.20.0.10</text><text x="400" y="274" class="ts">réseau de gestion · TLS interne recommandé</text>
+<rect x="660" y="34" width="210" height="62" rx="8" class="b-red"/><text x="765" y="59" class="tb">API sur ctl01</text><text x="765" y="79" class="ts">10.20.0.11 : 8774, 9696…</text>
+<rect x="660" y="134" width="210" height="62" rx="8" class="b-red"/><text x="765" y="159" class="tb">API sur ctl02</text><text x="765" y="179" class="ts">10.20.0.12 : 8774, 9696…</text>
+<rect x="660" y="234" width="210" height="62" rx="8" class="b-red"/><text x="765" y="259" class="tb">API sur ctl03</text><text x="765" y="279" class="ts">10.20.0.13 : 8774, 9696…</text>
+</g>
+<path d="M180,78 H248" class="lr"/><path d="M180,260 H248" class="lb"/>
+<path d="M400,110 V132" class="ln"/><path d="M400,228 V208" class="ln"/>
+<path d="M550,155 L658,70" class="lr"/><path d="M550,170 H658" class="lr"/><path d="M550,185 L658,262" class="lr"/>
+<rect x="910" y="34" width="230" height="262" rx="10" class="b-grey"/>
+<text x="926" y="60" class="tb">Keepalived (VRRP)</text>
+<g class="ts"><text x="926" y="86">• ctl01 MASTER : porte les deux VIP</text><text x="926" y="108">• ctl02, ctl03 : BACKUP</text><text x="926" y="130">• Annonces VRRP (protocole IP 112)</text><text x="936" y="146">entre contrôleurs</text><text x="926" y="168">• Si HAProxy ou ctl01 tombe,</text><text x="936" y="184">le suivant prend les VIP en</text><text x="936" y="200">quelques secondes</text><text x="926" y="222">• Les trois HAProxy tournent</text><text x="936" y="238">en permanence ; un seul</text><text x="936" y="254">reçoit le trafic</text><text x="926" y="278" class="tb">Variante : Pacemaker</text></g>
+</svg>
+</div>
+<div class="cols c3 nf">
+<div class="card"><h3>VIP externe</h3>Seule adresse du cloud visible des utilisateurs. Elle correspond aux points d'accès <code>public</code> du catalogue. On y applique certificat reconnu, limitation de débit, éventuel pare-feu applicatif.</div>
+<div class="card cb"><h3>VIP interne</h3>Adresse utilisée par les services entre eux (points d'accès <code>internal</code>) et pour MariaDB. Jamais routée hors du réseau de gestion.</div>
+<div class="card cn"><h3>Pourquoi deux</h3>Le trafic interne ne sort pas vers le domaine public ; on peut filtrer ou couper l'accès externe sans casser le cloud ; les certificats et les règles diffèrent.</div>
+</div>
+</div>
+</section>
+
+<!-- 44 -->
+<section class="slide">
+<header><span class="kick">3 · Segmentation réseau</span><h2>Sécuriser les flux du plan de contrôle</h2></header>
+<div class="body">
+<p>Isoler un réseau ne suffit pas : qui y prend pied voit passer jetons, mots de passe et messages RPC.</p>
+<table class="tbl tight">
+<thead><tr><th>Flux</th><th>Chiffrement</th><th>Authentification</th><th>Remarque</th></tr></thead>
+<tbody>
+<tr><td>REST, VIP externe</td><td>TLS obligatoire, terminé par HAProxy</td><td>Jeton Keystone</td><td>Certificat d'une autorité reconnue par les utilisateurs</td></tr>
+<tr><td>REST, VIP interne</td><td>TLS interne, éventuellement jusqu'au backend</td><td>Jeton Keystone + jeton de service</td><td>Autorité de certification interne, diffusée à tous les nœuds</td></tr>
+<tr><td>AMQP (RabbitMQ)</td><td>TLS, port 5671</td><td>Compte et mot de passe, par hôte virtuel</td><td>Un message RPC forgé équivaut à un ordre d'administrateur</td></tr>
+<tr><td>SQL (MariaDB)</td><td>TLS client-serveur ; TLS pour la réplication Galera</td><td>Un compte par service, limité à son schéma</td><td>Jamais de compte de base sur les hyperviseurs</td></tr>
+<tr><td>Memcached</td><td>Aucun par défaut</td><td>Aucune par défaut</td><td>Chiffrer les jetons mis en cache : <code>memcache_security_strategy = ENCRYPT</code></td></tr>
+<tr><td>OVSDB (OVN)</td><td>TLS avec certificats</td><td>Certificat client, contrôle d'accès par chassis</td><td>Un chassis ne doit modifier que ses propres lignes</td></tr>
+<tr><td>libvirt, migration</td><td>TLS (16514) ou tunnel SSH</td><td>Certificats ou clés entre hyperviseurs</td><td>La mémoire d'une instance transite en clair sinon</td></tr>
+<tr><td>Consoles VNC</td><td>TLS entre le proxy et l'hyperviseur (option)</td><td>Jeton de console à durée limitée</td><td>Le navigateur ne voit que le proxy, en HTTPS</td></tr>
+<tr><td>Ceph</td><td>Mode sécurisé du protocole msgr2 (option)</td><td>Clés cephx, une par service client</td><td>Clé distincte pour Glance, Cinder, Nova</td></tr>
+<tr><td>Tunnels Geneve</td><td>Aucun par défaut ; IPsec possible avec OVN</td><td>—</td><td>D'où l'isolement strict du réseau overlay</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<!-- 45 -->
+<section class="slide">
+<header><span class="kick">3 · Segmentation réseau</span><h2>Du logique au physique : agrégats de liens et trunks VLAN</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 370">
+<rect x="10" y="8" width="360" height="356" rx="12" class="zone"/><text x="28" y="33" class="tl">Nœud de calcul</text>
+<rect x="28" y="48" width="150" height="38" rx="7" class="b-grey"/><text x="103" y="72" class="tc tb">BMC (iDRAC, iLO)</text>
+<rect x="28" y="104" width="324" height="112" rx="10" class="bx"/><text x="42" y="126" class="tb">bond0 — LACP : eno1 + eno2</text>
+<g class="tc" style="font-size:12px">
+<rect x="42" y="140" width="96" height="60" rx="6" style="fill:#e2e8f0;stroke:#101a33;stroke-width:1.5"/><text x="90" y="165" class="tb">bond0.20</text><text x="90" y="184">gestion</text>
+<rect x="148" y="140" width="96" height="60" rx="6" class="b-blue"/><text x="196" y="165" class="tb">bond0.40</text><text x="196" y="184">overlay</text>
+<rect x="254" y="140" width="96" height="60" rx="6" class="b-amber"/><text x="302" y="165" class="tb">bond0.50</text><text x="302" y="184">stockage</text>
+</g>
+<rect x="28" y="236" width="324" height="112" rx="10" class="bx"/><text x="42" y="258" class="tb">bond1 — LACP : eno3 + eno4</text>
+<rect x="42" y="272" width="308" height="60" rx="6" class="b-violet"/><text x="196" y="297" class="tc tb">br-ex — réseaux fournisseurs</text><text x="196" y="316" class="tc ts">trunk VLAN, aucune adresse IP sur l'hôte</text>
+<g class="tc">
+<rect x="520" y="40" width="190" height="46" rx="8" class="b-grey"/><text x="615" y="68" class="tb">Commutateur hors bande</text>
+<rect x="520" y="120" width="190" height="64" rx="8" class="b-dark"/><text x="615" y="148" class="tw tb">Commutateur A</text><text x="615" y="167" class="tw" style="font-size:12px">haut de baie</text>
+<rect x="520" y="264" width="190" height="64" rx="8" class="b-dark"/><text x="615" y="292" class="tw tb">Commutateur B</text><text x="615" y="311" class="tw" style="font-size:12px">haut de baie</text>
+</g>
+<path d="M615,184 V262" stroke="#475569" stroke-width="2" stroke-dasharray="5 4" fill="none"/><text x="627" y="228" class="ts tb">MLAG</text>
+<g stroke-width="2.2" fill="none">
+<path d="M178,67 H518" stroke="#94a3b8"/>
+<path d="M352,140 H430 V140 H518" stroke="#101a33"/><path d="M352,180 H450 V284 H518" stroke="#101a33"/>
+<path d="M352,280 H410 V164 H518" stroke="#7c3aed"/><path d="M352,312 H518" stroke="#7c3aed"/>
+</g>
+<text x="436" y="132" class="tc ts">eno1</text><text x="480" y="276" class="tc ts">eno2</text><text x="470" y="158" class="tc ts">eno3</text><text x="436" y="304" class="tc ts">eno4</text>
+<g style="font-size:12.5px">
+<rect x="790" y="14" width="350" height="36" rx="7" class="b-grey"/><text x="806" y="37"><tspan class="tb">VLAN 10</tspan> — hors bande (port BMC dédié)</text>
+<rect x="790" y="58" width="350" height="36" rx="7" class="b-grey"/><text x="806" y="81"><tspan class="tb">VLAN 11</tspan> — provisionnement (VLAN natif, PXE)</text>
+<rect x="790" y="102" width="350" height="36" rx="7" style="fill:#e2e8f0;stroke:#101a33;stroke-width:1.5"/><text x="806" y="125"><tspan class="tb">VLAN 20</tspan> — gestion · API interne</text>
+<rect x="790" y="146" width="350" height="36" rx="7" class="b-red"/><text x="806" y="169"><tspan class="tb">VLAN 30</tspan> — API publique (contrôleurs seulement)</text>
+<rect x="790" y="190" width="350" height="36" rx="7" class="b-blue"/><text x="806" y="213"><tspan class="tb">VLAN 40</tspan> — overlay, MTU 9000</text>
+<rect x="790" y="234" width="350" height="36" rx="7" class="b-amber"/><text x="806" y="257"><tspan class="tb">VLAN 50, 51</tspan> — stockage, MTU 9000</text>
+<rect x="790" y="278" width="350" height="36" rx="7" class="b-violet"/><text x="806" y="301"><tspan class="tb">VLAN 100–199</tspan> — réseaux fournisseurs</text>
+<text x="790" y="340" class="ts">Chaque port de commutateur est un trunk : seuls les VLAN</text><text x="790" y="356" class="ts">utiles au rôle du nœud y sont autorisés.</text>
+</g>
+<path d="M710,152 H750 V296 H710" stroke="#475569" stroke-width="1.7" fill="none"/><path d="M750,224 H788" class="ln"/>
+</svg>
+</div>
+<div class="cols c3 nf">
+<div class="card cn"><h3>Redondance</h3>Chaque agrégat (LACP 802.3ad) relie le serveur à deux commutateurs couplés (MLAG, vPC) : la perte d'un lien ou d'un commutateur est transparente.</div>
+<div class="card cb"><h3>Séparation</h3>Le trafic des locataires (bond1) ne partage pas ses liens avec le contrôle et le stockage (bond0). Avec deux cartes seulement, tout passe par un seul agrégat et la séparation n'est que logique.</div>
+<div class="card ca"><h3>Hors bande</h3>Le port BMC rejoint un commutateur distinct : il reste joignable quand le système, l'agrégat ou les commutateurs de production sont en panne.</div>
+</div>
+</div>
+</section>
+
+<!-- 46 -->
+<section class="slide">
+<header><span class="kick">3 · Segmentation réseau</span><h2>Matrice de flux : la base des règles de pare-feu</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Source</th><th>Destination</th><th>Port / protocole</th><th>Réseau</th><th>Objet</th></tr></thead>
+<tbody>
+<tr><td>Utilisateurs</td><td>VIP externe</td><td>443, ou ports des API ; 6080</td><td>API publique</td><td>API, Horizon, consoles</td></tr>
+<tr><td>Tous les nœuds</td><td>VIP interne</td><td>5000, 8774, 8778, 9696, 8776, 9292</td><td>Gestion</td><td>REST entre services</td></tr>
+<tr><td>Contrôleurs</td><td>VIP interne</td><td>3306</td><td>Gestion</td><td>SQL</td></tr>
+<tr><td>Contrôleurs, calcul</td><td>Contrôleurs</td><td>5672 (ou 5671)</td><td>Gestion</td><td>AMQP</td></tr>
+<tr><td>Calcul, passerelles</td><td>Contrôleurs</td><td>6642</td><td>Gestion</td><td>OVSDB, base Southbound</td></tr>
+<tr><td>Contrôleurs</td><td>Contrôleurs</td><td>4567, 4568, 4444 ; 4369, 25672 ; 6643, 6644 ; 11211 ; VRRP</td><td>Gestion</td><td>Clusters et bascule</td></tr>
+<tr><td>Contrôleurs</td><td>Calcul</td><td>5900–5999</td><td>Gestion</td><td>Consoles des instances</td></tr>
+<tr><td>Calcul</td><td>Calcul</td><td>16514, 49152–49215</td><td>Gestion ou réseau dédié</td><td>Migration à chaud</td></tr>
+<tr><td>Calcul, passerelles</td><td>Calcul, passerelles</td><td>UDP 6081 (ou 4789)</td><td>Overlay</td><td>Tunnels Geneve (ou VXLAN)</td></tr>
+<tr><td>Calcul, contrôleurs</td><td>Stockage</td><td>3300, 6789 ; 6800–7300</td><td>Stockage — accès</td><td>Ceph MON et OSD</td></tr>
+<tr><td>Déploiement, bastion</td><td>Tous les nœuds</td><td>22</td><td>Gestion</td><td>Ansible, administration</td></tr>
+<tr><td>Tous les nœuds</td><td>Services d'infrastructure</td><td>UDP 123, 53</td><td>Gestion</td><td>NTP, DNS</td></tr>
+</tbody></table>
+<div class="note"><b>Ce qui n'apparaît pas est interdit :</b> aucun flux du domaine invité (instances) vers le réseau de gestion ; aucun flux des utilisateurs vers autre chose que la VIP externe ; aucun flux SQL depuis les nœuds de calcul.</div>
+</div>
+</section>
+
+<!-- 47 -->
+<section class="slide">
+<header><span class="kick">3 · Segmentation réseau</span><h2>MTU : le coût de l'encapsulation sur le réseau overlay</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 190">
+<text x="20" y="22" class="tb">Trame émise par l'hyperviseur sur le réseau overlay (Geneve, IPv4)</text>
+<g class="tc" style="font-size:12.5px">
+<rect x="20" y="40" width="120" height="56" rx="6" class="b-grey"/><text x="80" y="64" class="tb">Ethernet</text><text x="80" y="82" class="ts">hors MTU</text>
+<rect x="146" y="40" width="110" height="56" rx="6" class="b-blue"/><text x="201" y="64" class="tb">IP externe</text><text x="201" y="82" class="ts">20 octets</text>
+<rect x="262" y="40" width="90" height="56" rx="6" class="b-blue"/><text x="307" y="64" class="tb">UDP</text><text x="307" y="82" class="ts">8 octets</text>
+<rect x="358" y="40" width="100" height="56" rx="6" class="b-blue"/><text x="408" y="64" class="tb">Geneve</text><text x="408" y="82" class="ts">8 octets</text>
+<rect x="464" y="40" width="110" height="56" rx="6" class="b-blue"/><text x="519" y="64" class="tb">Option OVN</text><text x="519" y="82" class="ts">8 octets</text>
+<rect x="580" y="40" width="130" height="56" rx="6" class="b-blue"/><text x="645" y="64" class="tb">Ethernet interne</text><text x="645" y="82" class="ts">14 octets</text>
+<rect x="716" y="40" width="414" height="56" rx="6" class="b-red"/><text x="923" y="64" class="tb">Paquet IP de l'instance</text><text x="923" y="82" class="ts">au plus 1442 octets si le réseau physique est à 1500</text>
+</g>
+<path d="M146,112 H710" stroke="#2563eb" stroke-width="2" fill="none"/><path d="M146,106 V118 M710,106 V118" stroke="#2563eb" stroke-width="2"/>
+<text x="428" y="136" class="tc tb fb">58 octets d'encapsulation réservés par Neutron</text>
+<path d="M146,156 H1130" stroke="#475569" stroke-width="2" fill="none"/><path d="M146,150 V162 M1130,150 V162" stroke="#475569" stroke-width="2"/>
+<text x="638" y="180" class="tc tb">MTU du réseau overlay : 1500 (ou 9000 en trames géantes)</text>
+</svg>
+</div>
+<div class="cols c3 nf">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>MTU physique</th><th>Geneve</th><th>VXLAN</th></tr></thead>
+<tbody>
+<tr><td>1500</td><td>1442</td><td>1450</td></tr>
+<tr><td>9000</td><td>8942</td><td>8950</td></tr>
+</tbody></table>
+<p style="font-size:14.5px">MTU annoncée aux instances d'un réseau de projet, en IPv4. Neutron la calcule et la diffuse par DHCP.</p>
+</div>
+<pre><span class="m"># neutron.conf</span>
+<span class="k">[DEFAULT]</span>
+global_physnet_mtu = 9000
+
+<span class="m"># ml2_conf.ini</span>
+<span class="k">[ml2]</span>
+path_mtu = 9000</pre>
+<div class="col">
+<ul class="pts sm">
+<li><b>Symptôme d'une MTU incohérente :</b> le ping et l'ouverture SSH passent, les gros transferts et certaines négociations TLS se figent.</li>
+<li>La MTU doit être <b>identique de bout en bout</b> : cartes, agrégats, VLAN, ports des commutateurs.</li>
+<li>Test : <code>ping -M do -s 8972</code> entre deux hôtes du réseau overlay ou stockage.</li>
+</ul>
+</div>
+</div>
+<div class="note g">Le réseau de gestion reste en général à 1500 : il porte de petits messages. Les trames géantes profitent à l'overlay (pour offrir 1500 aux instances) et au stockage (débit de réplication).</div>
+</div>
+</section>
+
+<!-- 48 -->
+<section class="slide">
+<header><span class="kick">3 · Segmentation réseau</span><h2>Les flux de contrôle qui touchent aux instances</h2></header>
+<div class="body">
+<p>Quelques services doivent franchir la frontière entre le plan de contrôle et le domaine invité. Ce sont les passages les plus sensibles de l'architecture : chacun est étroit, filtré et authentifié.</p>
+<table class="tbl">
+<thead><tr><th>Flux</th><th>Trajet</th><th>Ports</th><th>Garde-fou</th></tr></thead>
+<tbody>
+<tr><td>Métadonnées</td><td>Instance → <code>169.254.169.254</code> → ovn-metadata-agent (sur l'hyperviseur) → nova-metadata</td><td>80 côté instance, 8775 côté API</td><td>L'agent ajoute l'identité de l'instance, signée par un secret partagé avec Nova</td></tr>
+<tr><td>Consoles</td><td>Navigateur → VIP externe → nova-novncproxy → hyperviseur</td><td>6080, puis 5900–5999</td><td>Jeton de console à usage limité ; l'hyperviseur n'écoute que sur le réseau de gestion</td></tr>
+<tr><td>Octavia</td><td>Contrôleurs Octavia ↔ amphores, par un réseau de gestion dédié (<code>lb-mgmt-net</code>)</td><td>TCP 9443, UDP 5555</td><td>TLS mutuel ; réseau distinct du réseau de gestion du cloud</td></tr>
+<tr><td>Ironic</td><td>ironic-conductor ↔ serveurs physiques : réseaux de provisionnement, de nettoyage, BMC</td><td>PXE, HTTP, IPMI ou Redfish</td><td>Le serveur ne rejoint le réseau du projet qu'une fois déployé</td></tr>
+<tr><td>Migration à chaud</td><td>Hyperviseur source → hyperviseur cible</td><td>16514, 49152–49215</td><td>Réseau dédié possible (<code>live_migration_inbound_addr</code>), TLS</td></tr>
+<tr><td>DHCP et DNS des projets</td><td>Instance → service fourni localement par OVN sur l'hyperviseur</td><td>UDP 67, 53</td><td>Réponses générées par des flux OVS : aucun démon exposé aux instances</td></tr>
+</tbody></table>
+<div class="note"><b>Principe commun :</b> l'instance ne dialogue jamais directement avec un service du plan de contrôle. Un relais situé sur l'hyperviseur ou sur un réseau dédié s'interpose, restreint la demande et l'authentifie avant de la transmettre.</div>
+</div>
+</section>
+
+<!-- 49 -->
+<section class="slide">
+<header><span class="kick">3 · Segmentation réseau</span><h2>Traduction en configuration</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:12.8px"><span class="m"># /etc/kolla/globals.yml (Kolla-Ansible)</span>
+<span class="k">network_interface</span>: "bond0.20"       <span class="m"># gestion · API interne</span>
+<span class="k">kolla_internal_vip_address</span>: "10.20.0.10"
+<span class="k">kolla_internal_fqdn</span>: "int.cloud.lan"
+
+<span class="k">kolla_external_vip_interface</span>: "bond0.30"
+<span class="k">kolla_external_vip_address</span>: "192.0.2.10"
+<span class="k">kolla_external_fqdn</span>: "cloud.example.org"
+
+<span class="k">tunnel_interface</span>: "bond0.40"        <span class="m"># overlay Geneve</span>
+<span class="k">storage_interface</span>: "bond0.50"       <span class="m"># accès Ceph, iSCSI</span>
+<span class="k">migration_interface</span>: "bond0.20"
+<span class="k">neutron_external_interface</span>: "bond1" <span class="m"># br-ex, sans IP</span>
+
+<span class="k">kolla_enable_tls_external</span>: "yes"
+<span class="k">kolla_enable_tls_internal</span>: "yes"</pre>
+<table class="tbl tight">
+<thead><tr><th>Réseau</th><th>Kolla-Ansible</th><th>OpenStack-Ansible</th></tr></thead>
+<tbody>
+<tr><td>Gestion</td><td><code>network_interface</code></td><td><code>br-mgmt</code></td></tr>
+<tr><td>Overlay</td><td><code>tunnel_interface</code></td><td><code>br-vxlan</code></td></tr>
+<tr><td>Stockage</td><td><code>storage_interface</code></td><td><code>br-storage</code></td></tr>
+<tr><td>Fournisseur</td><td><code>neutron_external_interface</code></td><td><code>br-vlan</code></td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Résultat sur un nœud de calcul : nova.conf</span>
+<span class="k">[DEFAULT]</span>
+my_ip = 10.20.0.31
+transport_url = rabbit://…@10.20.0.11:5672,…@10.20.0.12:5672,…
+<span class="k">[vnc]</span>
+server_listen = 10.20.0.31
+server_proxyclient_address = 10.20.0.31
+novncproxy_base_url = https://cloud.example.org:6080/vnc_lite.html
+<span class="k">[libvirt]</span>
+live_migration_inbound_addr = 10.20.0.31
+<span class="k">[neutron]</span>
+valid_interfaces = internal</pre>
+<pre style="font-size:11.6px"><span class="m"># Résultat sur le même nœud : enregistrement OVN</span>
+<span class="c">$ ovs-vsctl</span> get open . external_ids
+{ovn-encap-ip="10.40.0.31", ovn-encap-type=geneve,
+ ovn-remote="ssl:10.20.0.11:6642,ssl:10.20.0.12:6642,ssl:10.20.0.13:6642",
+ system-id="cmp01"}</pre>
+<div class="note g"><b>Lecture :</b> le contrôle (RabbitMQ, OVSDB, consoles) utilise les adresses <code>10.20.0.x</code> du réseau de gestion ; les tunnels partent de <code>10.40.0.31</code>, sur le réseau overlay. Une même machine, deux réseaux, deux usages.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 50 -->
+<section class="slide">
+<header><span class="kick">Synthèse</span><h2>À retenir</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card"><h3>1 · Un rôle = des processus + des réseaux</h3>Contrôle : API, base, bus, VIP. Calcul : nova-compute, libvirt, ovn-controller. Passerelle : sortie externe. Stockage : Ceph ou Swift.</div>
+<div class="card"><h3>2 · Contrôle et données sont découplés</h3>Trois contrôleurs pour le quorum. Leur perte fige le cloud sans l'éteindre : instances, réseaux et volumes continuent.</div>
+<div class="card"><h3>3 · Quatre protocoles internes</h3>REST entre services, AMQP dans un service, SQL vers la base, OVSDB pour OVN. Chaque panne se rattache à l'un d'eux.</div>
+<div class="card cb"><h3>4 · Le bus transporte des ordres</h3>call (avec réponse), cast (sans), fanout (à tous). Les files sont créées par les services ; une file qui grossit désigne le coupable.</div>
+<div class="card cb"><h3>5 · L'hyperviseur n'a pas la base</h3>nova-compute passe par nova-conductor. REST et SQL passent par la VIP interne ; AMQP et OVSDB visent directement les trois nœuds.</div>
+<div class="card cb"><h3>6 · Un réseau par famille de flux</h3>Gestion · API interne, API publique, overlay, stockage, externe, hors bande. Un nœud ne rejoint que ceux de son rôle.</div>
+</div>
+<table class="tbl tight">
+<thead><tr><th>Question à se poser devant un déploiement</th><th>Où trouver la réponse</th></tr></thead>
+<tbody>
+<tr><td>Quels processus tournent sur ce nœud ?</td><td>Inventaire de l'outil de déploiement ; listes de services Nova, Cinder, Neutron</td></tr>
+<tr><td>Par où passent les appels entre services ?</td><td><code>openstack endpoint list</code> : interfaces <code>internal</code> et <code>public</code></td></tr>
+<tr><td>Le bus est-il sain ?</td><td><code>rabbitmqctl cluster_status</code>, <code>rabbitmqctl list_queues name messages consumers</code></td></tr>
+<tr><td>La base a-t-elle son quorum ?</td><td><code>SHOW STATUS LIKE 'wsrep_cluster_size'</code></td></tr>
+<tr><td>Chaque chassis est-il enregistré ?</td><td><code>ovn-sbctl show</code>, <code>openstack network agent list</code></td></tr>
+<tr><td>Où une opération s'est-elle arrêtée ?</td><td>Identifiant <code>req-…</code> recherché dans les journaux centralisés</td></tr>
+</tbody></table>
+</div>
+</section>
+
+</div>
+<div id="bar"></div>
+<div id="nav"><button id="bO" title="Vue d'ensemble (O)">▦</button><button id="bF" title="Plein écran (F)">⛶</button><button id="bP" title="Précédent (←)">←</button><button id="bN" title="Suivant (→)">→</button></div>
+<script>
+(function(){
+var stage=document.getElementById('stage'),bar=document.getElementById('bar'),body=document.body;
+var slides=Array.prototype.slice.call(document.querySelectorAll('.slide')),N=slides.length,cur=0;
+slides.forEach(function(s,i){
+  var f=document.createElement('div');f.className='foot';
+  f.innerHTML='<span>OpenStack — architecture interne : nœuds, communication, réseaux</span><span>'+(i+1)+' / '+N+'</span>';
+  s.appendChild(f);
+  s.addEventListener('click',function(){if(body.classList.contains('ov')){body.classList.remove('ov');go(i);fit();}});
+});
+function go(n){
+  cur=Math.max(0,Math.min(N-1,n));
+  slides.forEach(function(s,i){s.classList.toggle('active',i===cur);});
+  bar.style.width=((cur+1)/N*100)+'%';
+  try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+}
+function fit(){
+  if(body.classList.contains('ov')){
+    stage.style.transform='';
+    document.documentElement.style.setProperty('--z',Math.max(.1,(window.innerWidth-40-4*14-20)/5/1280));
+  }else{
+    stage.style.transform='scale('+Math.min(window.innerWidth/1280,window.innerHeight/720)+')';
+  }
+}
+function overview(){body.classList.toggle('ov');fit();if(body.classList.contains('ov')){slides[cur].scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}}
+function full(){if(document.fullscreenElement){document.exitFullscreen();}else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen();}}
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'||k===' '||k==='ArrowDown'){e.preventDefault();go(cur+1);}
+  else if(k==='ArrowLeft'||k==='PageUp'||k==='ArrowUp'){e.preventDefault();go(cur-1);}
+  else if(k==='Home'){go(0);}
+  else if(k==='End'){go(N-1);}
+  else if(k==='o'||k==='O'||k==='Escape'){if(k!=='Escape'||body.classList.contains('ov'))overview();}
+  else if(k==='f'||k==='F'){full();}
+});
+document.getElementById('bN').onclick=function(){go(cur+1);};
+document.getElementById('bP').onclick=function(){go(cur-1);};
+document.getElementById('bO').onclick=overview;
+document.getElementById('bF').onclick=full;
+var tx=null;
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){if(tx===null||body.classList.contains('ov'))return;var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1));tx=null;},{passive:true});
+window.addEventListener('resize',fit);
+window.addEventListener('hashchange',function(){var h=parseInt(location.hash.slice(1),10);if(h&&h-1!==cur)go(h-1);});
+var h=parseInt(location.hash.slice(1),10);
+go(h?h-1:0);fit();
+})();
+</script>
+</body>
+</html>

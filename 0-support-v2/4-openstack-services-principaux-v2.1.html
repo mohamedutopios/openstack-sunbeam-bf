@@ -1,0 +1,2013 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenStack · Module 4 — Principaux services</title>
+<style>
+:root{--ink:#0f172a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;--navy:#101a33;--red:#e4002b;--red2:#b3122f;--blue:#2563eb;--teal:#0d9488;--amber:#d97706;--violet:#7c3aed;--green:#16a34a;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;--z:.2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#070b17;overflow:hidden;font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:#fff;color:var(--ink);padding:38px 64px 46px;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide>header{border-left:5px solid var(--red);padding:2px 0 2px 18px;margin-bottom:18px;flex:none}
+.kick{display:block;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+h2{font-size:32px;line-height:1.15;letter-spacing:-.012em;font-weight:750}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;font-size:17.5px;line-height:1.45;color:var(--ink2)}
+.body b,.body strong{color:var(--ink);font-weight:680}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;min-height:0}
+.cols.c3{grid-template-columns:repeat(3,1fr);gap:18px}
+.cols.c4{grid-template-columns:repeat(4,1fr);gap:14px}
+.cols.c5{grid-template-columns:repeat(5,1fr);gap:12px}
+.cols.w64{grid-template-columns:1.45fr 1fr}
+.cols.w46{grid-template-columns:1fr 1.35fr}
+.cols.nf{flex:none}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+ul.pts{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.pts li{padding-left:22px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.52em;width:8px;height:8px;border-radius:2px;background:var(--red)}
+ul.pts.sm{gap:5px;font-size:15px;line-height:1.38}
+ul.pts.sm li{padding-left:17px}
+ul.pts.sm li::before{width:6px;height:6px;top:.5em}
+.card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--c,var(--red));border-radius:10px;padding:13px 16px;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:15px;line-height:1.4;min-width:0}
+.card h3{font-size:16.5px;color:var(--ink);margin-bottom:5px;line-height:1.2}
+.card .os{display:block;margin-top:7px;font-size:13px;color:var(--mut)}
+.card .os b{color:var(--red2)}
+.cb{--c:var(--blue)}.ct{--c:var(--teal)}.ca{--c:var(--amber)}.cv{--c:var(--violet)}.cg{--c:var(--green)}.cn{--c:var(--navy)}
+.note{background:#fff5f6;border-left:4px solid var(--red);padding:9px 16px;border-radius:0 8px 8px 0;font-size:15.5px;color:var(--ink);flex:none}
+.note.b{background:#eff5ff;border-color:var(--blue)}
+.note.g{background:#f1f5f9;border-color:#64748b}
+table.tbl{width:100%;border-collapse:collapse;font-size:14.5px;line-height:1.35}
+.tbl th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-size:13px;letter-spacing:.03em;font-weight:650}
+.tbl td{padding:6.5px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:nth-child(even) td{background:#f8fafc}
+.tbl td:first-child{font-weight:680;color:var(--ink);white-space:nowrap}
+.tbl.os td:nth-child(2){color:var(--red2);font-weight:650}
+.tbl.tight td{padding:5px 12px;font-size:14px}
+table.resp{width:100%;border-collapse:separate;border-spacing:5px 4px;font-size:14.5px;text-align:center}
+.resp thead th{font-size:15px;color:var(--ink);padding:2px 4px 6px;line-height:1.2}
+.resp thead small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+.resp tbody th{text-align:right;padding-right:12px;font-weight:650;color:var(--ink);white-space:nowrap;width:210px}
+.resp td{padding:6px;border-radius:6px;font-weight:600}
+.resp .u{background:#e3edff;color:#1d4ed8}
+.resp .p{background:#fde8ec;color:var(--red2)}
+code{font-family:var(--mono);font-size:.87em;background:#f1f5f9;padding:1px 6px;border-radius:4px;color:var(--ink)}
+pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;font:13.5px/1.5 var(--mono);white-space:pre;overflow:hidden}
+pre .c{color:#7dd3fc}pre .k{color:#fda4af}pre .m{color:#94a3b8}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:#fde8ec;color:var(--red2);letter-spacing:.03em}
+.fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:100%}
+.foot{position:absolute;left:64px;right:64px;bottom:15px;display:flex;justify-content:space-between;font-size:11.5px;color:#94a3b8;letter-spacing:.02em}
+/* dark slides */
+.slide.dark{background:radial-gradient(1100px 600px at 85% 15%,#1c2a55 0%,var(--navy) 55%,#0b1226 100%);color:#fff;justify-content:center}
+.dark .foot{color:#64748b}
+.dark .kick{color:#ff6b84}
+h1{font-size:68px;line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:10px 0 14px}
+.sub{font-size:27px;color:#cbd5e1;font-weight:400}
+.chips{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin-top:34px}
+.chips li{border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:7px 16px;font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.04)}
+.ref{margin-top:36px;font-size:14px;color:#94a3b8}
+.deco{position:absolute;right:0;top:0;width:1280px;height:720px;pointer-events:none}
+.tt{position:relative;max-width:760px}
+.sec .num{font-size:150px;font-weight:800;line-height:.9;color:transparent;-webkit-text-stroke:2px #ff4d6a;letter-spacing:-.04em}
+.sec h2{font-size:50px;margin:16px 0 12px;letter-spacing:-.02em}
+.sec p{font-size:20px;color:#cbd5e1;max-width:820px;line-height:1.45}
+.sec ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:9px 40px;margin-top:30px;max-width:980px;font-size:16.5px;color:#e2e8f0}
+.sec ol li{padding-left:20px;position:relative}
+.sec ol li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:3px;background:#ff4d6a}
+/* svg */
+svg{display:block}
+svg{font-size:14px}
+svg text{font-family:inherit;fill:#0f172a}
+svg g.ts text{fill:#475569}svg g.tw text{fill:#fff}
+.big .card{font-size:17px;padding:18px 16px;display:flex;flex-direction:column;line-height:1.42}.big .card h3{font-size:19px;margin-bottom:12px}.big .card .os{font-size:14.5px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line);line-height:1.4}
+.dense .card{font-size:14px;padding:10px 14px;line-height:1.36}.dense .card h3{font-size:15.5px;margin-bottom:3px}
+.tc{text-anchor:middle}.te{text-anchor:end}
+svg .tb{font-weight:700}svg .ts{font-size:12px;fill:#475569}svg .tl{font-size:17px;font-weight:750}svg .tw{fill:#fff}svg .tr{fill:#b3122f}
+svg .tm{font-family:var(--mono);font-size:12px}
+.bx{fill:#fff;stroke:#94a3b8;stroke-width:1.5}
+.b-red{fill:#fde8ec;stroke:#e4002b;stroke-width:1.5}
+.b-blue{fill:#e3edff;stroke:#2563eb;stroke-width:1.5}
+.b-teal{fill:#d8f3ee;stroke:#0d9488;stroke-width:1.5}
+.b-amber{fill:#fdf0d5;stroke:#d97706;stroke-width:1.5}
+.b-violet{fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5}
+.b-green{fill:#dcf5e3;stroke:#16a34a;stroke-width:1.5}
+.b-grey{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5}
+.b-dark{fill:#101a33;stroke:#101a33}
+.f-red{fill:#e4002b}
+.zone{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 4}
+.ln{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar)}
+.ln2{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar);marker-start:url(#ar)}
+.lr{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr)}
+.lr2{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr);marker-start:url(#arr)}
+.ld{stroke-dasharray:5 4}
+.nl{stroke:#94a3b8;stroke-width:1.5;fill:none}
+/* ui */
+#bar{position:fixed;left:0;bottom:0;height:3px;background:var(--red);width:0;transition:width .2s;z-index:5}
+#nav{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;display:flex;gap:6px;z-index:6;opacity:.07;transition:opacity .2s}
+#nav:hover{opacity:1}
+#nav button{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;font:600 13px/1 inherit;padding:7px 10px;cursor:pointer}
+#nav button:hover{background:var(--red);border-color:var(--red)}
+body.ov{overflow:auto}
+body.ov #stage{position:static;margin:0;width:auto;height:auto;transform:none!important;display:flex;flex-wrap:wrap;gap:14px;padding:20px}
+body.ov .slide{display:flex;position:relative;inset:auto;flex:none;width:1280px;height:720px;zoom:var(--z);cursor:pointer;border-radius:8px}
+body.ov .slide.active{outline:14px solid var(--red)}
+@page{size:1280px 720px;margin:0}
+@media print{
+html,body{height:auto;overflow:visible;background:#fff}
+#stage{position:static;margin:0;width:1280px;height:auto;transform:none!important;display:block}
+.slide{display:flex!important;position:relative;inset:auto;width:1280px;height:720px;break-after:page;page-break-after:always;zoom:1!important}
+#bar,#nav{display:none}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.la{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA)}.la2{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA);marker-start:url(#arA)}
+.lt{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT)}.lt2{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT);marker-start:url(#arT)}
+.lb{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB)}.lb2{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB);marker-start:url(#arB)}
+svg text.fa,svg .fa{fill:#b45309}svg text.ft,svg .ft{fill:#0f766e}svg text.fb,svg .fb{fill:#1d4ed8}
+.tbl td.c,.tbl th.c{text-align:center}.tbl td.y{color:#16a34a;font-weight:800}.tbl td.n{color:#cbd5e1}
+.kick .deep{display:inline-block;margin-left:12px;padding:2px 10px;border-radius:99px;background:#eff5ff;color:#1d4ed8;font-weight:650;font-size:11.5px;letter-spacing:.02em;text-transform:none;vertical-align:1px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e4002b"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+<marker id="arT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker>
+<marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+</defs></svg>
+<div id="stage">
+
+<!-- 1 -->
+<section class="slide dark">
+<svg class="deco" viewBox="0 0 1280 720" aria-hidden="true"><g transform="translate(-60,0)">
+<g fill="none" stroke="#ff4d6a" stroke-width="2" opacity=".85">
+<path d="M900,540 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.12)"/>
+<path d="M900,470 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.18)"/>
+<path d="M900,400 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.26)"/>
+<path d="M900,330 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.36)"/>
+<path d="M900,260 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.5)"/>
+</g>
+<g font-weight="700" letter-spacing="2" style="font-size:12px"><text x="1210" y="264" style="fill:#cbd5e1">NOVA</text><text x="1210" y="334" style="fill:#cbd5e1">NEUTRON</text><text x="1210" y="404" style="fill:#cbd5e1">CINDER</text><text x="1210" y="474" style="fill:#cbd5e1">GLANCE</text><text x="1210" y="544" style="fill:#cbd5e1">PLACEMENT</text></g>
+</g></svg>
+<div class="tt">
+<span class="kick">Comprendre OpenStack · module 4</span>
+<h1>Tour des principaux services</h1>
+<p class="sub">Images, gestion des ressources, calcul, stockage bloc, réseau : rôle, architecture, interactions</p>
+<ul class="chips"><li>Glance</li><li>Placement</li><li>Nova</li><li>Cinder</li><li>Neutron</li></ul>
+<p class="ref">Version de référence : OpenStack 2026.2 « Hibiscus » (30 septembre 2026) · réseau de référence : ML2/OVN</p>
+</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Objectif et déroulé</h2></header>
+<div class="body">
+<div class="note"><b>Objectif :</b> comprendre comment chacun des cinq services centraux fonctionne de l'intérieur, et ce qu'il demande aux quatre autres pour accomplir sa tâche.</div>
+<div class="cols">
+<div class="col">
+<p><b>À l'issue de ce module, vous saurez :</b></p>
+<ul class="pts">
+<li>Décrire le <b>rôle</b> de Glance, Placement, Nova, Cinder et Neutron, et la frontière de chacun.</li>
+<li>Dessiner leur <b>architecture</b> : processus, pilotes, bases, backends.</li>
+<li>Lire le <b>cycle de vie</b> d'une image, d'une instance, d'un volume et d'un port à travers leurs états.</li>
+<li>Expliquer les <b>interactions</b> : qui appelle qui, à quel moment, pour obtenir quoi.</li>
+<li>Choisir entre les variantes de fonctionnement (téléchargement ou clone, disque local ou volume, routage distribué ou centralisé).</li>
+<li>Lancer les commandes qui montrent l'état de chaque service.</li>
+</ul>
+</div>
+<div class="col">
+<div class="card ca"><h3>1 · Glance — images</h3>Magasins, cycle de vie, import, propriétés qui pilotent les autres services.</div>
+<div class="card cv"><h3>2 · Placement — gestion des ressources</h3>Fournisseurs, inventaires, allocations, caractéristiques, candidats.</div>
+<div class="card"><h3>3 · Nova — calcul</h3>Cellules, états, ordonnancement, hyperviseur, disques, déplacements.</div>
+<div class="card ca"><h3>4 · Cinder — stockage bloc</h3>Backends, types, états, création depuis une image, sauvegardes.</div>
+<div class="card ct"><h3>5 · Neutron — réseau</h3>ML2, traduction OVN, liaison de port, filtrage, chemins du trafic.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Cinq services, et ce qu'ils se demandent</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 470">
+<g class="tc">
+<rect x="30" y="30" width="220" height="72" rx="10" class="b-amber"/><text x="140" y="61" class="tl">Glance</text><text x="140" y="83" class="ts">images</text>
+<rect x="30" y="320" width="220" height="72" rx="10" class="b-amber"/><text x="140" y="351" class="tl">Cinder</text><text x="140" y="373" class="ts">stockage bloc</text>
+<rect x="900" y="30" width="220" height="72" rx="10" class="b-teal"/><text x="1010" y="61" class="tl">Neutron</text><text x="1010" y="83" class="ts">réseau</text>
+<rect x="900" y="320" width="220" height="72" rx="10" class="b-violet"/><text x="1010" y="351" class="tl">Placement</text><text x="1010" y="373" class="ts">gestion des ressources</text>
+<rect x="455" y="166" width="240" height="90" rx="12" class="b-red" style="stroke-width:3"/><text x="575" y="204" class="tl tr">Nova</text><text x="575" y="228" class="ts">calcul : cycle de vie des instances</text>
+</g>
+<path d="M455,192 L252,84" class="lr2"/><path d="M455,232 L252,340" class="lr2"/>
+<path d="M695,192 L898,84" class="lr2"/><path d="M695,232 L898,340" class="lr"/>
+<path d="M140,104 V318" class="ln2"/><path d="M1010,104 V318" class="ln"/>
+<g class="ts">
+<text x="268" y="50">propriétés de l'image,</text><text x="268" y="67">téléchargement, instantanés</text>
+<text x="268" y="384">réservation, connexion</text><text x="268" y="401">et détachement des volumes</text>
+<text x="882" y="50" class="te">création et liaison des ports ;</text><text x="882" y="67" class="te">en retour : « port prêt »</text>
+<text x="882" y="384" class="te">hôtes candidats, réservations,</text><text x="882" y="401" class="te">inventaires des hyperviseurs</text>
+<text x="152" y="204">volume depuis une image,</text><text x="152" y="221">image depuis un volume</text>
+<text x="998" y="204" class="te">bande passante garantie,</text><text x="998" y="221" class="te">segments de réseaux routés</text>
+</g>
+<text x="575" y="296" class="tc ts tb">Nova est le seul à s'adresser aux quatre autres.</text>
+<rect x="30" y="420" width="1090" height="40" rx="8" class="b-dark"/><text x="575" y="445" class="tc tw tb">Keystone — authentifie chaque appel et publie le catalogue : les cinq en dépendent</text>
+</svg>
+</div></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Un même patron, cinq déclinaisons</h2></header>
+<div class="body">
+<p>Chaque service suit la même logique : une API qui valide et enregistre, un composant qui décide <b>où</b> réaliser la demande, un exécutant qui la réalise à travers un <b>pilote</b>, et un backend qui fait le travail réel.</p>
+<table class="tbl">
+<thead><tr><th></th><th>Glance</th><th>Placement</th><th>Nova</th><th>Cinder</th><th>Neutron</th></tr></thead>
+<tbody>
+<tr><td>Ressource gérée</td><td>Image</td><td>Inventaire, allocation</td><td>Instance</td><td>Volume</td><td>Réseau, port, routeur</td></tr>
+<tr><td>API</td><td>glance-api</td><td>placement-api</td><td>nova-api</td><td>cinder-api</td><td>neutron-server</td></tr>
+<tr><td>Qui décide où ?</td><td>Magasin par défaut ou choisi</td><td>— (il informe la décision)</td><td>nova-scheduler</td><td>cinder-scheduler</td><td>Liaison de port (ML2)</td></tr>
+<tr><td>Qui exécute ?</td><td>glance-api lui-même</td><td>—</td><td>nova-compute</td><td>cinder-volume</td><td>ovn-controller</td></tr>
+<tr><td>Pilote</td><td>glance_store : rbd, file, swift…</td><td>—</td><td>libvirt, Ironic, VMware</td><td>RBD, LVM, baies</td><td>Mécanisme : ovn, openvswitch</td></tr>
+<tr><td>Backend</td><td>Ceph, disque, objet</td><td>Sa base de données</td><td>KVM / QEMU</td><td>Ceph, LVM, baie</td><td>OVN + Open vSwitch</td></tr>
+<tr><td>Bus de messages</td><td>Non</td><td>Non</td><td>Oui</td><td>Oui</td><td>Très peu avec OVN</td></tr>
+<tr><td>Machine à états</td><td>Statut de l'image</td><td>—</td><td>vm_state, task_state</td><td>Statut du volume</td><td>Statut du port</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Clé de lecture :</b> pour comprendre un service, repérer ses quatre étages — API, décision, exécution, pilote — puis suivre une ressource d'un état à l'autre.</div>
+<div class="note g"><b>Placement est l'exception :</b> il n'exécute rien. C'est un registre que les autres services alimentent et interrogent ; toute sa logique tient dans son modèle de données.</div>
+</div>
+</div>
+</section>
+
+<!-- 5 -->
+<section class="slide dark sec">
+<div class="num">01</div>
+<h2>Glance — le service d'images</h2>
+<p>Glance tient le catalogue des images disque et les distribue aux services qui en ont besoin. Il ne lance rien, mais ce qu'il contient décide de la façon dont les instances démarrent.</p>
+<ol><li>Rôle et notions</li><li>Architecture : API, magasins, transit</li><li>Cycle de vie d'une image</li><li>Import en deux temps et greffons</li><li>Propriétés qui pilotent Nova et Cinder</li><li>Interactions, configuration, commandes</li></ol>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+<header><span class="kick">1 · Glance</span><h2>Rôle et notions</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Rôle :</b> enregistrer, décrire, protéger et distribuer des <b>images disque</b>. Une image est le modèle à partir duquel on crée le disque système d'une instance ou un volume amorçable.</p>
+<ul class="pts sm">
+<li><b>Ce qu'il fait :</b> conserver les données dans un ou plusieurs magasins, tenir les métadonnées en base, contrôler qui voit quoi.</li>
+<li><b>Ce qu'il ne fait pas :</b> construire des images, les maintenir à jour, démarrer des machines.</li>
+<li><b>Qui s'en sert :</b> Nova (démarrage, instantanés), Cinder (volumes amorçables), Ironic (déploiement de serveurs physiques), les utilisateurs.</li>
+</ul>
+<table class="tbl tight">
+<thead><tr><th>Visibilité</th><th>Qui voit l'image</th></tr></thead>
+<tbody>
+<tr><td>private</td><td>Le projet propriétaire</td></tr>
+<tr><td>shared</td><td>Le propriétaire et les projets qu'il désigne comme membres</td></tr>
+<tr><td>community</td><td>Tous, mais hors des listes par défaut</td></tr>
+<tr><td>public</td><td>Tous ; réservé aux administrateurs</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Notion</th><th>Définition</th></tr></thead>
+<tbody>
+<tr><td>Format de disque</td><td><code>qcow2</code> (compact), <code>raw</code> (brut, requis pour le clone Ceph), <code>vmdk</code>, <code>iso</code>…</td></tr>
+<tr><td>Format de conteneur</td><td>Presque toujours <code>bare</code> : l'image n'est enveloppée dans rien</td></tr>
+<tr><td>Somme de contrôle</td><td>Empreinte calculée à l'enregistrement, vérifiée par le consommateur</td></tr>
+<tr><td>Taille minimale</td><td><code>min_disk</code>, <code>min_ram</code> : refus des gabarits trop petits</td></tr>
+<tr><td>Propriétés</td><td>Paires clé-valeur libres ; certaines sont lues par Nova et Cinder</td></tr>
+<tr><td>Protection</td><td><code>protected</code> : suppression interdite tant que le drapeau est posé</td></tr>
+<tr><td>Emplacements</td><td>Une image peut exister dans plusieurs magasins à la fois</td></tr>
+<tr><td>Instantané d'instance</td><td>Une image créée par Nova à partir d'une instance</td></tr>
+</tbody></table>
+<div class="note"><b>Une image est immuable :</b> une fois active, ses données ne changent plus. Mettre à jour un système, c'est publier une <b>nouvelle</b> image et retirer l'ancienne.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+<header><span class="kick">1 · Glance</span><h2>Architecture : une API, une base, des magasins</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 400">
+<rect x="180" y="14" width="420" height="372" rx="12" class="zone"/><text x="198" y="40" class="tl">glance-api — application WSGI</text>
+<rect x="660" y="130" width="470" height="256" rx="12" class="zone"/><text x="678" y="156" class="tl">Magasins (stores) — plusieurs à la fois</text>
+<rect x="10" y="60" width="120" height="60" rx="8" class="b-blue"/><text x="70" y="86" class="tc tb">Clients</text><text x="70" y="105" class="tc ts">Nova, Cinder, CLI</text>
+<path d="M130,90 H198" class="lr"/>
+<g class="tc">
+<rect x="200" y="60" width="380" height="48" rx="8" class="b-red"/><text x="390" y="82" class="tb">API Images v2</text><text x="390" y="99" class="ts">/v2/images · /v2/stores · /v2/tasks</text>
+<rect x="200" y="122" width="182" height="62" rx="8" class="bx"/><text x="291" y="148" class="tb">Politique, quotas</text><text x="291" y="167" class="ts">visibilité, propriétaire</text>
+<rect x="398" y="122" width="182" height="62" rx="8" class="bx"/><text x="489" y="148" class="tb">Tâches d'import</text><text x="489" y="167" class="ts">exécutées par taskflow</text>
+<rect x="200" y="198" width="182" height="62" rx="8" class="b-grey"/><text x="291" y="224" class="tb">Zone de transit</text><text x="291" y="243" class="ts">données avant import</text>
+<rect x="398" y="198" width="182" height="62" rx="8" class="b-amber"/><text x="489" y="224" class="tb">glance_store</text><text x="489" y="243" class="ts">un pilote par magasin</text>
+<rect x="200" y="274" width="380" height="44" rx="8" class="bx"/><text x="390" y="301">Cache d'images local (optionnel)</text>
+<rect x="660" y="30" width="470" height="76" rx="10" class="b-grey"/><text x="895" y="60" class="tb">MariaDB — schéma glance</text><text x="895" y="82" class="ts">métadonnées, propriétés, membres, emplacements de chaque image</text>
+<rect x="680" y="174" width="140" height="58" rx="8" class="b-amber"/><text x="750" y="198" class="tb">rbd</text><text x="750" y="217" class="ts">Ceph</text>
+<rect x="830" y="174" width="140" height="58" rx="8" class="b-amber"/><text x="900" y="198" class="tb">file</text><text x="900" y="217" class="ts">système de fichiers</text>
+<rect x="980" y="174" width="130" height="58" rx="8" class="b-amber"/><text x="1045" y="198" class="tb">swift</text><text x="1045" y="217" class="ts">stockage objet</text>
+<rect x="680" y="244" width="140" height="58" rx="8" class="b-amber"/><text x="750" y="268" class="tb">s3</text><text x="750" y="287" class="ts">objet compatible S3</text>
+<rect x="830" y="244" width="140" height="58" rx="8" class="b-amber"/><text x="900" y="268" class="tb">cinder</text><text x="900" y="287" class="ts">un volume par image</text>
+<rect x="980" y="244" width="130" height="58" rx="8" class="bx"/><text x="1045" y="268" class="tb">http</text><text x="1045" y="287" class="ts">lecture seule</text>
+</g>
+<path d="M580,84 L658,68" class="ln"/><path d="M580,229 H658" class="la"/><path d="M382,229 H396" class="ln"/>
+<text x="198" y="346" class="ts">Un seul service à déployer : l'ancien glance-registry a disparu.</text>
+<text x="198" y="366" class="ts">Aucun bus de messages : REST en entrée, SQL et stockage en sortie.</text>
+<text x="678" y="332" class="ts">Chaque image peut avoir plusieurs emplacements : une copie par magasin.</text>
+<text x="678" y="352" class="ts">Un magasin par défaut reçoit les nouvelles images ; l'utilisateur peut en</text><text x="678" y="368" class="ts">désigner un autre, ou plusieurs.</text>
+</svg>
+</div></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+<header><span class="kick">1 · Glance</span><h2>Cycle de vie d'une image</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 290">
+<g class="tc tb">
+<rect x="30" y="118" width="130" height="52" rx="9" class="bx"/><text x="95" y="149">queued</text>
+<rect x="250" y="38" width="130" height="52" rx="9" class="b-amber"/><text x="315" y="69">saving</text>
+<rect x="250" y="198" width="130" height="52" rx="9" class="b-amber"/><text x="315" y="229">uploading</text>
+<rect x="450" y="198" width="130" height="52" rx="9" class="b-amber"/><text x="515" y="229">importing</text>
+<rect x="660" y="118" width="130" height="52" rx="9" class="b-green"/><text x="725" y="149">active</text>
+<rect x="870" y="38" width="160" height="52" rx="9" class="b-grey"/><text x="950" y="69">deactivated</text>
+<rect x="870" y="198" width="160" height="52" rx="9" class="b-grey"/><text x="950" y="229">pending_delete</text>
+<rect x="1060" y="198" width="80" height="52" rx="9" class="b-dark"/><text x="1100" y="229" class="tw">deleted</text>
+</g>
+<path d="M160,134 L248,72" class="ln"/><path d="M160,156 L248,220" class="lr"/>
+<path d="M380,66 L658,134" class="ln"/><path d="M380,224 H448" class="lr"/><path d="M580,220 L658,160" class="lr"/>
+<path d="M790,134 L868,72" class="ln2"/><path d="M790,156 L868,218" class="ln"/><path d="M1030,224 H1058" class="ln"/>
+<text x="520" y="62" class="ts">téléversement direct des données, en une requête</text>
+<text x="315" y="274" class="tc ts tb tr">dépôt en zone de transit</text><text x="515" y="274" class="tc ts tb tr">import vers les magasins</text>
+<text x="95" y="196" class="tc ts">enregistrement créé,</text><text x="95" y="212" class="tc ts">sans données</text>
+<text x="950" y="112" class="tc ts">données inaccessibles</text><text x="950" y="128" class="tc ts">aux non-administrateurs</text>
+<text x="950" y="274" class="tc ts">suppression différée</text>
+</svg>
+</div>
+<div class="cols">
+<table class="tbl tight">
+<thead><tr><th>Statut</th><th>Signification</th></tr></thead>
+<tbody>
+<tr><td>queued</td><td>L'image existe en base, ses données ne sont pas encore fournies</td></tr>
+<tr><td>saving</td><td>Données en cours de réception, par l'ancien mode de téléversement direct</td></tr>
+<tr><td>uploading, importing</td><td>Données en transit, puis en cours de traitement et d'écriture dans les magasins</td></tr>
+<tr><td>active</td><td>Utilisable : somme de contrôle calculée, au moins un emplacement</td></tr>
+</tbody></table>
+<div class="col">
+<ul class="pts sm">
+<li>Seule une image <b>active</b> peut servir à démarrer une instance ou créer un volume.</li>
+<li>Un import en échec laisse en général l'image à l'état <code>importing</code> ou la ramène à <code>queued</code> : on corrige, puis on relance.</li>
+<li>Supprimer une image n'affecte pas les instances déjà créées ; si leurs disques en sont des clones Ceph, Glance refuse la suppression.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+<header><span class="kick">1 · Glance</span><h2>L'import en deux temps et ses greffons</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 240">
+<g>
+<rect x="10" y="14" width="280" height="60" rx="8" class="b-blue"/><text x="24" y="38" class="tm tb">glance-direct</text><text x="24" y="58" class="ts">le client dépose les données en transit</text>
+<rect x="10" y="88" width="280" height="60" rx="8" class="b-blue"/><text x="24" y="112" class="tm tb">web-download</text><text x="24" y="132" class="ts">Glance télécharge depuis une URL</text>
+<rect x="10" y="162" width="280" height="60" rx="8" class="b-blue"/><text x="24" y="186" class="tm tb">copy-image</text><text x="24" y="206" class="ts">copie d'un magasin vers un autre</text>
+</g>
+<path d="M290,44 L338,100" class="ln"/><path d="M290,118 H338" class="ln"/><path d="M290,192 L338,136" class="ln"/>
+<rect x="340" y="80" width="150" height="76" rx="9" class="b-grey"/><text x="415" y="112" class="tc tb">Zone de transit</text><text x="415" y="132" class="tc ts">fichiers temporaires</text>
+<path d="M490,118 H528" class="lr"/>
+<rect x="530" y="30" width="400" height="176" rx="12" class="zone"/><text x="546" y="54" class="ts tb">Greffons d'import — optionnels, exécutés dans l'ordre</text>
+<g class="tc">
+<rect x="546" y="72" width="116" height="92" rx="8" class="bx"/><text x="604" y="104" class="tb" style="font-size:12.5px">Décompression</text><text x="604" y="126" class="ts">zip, gzip…</text>
+<rect x="672" y="72" width="116" height="92" rx="8" class="b-amber"/><text x="730" y="104" class="tb" style="font-size:12.5px">Conversion</text><text x="730" y="126" class="ts">qcow2 → raw</text><text x="730" y="144" class="ts">par exemple</text>
+<rect x="798" y="72" width="116" height="92" rx="8" class="bx"/><text x="856" y="104" class="tb" style="font-size:12.5px">Métadonnées</text><text x="856" y="126" class="ts">propriétés</text><text x="856" y="144" class="ts">imposées</text>
+</g>
+<path d="M662,118 H670" class="ln"/><path d="M788,118 H796" class="ln"/>
+<text x="730" y="190" class="tc ts">image_decompression · image_conversion · inject_image_metadata</text>
+<path d="M930,118 H968" class="lr"/>
+<rect x="970" y="50" width="170" height="60" rx="9" class="b-amber"/><text x="1055" y="76" class="tc tb">Écriture</text><text x="1055" y="96" class="tc ts">dans le ou les magasins</text>
+<rect x="970" y="128" width="170" height="60" rx="9" class="b-green"/><text x="1055" y="164" class="tc tb">active</text>
+<path d="M1055,110 V126" class="ln"/>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<pre style="font-size:12.4px"><span class="m"># 1. Créer l'enregistrement</span>
+<span class="c">openstack</span> image create ubuntu-24.04 <span class="k">--disk-format</span> qcow2 \
+    <span class="k">--container-format</span> bare
+<span class="m"># 2. Déposer puis importer (client glance)</span>
+<span class="c">glance</span> image-stage <span class="k">--file</span> noble.qcow2 &lt;id&gt;
+<span class="c">glance</span> image-import <span class="k">--import-method</span> glance-direct &lt;id&gt;
+<span class="m"># Ou tout en une commande</span>
+<span class="c">glance</span> image-create-via-import <span class="k">--name</span> ubuntu-24.04 \
+    <span class="k">--disk-format</span> qcow2 <span class="k">--container-format</span> bare <span class="k">--file</span> noble.qcow2</pre>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Pourquoi deux temps :</b> l'opérateur peut contrôler ou transformer l'image avant qu'elle ne devienne utilisable.</li>
+<li><b>Conversion vers raw :</b> indispensable pour profiter du clone instantané avec Ceph, quel que soit le format fourni par l'utilisateur.</li>
+<li>Avec plusieurs contrôleurs, la zone de transit doit être <b>partagée</b>, ou chaque glance-api doit pouvoir joindre les autres.</li>
+<li>Une quatrième méthode, <code>glance-download</code>, importe depuis le Glance d'une autre région.</li>
+</ul>
+<div class="note g">Méthodes proposées aux utilisateurs : option <code>enabled_import_methods</code> ; par défaut <code>glance-direct</code> et <code>web-download</code>.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+<header><span class="kick">1 · Glance</span><h2>Les propriétés d'image qui pilotent les autres services</h2></header>
+<div class="body">
+<p>Glance ne les interprète pas : il les conserve. Ce sont Nova et Cinder qui les lisent au moment de créer l'instance ou le volume.</p>
+<table class="tbl tight">
+<thead><tr><th>Propriété</th><th>Lue par</th><th>Effet</th><th>Exemple</th></tr></thead>
+<tbody>
+<tr><td><code>min_disk</code>, <code>min_ram</code></td><td>Nova (API)</td><td>Refuse un gabarit plus petit que l'image ne l'exige</td><td>20 Go, 2048 Mo</td></tr>
+<tr><td><code>hw_disk_bus</code>, <code>hw_scsi_model</code></td><td>Nova (libvirt)</td><td>Type de contrôleur disque présenté à la machine</td><td><code>scsi</code>, <code>virtio-scsi</code></td></tr>
+<tr><td><code>hw_vif_model</code></td><td>Nova (libvirt)</td><td>Modèle de carte réseau virtuelle</td><td><code>virtio</code>, <code>e1000</code></td></tr>
+<tr><td><code>hw_firmware_type</code>, <code>hw_machine_type</code></td><td>Nova (libvirt)</td><td>BIOS ou UEFI ; type de carte mère émulée</td><td><code>uefi</code>, <code>q35</code></td></tr>
+<tr><td><code>os_type</code>, <code>os_distro</code></td><td>Nova</td><td>Réglages adaptés au système invité (horloge, format du disque éphémère)</td><td><code>linux</code>, <code>windows</code></td></tr>
+<tr><td><code>hw_qemu_guest_agent</code></td><td>Nova</td><td>Active le canal de l'agent invité : gel des systèmes de fichiers avant instantané</td><td><code>yes</code></td></tr>
+<tr><td><code>hw_cpu_policy</code>, <code>hw_numa_nodes</code></td><td>Nova (ordonnancement)</td><td>CPU dédiés, topologie NUMA exigée</td><td><code>dedicated</code></td></tr>
+<tr><td><code>trait:…=required</code></td><td>Nova → Placement</td><td>N'accepte que les hôtes portant cette caractéristique</td><td><code>trait:HW_CPU_X86_AVX2</code></td></tr>
+<tr><td><code>img_signature_*</code></td><td>Nova, Cinder</td><td>Vérification de la signature de l'image avant usage</td><td>Certificat dans Barbican</td></tr>
+<tr><td><code>cinder_img_volume_type</code></td><td>Cinder</td><td>Type de volume par défaut pour un volume créé depuis cette image</td><td><code>ssd</code></td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Gabarit et image se complètent :</b> la plupart de ces réglages existent aussi comme propriétés de gabarit (<code>hw:cpu_policy</code>). En cas de contradiction, Nova refuse la demande ou donne la priorité au gabarit, choisi par l'opérateur.</div>
+<div class="note g"><b>Conséquence d'exploitation :</b> une image publiée sans ses propriétés (UEFI, bus disque) peut démarrer… ou rester bloquée au démarrage sans message. Elles font partie de l'image au même titre que ses données.</div>
+</div>
+</div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+<header><span class="kick">1 · Glance</span><h2>Interaction avec Nova : télécharger ou cloner</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 320">
+<rect x="10" y="8" width="545" height="304" rx="12" class="zone"/><text x="28" y="34" class="tl">Stockage local : téléchargement</text>
+<rect x="595" y="8" width="545" height="304" rx="12" class="zone"/><text x="613" y="34" class="tl tr">Ceph : clone instantané</text>
+<g class="tc">
+<rect x="28" y="72" width="150" height="70" rx="9" class="b-amber"/><text x="103" y="102" class="tb">Glance</text><text x="103" y="122" class="ts">magasin d'images</text>
+<rect x="235" y="52" width="302" height="210" rx="10" class="b-grey"/><text x="386" y="76" class="tb">Nœud de calcul</text>
+<rect x="251" y="90" width="270" height="56" rx="8" class="bx"/><text x="386" y="113" class="tm tb">_base/&lt;empreinte&gt;</text><text x="386" y="133" class="ts">image convertie en raw, gardée en cache</text>
+<rect x="251" y="186" width="128" height="56" rx="8" class="b-blue"/><text x="315" y="209" class="tb" style="font-size:12.5px">instance A</text><text x="315" y="229" class="ts">disque qcow2</text>
+<rect x="393" y="186" width="128" height="56" rx="8" class="b-blue"/><text x="457" y="209" class="tb" style="font-size:12.5px">instance B</text><text x="457" y="229" class="ts">disque qcow2</text>
+</g>
+<path d="M178,107 H249" class="lr"/><text x="213" y="97" class="tc ts tb tr">1 fois</text>
+<path d="M315,186 V148" class="ln ld"/><path d="M457,186 V148" class="ln ld"/><text x="386" y="172" class="tc ts">adossés</text>
+<text x="28" y="188" class="ts">Premier démarrage :</text><text x="28" y="205" class="ts">le temps de télécharger</text><text x="28" y="222" class="ts">et convertir l'image.</text><text x="28" y="246" class="ts">Suivants : immédiats</text><text x="28" y="263" class="ts">sur ce même hôte.</text>
+<text x="282" y="294" class="tc ts">Chaque hôte tient son propre cache ; il est nettoyé quand plus aucune instance ne s'y réfère.</text>
+<g class="tc">
+<rect x="613" y="52" width="240" height="210" rx="10" class="b-amber"/><text x="733" y="76" class="tb">Pool « images » (Glance)</text>
+<rect x="629" y="90" width="208" height="56" rx="8" class="bx"/><text x="733" y="113" class="tb">image, format raw</text><text x="733" y="133" class="ts">objet RBD</text>
+<rect x="629" y="186" width="208" height="56" rx="8" class="bx"/><text x="733" y="209" class="tb">instantané protégé</text><text x="733" y="229" class="ts">pris à l'enregistrement</text>
+<rect x="882" y="52" width="240" height="210" rx="10" class="b-blue"/><text x="1002" y="76" class="tb">Pool « vms » (Nova)</text>
+<rect x="898" y="90" width="208" height="56" rx="8" class="bx"/><text x="1002" y="113" class="tb">disque de l'instance A</text><text x="1002" y="133" class="ts">clone</text>
+<rect x="898" y="186" width="208" height="56" rx="8" class="bx"/><text x="1002" y="209" class="tb">disque de l'instance B</text><text x="1002" y="229" class="ts">clone</text>
+</g>
+<path d="M733,146 V184" class="ln"/><path d="M837,205 L896,125" class="lr"/><path d="M837,220 H896" class="lr"/>
+<text x="867" y="294" class="tc ts">Aucun octet copié au démarrage : seuls les blocs modifiés sont écrits.</text>
+</svg>
+</div>
+<div class="cols nf">
+<table class="tbl tight">
+<thead><tr><th>Condition du clone Ceph</th><th>Réglage</th></tr></thead>
+<tbody>
+<tr><td>Image au format raw</td><td>Conversion à l'import, côté Glance</td></tr>
+<tr><td>Même cluster Ceph</td><td>Glance et Nova sur des pools du même cluster</td></tr>
+<tr><td>Emplacement visible de Nova</td><td>Glance : <code>show_image_direct_url</code> ; Nova : <code>images_type = rbd</code></td></tr>
+</tbody></table>
+<div class="col">
+<ul class="pts sm">
+<li>Si une condition manque, Nova <b>retombe sans prévenir</b> sur le téléchargement complet : démarrages lents, espace consommé en double.</li>
+<li>Dans les deux cas, Nova vérifie la somme de contrôle de ce qu'il reçoit.</li>
+<li><b>Instantané d'instance :</b> chemin inverse — Nova fige le disque et le téléverse dans Glance comme nouvelle image ; avec Ceph, c'est encore un clone.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+<header><span class="kick">1 · Glance</span><h2>Les autres interactions de Glance</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Avec</th><th>Sens</th><th>Ce qui se passe</th><th>Point d'attention</th></tr></thead>
+<tbody>
+<tr><td>Keystone</td><td>Glance → Keystone</td><td>Validation du jeton ; le projet du jeton détermine les images visibles</td><td>Une image « introuvable » appartient souvent à un autre projet</td></tr>
+<tr><td>Nova</td><td>Nova → Glance</td><td>Lecture des propriétés, téléchargement ou clone, téléversement des instantanés</td><td>Nova garde l'identifiant de l'image dans l'instance, pas ses données</td></tr>
+<tr><td>Cinder</td><td>Cinder → Glance</td><td>Création d'un volume amorçable depuis une image ; export d'un volume en image</td><td>Clone direct possible si image et volumes partagent le même cluster Ceph</td></tr>
+<tr><td>Cinder (magasin)</td><td>Glance → Cinder</td><td>Avec le magasin <code>cinder</code>, chaque image est stockée dans un volume</td><td>Utile quand le seul stockage disponible est une baie pilotée par Cinder</td></tr>
+<tr><td>Swift, Ceph, S3</td><td>Glance → stockage</td><td>Lecture et écriture des données d'image par le pilote du magasin</td><td>La disponibilité de Glance est celle de son magasin</td></tr>
+<tr><td>Barbican</td><td>Nova, Cinder → Barbican</td><td>Récupération du certificat pour vérifier la signature d'une image</td><td>Glance ne fait que conserver les propriétés de signature</td></tr>
+<tr><td>Ironic</td><td>Ironic → Glance</td><td>Récupération de l'image à écrire sur le disque d'un serveur physique</td><td>Images souvent au format raw, parfois volumineuses</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Glance n'appelle presque personne :</b> il est sollicité. Sa seule dépendance active est son magasin de données — et Keystone, comme tout le monde.</div>
+<div class="note b"><b>Sécurité des formats :</b> une image qcow2 peut référencer un fichier externe. Glance et Nova inspectent le format réel des images et refusent celles qui ne correspondent pas au format déclaré ; restreindre <code>disk_formats</code> à ce qui est réellement utilisé.</div>
+</div>
+</div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+<header><span class="kick">1 · Glance</span><h2>Configuration type et commandes</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:12.6px"><span class="m"># /etc/glance/glance-api.conf — deux magasins</span>
+<span class="k">[DEFAULT]</span>
+enabled_backends = ceph:rbd, local:file
+enabled_import_methods = glance-direct,web-download,copy-image
+show_image_direct_url = true
+
+<span class="k">[glance_store]</span>
+default_backend = ceph
+
+<span class="k">[ceph]</span>
+rbd_store_pool = images
+rbd_store_user = glance
+rbd_store_ceph_conf = /etc/ceph/ceph.conf
+
+<span class="k">[local]</span>
+filesystem_store_datadir = /var/lib/glance/images/
+
+<span class="k">[image_import_opts]</span>
+image_import_plugins = ['image_conversion']
+<span class="k">[image_conversion]</span>
+output_format = raw</pre>
+</div>
+<div class="col">
+<pre style="font-size:12.4px"><span class="m"># Magasins déclarés</span>
+<span class="c">glance</span> stores-info
+
+<span class="m"># Publier une image avec ses propriétés</span>
+<span class="c">openstack</span> image set ubuntu-24.04 <span class="k">--public</span> <span class="k">--protected</span> \
+    <span class="k">--min-disk</span> 10 <span class="k">--property</span> hw_firmware_type=uefi \
+    <span class="k">--property</span> hw_machine_type=q35 <span class="k">--property</span> os_distro=ubuntu
+
+<span class="m"># État, format, somme de contrôle, emplacements</span>
+<span class="c">openstack</span> image show ubuntu-24.04 <span class="k">-c</span> status <span class="k">-c</span> disk_format \
+    <span class="k">-c</span> checksum <span class="k">-c</span> properties
+
+<span class="m"># Copier vers un second magasin ; partager avec un projet</span>
+<span class="c">glance</span> image-import &lt;id&gt; <span class="k">--import-method</span> copy-image <span class="k">--stores</span> local
+<span class="c">openstack</span> image add project &lt;image&gt; &lt;projet&gt;</pre>
+<ul class="pts sm">
+<li><code>enabled_backends</code> associe un nom libre à un pilote ; chaque nom a sa section.</li>
+<li><code>show_image_direct_url</code> expose l'emplacement réel : nécessaire au clone, mais à réserver à un Glance joint par l'interface interne.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 14 -->
+<section class="slide dark sec">
+<div class="num">02</div>
+<h2>Placement — la gestion des ressources</h2>
+<p>Placement tient la comptabilité du cloud : ce que chaque fournisseur possède, ce qui en est déjà consommé, et par qui. C'est lui qui permet de répondre à la question « où reste-t-il de la place ? ».</p>
+<ol><li>Rôle et frontière avec Nova</li><li>Modèle de données</li><li>Calcul de la capacité</li><li>Arbres et fournisseurs partagés</li><li>La requête de candidats</li><li>Interactions, commandes, diagnostic</li></ol>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+<header><span class="kick">2 · Placement</span><h2>Rôle : un registre, pas un ordonnanceur</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Rôle :</b> enregistrer les <b>quantités</b> de ressources disponibles et consommées, et répondre aux requêtes du type « quels fournisseurs peuvent offrir 2 VCPU, 4 Go de mémoire et 20 Go de disque, avec telle caractéristique ? ».</p>
+<ul class="pts sm">
+<li><b>Ce qu'il fait :</b> tenir inventaires et allocations, filtrer par quantité, caractéristique et agrégat, garantir qu'une ressource n'est pas promise deux fois.</li>
+<li><b>Ce qu'il ne fait pas :</b> choisir l'hôte final, connaître les instances, parler aux hyperviseurs. Il ne sait pas ce qu'est une machine virtuelle.</li>
+<li><b>Né dans Nova</b>, il en a été extrait pour servir aussi Neutron, Cyborg, Ironic et d'autres.</li>
+</ul>
+<div class="note"><b>Partage des tâches :</b> Placement réduit des milliers d'hôtes à une courte liste de candidats <b>possibles</b> ; nova-scheduler choisit ensuite le <b>meilleur</b> selon des critères que Placement ignore (affinité, charge, politique).</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Question</th><th>Qui répond</th></tr></thead>
+<tbody>
+<tr><td style="white-space:normal">Cet hôte a-t-il assez de VCPU, de mémoire, de disque ?</td><td>Placement</td></tr>
+<tr><td style="white-space:normal">Porte-t-il la caractéristique exigée (AVX2, SSD) ?</td><td>Placement</td></tr>
+<tr><td style="white-space:normal">Est-il dans la zone de disponibilité demandée ?</td><td>Placement (agrégats)</td></tr>
+<tr><td style="white-space:normal">Est-il désactivé par l'administrateur ?</td><td>Placement (caractéristique dédiée)</td></tr>
+<tr><td style="white-space:normal">Respecte-t-il l'anti-affinité du groupe de serveurs ?</td><td>nova-scheduler (filtre)</td></tr>
+<tr><td style="white-space:normal">Sa topologie NUMA convient-elle ?</td><td>nova-scheduler (filtre)</td></tr>
+<tr><td style="white-space:normal">Lequel des candidats est le moins chargé ?</td><td>nova-scheduler (pondération)</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li>Un seul processus : <b>placement-api</b>, une application WSGI et sa base. Ni bus de messages, ni agent.</li>
+<li>Sans état propre en mémoire : tout est en base, chaque requête est indépendante.</li>
+<li>Indisponible, il bloque toute création et tout déplacement d'instance ; les instances existantes ne sont pas touchées.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+<header><span class="kick">2 · Placement</span><h2>Le modèle de données</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 400">
+<rect x="30" y="50" width="300" height="300" rx="12" class="b-red"/><text x="180" y="82" class="tc tl tr">Fournisseur de ressources</text><text x="180" y="104" class="tc ts">resource provider</text>
+<g class="tm"><text x="52" y="146">name : cmp01</text><text x="52" y="170">uuid : 4e8a…</text><text x="52" y="194">generation : 137</text><text x="52" y="218">parent : (aucun)</text></g>
+<g class="ts"><text x="52" y="262">Tout ce qui offre une quantité :</text><text x="52" y="280">hyperviseur, pool de stockage,</text><text x="52" y="298">carte GPU, interface réseau.</text><text x="52" y="328" class="tb">generation : verrou optimiste</text></g>
+<rect x="420" y="20" width="340" height="160" rx="10" class="b-violet"/><text x="436" y="46" class="tl">Inventaires — un par classe</text>
+<g class="tm"><text x="436" y="76">VCPU       total 64      ratio 4.0</text><text x="436" y="100">MEMORY_MB  total 262144  réservé 8192</text><text x="436" y="124">DISK_GB    total 2000    réservé 50</text></g>
+<text x="436" y="158" class="ts">Classes standard ou personnalisées (CUSTOM_…)</text>
+<rect x="420" y="200" width="340" height="86" rx="10" class="bx"/><text x="436" y="226" class="tl">Caractéristiques (traits)</text>
+<text x="436" y="250" class="tm">HW_CPU_X86_AVX2 · STORAGE_DISK_SSD</text><text x="436" y="270" class="tm">COMPUTE_STATUS_DISABLED · CUSTOM_GOLD</text>
+<rect x="420" y="306" width="340" height="74" rx="10" class="bx"/><text x="436" y="332" class="tl">Agrégats</text><text x="436" y="356" class="ts">regroupements : zone de disponibilité, stockage partagé</text>
+<rect x="850" y="20" width="280" height="160" rx="10" class="b-blue"/><text x="866" y="46" class="tl">Allocations</text>
+<g class="tm"><text x="866" y="76">consommateur 9d0e…</text><text x="866" y="100">  VCPU 2</text><text x="866" y="124">  MEMORY_MB 4096</text><text x="866" y="148">  DISK_GB 20</text></g>
+<rect x="850" y="230" width="280" height="110" rx="10" class="b-grey"/><text x="866" y="256" class="tl">Consommateur</text>
+<g class="ts"><text x="866" y="280">une instance, une migration en cours,</text><text x="866" y="298">un port réseau à débit garanti…</text><text x="866" y="322" class="tb">rattaché à un projet et un utilisateur</text></g>
+<path d="M330,110 H418" class="ln"/><path d="M330,243 H418" class="ln"/><path d="M330,330 H418" class="ln"/>
+<text x="374" y="100" class="tc ts">possède</text><text x="374" y="233" class="tc ts">porte</text><text x="374" y="320" class="tc ts">appartient</text>
+<path d="M848,100 H762" class="lr"/><text x="805" y="90" class="tc ts tb tr">consomme</text>
+<path d="M990,228 V182" class="ln"/><text x="1002" y="210" class="ts">détient</text>
+</svg>
+</div>
+<div class="note g"><b>Quantités d'un côté, qualités de l'autre :</b> les <b>classes de ressources</b> se comptent et se consomment (VCPU, MEMORY_MB, DISK_GB, VGPU, SRIOV_NET_VF) ; les <b>caractéristiques</b> sont présentes ou absentes et ne s'épuisent pas. Une requête combine toujours les deux.</div>
+</div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+<header><span class="kick">2 · Placement</span><h2>Le calcul de la capacité</h2></header>
+<div class="body">
+<div class="fig" style="flex:none;height:205px">
+<svg viewBox="0 0 1150 205">
+<text x="20" y="22" class="tb">VCPU sur cmp01 — capacité = (total − réservé) × ratio = (64 − 0) × 4,0 = 256</text>
+<rect x="20" y="34" width="225" height="30" rx="5" class="b-grey"/><text x="132" y="54" class="tc ts tb">64 cœurs physiques</text>
+<rect x="20" y="72" width="633" height="34" rx="5" class="b-red"/><text x="336" y="94" class="tc tb" style="font-size:13px">180 VCPU alloués</text>
+<rect x="653" y="72" width="267" height="34" rx="5" class="b-green"/><text x="786" y="94" class="tc tb" style="font-size:13px">76 libres</text>
+<text x="935" y="94" class="ts">capacité : 256</text>
+<text x="20" y="138" class="tb">MEMORY_MB sur cmp01 — capacité = (262 144 − 8 192) × 1,0 = 253 952</text>
+<rect x="20" y="150" width="697" height="34" rx="5" class="b-red"/><text x="368" y="172" class="tc tb" style="font-size:13px">196 608 Mo alloués</text>
+<rect x="717" y="150" width="203" height="34" rx="5" class="b-green"/><text x="818" y="172" class="tc tb" style="font-size:13px">57 344 libres</text>
+<rect x="920" y="150" width="29" height="34" rx="5" class="b-grey"/><text x="962" y="172" class="ts">8 192 réservés à l'hôte</text>
+</svg>
+</div>
+<div class="cols">
+<table class="tbl tight">
+<thead><tr><th>Champ d'un inventaire</th><th>Rôle</th></tr></thead>
+<tbody>
+<tr><td><code>total</code></td><td>Quantité physique déclarée par le fournisseur</td></tr>
+<tr><td><code>reserved</code></td><td>Part gardée pour l'hôte lui-même, jamais attribuée</td></tr>
+<tr><td><code>allocation_ratio</code></td><td>Facteur de surallocation ; 1,0 = aucune</td></tr>
+<tr><td><code>min_unit</code>, <code>max_unit</code></td><td>Plus petite et plus grande quantité qu'une seule allocation peut prendre</td></tr>
+<tr><td><code>step_size</code></td><td>Pas : les quantités demandées en sont des multiples</td></tr>
+</tbody></table>
+<div class="col">
+<ul class="pts sm">
+<li>Une demande est acceptée si <b>alloué + demandé ≤ capacité</b>, pour chaque classe, et si elle respecte <code>max_unit</code>.</li>
+<li>Avec 76 VCPU libres mais <code>max_unit = 64</code>, une instance de 72 VCPU est refusée : elle ne tiendrait pas sur les cœurs réels.</li>
+<li>Les ratios viennent de <code>nova.conf</code> sur chaque hyperviseur (<code>cpu_allocation_ratio</code>…) ou sont fixés par l'API de Placement.</li>
+<li>La mémoire se suralloue rarement : au-delà de 1,0, l'hôte risque de tuer des machines faute de mémoire.</li>
+</ul>
+<div class="note">Ce sont des <b>promesses</b>, pas des mesures : Placement compte ce qui est réservé par les gabarits, pas ce que les instances consomment réellement.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+<header><span class="kick">2 · Placement</span><h2>Arbres de fournisseurs et ressources partagées</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 300">
+<g class="tc">
+<rect x="60" y="14" width="260" height="64" rx="10" class="b-red"/><text x="190" y="40" class="tb tr">cmp01 — racine</text><text x="190" y="60" class="ts">VCPU · MEMORY_MB · DISK_GB</text>
+<rect x="400" y="14" width="200" height="64" rx="10" class="b-grey"/><text x="500" y="40" class="tb">cmp02 — racine</text><text x="500" y="60" class="ts">VCPU · MEMORY_MB</text>
+<rect x="800" y="14" width="330" height="64" rx="10" class="b-amber"/><text x="965" y="40" class="tb">Pool Ceph — fournisseur partagé</text><text x="965" y="60" class="ts">DISK_GB · MISC_SHARES_VIA_AGGREGATE</text>
+<rect x="20" y="170" width="262" height="78" rx="10" class="b-violet"/><text x="151" y="196" class="tb">GPU physique</text><text x="151" y="216" class="ts">VGPU : 16</text><text x="151" y="234" class="ts">déclaré par Nova</text>
+<rect x="302" y="170" width="262" height="78" rx="10" class="b-violet"/><text x="433" y="196" class="tb">Périphérique PCI</text><text x="433" y="216" class="ts">CUSTOM_PCI_… : 1</text><text x="433" y="234" class="ts">déclaré par Nova (option)</text>
+<rect x="584" y="170" width="262" height="78" rx="10" class="b-teal"/><text x="715" y="196" class="tb">Interface réseau</text><text x="715" y="216" class="ts">NET_BW_EGR_KILOBIT_PER_SEC</text><text x="715" y="234" class="ts">déclaré par Neutron</text>
+<rect x="866" y="170" width="264" height="78" rx="10" class="bx"/><text x="998" y="196" class="tb">Accélérateur</text><text x="998" y="216" class="ts">FPGA, carte spécialisée</text><text x="998" y="234" class="ts">déclaré par Cyborg</text>
+</g>
+<path d="M190,78 V124 M151,124 H998 M151,124 V168 M433,124 V168 M715,124 V168 M998,124 V168" class="nl"/>
+<path d="M600,46 H798" stroke="#d97706" stroke-width="2" stroke-dasharray="6 4" fill="none"/><path d="M320,34 H398" stroke="#d97706" stroke-width="2" stroke-dasharray="6 4" fill="none"/>
+<text x="700" y="36" class="tc ts tb fa">même agrégat</text>
+<text x="575" y="282" class="tc ts">Une même requête peut être servie par plusieurs fournisseurs d'un arbre : VCPU et mémoire sur la racine, VGPU sur un enfant, disque sur le pool partagé.</text>
+</svg>
+</div>
+<div class="cols c3 nf">
+<div class="card cv"><h3>Fournisseurs imbriqués</h3>Un hyperviseur n'est pas un bloc uniforme : un GPU, une carte SR-IOV ont leur propre inventaire et leurs propres caractéristiques. Ils sont déclarés comme enfants du nœud de calcul.</div>
+<div class="card ca"><h3>Fournisseurs partagés</h3>Un pool de stockage commun à plusieurs hôtes n'est compté qu'<b>une fois</b>. Il est rattaché à ces hôtes par un agrégat ; sans cela, chaque hôte déclarerait le pool entier comme sien.</div>
+<div class="card"><h3>Plusieurs déclarants</h3>Nova n'est pas seul à écrire : Neutron et Cyborg ajoutent leurs fournisseurs sous l'arbre du même hôte. Une caractéristique récente, <code>OWNER_NOVA</code>, distingue ceux que Nova gère.</div>
+</div>
+</div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+<header><span class="kick">2 · Placement</span><h2>La requête centrale : les candidats à l'allocation</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:12.6px"><span class="c">GET</span> /allocation_candidates
+    ?<span class="k">resources</span>=VCPU:2,MEMORY_MB:4096,DISK_GB:20
+    &amp;<span class="k">required</span>=HW_CPU_X86_AVX2,!COMPUTE_STATUS_DISABLED
+    &amp;<span class="k">member_of</span>=in:3f2a…          <span class="m"># agrégat de la zone az-nord</span>
+    &amp;<span class="k">limit</span>=1000
+
+<span class="m"># Réponse (simplifiée)</span>
+{
+  <span class="k">"allocation_requests"</span>: [
+    { "allocations": {
+        "4e8a… (cmp01)": { "resources":
+            { "VCPU": 2, "MEMORY_MB": 4096, "DISK_GB": 20 } } } },
+    { "allocations": { "77b1… (cmp07)": { … } } }
+  ],
+  <span class="k">"provider_summaries"</span>: {
+    "4e8a…": { "resources": { "VCPU":
+        { "capacity": 256, "used": 180 }, … },
+               "traits": [ "HW_CPU_X86_AVX2", … ] }
+  }
+}</pre>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Paramètre</th><th>Sens</th></tr></thead>
+<tbody>
+<tr><td><code>resources</code></td><td>Quantités exigées, par classe</td></tr>
+<tr><td><code>required</code></td><td>Caractéristiques exigées ; <code>!</code> pour une caractéristique interdite</td></tr>
+<tr><td><code>member_of</code></td><td>Restreint aux fournisseurs d'un ou plusieurs agrégats</td></tr>
+<tr><td><code>in_tree</code></td><td>Restreint à l'arbre d'un fournisseur donné (hôte imposé)</td></tr>
+<tr><td><code>resourcesN</code>, <code>requiredN</code></td><td>Groupes numérotés : ces ressources doivent venir d'un même fournisseur</td></tr>
+<tr><td><code>group_policy</code></td><td><code>isolate</code> : les groupes doivent venir de fournisseurs distincts</td></tr>
+<tr><td><code>limit</code></td><td>Nombre maximal de candidats renvoyés</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>allocation_requests :</b> des réservations prêtes à l'emploi ; le demandeur en renvoie une telle quelle pour réserver.</li>
+<li><b>provider_summaries :</b> l'état de chaque fournisseur cité, pour aider à choisir.</li>
+<li>La réservation (<code>PUT /allocations/{consommateur}</code>) est <b>atomique</b> : si un concurrent a pris la place entre-temps, elle échoue et le demandeur essaie le candidat suivant.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 20 -->
+<section class="slide">
+<header><span class="kick">2 · Placement</span><h2>Architecture et interactions</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 345">
+<rect x="455" y="96" width="240" height="96" rx="12" class="b-violet" style="stroke-width:3"/><text x="575" y="134" class="tc tl">placement-api</text><text x="575" y="158" class="tc ts">application WSGI, port 8778</text>
+<rect x="495" y="250" width="160" height="60" rx="9" class="b-grey"/><text x="575" y="276" class="tc tb">MariaDB</text><text x="575" y="296" class="tc ts">schéma placement</text>
+<path d="M575,192 V248" class="ln"/>
+<g>
+<rect x="20" y="10" width="290" height="88" rx="10" class="b-red"/><text x="36" y="36" class="tb">nova-compute</text><text x="36" y="57" class="ts">déclare inventaires et caractéristiques</text><text x="36" y="80" class="tm">PUT …/inventories · …/traits</text>
+<rect x="20" y="128" width="290" height="88" rx="10" class="b-red"/><text x="36" y="154" class="tb">nova-scheduler</text><text x="36" y="175" class="ts">demande les candidats, puis réserve</text><text x="36" y="198" class="tm">GET /allocation_candidates</text>
+<rect x="20" y="246" width="290" height="88" rx="10" class="b-red"/><text x="36" y="272" class="tb">nova-conductor, nova-api</text><text x="36" y="293" class="ts">déplace ou libère les réservations</text><text x="36" y="316" class="tm">POST · DELETE /allocations</text>
+<rect x="840" y="10" width="290" height="88" rx="10" class="b-teal"/><text x="856" y="36" class="tb">Neutron</text><text x="856" y="57" class="ts">débit garanti, segments routés</text><text x="856" y="80" class="tm">fournisseurs enfants, agrégats</text>
+<rect x="840" y="128" width="290" height="88" rx="10" class="bx"/><text x="856" y="154" class="tb">Cyborg</text><text x="856" y="175" class="ts">accélérateurs : GPU, FPGA</text><text x="856" y="198" class="tm">fournisseurs enfants</text>
+<rect x="840" y="246" width="290" height="88" rx="10" class="bx"/><text x="856" y="272" class="tb">Ironic, à travers Nova</text><text x="856" y="293" class="ts">un serveur physique = une unité</text><text x="856" y="316" class="tm">CUSTOM_BAREMETAL_… : 1</text>
+</g>
+<path d="M310,54 L453,120" class="lr"/><path d="M310,160 H453" class="lr2"/><path d="M310,290 L453,172" class="lr"/>
+<path d="M840,54 L697,120" class="lt"/><path d="M840,160 H697" class="ln"/><path d="M840,290 L697,172" class="ln"/>
+</svg>
+</div>
+<table class="tbl tight">
+<thead><tr><th>Moment</th><th>Qui appelle Placement</th><th>Effet</th></tr></thead>
+<tbody>
+<tr><td>Démarrage puis toutes les minutes</td><td>nova-compute (suivi des ressources)</td><td>Crée ou met à jour son fournisseur, ses inventaires et ses caractéristiques</td></tr>
+<tr><td>Création d'une instance</td><td>nova-scheduler</td><td>Obtient les candidats, réserve sur l'hôte retenu avant même de le prévenir</td></tr>
+<tr><td>Migration, redimensionnement</td><td>nova-conductor</td><td>Réserve sur la cible ; la source reste réservée jusqu'à confirmation</td></tr>
+<tr><td>Suppression</td><td>nova-compute, nova-api</td><td>Libère les allocations du consommateur</td></tr>
+<tr><td>Port à débit minimal garanti</td><td>Neutron déclare, Nova réserve</td><td>La bande passante devient une ressource comptée comme les autres</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<!-- 21 -->
+<section class="slide">
+<header><span class="kick">2 · Placement</span><h2>Commandes et diagnostic</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:12.6px"><span class="m"># Fournisseurs, puis détail de l'un d'eux</span>
+<span class="c">openstack</span> resource provider list
+<span class="c">openstack</span> resource provider inventory list &lt;uuid&gt;
+<span class="c">openstack</span> resource provider usage show &lt;uuid&gt;
+<span class="c">openstack</span> resource provider trait list &lt;uuid&gt;
+<span class="c">openstack</span> resource provider aggregate list &lt;uuid&gt;
+
+<span class="m"># Qui consomme sur cet hôte ?</span>
+<span class="c">openstack</span> resource provider show &lt;uuid&gt; <span class="k">--allocations</span>
+
+<span class="m"># Ce qu'une instance a réservé, et où</span>
+<span class="c">openstack</span> resource provider allocation show &lt;instance&gt;
+
+<span class="m"># Rejouer la question du scheduler</span>
+<span class="c">openstack</span> allocation candidate list \
+    <span class="k">--resource</span> VCPU=2 <span class="k">--resource</span> MEMORY_MB=4096 \
+    <span class="k">--resource</span> DISK_GB=20 <span class="k">--required</span> HW_CPU_X86_AVX2
+
+<span class="m"># Réparer les écarts entre Nova et Placement</span>
+<span class="c">nova-manage</span> placement audit <span class="k">--verbose</span>
+<span class="c">nova-manage</span> placement heal_allocations</pre>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Symptôme</th><th>Cause fréquente</th></tr></thead>
+<tbody>
+<tr><td style="white-space:normal">« No valid host was found » alors que des hôtes semblent libres</td><td>Capacité épuisée dans <b>une</b> classe (souvent DISK_GB ou MEMORY_MB) ; caractéristique exigée absente</td></tr>
+<tr><td style="white-space:normal">Aucun candidat renvoyé</td><td>Zone de disponibilité sans hôte éligible ; hôtes tous désactivés</td></tr>
+<tr><td style="white-space:normal">Hôte plein dans Placement, vide en réalité</td><td>Allocations orphelines après une suppression ou une migration interrompue</td></tr>
+<tr><td style="white-space:normal">Nouvel hyperviseur jamais choisi</td><td>Hôte non rattaché à une cellule (<code>discover_hosts</code>) ; inventaire non déclaré</td></tr>
+<tr><td style="white-space:normal">Conflit « generation »</td><td>Deux écritures concurrentes sur un même fournisseur : le client doit relire et réessayer</td></tr>
+</tbody></table>
+<div class="note"><b>Méthode devant un « No valid host » :</b> rejouer la demande avec <code>allocation candidate list</code>. Aucun candidat : le problème est dans Placement (quantité, caractéristique, agrégat). Des candidats existent : ce sont les filtres de nova-scheduler qui les ont tous écartés.</div>
+<div class="note g">Ces commandes viennent de l'extension <code>osc-placement</code> du client OpenStack.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 22 -->
+<section class="slide dark sec">
+<div class="num">03</div>
+<h2>Nova — le service de calcul</h2>
+<p>Nova gère le cycle de vie des instances. C'est le chef d'orchestre : il ne possède ni les images, ni les réseaux, ni les volumes, mais il les assemble autour d'une machine virtuelle.</p>
+<ol><li>Rôle et processus</li><li>Cellules : l'architecture à deux niveaux</li><li>Les états d'une instance</li><li>Ordonnancement : filtres et pondérations</li><li>nova-compute, pilote et disques</li><li>Déplacements, interactions, diagnostic</li></ol>
+</section>
+
+<!-- 23 -->
+<section class="slide">
+<header><span class="kick">3 · Nova</span><h2>Rôle et processus</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Rôle :</b> créer, démarrer, arrêter, déplacer et supprimer des <b>instances</b> — machines virtuelles le plus souvent, serveurs physiques avec Ironic.</p>
+<ul class="pts sm">
+<li><b>Ce qu'il possède :</b> les instances, les gabarits, les paires de clés, les groupes de serveurs, les agrégats d'hôtes.</li>
+<li><b>Ce qu'il emprunte :</b> l'image (Glance), les ports (Neutron), les volumes (Cinder), la place (Placement).</li>
+<li><b>Ce qu'il ne fait pas :</b> surveiller ce qui tourne dans l'instance, garantir sa disponibilité, sauvegarder ses données.</li>
+</ul>
+<table class="tbl tight">
+<thead><tr><th>Notion</th><th>Définition</th></tr></thead>
+<tbody>
+<tr><td>Gabarit (flavor)</td><td>Quantités de ressources et réglages matériels (<code>hw:…</code>)</td></tr>
+<tr><td>Groupe de serveurs</td><td>Politique d'affinité ou d'anti-affinité, stricte ou souple</td></tr>
+<tr><td>Agrégat d'hôtes</td><td>Regroupement d'hyperviseurs par l'administrateur, avec métadonnées</td></tr>
+<tr><td>Zone de disponibilité</td><td>Un agrégat rendu visible des utilisateurs</td></tr>
+<tr><td>Correspondance de périphériques bloc</td><td>Liste des disques de l'instance : image, volume, éphémère, swap</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Processus</th><th>Où</th><th>Fonction</th></tr></thead>
+<tbody>
+<tr><td>nova-api</td><td>Contrôle</td><td>API REST ; valide, vérifie les quotas, enregistre, délègue</td></tr>
+<tr><td>nova-scheduler</td><td>Contrôle</td><td>Choisit l'hôte : Placement, filtres, pondérations</td></tr>
+<tr><td>nova-conductor</td><td>Contrôle</td><td>Orchestre les opérations longues ; accès base pour les hôtes</td></tr>
+<tr><td>nova-compute</td><td>Chaque hyperviseur</td><td>Exécute : pilote libvirt, disques, interfaces, volumes</td></tr>
+<tr><td>API de métadonnées</td><td>Contrôle</td><td>Sert <code>169.254.169.254</code> : données utilisateur, clés</td></tr>
+<tr><td>nova-novncproxy</td><td>Contrôle</td><td>Relaie les consoles vers le navigateur</td></tr>
+</tbody></table>
+<div class="note"><b>Deux bases, pas une :</b> la base « API » (<code>nova_api</code>) pour ce qui est global — gabarits, quotas, cartographie des cellules ; une base par <b>cellule</b> (<code>nova</code>) pour les instances et leurs hôtes.</div>
+<div class="note g">Les quotas peuvent être comptés à partir de Placement et définis dans Keystone (« limites unifiées ») : Nova n'a alors plus de table de quotas propre.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 24 -->
+<section class="slide">
+<header><span class="kick">3 · Nova</span><h2>Cellules : une architecture à deux niveaux</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 395">
+<rect x="20" y="8" width="1110" height="130" rx="12" class="zone"/><text x="38" y="33" class="tl">Niveau global</text>
+<rect x="20" y="170" width="545" height="218" rx="12" class="zone"/><text x="38" y="195" class="tl">Cellule cell1</text>
+<rect x="585" y="170" width="545" height="218" rx="12" class="zone"/><text x="603" y="195" class="tl">Cellule cell2</text>
+<g class="tc">
+<rect x="40" y="50" width="150" height="66" rx="8" class="b-red"/><text x="115" y="88" class="tb">nova-api</text>
+<rect x="205" y="50" width="150" height="66" rx="8" class="b-red"/><text x="280" y="88" class="tb">nova-scheduler</text>
+<rect x="370" y="50" width="170" height="66" rx="8" class="b-red"/><text x="455" y="78" class="tb">nova-conductor</text><text x="455" y="98" class="ts">« super-conductor »</text>
+<rect x="560" y="50" width="200" height="66" rx="8" class="b-grey"/><text x="660" y="78" class="tb">Base API (nova_api)</text><text x="660" y="98" class="ts">gabarits, hôte → cellule</text>
+<rect x="775" y="50" width="160" height="66" rx="8" class="b-grey"/><text x="855" y="78" class="tb">cell0</text><text x="855" y="98" class="ts">instances jamais placées</text>
+<rect x="950" y="50" width="160" height="66" rx="8" class="b-violet"/><text x="1030" y="88" class="tb">Placement</text>
+<rect x="40" y="212" width="160" height="60" rx="8" class="b-red"/><text x="120" y="238" class="tb">nova-conductor</text><text x="120" y="257" class="ts">de la cellule</text>
+<rect x="215" y="212" width="160" height="60" rx="8" class="b-amber"/><text x="295" y="238" class="tb">RabbitMQ</text><text x="295" y="257" class="ts">bus de la cellule</text>
+<rect x="390" y="212" width="155" height="60" rx="8" class="b-grey"/><text x="467" y="238" class="tb">Base nova</text><text x="467" y="257" class="ts">instances de cell1</text>
+<rect x="605" y="212" width="160" height="60" rx="8" class="b-red"/><text x="685" y="238" class="tb">nova-conductor</text><text x="685" y="257" class="ts">de la cellule</text>
+<rect x="780" y="212" width="160" height="60" rx="8" class="b-amber"/><text x="860" y="238" class="tb">RabbitMQ</text><text x="860" y="257" class="ts">bus de la cellule</text>
+<rect x="955" y="212" width="155" height="60" rx="8" class="b-grey"/><text x="1032" y="238" class="tb">Base nova</text><text x="1032" y="257" class="ts">instances de cell2</text>
+</g>
+<g class="tc ts tb">
+<rect x="40" y="306" width="118" height="56" rx="7" class="b-blue"/><text x="99" y="338">compute 1</text><rect x="169" y="306" width="118" height="56" rx="7" class="b-blue"/><text x="228" y="338">compute 2</text><rect x="298" y="306" width="118" height="56" rx="7" class="b-blue"/><text x="357" y="338">compute 3</text><rect x="427" y="306" width="118" height="56" rx="7" class="b-blue"/><text x="486" y="338">… n</text>
+<rect x="605" y="306" width="118" height="56" rx="7" class="b-blue"/><text x="664" y="338">compute 1</text><rect x="734" y="306" width="118" height="56" rx="7" class="b-blue"/><text x="793" y="338">compute 2</text><rect x="863" y="306" width="118" height="56" rx="7" class="b-blue"/><text x="922" y="338">compute 3</text><rect x="992" y="306" width="118" height="56" rx="7" class="b-blue"/><text x="1051" y="338">… n</text>
+</g>
+<path d="M430,116 L300,210" class="la"/><path d="M480,116 L850,210" class="la"/>
+<text x="330" y="160" class="te ts tb fa">RPC</text><text x="690" y="160" class="ts tb fa">RPC</text>
+<path d="M295,272 V304" class="la2"/><path d="M860,272 V304" class="la2"/>
+<path d="M200,242 H213" class="la2"/><path d="M765,242 H778" class="la2"/>
+</svg>
+</div>
+<div class="cols c3 nf">
+<div class="card"><h3>Pourquoi</h3>Une base et un bus uniques finissent par saturer. Chaque cellule isole les siens : la charge et les pannes restent locales.</div>
+<div class="card cb"><h3>Comment</h3>La base API sait dans quelle cellule vit chaque instance et chaque hôte. L'API s'adresse ensuite directement à la base et au bus de cette cellule.</div>
+<div class="card cn"><h3>À savoir</h3>Tout déploiement a au moins <code>cell0</code> et <code>cell1</code>. Un nouvel hyperviseur doit être rattaché : <code>nova-manage cell_v2 discover_hosts</code>.</div>
+</div>
+</div>
+</section>
+
+<!-- 25 -->
+<section class="slide">
+<header><span class="kick">3 · Nova</span><h2>Les états d'une instance</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 700 380">
+<g class="tc tb" style="font-size:13px">
+<rect x="10" y="162" width="130" height="50" rx="9" class="b-amber"/><text x="75" y="192">BUILDING</text>
+<rect x="200" y="162" width="130" height="50" rx="9" class="b-green"/><text x="265" y="192">ACTIVE</text>
+<rect x="200" y="40" width="130" height="50" rx="9" class="b-grey"/><text x="265" y="70">STOPPED</text>
+<rect x="10" y="296" width="130" height="50" rx="9" class="b-red"/><text x="75" y="326" class="tr">ERROR</text>
+<rect x="200" y="296" width="130" height="50" rx="9" class="b-dark"/><text x="265" y="326" class="tw">DELETED</text>
+<rect x="420" y="10" width="170" height="44" rx="8" class="bx"/><text x="505" y="37">PAUSED</text>
+<rect x="420" y="84" width="170" height="44" rx="8" class="bx"/><text x="505" y="111">SUSPENDED</text>
+<rect x="420" y="158" width="170" height="44" rx="8" class="bx"/><text x="505" y="185">RESCUED</text>
+<rect x="420" y="232" width="170" height="44" rx="8" class="bx"/><text x="505" y="259">RESIZED</text>
+<rect x="420" y="306" width="170" height="44" rx="8" class="bx"/><text x="505" y="333" style="font-size:12px">SHELVED_OFFLOADED</text>
+</g>
+<path d="M140,187 H198" class="lr"/><path d="M265,160 V92" class="ln2"/><path d="M75,212 V294" class="lr"/><path d="M265,212 V294" class="ln"/>
+<path d="M330,172 L418,34" class="ln2"/><path d="M330,180 L418,108" class="ln2"/><path d="M330,187 H418" class="ln2"/><path d="M330,194 L418,252" class="ln2"/><path d="M330,202 L418,326" class="ln2"/>
+<g class="ts"><text x="275" y="124">stop /</text><text x="275" y="140">start</text><text x="85" y="250">échec</text><text x="275" y="250">delete</text>
+<text x="600" y="28">pause</text><text x="600" y="44">unpause</text><text x="600" y="102">suspend</text><text x="600" y="118">resume</text><text x="600" y="176">rescue</text><text x="600" y="192">unrescue</text><text x="600" y="250">resize, puis</text><text x="600" y="266">confirm, revert</text><text x="600" y="324">shelve</text><text x="600" y="340">unshelve</text></g>
+<text x="10" y="372" class="ts">ERROR est atteignable depuis presque tous les états, à la suite d'une opération en échec.</text>
+</svg>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Champ</th><th>Ce qu'il décrit</th></tr></thead>
+<tbody>
+<tr><td><code>vm_state</code></td><td>État stable de l'instance, du point de vue de Nova</td></tr>
+<tr><td><code>task_state</code></td><td>Opération en cours ; vide quand rien ne se passe</td></tr>
+<tr><td><code>power_state</code></td><td>Ce que l'hyperviseur constate réellement</td></tr>
+<tr><td><code>status</code></td><td>Synthèse des deux premiers, montrée par l'API</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li>Pendant une création, <code>task_state</code> passe par <code>scheduling</code>, <code>networking</code>, <code>block_device_mapping</code>, <code>spawning</code> : il dit <b>à quelle étape</b> l'instance est restée bloquée.</li>
+<li>Une instance en cours d'opération refuse toute autre action : erreur 409 tant que <code>task_state</code> n'est pas vide.</li>
+<li><b>SHELVED_OFFLOADED :</b> disque sauvegardé dans Glance, hôte et ressources libérés ; au retour, l'instance est replacée.</li>
+<li>Si <code>power_state</code> contredit <code>vm_state</code>, une tâche périodique réaligne la base sur la réalité.</li>
+</ul>
+<div class="note">Remettre une instance en état : <code>openstack server set --state active</code> corrige la <b>base</b>, pas l'hyperviseur. À n'utiliser qu'après avoir vérifié la réalité.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 26 -->
+<section class="slide">
+<header><span class="kick">3 · Nova</span><h2>Ordonnancement : préfiltres, filtres, pondérations</h2></header>
+<div class="body">
+<div class="cols c3">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>1 · Préfiltres (via Placement)</th></tr></thead>
+<tbody>
+<tr><td style="white-space:normal;font-weight:400"><b>Quantités</b> du gabarit : VCPU, mémoire, disque</td></tr>
+<tr><td style="white-space:normal;font-weight:400"><b>Caractéristiques</b> exigées par le gabarit ou l'image</td></tr>
+<tr><td style="white-space:normal;font-weight:400"><b>Zone de disponibilité</b> demandée → agrégat</td></tr>
+<tr><td style="white-space:normal;font-weight:400"><b>Hôtes désactivés</b> exclus (<code>COMPUTE_STATUS_DISABLED</code>)</td></tr>
+<tr><td style="white-space:normal;font-weight:400"><b>Format d'image</b> pris en charge par l'hôte (option)</td></tr>
+<tr><td style="white-space:normal;font-weight:400"><b>Isolation</b> de projets ou d'agrégats (option)</td></tr>
+</tbody></table>
+<div class="note g">Tout ce qui s'exprime en quantité, caractéristique ou agrégat est traité <b>dans la base de Placement</b>, en une requête.</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>2 · Filtres (nova-scheduler)</th></tr></thead>
+<tbody>
+<tr><td style="white-space:normal;font-weight:400"><code>ComputeFilter</code> : service actif</td></tr>
+<tr><td style="white-space:normal;font-weight:400"><code>ImagePropertiesFilter</code> : architecture, hyperviseur</td></tr>
+<tr><td style="white-space:normal;font-weight:400"><code>ComputeCapabilitiesFilter</code> : capacités exigées par le gabarit</td></tr>
+<tr><td style="white-space:normal;font-weight:400"><code>ServerGroupAntiAffinityFilter</code>, <code>ServerGroupAffinityFilter</code></td></tr>
+<tr><td style="white-space:normal;font-weight:400"><code>NUMATopologyFilter</code> : CPU dédiés, pages larges</td></tr>
+<tr><td style="white-space:normal;font-weight:400"><code>PciPassthroughFilter</code> : périphériques attribués</td></tr>
+<tr><td style="white-space:normal;font-weight:400"><code>AggregateInstanceExtraSpecsFilter</code> : gabarit ↔ agrégat</td></tr>
+</tbody></table>
+<div class="note g">Un filtre répond oui ou non, hôte par hôte. Liste active : <code>[filter_scheduler] enabled_filters</code>.</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>3 · Pondérations</th></tr></thead>
+<tbody>
+<tr><td style="white-space:normal;font-weight:400"><code>RAMWeigher</code>, <code>CPUWeigher</code>, <code>DiskWeigher</code> : ressources libres</td></tr>
+<tr><td style="white-space:normal;font-weight:400"><code>IoOpsWeigher</code> : opérations en cours sur l'hôte</td></tr>
+<tr><td style="white-space:normal;font-weight:400"><code>BuildFailureWeigher</code> : échecs récents</td></tr>
+<tr><td style="white-space:normal;font-weight:400"><code>ServerGroupSoft…Weigher</code> : affinité souple</td></tr>
+<tr><td style="white-space:normal;font-weight:400"><code>NumInstancesWeigher</code>, <code>PCIWeigher</code>…</td></tr>
+</tbody></table>
+<div class="note g">Chaque pondération note les hôtes restants ; un multiplicateur fixe son poids. Positif : <b>répartir</b>. Négatif : <b>tasser</b>.</div>
+</div>
+</div>
+<div class="cols nf">
+<div class="note"><b>Après le classement :</b> le premier hôte est retenu, sa place réservée dans Placement, et quelques <b>suppléants</b> sont transmis avec la demande. Si la construction échoue sur l'hôte, le conductor réessaie sur le suivant, sans repasser par le scheduler (<code>max_attempts</code>).</div>
+<div class="note b"><b>Lire un refus :</b> en mode <code>debug</code>, nova-scheduler journalise, filtre par filtre, combien d'hôtes restent. Le filtre qui fait tomber le compte à zéro désigne la contrainte impossible à satisfaire.</div>
+</div>
+</div>
+</section>
+
+<!-- 27 -->
+<section class="slide">
+<header><span class="kick">3 · Nova</span><h2>nova-compute : ce qui se passe sur l'hyperviseur</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 400">
+<rect x="200" y="10" width="740" height="380" rx="14" class="zone"/><text x="218" y="36" class="tl">Processus nova-compute</text>
+<g class="tc">
+<rect x="10" y="64" width="150" height="64" rx="8" class="b-amber"/><text x="85" y="92" class="tb">RabbitMQ</text><text x="85" y="111" class="ts">ordres RPC</text>
+<rect x="10" y="174" width="150" height="64" rx="8" class="b-violet"/><text x="85" y="202" class="tb">Placement</text><text x="85" y="221" class="ts">inventaires</text>
+<rect x="10" y="284" width="150" height="64" rx="8" class="b-amber"/><text x="85" y="312" class="tb">Glance</text><text x="85" y="331" class="ts">images</text>
+<rect x="220" y="56" width="230" height="80" rx="9" class="b-red"/><text x="335" y="82" class="tb">Gestionnaire</text><text x="335" y="102" class="ts">reçoit les ordres, enchaîne</text><text x="335" y="119" class="ts">les étapes de chaque opération</text>
+<rect x="220" y="166" width="230" height="80" rx="9" class="bx"/><text x="335" y="192" class="tb">Suivi des ressources</text><text x="335" y="212" class="ts">mesure l'hôte, déclare inventaire</text><text x="335" y="229" class="ts">et usage, périodiquement</text>
+<rect x="220" y="276" width="230" height="80" rx="9" class="bx"/><text x="335" y="302" class="tb">Cache d'images</text><text x="335" y="322" class="ts">répertoire _base : une copie</text><text x="335" y="339" class="ts">par image utilisée sur l'hôte</text>
+<rect x="480" y="56" width="200" height="300" rx="9" class="b-red"/><text x="580" y="84" class="tb tr">Pilote de virtualisation</text><text x="580" y="104" class="ts">libvirt (référence)</text>
+<rect x="710" y="56" width="210" height="80" rx="9" class="bx"/><text x="815" y="82" class="tb">os-vif</text><text x="815" y="102" class="ts">branche les interfaces</text><text x="815" y="119" class="ts">virtuelles sur le pont</text>
+<rect x="710" y="166" width="210" height="80" rx="9" class="bx"/><text x="815" y="192" class="tb">os-brick</text><text x="815" y="212" class="ts">connecte et déconnecte</text><text x="815" y="229" class="ts">les volumes</text>
+<rect x="710" y="276" width="210" height="80" rx="9" class="bx"/><text x="815" y="302" class="tb">privsep</text><text x="815" y="322" class="ts">exécute à part les actions</text><text x="815" y="339" class="ts">qui exigent les droits root</text>
+<rect x="980" y="64" width="160" height="64" rx="8" class="b-teal"/><text x="1060" y="92" class="tb">Open vSwitch</text><text x="1060" y="111" class="ts">br-int</text>
+<rect x="980" y="174" width="160" height="64" rx="8" class="b-amber"/><text x="1060" y="202" class="tb">Stockage</text><text x="1060" y="221" class="ts">Ceph, iSCSI, NVMe</text>
+<rect x="980" y="284" width="160" height="64" rx="8" class="b-blue"/><text x="1060" y="312" class="tb">libvirt, QEMU</text><text x="1060" y="331" class="ts">machines KVM</text>
+</g>
+<g class="ts"><text x="494" y="140">• traduit gabarit, image et</text><text x="504" y="156">ports en définition XML</text><text x="494" y="182">• crée et attache les disques</text><text x="494" y="208">• démarre, arrête, capture</text><text x="494" y="234">• migre à chaud</text><text x="494" y="260">• rapporte l'état réel</text><text x="494" y="300" class="tb">Autres pilotes :</text><text x="494" y="318">Ironic (serveurs physiques),</text><text x="494" y="336">VMware vCenter</text></g>
+<path d="M160,96 H218" class="la2"/><path d="M218,206 H162" class="lr"/><path d="M218,316 H162" class="lr2"/>
+<path d="M450,96 H478" class="ln"/><path d="M680,96 H708" class="ln"/><path d="M680,206 H708" class="ln"/>
+<path d="M920,96 H978" class="lt"/><path d="M920,206 H978" class="la"/><path d="M680,316 H700 V372 H960 V316 H978" class="lb"/>
+</svg>
+</div>
+<div class="note g">Un seul nova-compute par hyperviseur, et c'est lui qui « possède » les instances de cet hôte : s'il s'arrête, elles continuent de tourner mais plus aucune opération sur elles n'est possible.</div>
+</div>
+</section>
+
+<!-- 28 -->
+<section class="slide">
+<header><span class="kick">3 · Nova</span><h2>Où vivent les disques d'une instance</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 250">
+<rect x="10" y="8" width="365" height="234" rx="12" class="zone"/><text x="28" y="34" class="tl">Fichier local</text>
+<rect x="392" y="8" width="365" height="234" rx="12" class="zone"/><text x="410" y="34" class="tl">Ceph RBD</text>
+<rect x="775" y="8" width="365" height="234" rx="12" class="zone"/><text x="793" y="34" class="tl tr">Démarrage sur volume</text>
+<g class="tc">
+<rect x="28" y="52" width="329" height="54" rx="8" class="bx"/><text x="192" y="75" class="tm tb">instances/_base/&lt;empreinte&gt;</text><text x="192" y="95" class="ts">image, partagée en lecture</text>
+<rect x="28" y="140" width="329" height="54" rx="8" class="b-blue"/><text x="192" y="163" class="tm tb">instances/&lt;uuid&gt;/disk</text><text x="192" y="183" class="ts">qcow2 : seulement les différences</text>
+<rect x="410" y="52" width="329" height="54" rx="8" class="bx"/><text x="574" y="75" class="tm tb">images/&lt;id&gt;@snap</text><text x="574" y="95" class="ts">instantané de l'image Glance</text>
+<rect x="410" y="140" width="329" height="54" rx="8" class="b-blue"/><text x="574" y="163" class="tm tb">vms/&lt;uuid&gt;_disk</text><text x="574" y="183" class="ts">clone, dans le pool de Nova</text>
+<rect x="793" y="52" width="329" height="54" rx="8" class="bx"/><text x="957" y="75" class="tb">image Glance</text><text x="957" y="95" class="ts">copiée ou clonée une fois, par Cinder</text>
+<rect x="793" y="140" width="329" height="54" rx="8" class="b-amber"/><text x="957" y="163" class="tb">volume Cinder</text><text x="957" y="183" class="ts">disque système, indépendant de l'instance</text>
+</g>
+<path d="M192,140 V108" class="ln ld"/><path d="M574,140 V108" class="ln ld"/><path d="M957,108 V138" class="ln"/>
+<g class="tc ts"><text x="192" y="222">sur le disque de l'hyperviseur</text><text x="574" y="222">dans le cluster, hors de l'hyperviseur</text><text x="957" y="222">dans le backend de Cinder</text></g>
+</svg>
+</div>
+<table class="tbl tight">
+<thead><tr><th></th><th>Fichier local</th><th>Ceph RBD</th><th>Démarrage sur volume</th></tr></thead>
+<tbody>
+<tr><td>Réglage</td><td><code>[libvirt] images_type = qcow2</code></td><td><code>images_type = rbd</code>, <code>images_rbd_pool = vms</code></td><td>Demandé à la création de l'instance</td></tr>
+<tr><td>Création</td><td>Rapide si l'image est déjà en cache</td><td>Instantanée (clone)</td><td>Selon le backend : clone ou copie</td></tr>
+<tr><td>Migration à chaud</td><td>Avec copie des disques entre hôtes</td><td>Oui, sans copie</td><td>Oui, sans copie</td></tr>
+<tr><td>Perte de l'hyperviseur</td><td>Disque perdu avec l'hôte</td><td>Instance relançable ailleurs</td><td>Instance relançable ailleurs</td></tr>
+<tr><td>Suppression de l'instance</td><td>Disque supprimé</td><td>Disque supprimé</td><td>Volume conservé si demandé</td></tr>
+<tr><td>Instantané</td><td>Téléversé dans Glance</td><td>Clone dans Glance</td><td>Instantané de volume, dans Cinder</td></tr>
+</tbody></table>
+<div class="note g">Dans tous les cas, une instance peut recevoir en plus un <b>disque de configuration</b> (données de démarrage en lecture seule), un disque éphémère supplémentaire et un disque d'échange, selon le gabarit.</div>
+</div>
+</section>
+
+<!-- 29 -->
+<section class="slide">
+<header><span class="kick">3 · Nova</span><h2>Déplacer une instance : cinq opérations, cinq usages</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Opération</th><th>Instance pendant l'opération</th><th>Hôte source</th><th>Choix de la cible</th><th>Condition principale</th><th>Usage</th></tr></thead>
+<tbody>
+<tr><td>Migration à chaud</td><td>En marche ; pause de quelques instants en fin de transfert</td><td>En service</td><td>Scheduler ou hôte imposé</td><td>Processeurs compatibles ; disque partagé, ou copie des disques</td><td>Vider un hôte avant maintenance</td></tr>
+<tr><td>Migration à froid</td><td>Arrêtée, puis redémarrée</td><td>En service</td><td>Scheduler</td><td>Accès entre hôtes pour copier le disque local</td><td>Déplacement sans exigence de continuité</td></tr>
+<tr><td>Redimensionnement</td><td>Arrêtée, puis redémarrée</td><td>En service</td><td>Scheduler (souvent un autre hôte)</td><td>Nouveau gabarit ; confirmation ou retour arrière</td><td>Changer de taille</td></tr>
+<tr><td>Évacuation</td><td>Déjà arrêtée par la panne</td><td>Hors service</td><td>Scheduler ou hôte imposé</td><td>Hôte déclaré « down » ; disque partagé ou sur volume pour garder les données</td><td>Reprise après panne d'hôte</td></tr>
+<tr><td>Mise à l'écart (shelve)</td><td>Arrêtée, disque sauvegardé</td><td>Libéré</td><td>Au retour, par le scheduler</td><td>—</td><td>Libérer des ressources sans perdre l'instance</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="col">
+<pre style="font-size:12.4px"><span class="c">openstack</span> server migrate <span class="k">--live-migration</span> web-01  <span class="m"># à chaud</span>
+<span class="c">openstack</span> server migrate web-01                   <span class="m"># à froid</span>
+<span class="c">openstack</span> server resize <span class="k">--flavor</span> m1.large web-01
+<span class="c">openstack</span> server resize confirm web-01          <span class="m"># ou revert</span>
+<span class="c">openstack</span> server evacuate web-01
+<span class="c">openstack</span> server shelve web-01</pre>
+<p style="font-size:14.5px">Migration à chaud, échange par échange : slide 49.</p>
+</div>
+<div class="col">
+<div class="note"><b>Évacuer n'est pas migrer :</b> l'évacuation suppose l'hôte mort. Lancée sur un hôte encore vivant mais injoignable, elle démarre un second exemplaire de l'instance sur le même disque — d'où l'intérêt d'isoler l'hôte (coupure électrique commandée) avant d'évacuer.</div>
+<div class="note g">Suivre un déplacement : <code>openstack server migration list</code>, et l'état <code>VERIFY_RESIZE</code> qui attend <code>resize confirm</code> ou <code>resize revert</code>.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 30 -->
+<section class="slide">
+<header><span class="kick">3 · Nova</span><h2>Interactions : ce que Nova demande, et à quel moment</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 485">
+<rect x="150" y="6" width="237" height="38" rx="8" class="b-red"/><text x="268" y="30" class="tc tb">Validation (nova-api)</text>
+<rect x="395" y="6" width="237" height="38" rx="8" class="b-red"/><text x="513" y="30" class="tc tb">Ordonnancement</text>
+<rect x="640" y="6" width="237" height="38" rx="8" class="b-red"/><text x="758" y="30" class="tc tb">Construction sur l'hôte</text>
+<rect x="885" y="6" width="237" height="38" rx="8" class="b-red"/><text x="1003" y="30" class="tc tb">Finalisation</text>
+<rect x="10" y="58" width="130" height="60" rx="8" class="b-dark"/><text x="75" y="93" class="tc tb tw">Keystone</text>
+<rect x="150" y="58" width="237" height="60" rx="8" class="bx"/>
+<text x="268" y="93" class="tc" style="font-size:12.5px;font-weight:600">valide le jeton de l'utilisateur</text>
+<rect x="395" y="58" width="237" height="60" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<rect x="640" y="58" width="237" height="60" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<rect x="885" y="58" width="237" height="60" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<rect x="10" y="128" width="130" height="60" rx="8" class="b-amber"/><text x="75" y="163" class="tc tb">Glance</text>
+<rect x="150" y="128" width="237" height="60" rx="8" class="bx"/>
+<text x="268" y="154" class="tc" style="font-size:12.5px;font-weight:600">l'image existe-t-elle ?</text><text x="268" y="172" class="tc ts">propriétés, taille minimale</text>
+<rect x="395" y="128" width="237" height="60" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<rect x="640" y="128" width="237" height="60" rx="8" class="bx"/>
+<text x="758" y="154" class="tc" style="font-size:12.5px;font-weight:600">télécharge ou clone l'image</text><text x="758" y="172" class="tc ts">vérifie la somme de contrôle</text>
+<rect x="885" y="128" width="237" height="60" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<rect x="10" y="198" width="130" height="60" rx="8" class="b-violet"/><text x="75" y="233" class="tc tb">Placement</text>
+<rect x="150" y="198" width="237" height="60" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<rect x="395" y="198" width="237" height="60" rx="8" class="bx"/>
+<text x="513" y="224" class="tc" style="font-size:12.5px;font-weight:600">hôtes candidats,</text><text x="513" y="242" class="tc ts">puis réservation sur l'hôte retenu</text>
+<rect x="640" y="198" width="237" height="60" rx="8" class="bx"/>
+<text x="758" y="224" class="tc" style="font-size:12.5px;font-weight:600">en cas d'échec : libération,</text><text x="758" y="242" class="tc ts">nouvel essai sur un suppléant</text>
+<rect x="885" y="198" width="237" height="60" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<rect x="10" y="268" width="130" height="60" rx="8" class="b-teal"/><text x="75" y="303" class="tc tb">Neutron</text>
+<rect x="150" y="268" width="237" height="60" rx="8" class="bx"/>
+<text x="268" y="294" class="tc" style="font-size:12.5px;font-weight:600">réseaux et ports demandés ?</text><text x="268" y="312" class="tc ts">quota de ports</text>
+<rect x="395" y="268" width="237" height="60" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<rect x="640" y="268" width="237" height="60" rx="8" class="bx"/>
+<text x="758" y="294" class="tc" style="font-size:12.5px;font-weight:600">crée ou complète les ports,</text><text x="758" y="312" class="tc ts">désigne l'hôte de liaison</text>
+<rect x="885" y="268" width="237" height="60" rx="8" class="bx"/>
+<text x="1003" y="294" class="tc" style="font-size:12.5px;font-weight:600">événement « port prêt »</text><text x="1003" y="312" class="tc ts">attendu avant de démarrer</text>
+<rect x="10" y="338" width="130" height="60" rx="8" class="b-amber"/><text x="75" y="373" class="tc tb">Cinder</text>
+<rect x="150" y="338" width="237" height="60" rx="8" class="bx"/>
+<text x="268" y="373" class="tc" style="font-size:12.5px;font-weight:600">volumes demandés disponibles ?</text>
+<rect x="395" y="338" width="237" height="60" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<rect x="640" y="338" width="237" height="60" rx="8" class="bx"/>
+<text x="758" y="364" class="tc" style="font-size:12.5px;font-weight:600">crée les volumes, obtient</text><text x="758" y="382" class="tc ts">les informations de connexion</text>
+<rect x="885" y="338" width="237" height="60" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<text x="75" y="444" class="tc tb">État vu</text><text x="75" y="461" class="tc tb">par l'API</text>
+<rect x="150" y="422" width="237" height="56" rx="8" class="b-grey"/><text x="268" y="445" class="tc tb">BUILD</text><text x="268" y="464" class="tc ts" style="font-size:10px">task_state : scheduling</text>
+<rect x="395" y="422" width="237" height="56" rx="8" class="b-grey"/><text x="513" y="445" class="tc tb">BUILD</text><text x="513" y="464" class="tc ts" style="font-size:10px">task_state : scheduling</text>
+<rect x="640" y="422" width="237" height="56" rx="8" class="b-grey"/><text x="758" y="445" class="tc tb">BUILD</text><text x="758" y="464" class="tc ts" style="font-size:10px">networking→block_device_mapping→spawning</text>
+<rect x="885" y="422" width="237" height="56" rx="8" class="b-green"/><text x="1003" y="445" class="tc tb">ACTIVE</text><text x="1003" y="464" class="tc ts" style="font-size:10px">task_state vide</text>
+<path d="M387,25 H394" class="lr"/>
+<path d="M632,25 H639" class="lr"/>
+<path d="M877,25 H884" class="lr"/>
+</svg>
+</div></div>
+</section>
+
+<!-- 31 -->
+<section class="slide">
+<header><span class="kick">3 · Nova</span><h2>Commandes et diagnostic</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:12.6px"><span class="m"># État complet d'une instance (administrateur)</span>
+<span class="c">openstack</span> server show web-01 <span class="k">-c</span> status <span class="k">-c</span> OS-EXT-STS:vm_state \
+    <span class="k">-c</span> OS-EXT-STS:task_state <span class="k">-c</span> OS-EXT-SRV-ATTR:host <span class="k">-c</span> fault
+
+<span class="m"># Historique des opérations et de leurs étapes</span>
+<span class="c">openstack</span> server event list web-01
+<span class="c">openstack</span> server event show web-01 req-5f1c2b7e-…
+
+<span class="m"># Services, hyperviseurs, déplacements en cours</span>
+<span class="c">openstack</span> compute service list
+<span class="c">openstack</span> hypervisor list <span class="k">--long</span>
+<span class="c">openstack</span> server migration list
+
+<span class="m"># Cellules et rattachement des hôtes</span>
+<span class="c">nova-manage</span> cell_v2 list_cells
+<span class="c">nova-manage</span> cell_v2 discover_hosts <span class="k">--verbose</span>
+
+<span class="m"># Contrôles avant montée de version</span>
+<span class="c">nova-status</span> upgrade check
+
+<span class="m"># Sur l'hyperviseur : ce que voit libvirt</span>
+<span class="c">virsh</span> list <span class="k">--all</span> ; <span class="c">virsh</span> dumpxml instance-0000002a</pre>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Bloquée à l'étape…</th><th>Chercher du côté de…</th></tr></thead>
+<tbody>
+<tr><td style="white-space:normal"><code>scheduling</code>, puis ERROR « No valid host »</td><td>Placement, filtres du scheduler</td></tr>
+<tr><td style="white-space:normal"><code>scheduling</code>, sans fin</td><td>Bus de messages, nova-conductor, nova-scheduler</td></tr>
+<tr><td style="white-space:normal"><code>networking</code></td><td>Neutron : création ou liaison du port</td></tr>
+<tr><td style="white-space:normal"><code>block_device_mapping</code></td><td>Cinder : création ou connexion du volume</td></tr>
+<tr><td style="white-space:normal"><code>spawning</code></td><td>Glance (image), libvirt, événement « port prêt » de Neutron</td></tr>
+<tr><td style="white-space:normal">ACTIVE mais injoignable</td><td>Groupes de sécurité, DHCP, métadonnées ; plus Nova</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li>Le champ <b>fault</b> donne le message et, pour un administrateur, la trace de l'erreur.</li>
+<li>Les <b>événements d'instance</b> listent chaque action, son identifiant de requête et l'étape qui a échoué : le meilleur point d'entrée dans les journaux.</li>
+<li>Le nom libvirt d'une instance (<code>instance-0000002a</code>) figure dans <code>OS-EXT-SRV-ATTR:instance_name</code>.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 32 -->
+<section class="slide dark sec">
+<div class="num">04</div>
+<h2>Cinder — le stockage bloc</h2>
+<p>Cinder fournit des disques persistants, indépendants des instances. Il pilote des backends très différents derrière une même API, et s'efface dès que le disque est connecté.</p>
+<ol><li>Rôle et notions</li><li>Architecture multi-backend</li><li>Types de volumes et ordonnancement</li><li>Les états d'un volume</li><li>Créer un volume depuis une image</li><li>Instantanés, sauvegardes, interactions</li></ol>
+</section>
+
+<!-- 33 -->
+<section class="slide">
+<header><span class="kick">4 · Cinder</span><h2>Rôle et notions</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Rôle :</b> créer et gérer des <b>volumes</b> — des disques virtuels dont la durée de vie ne dépend d'aucune instance — et fournir à l'hyperviseur de quoi s'y connecter.</p>
+<ul class="pts sm">
+<li><b>Ce qu'il fait :</b> choisir un backend, y créer le volume, en gérer les instantanés, sauvegardes, clones et extensions, autoriser les connexions.</li>
+<li><b>Ce qu'il ne fait pas :</b> transporter les données. Une fois le volume connecté, l'hyperviseur dialogue directement avec le backend.</li>
+<li><b>Conséquence :</b> un arrêt de Cinder n'interrompt aucune E/S en cours ; il empêche seulement de créer, attacher ou détacher.</li>
+</ul>
+<table class="tbl tight">
+<thead><tr><th>Processus</th><th>Fonction</th></tr></thead>
+<tbody>
+<tr><td>cinder-api</td><td>API REST ; valide, vérifie quotas, enregistre</td></tr>
+<tr><td>cinder-scheduler</td><td>Choisit le backend et le pool</td></tr>
+<tr><td>cinder-volume</td><td>Un par backend ; pilote le stockage</td></tr>
+<tr><td>cinder-backup</td><td>Copie les volumes vers un dépôt distinct (optionnel)</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Notion</th><th>Définition</th></tr></thead>
+<tbody>
+<tr><td>Volume</td><td>Disque bloc persistant, d'une taille en Go, appartenant à un projet</td></tr>
+<tr><td>Type de volume</td><td>Classe de service choisie par l'utilisateur : backend, performances, chiffrement</td></tr>
+<tr><td>Instantané</td><td>État figé d'un volume, sur le même backend ; base d'un nouveau volume</td></tr>
+<tr><td>Sauvegarde</td><td>Copie hors du backend, complète ou incrémentale</td></tr>
+<tr><td>Attachement</td><td>Lien entre un volume et une instance, avec ses informations de connexion</td></tr>
+<tr><td>Volume amorçable</td><td>Créé depuis une image ; peut servir de disque système</td></tr>
+<tr><td>Spécification de qualité de service</td><td>Limites de débit et d'opérations, appliquées par le backend ou l'hyperviseur</td></tr>
+</tbody></table>
+<div class="note"><b>Différence avec le disque éphémère de Nova :</b> un volume survit à l'instance, se détache, se rattache ailleurs, se sauvegarde. C'est le support des données qui comptent.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 34 -->
+<section class="slide">
+<header><span class="kick">4 · Cinder</span><h2>Architecture : un service de volume par backend</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 345">
+<g class="tc">
+<rect x="10" y="118" width="150" height="64" rx="9" class="b-red"/><text x="85" y="146" class="tb">cinder-api</text><text x="85" y="165" class="ts">port 8776</text>
+<rect x="210" y="118" width="170" height="64" rx="9" class="b-red"/><text x="295" y="146" class="tb">cinder-scheduler</text><text x="295" y="165" class="ts">filtres, pondérations</text>
+<rect x="450" y="14" width="280" height="64" rx="9" class="b-red"/><text x="590" y="40" class="tb">cinder-volume</text><text x="590" y="60" class="tm">ctl01@ceph</text>
+<rect x="450" y="98" width="280" height="64" rx="9" class="b-red"/><text x="590" y="124" class="tb">cinder-volume</text><text x="590" y="144" class="tm">ctl01@nvme</text>
+<rect x="450" y="182" width="280" height="64" rx="9" class="b-red"/><text x="590" y="208" class="tb">cinder-volume</text><text x="590" y="228" class="tm">stor01@lvm</text>
+<rect x="450" y="266" width="280" height="64" rx="9" class="bx"/><text x="590" y="292" class="tb">cinder-backup</text><text x="590" y="312" class="ts">optionnel</text>
+<rect x="830" y="14" width="310" height="64" rx="9" class="b-amber"/><text x="985" y="40" class="tb">Ceph RBD</text><text x="985" y="60" class="ts">pool « volumes »</text>
+<rect x="830" y="98" width="310" height="64" rx="9" class="b-amber"/><text x="985" y="124" class="tb">Baie NVMe-oF</text><text x="985" y="144" class="ts">pools de la baie</text>
+<rect x="830" y="182" width="310" height="64" rx="9" class="b-amber"/><text x="985" y="208" class="tb">LVM local</text><text x="985" y="228" class="ts">groupe de volumes, export iSCSI</text>
+<rect x="830" y="266" width="310" height="64" rx="9" class="b-grey"/><text x="985" y="292" class="tb">Dépôt de sauvegarde</text><text x="985" y="312" class="ts">Swift, Ceph, S3, NFS</text>
+<rect x="10" y="266" width="370" height="64" rx="9" class="b-grey"/><text x="195" y="292" class="tb">MariaDB — schéma cinder</text><text x="195" y="312" class="ts">lu et écrit par tous les processus Cinder</text>
+</g>
+<path d="M160,150 H208" class="la"/><path d="M380,138 L448,50" class="la"/><path d="M380,150 L448,132" class="la"/><path d="M380,162 L448,212" class="la"/>
+<path d="M85,182 V264" class="ln"/><path d="M295,182 V264" class="ln"/>
+<path d="M730,46 H828" class="ln"/><path d="M730,130 H828" class="ln"/><path d="M730,214 H828" class="ln"/><path d="M730,298 H828" class="ln"/>
+<g class="tc ts"><text x="780" y="38">pilote RBD</text><text x="780" y="122">pilote NVMe</text><text x="780" y="206">pilote LVM</text><text x="184" y="140" class="tb fa">RPC</text><text x="408" y="88" class="tb fa">RPC</text></g>
+</svg>
+</div>
+<div class="cols nf">
+<pre style="font-size:12.4px"><span class="m"># /etc/cinder/cinder.conf</span>
+<span class="k">[DEFAULT]</span>
+enabled_backends = ceph, nvme
+<span class="k">[ceph]</span>
+volume_driver = cinder.volume.drivers.rbd.RBDDriver
+volume_backend_name = ceph
+rbd_pool = volumes
+rbd_user = cinder</pre>
+<div class="col">
+<ul class="pts sm">
+<li>Chaque backend est une <b>section</b> du fichier et donne naissance à un service de volume nommé <code>hôte@backend</code>.</li>
+<li>Un backend peut exposer plusieurs <b>pools</b> : la désignation complète est <code>hôte@backend#pool</code>.</li>
+<li>Backend distant (Ceph, baie) : cinder-volume tourne sur les contrôleurs. Backend local (LVM) : il tourne sur le nœud qui porte les disques.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 35 -->
+<section class="slide">
+<header><span class="kick">4 · Cinder</span><h2>Types de volumes et choix du backend</h2></header>
+<div class="body">
+<div class="fig" style="flex:none;height:170px">
+<svg viewBox="0 0 1150 170">
+<g class="tc">
+<rect x="10" y="30" width="190" height="90" rx="9" class="b-blue"/><text x="105" y="60" class="tb">Demande</text><text x="105" y="82" class="ts">50 Go, type « rapide »,</text><text x="105" y="100" class="ts">zone az-nord</text>
+<rect x="250" y="30" width="200" height="90" rx="9" class="bx"/><text x="350" y="60" class="tb">Type « rapide »</text><text x="350" y="82" class="tm">volume_backend_name</text><text x="350" y="100" class="tm">= nvme</text>
+<rect x="500" y="30" width="200" height="90" rx="9" class="bx"/><text x="600" y="60" class="tb">Filtres</text><text x="600" y="82" class="ts">zone · capacité libre</text><text x="600" y="100" class="ts">capacités du backend</text>
+<rect x="750" y="30" width="170" height="90" rx="9" class="bx"/><text x="835" y="60" class="tb">Pondération</text><text x="835" y="82" class="ts">le pool le plus libre</text><text x="835" y="100" class="ts">par défaut</text>
+<rect x="970" y="30" width="170" height="90" rx="9" class="b-red"/><text x="1055" y="60" class="tb tr">Pool retenu</text><text x="1055" y="82" class="tm">ctl01@nvme#p1</text><text x="1055" y="100" class="ts">ordre envoyé par RPC</text>
+</g>
+<path d="M200,75 H248" class="ln"/><path d="M450,75 H498" class="ln"/><path d="M700,75 H748" class="ln"/><path d="M920,75 H968" class="lr"/>
+<text x="575" y="152" class="tc ts">Chaque cinder-volume publie périodiquement les capacités de ses pools : espace total et libre, fonctions prises en charge, nom de backend.</text>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<pre style="font-size:12.4px"><span class="m"># Créer un type et le lier à un backend</span>
+<span class="c">openstack</span> volume type create rapide
+<span class="c">openstack</span> volume type set rapide \
+    <span class="k">--property</span> volume_backend_name=nvme
+
+<span class="m"># Limiter les performances</span>
+<span class="c">openstack</span> volume qos create bridee <span class="k">--consumer</span> front-end \
+    <span class="k">--property</span> total_iops_sec=2000
+<span class="c">openstack</span> volume qos associate bridee rapide
+
+<span class="m"># Voir les pools et ce qu'ils annoncent</span>
+<span class="c">openstack</span> volume backend pool list <span class="k">--long</span></pre>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Étape</th><th>Composant par défaut</th></tr></thead>
+<tbody>
+<tr><td>Filtres</td><td><code>AvailabilityZoneFilter</code>, <code>CapacityFilter</code>, <code>CapabilitiesFilter</code></td></tr>
+<tr><td>Pondération</td><td><code>CapacityWeigher</code> : privilégie l'espace libre</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li>Le <b>type</b> est le seul levier de l'utilisateur : il ne voit ni les backends ni les pools.</li>
+<li>Les propriétés du type (<i>extra specs</i>) sont comparées aux capacités annoncées : nom de backend, provisionnement fin, réplication, chiffrement.</li>
+<li>Qualité de service <code>front-end</code> : appliquée par l'hyperviseur (libvirt) ; <code>back-end</code> : par le stockage.</li>
+<li>Un type peut être <b>privé</b> : réservé à certains projets.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 36 -->
+<section class="slide">
+<header><span class="kick">4 · Cinder</span><h2>Les états d'un volume</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 300">
+<g class="tc tb">
+<rect x="20" y="118" width="140" height="52" rx="9" class="b-amber"/><text x="90" y="149">creating</text>
+<rect x="240" y="118" width="140" height="52" rx="9" class="b-green"/><text x="310" y="149">available</text>
+<rect x="460" y="30" width="140" height="52" rx="9" class="bx"/><text x="530" y="61">reserved</text>
+<rect x="680" y="30" width="140" height="52" rx="9" class="bx"/><text x="750" y="61">attaching</text>
+<rect x="900" y="118" width="140" height="52" rx="9" class="b-blue"/><text x="970" y="149">in-use</text>
+<rect x="570" y="206" width="140" height="52" rx="9" class="bx"/><text x="640" y="237">detaching</text>
+<rect x="20" y="226" width="140" height="52" rx="9" class="b-red"/><text x="90" y="257" class="tr">error</text>
+<rect x="240" y="226" width="140" height="52" rx="9" class="b-dark"/><text x="310" y="257" class="tw">deleting</text>
+</g>
+<path d="M160,144 H238" class="lr"/><path d="M90,170 V224" class="lr"/><path d="M310,170 V224" class="ln"/>
+<path d="M380,132 L458,70" class="lr"/><path d="M600,56 H678" class="lr"/><path d="M820,66 L898,130" class="lr"/>
+<path d="M900,160 L712,222" class="ln"/><path d="M568,222 L382,160" class="ln"/>
+<g class="ts"><text x="100" y="202">échec</text><text x="320" y="202">suppression</text>
+<text x="530" y="20" class="tc">Nova réserve</text><text x="750" y="20" class="tc">connexion en cours</text><text x="970" y="196" class="tc">attaché à une instance</text>
+<text x="640" y="280" class="tc">déconnexion en cours</text></g>
+</svg>
+</div>
+<div class="cols">
+<table class="tbl tight">
+<thead><tr><th>État transitoire</th><th>Opération en cours</th></tr></thead>
+<tbody>
+<tr><td>extending</td><td>Agrandissement ; possible volume attaché si le backend le permet</td></tr>
+<tr><td>backing-up, restoring-backup</td><td>Sauvegarde ou restauration</td></tr>
+<tr><td>uploading, downloading</td><td>Export vers une image Glance ; remplissage depuis une image</td></tr>
+<tr><td>retyping, migrating</td><td>Changement de type ou de backend</td></tr>
+<tr><td>error_extending, error_deleting…</td><td>L'opération a échoué ; le volume reste dans cet état</td></tr>
+</tbody></table>
+<div class="col">
+<ul class="pts sm">
+<li>Un volume ne s'attache que s'il est <b>available</b> (ou déjà <i>in-use</i> avec l'attachement multiple).</li>
+<li>Un volume bloqué dans un état transitoire refuse toute action : c'est le symptôme d'un ordre RPC perdu ou d'un cinder-volume arrêté.</li>
+<li>Remise en état par l'administrateur : <code>openstack volume set --state available</code> — après avoir vérifié la réalité côté backend et côté Nova.</li>
+</ul>
+<div class="note">Un volume a aussi un <b>état d'attachement</b> et un <b>état de migration</b> distincts : les trois doivent être cohérents avant de forcer quoi que ce soit.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 37 -->
+<section class="slide">
+<header><span class="kick">4 · Cinder</span><h2>Créer un volume depuis une image : trois chemins</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 300">
+<rect x="10" y="6" width="1130" height="88" rx="12" class="zone"/><rect x="10" y="106" width="1130" height="88" rx="12" class="zone"/><rect x="10" y="206" width="1130" height="88" rx="12" class="zone"/>
+<g class="tb"><text x="28" y="44">A · Chemin générique</text><text x="28" y="144" class="tr">B · Clone côté stockage</text><text x="28" y="244">C · Cache d'images-volumes</text></g>
+<g class="ts"><text x="28" y="66">fonctionne toujours ; lent</text><text x="28" y="166">instantané ; sous conditions</text><text x="28" y="266">rapide dès la deuxième fois</text></g>
+<g class="tc" style="font-size:12.5px">
+<rect x="250" y="22" width="150" height="56" rx="8" class="b-amber"/><text x="325" y="46" class="tb">Glance</text><text x="325" y="64" class="ts">image qcow2 ou raw</text>
+<rect x="450" y="22" width="220" height="56" rx="8" class="b-red"/><text x="560" y="46" class="tb">cinder-volume</text><text x="560" y="64" class="ts">télécharge, convertit en raw</text>
+<rect x="720" y="22" width="190" height="56" rx="8" class="bx"/><text x="815" y="46" class="tb">volume vide</text><text x="815" y="64" class="ts">créé sur le backend</text>
+<rect x="960" y="22" width="165" height="56" rx="8" class="b-green"/><text x="1042" y="46" class="tb">volume rempli</text><text x="1042" y="64" class="ts">copie bloc à bloc</text>
+<rect x="250" y="122" width="250" height="56" rx="8" class="b-amber"/><text x="375" y="146" class="tb">image raw dans Ceph</text><text x="375" y="164" class="ts">pool « images », même cluster</text>
+<rect x="600" y="122" width="250" height="56" rx="8" class="b-red"/><text x="725" y="146" class="tb">clone RBD</text><text x="725" y="164" class="ts">aucune donnée copiée</text>
+<rect x="960" y="122" width="165" height="56" rx="8" class="b-green"/><text x="1042" y="146" class="tb">volume prêt</text><text x="1042" y="164" class="ts">en quelques secondes</text>
+<rect x="250" y="222" width="200" height="56" rx="8" class="bx"/><text x="350" y="246" class="tb">1re demande</text><text x="350" y="264" class="ts">chemin générique</text>
+<rect x="500" y="222" width="230" height="56" rx="8" class="b-amber"/><text x="615" y="246" class="tb">volume-cache conservé</text><text x="615" y="264" class="ts">sur le backend, par image</text>
+<rect x="780" y="222" width="150" height="56" rx="8" class="b-red"/><text x="855" y="246" class="tb">clone local</text><text x="855" y="264" class="ts">demandes suivantes</text>
+<rect x="960" y="222" width="165" height="56" rx="8" class="b-green"/><text x="1042" y="246" class="tb">volume prêt</text><text x="1042" y="264" class="ts">sans retéléchargement</text>
+</g>
+<path d="M400,50 H448" class="ln"/><path d="M670,50 H718" class="ln"/><path d="M910,50 H958" class="ln"/>
+<path d="M500,150 H598" class="lr"/><path d="M850,150 H958" class="lr"/>
+<path d="M450,250 H498" class="ln"/><path d="M730,250 H778" class="ln"/><path d="M930,250 H958" class="ln"/>
+</svg>
+</div>
+<div class="cols nf">
+<table class="tbl tight">
+<thead><tr><th>Chemin</th><th>Conditions</th><th>Coût</th></tr></thead>
+<tbody>
+<tr><td>A · Générique</td><td>Aucune</td><td>Temps et espace temporaire, selon la taille</td></tr>
+<tr><td>B · Clone</td><td>Image raw, même cluster Ceph, emplacement exposé</td><td>Quasi nul</td></tr>
+<tr><td>C · Cache</td><td><code>image_volume_cache_enabled</code> sur le backend</td><td>Un volume caché par image</td></tr>
+</tbody></table>
+<div class="col">
+<ul class="pts sm">
+<li>Le chemin A exige de l'<b>espace disque temporaire</b> là où tourne cinder-volume : une image de 40 Go qui échoue « sans raison » a souvent rempli ce répertoire.</li>
+<li>Le chemin B crée une <b>dépendance</b> entre le volume et l'image : tant que le clone existe, l'image ne peut pas être supprimée de Ceph.</li>
+<li>Dans tous les cas, le volume reçoit les métadonnées de l'image (<code>volume_image_metadata</code>) : Nova les relira au démarrage.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 38 -->
+<section class="slide">
+<header><span class="kick">4 · Cinder</span><h2>Instantanés, sauvegardes, clones et déplacements</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Opération</th><th>Ce qu'elle produit</th><th>Où</th><th>Volume attaché ?</th><th>Usage</th></tr></thead>
+<tbody>
+<tr><td>Instantané</td><td>État figé du volume, à un instant</td><td>Même backend que le volume</td><td>Oui, avec <code>--force</code> ; cohérence à assurer côté invité</td><td>Point de retour rapide ; source d'un nouveau volume</td></tr>
+<tr><td>Clone</td><td>Nouveau volume, copie d'un volume existant</td><td>Même backend</td><td>Oui</td><td>Dupliquer un environnement</td></tr>
+<tr><td>Sauvegarde</td><td>Copie complète ou incrémentale</td><td>Dépôt distinct : Swift, Ceph, S3, NFS</td><td>Oui, avec <code>--force</code></td><td>Protection contre la perte du backend</td></tr>
+<tr><td>Changement de type (retype)</td><td>Même volume, autre classe de service</td><td>Sur place, ou vers un autre backend</td><td>Oui, si le backend le permet</td><td>Passer de « standard » à « rapide »</td></tr>
+<tr><td>Migration</td><td>Même volume, autre backend ou pool</td><td>D'un backend à l'autre</td><td>Oui : Nova bascule le disque à chaud</td><td>Vider un backend avant son retrait</td></tr>
+<tr><td>Transfert</td><td>Même volume, autre projet</td><td>Sur place</td><td>Non</td><td>Céder un volume à une autre équipe</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Instantané n'est pas sauvegarde :</b> l'instantané vit sur le même stockage que le volume et disparaît avec lui. Seule la sauvegarde sort les données du backend.</div>
+<div class="note g"><b>Dépendances :</b> sur beaucoup de backends, un volume ne peut pas être supprimé tant qu'il a des instantanés, et un instantané tant que des volumes en sont issus. Vérifier avant de conclure à un blocage.</div>
+</div>
+</div>
+</section>
+
+<!-- 39 -->
+<section class="slide">
+<header><span class="kick">4 · Cinder</span><h2>Interactions, commandes et diagnostic</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Avec</th><th>Échange</th></tr></thead>
+<tbody>
+<tr><td>Nova</td><td>Nova réserve, fournit la description de l'hôte, reçoit les informations de connexion ; Cinder prévient Nova d'une extension</td></tr>
+<tr><td>Glance</td><td>Volume depuis une image ; image depuis un volume ; magasin d'images adossé à Cinder</td></tr>
+<tr><td>Keystone</td><td>Jetons, et jeton de service exigé pour les actions réservées à Nova</td></tr>
+<tr><td>Barbican</td><td>Clés des volumes chiffrés</td></tr>
+<tr><td>Swift, Ceph, S3</td><td>Dépôt des sauvegardes</td></tr>
+<tr><td>Backend</td><td>Création, export, droits d'accès — par le pilote</td></tr>
+</tbody></table>
+<div class="note"><b>Qui établit la connexion :</b> <b>os-brick</b>, sur l'hyperviseur, d'après la réponse de Cinder. Un échec de connexion se lit dans le journal de <b>nova-compute</b>.</div>
+<table class="tbl tight">
+<thead><tr><th>Symptôme</th><th>Piste</th></tr></thead>
+<tbody>
+<tr><td style="white-space:normal">Volume en « error » dès la création</td><td>« No valid backend » : type, capacité, zone</td></tr>
+<tr><td style="white-space:normal">Figé en « creating », « attaching »</td><td>cinder-volume arrêté, ordre RPC perdu</td></tr>
+<tr><td style="white-space:normal">Attachement refusé (403)</td><td>Jeton de service absent côté Nova</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<pre style="font-size:12.4px"><span class="m"># Services et backends vivants</span>
+<span class="c">openstack</span> volume service list
+<span class="c">openstack</span> volume backend pool list <span class="k">--long</span>
+
+<span class="m"># Où vit ce volume, dans quel état, attaché à quoi</span>
+<span class="c">openstack</span> volume show data-01 <span class="k">-c</span> status <span class="k">-c</span> type \
+    <span class="k">-c</span> os-vol-host-attr:host <span class="k">-c</span> attachments
+
+<span class="m"># Les attachements, vus de Cinder</span>
+<span class="c">openstack</span> volume attachment list <span class="k">--os-volume-api-version</span> 3.27
+
+<span class="m"># Pourquoi une création a échoué</span>
+<span class="c">openstack</span> volume message list
+
+<span class="m"># Cycle courant</span>
+<span class="c">openstack</span> volume create <span class="k">--size</span> 50 <span class="k">--type</span> rapide data-01
+<span class="c">openstack</span> server add volume web-01 data-01
+<span class="c">openstack</span> volume snapshot create <span class="k">--volume</span> data-01 <span class="k">--force</span> s1
+<span class="c">openstack</span> volume backup create <span class="k">--force</span> data-01
+
+<span class="m"># Côté Ceph : le volume existe-t-il vraiment ?</span>
+<span class="c">rbd</span> <span class="k">-p</span> volumes ls | grep &lt;id-du-volume&gt;</pre>
+<div class="note g"><code>volume message list</code> donne en clair la raison d'un échec asynchrone, sans avoir à lire les journaux.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 40 -->
+<section class="slide dark sec">
+<div class="num">05</div>
+<h2>Neutron — le réseau</h2>
+<p>Neutron donne à chaque projet ses réseaux, ses routeurs et ses règles de filtrage. Il décrit le réseau voulu ; un backend — OVN dans la configuration de référence — le réalise sur chaque hyperviseur.</p>
+<ol><li>Rôle et modèle de ressources</li><li>Architecture : ML2 et ses pilotes</li><li>Du modèle Neutron au modèle OVN</li><li>La liaison de port</li><li>Filtrage, chemins du trafic, services intégrés</li><li>Interactions et diagnostic</li></ol>
+</section>
+
+<!-- 41 -->
+<section class="slide">
+<header><span class="kick">5 · Neutron</span><h2>Rôle et modèle de ressources</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Rôle :</b> offrir le réseau « à la demande ». Chaque projet compose sa topologie par API, isolée de celle des autres, sans intervention de l'équipe réseau.</p>
+<ul class="pts sm">
+<li><b>Ce qu'il fait :</b> tenir le modèle (réseaux, sous-réseaux, ports, routeurs), attribuer les adresses, traduire ce modèle pour le backend, signaler à Nova qu'un port est prêt.</li>
+<li><b>Ce qu'il ne fait pas :</b> commuter les paquets. Le trafic passe par Open vSwitch sur chaque hôte, jamais par neutron-server.</li>
+</ul>
+<div class="note"><b>Le port est l'objet central :</b> c'est lui qui relie une instance (côté Nova) à un réseau (côté Neutron). Adresse MAC, adresses IP, groupes de sécurité, hôte de rattachement : tout s'y trouve.</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Ressource</th><th>Rôle</th><th>Créée par</th></tr></thead>
+<tbody>
+<tr><td>Réseau</td><td>Domaine de diffusion isolé</td><td>Projet, ou administrateur (fournisseur)</td></tr>
+<tr><td>Sous-réseau</td><td>Plage d'adresses, passerelle, DHCP, DNS</td><td>Projet</td></tr>
+<tr><td>Port</td><td>Point de raccordement</td><td>Projet, ou Nova pour son compte</td></tr>
+<tr><td>Routeur</td><td>Relie des sous-réseaux, sort vers l'extérieur</td><td>Projet</td></tr>
+<tr><td>IP flottante</td><td>Adresse externe associée à un port</td><td>Projet</td></tr>
+<tr><td>Groupe de sécurité</td><td>Règles de filtrage appliquées aux ports</td><td>Projet</td></tr>
+<tr><td>Réseau fournisseur</td><td>Adossé à un VLAN ou réseau physique</td><td>Administrateur</td></tr>
+</tbody></table>
+</div>
+</div></div>
+</section>
+
+<!-- 42 -->
+<section class="slide">
+<header><span class="kick">5 · Neutron</span><h2>Architecture : neutron-server, ML2 et ses pilotes</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 345">
+<rect x="10" y="6" width="720" height="333" rx="12" class="zone"/><text x="28" y="32" class="tl">neutron-server</text>
+<rect x="28" y="44" width="684" height="40" rx="8" class="b-red"/><text x="370" y="69" class="tc tb">API REST v2.0 et extensions — port 9696</text>
+<rect x="28" y="98" width="430" height="226" rx="10" class="bx" style="stroke-dasharray:6 4"/><text x="44" y="122" class="tb">Greffon principal : ML2</text>
+<rect x="476" y="98" width="236" height="226" rx="10" class="bx" style="stroke-dasharray:6 4"/><text x="492" y="122" class="tb">Greffons de service</text>
+<text x="44" y="150" class="ts tb">Pilotes de type — comment isoler un réseau</text>
+<g class="tc tm tb"><rect x="44" y="158" width="92" height="30" rx="5" class="b-grey"/><text x="90" y="178">flat</text><rect x="144" y="158" width="92" height="30" rx="5" class="b-grey"/><text x="190" y="178">vlan</text><rect x="244" y="158" width="92" height="30" rx="5" class="b-blue"/><text x="290" y="178">geneve</text><rect x="344" y="158" width="92" height="30" rx="5" class="b-grey"/><text x="390" y="178">vxlan</text></g>
+<text x="44" y="214" class="ts tb">Pilotes de mécanisme — qui réalise le réseau</text>
+<g class="tc tm tb"><rect x="44" y="222" width="92" height="30" rx="5" class="b-red"/><text x="90" y="242">ovn</text><rect x="144" y="222" width="134" height="30" rx="5" class="b-grey"/><text x="211" y="242">openvswitch</text><rect x="286" y="222" width="150" height="30" rx="5" class="b-grey"/><text x="361" y="242">sriovnicswitch</text></g>
+<text x="44" y="278" class="ts tb">Pilotes d'extension — attributs supplémentaires</text>
+<g class="tc tm tb"><rect x="44" y="286" width="134" height="30" rx="5" class="b-grey"/><text x="111" y="306">port_security</text><rect x="186" y="286" width="92" height="30" rx="5" class="b-grey"/><text x="232" y="306">qos</text><rect x="286" y="286" width="92" height="30" rx="5" class="b-grey"/><text x="332" y="306">dns</text></g>
+<g class="tc tm tb"><rect x="492" y="134" width="204" height="30" rx="5" class="b-red"/><text x="594" y="154">ovn-router</text><rect x="492" y="172" width="98" height="30" rx="5" class="b-grey"/><text x="541" y="192">qos</text><rect x="598" y="172" width="98" height="30" rx="5" class="b-grey"/><text x="647" y="192">trunk</text><rect x="492" y="210" width="98" height="30" rx="5" class="b-grey"/><text x="541" y="230">segments</text><rect x="598" y="210" width="98" height="30" rx="5" class="b-grey"/><text x="647" y="230">placement</text><rect x="492" y="248" width="204" height="30" rx="5" class="b-grey"/><text x="594" y="268">port_forwarding</text></g>
+<text x="492" y="304" class="ts">routage, débit, VLAN multiples,</text><text x="492" y="320" class="ts">réseaux routés, redirection de ports</text>
+<g class="tc">
+<rect x="800" y="20" width="340" height="80" rx="10" class="b-grey"/><text x="970" y="50" class="tb">MariaDB — schéma neutron</text><text x="970" y="72" class="ts">la référence : réseaux, ports, adresses attribuées</text>
+<rect x="800" y="132" width="340" height="80" rx="10" class="b-teal"/><text x="970" y="162" class="tb">Base OVN Northbound</text><text x="970" y="184" class="ts">écrite par le mécanisme ovn et ovn-router</text>
+<rect x="800" y="244" width="340" height="80" rx="10" class="bx"/><text x="970" y="274" class="tb">Autres réalisations</text><text x="970" y="296" class="ts">agents OVS par RPC, cartes SR-IOV</text>
+</g>
+<path d="M730,60 H798" class="ln"/><path d="M730,172 H798" class="lt"/><path d="M730,284 H798" class="ln ld"/>
+</svg>
+</div>
+<div class="cols nf">
+<pre style="font-size:12.4px"><span class="m"># /etc/neutron/plugins/ml2/ml2_conf.ini</span>
+<span class="k">[ml2]</span>
+type_drivers = flat,vlan,geneve
+tenant_network_types = geneve
+mechanism_drivers = ovn
+extension_drivers = port_security,qos,dns
+<span class="k">[ml2_type_vlan]</span>
+network_vlan_ranges = physnet1:100:199</pre>
+<div class="col">
+<ul class="pts sm">
+<li><b>ML2 sépare deux questions :</b> le <i>type</i> (comment un réseau est isolé) et le <i>mécanisme</i> (qui le met en œuvre). Plusieurs mécanismes peuvent cohabiter.</li>
+<li><code>tenant_network_types</code> : type attribué aux réseaux que créent les projets — ici des tunnels Geneve.</li>
+<li><code>network_vlan_ranges</code> : VLAN utilisables pour les réseaux fournisseurs, par réseau physique nommé.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 43 -->
+<section class="slide">
+<header><span class="kick">5 · Neutron</span><h2>Du modèle Neutron au modèle OVN</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 440">
+<text x="200" y="20" class="tc tl">API Neutron — ce que crée l'utilisateur</text><text x="745" y="20" class="tc tl">Base OVN Northbound — ce qu'écrit le pilote</text>
+<rect x="20" y="34" width="360" height="36" rx="7" class="b-red"/><text x="200" y="57" class="tc tb">Réseau</text>
+<path d="M380,52 H548" class="lt"/>
+<rect x="550" y="34" width="290" height="36" rx="7" class="b-teal"/><text x="695" y="57" class="tc tm tb" style="font-size:13px">Logical_Switch</text>
+<text x="856" y="57" class="ts">un commutateur logique par réseau</text>
+<rect x="20" y="79" width="360" height="36" rx="7" class="b-red"/><text x="200" y="102" class="tc tb">Port</text>
+<path d="M380,97 H548" class="lt"/>
+<rect x="550" y="79" width="290" height="36" rx="7" class="b-teal"/><text x="695" y="102" class="tc tm tb" style="font-size:13px">Logical_Switch_Port</text>
+<text x="856" y="102" class="ts">adresses, sécurité de port</text>
+<rect x="20" y="124" width="360" height="36" rx="7" class="b-red"/><text x="200" y="147" class="tc tb">Routeur</text>
+<path d="M380,142 H548" class="lt"/>
+<rect x="550" y="124" width="290" height="36" rx="7" class="b-teal"/><text x="695" y="147" class="tc tm tb" style="font-size:13px">Logical_Router</text>
+<text x="856" y="147" class="ts">routage distribué</text>
+<rect x="20" y="169" width="360" height="36" rx="7" class="b-red"/><text x="200" y="192" class="tc tb">Interface de routeur</text>
+<path d="M380,187 H548" class="lt"/>
+<rect x="550" y="169" width="290" height="36" rx="7" class="b-teal"/><text x="695" y="192" class="tc tm tb" style="font-size:13px">Logical_Router_Port</text>
+<text x="856" y="192" class="ts">+ port de commutateur de type « router »</text>
+<rect x="20" y="214" width="360" height="36" rx="7" class="b-red"/><text x="200" y="237" class="tc tb">Groupe de sécurité</text>
+<path d="M380,232 H548" class="lt"/>
+<rect x="550" y="214" width="290" height="36" rx="7" class="b-teal"/><text x="695" y="237" class="tc tm tb" style="font-size:13px">Port_Group</text>
+<text x="856" y="237" class="ts">les ports membres du groupe</text>
+<rect x="20" y="259" width="360" height="36" rx="7" class="b-red"/><text x="200" y="282" class="tc tb">Règle de groupe de sécurité</text>
+<path d="M380,277 H548" class="lt"/>
+<rect x="550" y="259" width="290" height="36" rx="7" class="b-teal"/><text x="695" y="282" class="tc tm tb" style="font-size:13px">ACL</text>
+<text x="856" y="282" class="ts">appliquée au groupe de ports</text>
+<rect x="20" y="304" width="360" height="36" rx="7" class="b-red"/><text x="200" y="327" class="tc tb">IP flottante, passerelle externe</text>
+<path d="M380,322 H548" class="lt"/>
+<rect x="550" y="304" width="290" height="36" rx="7" class="b-teal"/><text x="695" y="327" class="tc tm tb" style="font-size:13px">NAT</text>
+<text x="856" y="327" class="ts">dnat_and_snat, snat</text>
+<rect x="20" y="349" width="360" height="36" rx="7" class="b-red"/><text x="200" y="372" class="tc tb">Sous-réseau avec DHCP</text>
+<path d="M380,367 H548" class="lt"/>
+<rect x="550" y="349" width="290" height="36" rx="7" class="b-teal"/><text x="695" y="372" class="tc tm tb" style="font-size:13px">DHCP_Options</text>
+<text x="856" y="372" class="ts">réponses générées localement</text>
+<rect x="20" y="394" width="360" height="36" rx="7" class="b-red"/><text x="200" y="417" class="tc tb">Réseau fournisseur</text>
+<path d="M380,412 H548" class="lt"/>
+<rect x="550" y="394" width="290" height="36" rx="7" class="b-teal"/><text x="695" y="417" class="tc tm tb" style="font-size:13px">port de type « localnet »</text>
+<text x="856" y="417" class="ts">sortie vers le réseau physique</text>
+</svg>
+</div>
+<div class="cols nf">
+<div class="note"><b>Lecture :</b> le pilote <code>ovn</code> traduit chaque objet de l'API en une ou plusieurs lignes de la base Northbound. <code>ovn-northd</code> en déduit ensuite les flux logiques, que chaque ovn-controller convertit en règles Open vSwitch.</div>
+<div class="note g"><b>En cas d'écart</b> entre les deux bases (panne pendant une écriture, intervention manuelle), l'outil <code>neutron-ovn-db-sync-util</code> compare et, en mode réparation, réaligne OVN sur Neutron.</div>
+</div>
+</div>
+</section>
+
+<!-- 44 -->
+<section class="slide">
+<header><span class="kick">5 · Neutron</span><h2>La liaison de port : relier un port à un hôte</h2></header>
+<div class="body">
+<div class="fig" style="flex:none;height:185px">
+<svg viewBox="0 0 1150 185">
+<g>
+<rect x="10" y="24" width="206" height="150" rx="10" class="bx"/><rect x="236" y="24" width="206" height="150" rx="10" class="b-red"/><rect x="462" y="24" width="206" height="150" rx="10" class="b-teal"/><rect x="688" y="24" width="206" height="150" rx="10" class="b-red"/><rect x="914" y="24" width="226" height="150" rx="10" class="b-green"/>
+</g>
+<path d="M216,99 H234" class="ln"/><path d="M442,99 H460" class="ln"/><path d="M668,99 H686" class="ln"/><path d="M894,99 H912" class="ln"/>
+<g class="tc tw tb"><circle cx="34" cy="24" r="14" class="f-red"/><text x="34" y="29">1</text><circle cx="260" cy="24" r="14" class="f-red"/><text x="260" y="29">2</text><circle cx="486" cy="24" r="14" class="f-red"/><text x="486" y="29">3</text><circle cx="712" cy="24" r="14" class="f-red"/><text x="712" y="29">4</text><circle cx="938" cy="24" r="14" class="f-red"/><text x="938" y="29">5</text></g>
+<g class="tc">
+<text x="113" y="66" class="tb">Port créé</text><text x="113" y="92" class="ts">adresses attribuées,</text><text x="113" y="110" class="ts">aucun hôte</text><text x="113" y="140" class="tm">vif_type = unbound</text><text x="113" y="158" class="tm">status = DOWN</text>
+<text x="339" y="66" class="tb">Nova désigne l'hôte</text><text x="339" y="92" class="ts">après le choix</text><text x="339" y="110" class="ts">du scheduler</text><text x="339" y="140" class="tm">binding:host_id</text><text x="339" y="158" class="tm">= cmp01</text>
+<text x="565" y="66" class="tb">ML2 lie le port</text><text x="565" y="92" class="ts">un mécanisme accepte</text><text x="565" y="110" class="ts">l'hôte et le type de réseau</text><text x="565" y="140" class="tm">vif_type = ovs</text><text x="565" y="158" class="tm">+ vif_details</text>
+<text x="791" y="66" class="tb">Nova branche</text><text x="791" y="92" class="ts">os-vif crée l'interface</text><text x="791" y="110" class="ts">sur br-int, marquée</text><text x="791" y="140" class="tm">iface-id = &lt;port&gt;</text><text x="791" y="158" class="ts">la machine attend</text>
+<text x="1027" y="66" class="tb">OVN revendique</text><text x="1027" y="92" class="ts">ovn-controller de cmp01</text><text x="1027" y="110" class="ts">installe les flux</text><text x="1027" y="140" class="tm">status = ACTIVE</text><text x="1027" y="158" class="ts">événement vers Nova</text>
+</g>
+</svg>
+</div>
+<div class="cols">
+<table class="tbl tight">
+<thead><tr><th>Attribut du port</th><th>Sens</th></tr></thead>
+<tbody>
+<tr><td><code>binding:host_id</code></td><td>Hôte sur lequel le port doit vivre ; renseigné par Nova</td></tr>
+<tr><td><code>binding:vnic_type</code></td><td>Nature de l'interface : <code>normal</code> (virtuelle), <code>direct</code> (SR-IOV), <code>baremetal</code></td></tr>
+<tr><td><code>binding:vif_type</code></td><td>Résultat : <code>ovs</code>, <code>unbound</code>, ou <code>binding_failed</code></td></tr>
+<tr><td><code>binding:vif_details</code></td><td>Ce que Nova doit savoir pour brancher : type de pont, filtrage</td></tr>
+<tr><td><code>binding:profile</code></td><td>Informations fournies par Nova : adresse PCI, données de migration</td></tr>
+<tr><td><code>device_owner</code>, <code>device_id</code></td><td>Qui utilise le port : instance, routeur, DHCP, IP flottante</td></tr>
+</tbody></table>
+<div class="col">
+<ul class="pts sm">
+<li><code>binding_failed</code> : aucun mécanisme n'a pu lier le port à cet hôte — hôte inconnu d'OVN, réseau physique non déclaré sur l'hôte (<code>bridge-mappings</code>), type de réseau non pris en charge.</li>
+<li>Le lien entre l'interface locale et le port logique se fait par l'identifiant du port, posé sur l'interface Open vSwitch.</li>
+<li><b>Migration à chaud :</b> un port peut porter deux liaisons, source et cible ; la seconde est activée au moment de la bascule.</li>
+</ul>
+<div class="note">Un port DOWN sur une instance ACTIVE mérite toujours un regard : <code>openstack port show &lt;id&gt; -c binding_vif_type -c binding_host_id -c status</code>.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 45 -->
+<section class="slide">
+<header><span class="kick">5 · Neutron</span><h2>Groupes de sécurité : le filtrage au plus près du port</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 250">
+<g class="tc">
+<rect x="10" y="60" width="100" height="70" rx="9" class="b-blue"/><text x="60" y="92" class="tb">VM A</text><text x="60" y="112" class="ts">10.0.1.12</text>
+<rect x="150" y="40" width="200" height="110" rx="10" class="bx"/><text x="250" y="68" class="tb">Sécurité de port</text><text x="250" y="92" class="ts">adresses MAC et IP source</text><text x="250" y="110" class="ts">conformes à celles du port ?</text><text x="250" y="134" class="ts tb">anti-usurpation</text>
+<rect x="380" y="40" width="200" height="110" rx="10" class="b-red"/><text x="480" y="68" class="tb">Règles de sortie</text><text x="480" y="92" class="ts">groupes de sécurité de A</text><text x="480" y="110" class="ts">direction « egress »</text><text x="480" y="134" class="ts tb">tout autorisé par défaut</text>
+<rect x="610" y="40" width="200" height="110" rx="10" class="b-teal"/><text x="710" y="68" class="tb">Commutation, routage</text><text x="710" y="92" class="ts">commutateur et routeur</text><text x="710" y="110" class="ts">logiques ; tunnel si autre hôte</text>
+<rect x="840" y="40" width="200" height="110" rx="10" class="b-red"/><text x="940" y="68" class="tb">Règles d'entrée</text><text x="940" y="92" class="ts">groupes de sécurité de B</text><text x="940" y="110" class="ts">direction « ingress »</text><text x="940" y="134" class="ts tb">tout refusé par défaut</text>
+<rect x="1060" y="60" width="80" height="70" rx="9" class="b-blue"/><text x="1100" y="92" class="tb">VM B</text><text x="1100" y="112" class="ts">10.0.1.13</text>
+</g>
+<path d="M110,95 H148" class="lr"/><path d="M350,95 H378" class="lr"/><path d="M580,95 H608" class="lr"/><path d="M810,95 H838" class="lr"/><path d="M1040,95 H1058" class="lr"/>
+<path d="M250,150 V186" class="ln ld"/><path d="M480,150 V186" class="ln ld"/><path d="M940,150 V186" class="ln ld"/>
+<g class="tc ts"><text x="250" y="204">rejet</text><text x="480" y="204">rejet</text><text x="940" y="204">rejet</text></g>
+<text x="575" y="236" class="tc ts tb">Suivi de connexion : une fois un échange autorisé, les paquets de réponse passent sans règle dédiée.</text>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<ul class="pts sm">
+<li>Les règles s'appliquent <b>sur l'hyperviseur</b>, à l'entrée et à la sortie de chaque port — y compris entre deux instances du même réseau.</li>
+<li>Avec OVN : un groupe de sécurité devient un <b>groupe de ports</b>, chaque règle une <b>ACL</b> ; le tout est exécuté par les flux Open vSwitch, avec suivi de connexion du noyau.</li>
+<li>Une règle peut désigner comme source un <b>autre groupe</b> : « autoriser 5432 depuis le groupe web ». L'appartenance est suivie automatiquement.</li>
+<li>Le groupe <code>default</code> de chaque projet autorise le trafic entre ses propres membres et toute sortie.</li>
+</ul>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Réglage du port</th><th>Effet</th></tr></thead>
+<tbody>
+<tr><td><code>port_security_enabled = false</code></td><td>Ni anti-usurpation ni groupes : pour un routeur ou pare-feu virtuel</td></tr>
+<tr><td><code>allowed_address_pairs</code></td><td>Autorise des adresses supplémentaires : adresse virtuelle partagée (VRRP)</td></tr>
+</tbody></table>
+<pre style="font-size:12.4px"><span class="c">openstack</span> security group rule create web \
+    <span class="k">--ingress</span> <span class="k">--protocol</span> tcp <span class="k">--dst-port</span> 443 \
+    <span class="k">--remote-ip</span> 0.0.0.0/0
+<span class="m"># Côté OVN : les ACL du groupe</span>
+<span class="c">ovn-nbctl</span> acl-list pg_&lt;id_du_groupe&gt;</pre>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 46 -->
+<section class="slide">
+<header><span class="kick">5 · Neutron</span><h2>Les chemins du trafic</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 375">
+<rect x="410" y="6" width="720" height="30" rx="6" class="b-violet"/><text x="770" y="26" class="tc tb" style="font-size:13px">Réseau externe (fournisseur)</text>
+<rect x="20" y="56" width="330" height="230" rx="12" class="zone"/><text x="36" y="80" class="tl">Hyperviseur A</text>
+<rect x="410" y="56" width="330" height="230" rx="12" class="zone"/><text x="426" y="80" class="tl">Hyperviseur B</text>
+<rect x="800" y="56" width="330" height="230" rx="12" class="zone"/><text x="816" y="80" class="tl">Passerelle</text>
+<g class="tc">
+<rect x="40" y="98" width="130" height="54" rx="8" class="b-blue"/><text x="105" y="121" class="tb">VM1</text><text x="105" y="140" class="ts">net-app</text>
+<rect x="200" y="98" width="130" height="54" rx="8" class="b-blue"/><text x="265" y="121" class="tb">VM2</text><text x="265" y="140" class="ts">net-db</text>
+<rect x="40" y="228" width="290" height="38" rx="7" class="b-teal"/><text x="295" y="252" class="tb">br-int</text>
+<rect x="430" y="98" width="130" height="54" rx="8" class="b-blue"/><text x="495" y="121" class="tb">VM3</text><text x="495" y="140" class="ts">net-app</text>
+<rect x="590" y="98" width="130" height="54" rx="8" class="b-amber"/><text x="655" y="121" class="tb">br-ex</text><text x="655" y="140" class="ts">si distribué</text>
+<rect x="430" y="228" width="290" height="38" rx="7" class="b-teal"/><text x="455" y="252" class="tb">br-int</text>
+<rect x="900" y="98" width="130" height="54" rx="8" class="b-amber"/><text x="965" y="121" class="tb">br-ex</text><text x="965" y="140" class="ts">NAT</text>
+<rect x="820" y="228" width="290" height="38" rx="7" class="b-teal"/><text x="1040" y="252" class="tb">br-int</text>
+</g>
+<line x1="20" y1="350" x2="1130" y2="350" stroke="#94a3b8" stroke-width="10" stroke-linecap="round"/><text x="575" y="370" class="tc ts tb">Réseau overlay — tunnels Geneve entre hôtes</text>
+<g fill="none" stroke-width="3">
+<path d="M95,152 V338 H485 V152" stroke="#2563eb"/>
+<path d="M140,152 V246 H240 V152" stroke="#0d9488"/>
+<path d="M65,152 V350 H930 V36" stroke="#d97706"/>
+<path d="M535,152 V246 H705 V36" stroke="#e4002b"/>
+</g>
+<g class="tc tw tb" style="font-size:12px">
+<circle cx="290" cy="338" r="11" fill="#2563eb"/><text x="290" y="342">1</text>
+<circle cx="190" cy="246" r="11" fill="#0d9488"/><text x="190" y="250">2</text>
+<circle cx="930" cy="190" r="11" fill="#d97706"/><text x="930" y="194">3</text>
+<circle cx="705" cy="190" r="11" fill="#e4002b"/><text x="705" y="194">4</text>
+</g>
+</svg>
+</div>
+<table class="tbl tight">
+<thead><tr><th></th><th>Cas</th><th>Chemin</th><th>Où se fait le traitement</th></tr></thead>
+<tbody>
+<tr><td style="color:#2563eb">1</td><td>Même réseau, hôtes différents</td><td>VM1 → br-int A → tunnel → br-int B → VM3</td><td>Commutation logique sur A ; aucun équipement central</td></tr>
+<tr><td style="color:#0d9488">2</td><td>Deux réseaux reliés par un routeur</td><td>VM1 → br-int A → VM2</td><td>Routage <b>distribué</b> : exécuté sur l'hyperviseur source</td></tr>
+<tr><td style="color:#d97706">3</td><td>Sortie sans IP flottante</td><td>VM1 → tunnel → passerelle → br-ex → externe</td><td>Traduction d'adresse source (SNAT) <b>centralisée</b> sur la passerelle</td></tr>
+<tr><td style="color:#e4002b">4</td><td>IP flottante, mode distribué</td><td>VM3 → br-int B → br-ex B → externe</td><td>NAT sur l'hyperviseur lui-même, s'il est raccordé au réseau externe</td></tr>
+</tbody></table>
+<div class="note g">Le mode distribué des IP flottantes (<code>enable_distributed_floating_ip</code>) suppose que <b>chaque hyperviseur</b> ait une patte sur le réseau externe. Sinon, les IP flottantes passent elles aussi par la passerelle, comme le cas 3.</div>
+</div>
+</section>
+
+<!-- 47 -->
+<section class="slide">
+<header><span class="kick">5 · Neutron</span><h2>Adresses, DHCP, DNS, métadonnées : les services intégrés</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Service</th><th>Qui le rend</th><th>Comment</th><th>Point d'attention</th></tr></thead>
+<tbody>
+<tr><td>Attribution d'adresses (IPAM)</td><td>neutron-server</td><td>À la création du port, une adresse est prise dans la plage du sous-réseau et enregistrée en base</td><td>L'adresse appartient au <b>port</b>, pas à l'instance : elle survit à un redémarrage, pas à la suppression du port</td></tr>
+<tr><td>DHCP</td><td>OVN, sur chaque hyperviseur</td><td>ovn-controller répond lui-même aux requêtes, d'après les options inscrites en base</td><td>Aucun serveur ni agent DHCP ; les options du sous-réseau (DNS, routes, MTU) y sont reprises</td></tr>
+<tr><td>DNS interne</td><td>OVN</td><td>Les noms des ports d'un réseau sont résolus localement</td><td>Requiert le pilote d'extension <code>dns</code> ; publication externe via Designate</td></tr>
+<tr><td>Métadonnées</td><td>ovn-metadata-agent, sur chaque hyperviseur</td><td>Intercepte <code>169.254.169.254</code>, ajoute l'identité de l'instance, relaie vers l'API de Nova</td><td>Un espace de noms et un relais par réseau présent sur l'hôte</td></tr>
+<tr><td>Routage, NAT</td><td>OVN</td><td>Routeurs logiques exécutés par les flux Open vSwitch</td><td>Pas d'espace de noms de routeur ; SNAT sur les passerelles</td></tr>
+<tr><td>Répartition de charge</td><td>Octavia, avec le fournisseur OVN ou des amphores</td><td>Service distinct qui s'appuie sur les ports Neutron</td><td>Hors de Neutron lui-même</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Tout est local à l'hyperviseur :</b> avec OVN, une instance obtient son adresse, résout un nom et lit ses métadonnées sans qu'aucun paquet ne quitte son hôte.</div>
+<div class="note g"><b>Vérifier depuis l'instance :</b> bail DHCP reçu ? <code>curl http://169.254.169.254/openstack/latest/meta_data.json</code> répond ? Deux tests qui valident d'un coup le port, le filtrage et les relais.</div>
+</div>
+</div>
+</section>
+
+<!-- 48 -->
+<section class="slide">
+<header><span class="kick">5 · Neutron</span><h2>Interactions, commandes et diagnostic</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Avec</th><th>Échange</th></tr></thead>
+<tbody>
+<tr><td>Nova</td><td>Nova crée ou complète les ports et désigne l'hôte ; Neutron renvoie les événements « port prêt », « réseau modifié »</td></tr>
+<tr><td>Placement</td><td>Neutron déclare la bande passante des interfaces et les segments de réseaux routés ; Nova en tient compte au placement</td></tr>
+<tr><td>Keystone</td><td>Jetons ; Neutron a son propre compte pour appeler Nova</td></tr>
+<tr><td>Designate</td><td>Publication des noms des ports et des IP flottantes</td></tr>
+<tr><td>Octavia</td><td>Ports, adresses virtuelles et groupes de sécurité des répartiteurs</td></tr>
+<tr><td>Ironic</td><td>Ports des serveurs physiques, configuration des commutateurs</td></tr>
+</tbody></table>
+<table class="tbl tight">
+<thead><tr><th>Symptôme</th><th>Piste</th></tr></thead>
+<tbody>
+<tr><td style="white-space:normal">Instance sans adresse</td><td>Port DOWN, liaison en échec, ovn-controller arrêté</td></tr>
+<tr><td style="white-space:normal">Ping impossible entre instances</td><td>Groupe de sécurité ; MTU ; tunnel entre hôtes</td></tr>
+<tr><td style="white-space:normal">IP flottante injoignable</td><td>Passerelle, <code>bridge-mappings</code>, règle d'entrée</td></tr>
+<tr><td style="white-space:normal">Métadonnées muettes</td><td>ovn-metadata-agent sur l'hôte ; secret partagé avec Nova</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<pre style="font-size:12.4px"><span class="m"># Le port d'une instance : état et liaison</span>
+<span class="c">openstack</span> port list <span class="k">--server</span> web-01
+<span class="c">openstack</span> port show &lt;id&gt; <span class="k">-c</span> status <span class="k">-c</span> binding_host_id \
+    <span class="k">-c</span> binding_vif_type <span class="k">-c</span> fixed_ips <span class="k">-c</span> security_group_ids
+
+<span class="m"># Les hôtes connus du réseau</span>
+<span class="c">openstack</span> network agent list
+
+<span class="m"># Vue OVN : topologie logique, puis hôtes et ports liés</span>
+<span class="c">ovn-nbctl</span> show
+<span class="c">ovn-sbctl</span> show
+<span class="c">ovn-sbctl</span> find Port_Binding logical_port=&lt;id_du_port&gt;
+
+<span class="m"># Simuler le trajet d'un paquet dans le réseau logique</span>
+<span class="c">ovn-trace</span> neutron-&lt;id_reseau&gt; 'inport == "&lt;port_A&gt;" &amp;&amp;
+    eth.src == fa:16:3e:aa:bb:01 &amp;&amp; ip4.src == 10.0.1.12 &amp;&amp;
+    ip4.dst == 10.0.1.13 &amp;&amp; tcp.dst == 443'
+
+<span class="m"># Sur l'hyperviseur : l'interface est-elle sur br-int ?</span>
+<span class="c">ovs-vsctl</span> list-ports br-int
+
+<span class="m"># Réaligner OVN sur Neutron</span>
+<span class="c">neutron-ovn-db-sync-util</span> <span class="k">--ovn-neutron_sync_mode</span> repair</pre>
+<div class="note g"><code>ovn-trace</code> dit quelle règle laisse passer ou rejette un paquet, sans rien émettre sur le réseau.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 49 -->
+<section class="slide">
+<header><span class="kick">Synthèse</span><h2>Les services dans une même opération : la migration à chaud</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 430">
+<rect x="140" y="20" width="1000" height="66" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<rect x="10" y="28" width="118" height="50" rx="8" class="b-red"/><text x="69" y="58" class="tc tb">Nova</text>
+<rect x="140" y="102" width="1000" height="66" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<rect x="10" y="110" width="118" height="50" rx="8" class="b-violet"/><text x="69" y="140" class="tc tb">Placement</text>
+<rect x="140" y="184" width="1000" height="66" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<rect x="10" y="192" width="118" height="50" rx="8" class="b-amber"/><text x="69" y="222" class="tc tb">Glance</text>
+<rect x="140" y="266" width="1000" height="66" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<rect x="10" y="274" width="118" height="50" rx="8" class="b-amber"/><text x="69" y="304" class="tc tb">Cinder</text>
+<rect x="140" y="348" width="1000" height="66" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<rect x="10" y="356" width="118" height="50" rx="8" class="b-teal"/><text x="69" y="386" class="tc tb">Neutron</text>
+<text x="160" y="222" class="ts tb">Non sollicité : aucune image relue</text>
+<path d="M234,53 H241.5 V135 H249" class="ln"/>
+<path d="M333,135 H340.5 V53 H348" class="ln"/>
+<path d="M432,53 H439.5 V381 H447" class="ln"/>
+<path d="M531,381 H538.5 V299 H546" class="ln"/>
+<path d="M630,299 H637.5 V53 H645" class="ln"/>
+<path d="M729,53 H736.5 V299 H744" class="ln"/>
+<path d="M828,299 H835.5 V381 H843" class="ln"/>
+<path d="M927,381 H934.5 V135 H942" class="ln"/>
+<path d="M1026,135 H1033.5 V53 H1041" class="ln"/>
+<rect x="150" y="28" width="84" height="50" rx="7" class="bx" style="stroke:#0f172a;stroke-width:1.5"/>
+<text x="192" y="50" class="tc" style="font-size:10.5px;font-weight:650">reçoit</text><text x="192" y="66" class="tc" style="font-size:10.5px">live-migrate</text>
+<circle cx="154" cy="30" r="10" class="f-red"/><text x="154" y="34" class="tc tw tb" style="font-size:11px">1</text>
+
+<rect x="249" y="110" width="84" height="50" rx="7" class="bx" style="stroke:#0f172a;stroke-width:1.5"/>
+<text x="291" y="132" class="tc" style="font-size:10.5px;font-weight:650">cible choisie</text><text x="291" y="148" class="tc" style="font-size:10.5px">et réservée</text>
+<circle cx="253" cy="112" r="10" class="f-red"/><text x="253" y="116" class="tc tw tb" style="font-size:11px">2</text>
+
+<rect x="348" y="28" width="84" height="50" rx="7" class="bx" style="stroke:#0f172a;stroke-width:1.5"/>
+<text x="390" y="50" class="tc" style="font-size:10.5px;font-weight:650">contrôles</text><text x="390" y="66" class="tc" style="font-size:10.5px">source et cible</text>
+<circle cx="352" cy="30" r="10" class="f-red"/><text x="352" y="34" class="tc tw tb" style="font-size:11px">3</text>
+
+<rect x="447" y="356" width="84" height="50" rx="7" class="bx" style="stroke:#0f172a;stroke-width:1.5"/>
+<text x="489" y="378" class="tc" style="font-size:10.5px;font-weight:650">2e liaison</text><text x="489" y="394" class="tc" style="font-size:10.5px">sur la cible</text>
+<circle cx="451" cy="358" r="10" class="f-red"/><text x="451" y="362" class="tc tw tb" style="font-size:11px">4</text>
+
+<rect x="546" y="274" width="84" height="50" rx="7" class="bx" style="stroke:#0f172a;stroke-width:1.5"/>
+<text x="588" y="296" class="tc" style="font-size:10.5px;font-weight:650">attachement</text><text x="588" y="312" class="tc" style="font-size:10.5px">sur la cible</text>
+<circle cx="550" cy="276" r="10" class="f-red"/><text x="550" y="280" class="tc tw tb" style="font-size:11px">5</text>
+
+<rect x="645" y="28" width="84" height="50" rx="7" class="bx" style="stroke:#0f172a;stroke-width:1.5"/>
+<text x="687" y="50" class="tc" style="font-size:10.5px;font-weight:650">copie mémoire,</text><text x="687" y="66" class="tc" style="font-size:10.5px">bascule</text>
+<circle cx="649" cy="30" r="10" class="f-red"/><text x="649" y="34" class="tc tw tb" style="font-size:11px">6</text>
+
+<rect x="744" y="274" width="84" height="50" rx="7" class="bx" style="stroke:#0f172a;stroke-width:1.5"/>
+<text x="786" y="296" class="tc" style="font-size:10.5px;font-weight:650">attachement</text><text x="786" y="312" class="tc" style="font-size:10.5px">source retiré</text>
+<circle cx="748" cy="276" r="10" class="f-red"/><text x="748" y="280" class="tc tw tb" style="font-size:11px">7</text>
+
+<rect x="843" y="356" width="84" height="50" rx="7" class="bx" style="stroke:#0f172a;stroke-width:1.5"/>
+<text x="885" y="378" class="tc" style="font-size:10.5px;font-weight:650">liaison cible</text><text x="885" y="394" class="tc" style="font-size:10.5px">activée</text>
+<circle cx="847" cy="358" r="10" class="f-red"/><text x="847" y="362" class="tc tw tb" style="font-size:11px">8</text>
+
+<rect x="942" y="110" width="84" height="50" rx="7" class="bx" style="stroke:#0f172a;stroke-width:1.5"/>
+<text x="984" y="132" class="tc" style="font-size:10.5px;font-weight:650">réservation</text><text x="984" y="148" class="tc" style="font-size:10.5px">source libérée</text>
+<circle cx="946" cy="112" r="10" class="f-red"/><text x="946" y="116" class="tc tw tb" style="font-size:11px">9</text>
+
+<rect x="1041" y="28" width="84" height="50" rx="7" class="bx" style="stroke:#0f172a;stroke-width:1.5"/>
+<text x="1083" y="50" class="tc" style="font-size:10.5px;font-weight:650">ACTIVE</text><text x="1083" y="66" class="tc" style="font-size:10.5px">sur la cible</text>
+<circle cx="1045" cy="30" r="10" class="f-red"/><text x="1045" y="34" class="tc tw tb" style="font-size:11px">10</text>
+
+</svg>
+</div>
+<div class="note"><b>Scénario :</b> migrer à chaud une instance démarrée sur un volume Ceph. <b>Placement</b> garde la réservation des deux côtés jusqu'à la fin (celle de la source passe au nom de la migration) ; <b>Neutron</b> et <b>Cinder</b> préparent la cible avant la bascule, puis la source est nettoyée. <b>Glance</b> n'intervient pas : le disque n'est pas recréé.</div>
+</div>
+</section>
+
+<!-- 50 -->
+<section class="slide">
+<header><span class="kick">Synthèse</span><h2>À retenir</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th></th><th>Glance</th><th>Placement</th><th>Nova</th><th>Cinder</th><th>Neutron</th></tr></thead>
+<tbody>
+<tr><td>Rôle</td><td>Catalogue et distribution des images</td><td>Comptabilité des ressources</td><td>Cycle de vie des instances</td><td>Disques persistants</td><td>Réseaux à la demande</td></tr>
+<tr><td>Objet suivi</td><td>Image : queued → active</td><td>Allocation</td><td>Instance : BUILD → ACTIVE</td><td>Volume : available ↔ in-use</td><td>Port : DOWN → ACTIVE</td></tr>
+<tr><td>Appelle</td><td>Son magasin</td><td>Personne</td><td>Les quatre autres</td><td>Glance, Nova</td><td>Nova, Placement</td></tr>
+<tr><td>S'il s'arrête</td><td>Plus de création depuis une image non mise en cache</td><td>Plus de création ni de déplacement</td><td>Plus d'opération sur les instances</td><td>Plus de création ni d'attachement</td><td>Plus de modification du réseau</td></tr>
+<tr><td>Ce qui continue</td><td colspan="5" style="text-align:center">Les instances tournent, leurs disques restent connectés, leur trafic circule : aucun de ces services n'est sur le chemin des données</td></tr>
+<tr><td>Première commande</td><td><code>image show</code></td><td><code>allocation candidate list</code></td><td><code>server event list</code></td><td><code>volume message list</code></td><td><code>port show</code></td></tr>
+</tbody></table>
+<div class="cols c3 nf">
+<div class="card"><h3>Un patron commun</h3>API qui valide, composant qui choisit, exécutant qui agit par un pilote. Le reconnaître dans un service, c'est savoir lire les quatre autres.</div>
+<div class="card cb"><h3>Des machines à états</h3>Chaque ressource avance d'état en état. Un état transitoire qui dure désigne l'étape — donc le service — où chercher.</div>
+<div class="card cn"><h3>Nova assemble</h3>Il emprunte l'image, la place, le port et le volume. Une instance qui ne démarre pas est le plus souvent l'échec d'un de ces emprunts.</div>
+</div>
+</div>
+</section>
+
+</div>
+<div id="bar"></div>
+<div id="nav"><button id="bO" title="Vue d'ensemble (O)">▦</button><button id="bF" title="Plein écran (F)">⛶</button><button id="bP" title="Précédent (←)">←</button><button id="bN" title="Suivant (→)">→</button></div>
+<script>
+(function(){
+var stage=document.getElementById('stage'),bar=document.getElementById('bar'),body=document.body;
+var slides=Array.prototype.slice.call(document.querySelectorAll('.slide')),N=slides.length,cur=0;
+slides.forEach(function(s,i){
+  var f=document.createElement('div');f.className='foot';
+  f.innerHTML='<span>OpenStack · Module 4 — Principaux services</span><span>'+(i+1)+' / '+N+'</span>';
+  s.appendChild(f);
+  s.addEventListener('click',function(){if(body.classList.contains('ov')){body.classList.remove('ov');go(i);fit();}});
+});
+function go(n){
+  cur=Math.max(0,Math.min(N-1,n));
+  slides.forEach(function(s,i){s.classList.toggle('active',i===cur);});
+  bar.style.width=((cur+1)/N*100)+'%';
+  try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+}
+function fit(){
+  if(body.classList.contains('ov')){
+    stage.style.transform='';
+    document.documentElement.style.setProperty('--z',Math.max(.1,(window.innerWidth-40-4*14-20)/5/1280));
+  }else{
+    stage.style.transform='scale('+Math.min(window.innerWidth/1280,window.innerHeight/720)+')';
+  }
+}
+function overview(){body.classList.toggle('ov');fit();if(body.classList.contains('ov')){slides[cur].scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}}
+function full(){if(document.fullscreenElement){document.exitFullscreen();}else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen();}}
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'||k===' '||k==='ArrowDown'){e.preventDefault();go(cur+1);}
+  else if(k==='ArrowLeft'||k==='PageUp'||k==='ArrowUp'){e.preventDefault();go(cur-1);}
+  else if(k==='Home'){go(0);}
+  else if(k==='End'){go(N-1);}
+  else if(k==='o'||k==='O'||k==='Escape'){if(k!=='Escape'||body.classList.contains('ov'))overview();}
+  else if(k==='f'||k==='F'){full();}
+});
+document.getElementById('bN').onclick=function(){go(cur+1);};
+document.getElementById('bP').onclick=function(){go(cur-1);};
+document.getElementById('bO').onclick=overview;
+document.getElementById('bF').onclick=full;
+var tx=null;
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){if(tx===null||body.classList.contains('ov'))return;var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1));tx=null;},{passive:true});
+window.addEventListener('resize',fit);
+window.addEventListener('hashchange',function(){var h=parseInt(location.hash.slice(1),10);if(h&&h-1!==cur)go(h-1);});
+var h=parseInt(location.hash.slice(1),10);
+go(h?h-1:0);fit();
+})();
+</script>
+</body>
+</html>

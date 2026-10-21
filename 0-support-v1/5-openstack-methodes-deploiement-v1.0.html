@@ -1,0 +1,2238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenStack — méthodes de déploiement</title>
+<style>
+:root{--ink:#0f172a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;--navy:#101a33;--red:#e4002b;--red2:#b3122f;--blue:#2563eb;--teal:#0d9488;--amber:#d97706;--violet:#7c3aed;--green:#16a34a;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;--z:.2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#070b17;overflow:hidden;font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:#fff;color:var(--ink);padding:38px 64px 46px;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide>header{border-left:5px solid var(--red);padding:2px 0 2px 18px;margin-bottom:18px;flex:none}
+.kick{display:block;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+h2{font-size:32px;line-height:1.15;letter-spacing:-.012em;font-weight:750}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;font-size:17.5px;line-height:1.45;color:var(--ink2)}
+.body b,.body strong{color:var(--ink);font-weight:680}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;min-height:0}
+.cols.c3{grid-template-columns:repeat(3,1fr);gap:18px}
+.cols.c4{grid-template-columns:repeat(4,1fr);gap:14px}
+.cols.c5{grid-template-columns:repeat(5,1fr);gap:12px}
+.cols.w64{grid-template-columns:1.45fr 1fr}
+.cols.w46{grid-template-columns:1fr 1.35fr}
+.cols.nf{flex:none}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+ul.pts{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.pts li{padding-left:22px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.52em;width:8px;height:8px;border-radius:2px;background:var(--red)}
+ul.pts.sm{gap:5px;font-size:15px;line-height:1.38}
+ul.pts.sm li{padding-left:17px}
+ul.pts.sm li::before{width:6px;height:6px;top:.5em}
+.card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--c,var(--red));border-radius:10px;padding:13px 16px;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:15px;line-height:1.4;min-width:0}
+.card h3{font-size:16.5px;color:var(--ink);margin-bottom:5px;line-height:1.2}
+.card .os{display:block;margin-top:7px;font-size:13px;color:var(--mut)}
+.card .os b{color:var(--red2)}
+.cb{--c:var(--blue)}.ct{--c:var(--teal)}.ca{--c:var(--amber)}.cv{--c:var(--violet)}.cg{--c:var(--green)}.cn{--c:var(--navy)}
+.note{background:#fff5f6;border-left:4px solid var(--red);padding:9px 16px;border-radius:0 8px 8px 0;font-size:15.5px;color:var(--ink);flex:none}
+.note.b{background:#eff5ff;border-color:var(--blue)}
+.note.g{background:#f1f5f9;border-color:#64748b}
+table.tbl{width:100%;border-collapse:collapse;font-size:14.5px;line-height:1.35}
+.tbl th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-size:13px;letter-spacing:.03em;font-weight:650}
+.tbl td{padding:6.5px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:nth-child(even) td{background:#f8fafc}
+.tbl td:first-child{font-weight:680;color:var(--ink);white-space:nowrap}
+.tbl.os td:nth-child(2){color:var(--red2);font-weight:650}
+.tbl.tight td{padding:5px 12px;font-size:14px}
+table.resp{width:100%;border-collapse:separate;border-spacing:5px 4px;font-size:14.5px;text-align:center}
+.resp thead th{font-size:15px;color:var(--ink);padding:2px 4px 6px;line-height:1.2}
+.resp thead small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+.resp tbody th{text-align:right;padding-right:12px;font-weight:650;color:var(--ink);white-space:nowrap;width:210px}
+.resp td{padding:6px;border-radius:6px;font-weight:600}
+.resp .u{background:#e3edff;color:#1d4ed8}
+.resp .p{background:#fde8ec;color:var(--red2)}
+code{font-family:var(--mono);font-size:.87em;background:#f1f5f9;padding:1px 6px;border-radius:4px;color:var(--ink)}
+pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;font:13.5px/1.5 var(--mono);white-space:pre;overflow:hidden}
+pre .c{color:#7dd3fc}pre .k{color:#fda4af}pre .m{color:#94a3b8}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:#fde8ec;color:var(--red2);letter-spacing:.03em}
+.fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:100%}
+.foot{position:absolute;left:64px;right:64px;bottom:15px;display:flex;justify-content:space-between;font-size:11.5px;color:#94a3b8;letter-spacing:.02em}
+/* dark slides */
+.slide.dark{background:radial-gradient(1100px 600px at 85% 15%,#1c2a55 0%,var(--navy) 55%,#0b1226 100%);color:#fff;justify-content:center}
+.dark .foot{color:#64748b}
+.dark .kick{color:#ff6b84}
+h1{font-size:68px;line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:10px 0 14px}
+.sub{font-size:27px;color:#cbd5e1;font-weight:400}
+.chips{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin-top:34px}
+.chips li{border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:7px 16px;font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.04)}
+.ref{margin-top:36px;font-size:14px;color:#94a3b8}
+.deco{position:absolute;right:0;top:0;width:1280px;height:720px;pointer-events:none}
+.tt{position:relative;max-width:760px}
+.sec .num{font-size:150px;font-weight:800;line-height:.9;color:transparent;-webkit-text-stroke:2px #ff4d6a;letter-spacing:-.04em}
+.sec h2{font-size:50px;margin:16px 0 12px;letter-spacing:-.02em}
+.sec p{font-size:20px;color:#cbd5e1;max-width:820px;line-height:1.45}
+.sec ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:9px 40px;margin-top:30px;max-width:980px;font-size:16.5px;color:#e2e8f0}
+.sec ol li{padding-left:20px;position:relative}
+.sec ol li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:3px;background:#ff4d6a}
+/* svg */
+svg{display:block}
+svg{font-size:14px}
+svg text{font-family:inherit;fill:#0f172a}
+svg g.ts text{fill:#475569}svg g.tw text{fill:#fff}
+.big .card{font-size:17px;padding:18px 16px;display:flex;flex-direction:column;line-height:1.42}.big .card h3{font-size:19px;margin-bottom:12px}.big .card .os{font-size:14.5px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line);line-height:1.4}
+.dense .card{font-size:14px;padding:10px 14px;line-height:1.36}.dense .card h3{font-size:15.5px;margin-bottom:3px}
+.tc{text-anchor:middle}.te{text-anchor:end}
+svg .tb{font-weight:700}svg .ts{font-size:12px;fill:#475569}svg .tl{font-size:17px;font-weight:750}svg .tw{fill:#fff}svg .tr{fill:#b3122f}
+svg .tm{font-family:var(--mono);font-size:12px}
+.bx{fill:#fff;stroke:#94a3b8;stroke-width:1.5}
+.b-red{fill:#fde8ec;stroke:#e4002b;stroke-width:1.5}
+.b-blue{fill:#e3edff;stroke:#2563eb;stroke-width:1.5}
+.b-teal{fill:#d8f3ee;stroke:#0d9488;stroke-width:1.5}
+.b-amber{fill:#fdf0d5;stroke:#d97706;stroke-width:1.5}
+.b-violet{fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5}
+.b-green{fill:#dcf5e3;stroke:#16a34a;stroke-width:1.5}
+.b-grey{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5}
+.b-dark{fill:#101a33;stroke:#101a33}
+.f-red{fill:#e4002b}
+.zone{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 4}
+.ln{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar)}
+.ln2{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar);marker-start:url(#ar)}
+.lr{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr)}
+.lr2{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr);marker-start:url(#arr)}
+.ld{stroke-dasharray:5 4}
+.nl{stroke:#94a3b8;stroke-width:1.5;fill:none}
+/* ui */
+#bar{position:fixed;left:0;bottom:0;height:3px;background:var(--red);width:0;transition:width .2s;z-index:5}
+#nav{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;display:flex;gap:6px;z-index:6;opacity:.07;transition:opacity .2s}
+#nav:hover{opacity:1}
+#nav button{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;font:600 13px/1 inherit;padding:7px 10px;cursor:pointer}
+#nav button:hover{background:var(--red);border-color:var(--red)}
+body.ov{overflow:auto}
+body.ov #stage{position:static;margin:0;width:auto;height:auto;transform:none!important;display:flex;flex-wrap:wrap;gap:14px;padding:20px}
+body.ov .slide{display:flex;position:relative;inset:auto;flex:none;width:1280px;height:720px;zoom:var(--z);cursor:pointer;border-radius:8px}
+body.ov .slide.active{outline:14px solid var(--red)}
+@page{size:1280px 720px;margin:0}
+@media print{
+html,body{height:auto;overflow:visible;background:#fff}
+#stage{position:static;margin:0;width:1280px;height:auto;transform:none!important;display:block}
+.slide{display:flex!important;position:relative;inset:auto;width:1280px;height:720px;break-after:page;page-break-after:always;zoom:1!important}
+#bar,#nav{display:none}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.la{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA)}.la2{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA);marker-start:url(#arA)}
+.lt{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT)}.lt2{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT);marker-start:url(#arT)}
+.lb{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB)}.lb2{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB);marker-start:url(#arB)}
+svg text.fa,svg .fa{fill:#b45309}svg text.ft,svg .ft{fill:#0f766e}svg text.fb,svg .fb{fill:#1d4ed8}
+.tbl td.c,.tbl th.c{text-align:center}.tbl td.y{color:#16a34a;font-weight:800}.tbl td.n{color:#cbd5e1}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e4002b"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+<marker id="arT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker>
+<marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+</defs></svg>
+<div id="stage">
+
+<!-- 1 -->
+<section class="slide dark">
+<svg class="deco" viewBox="0 0 1280 720" aria-hidden="true"><g transform="translate(-60,0)">
+<g fill="none" stroke="#ff4d6a" stroke-width="2" opacity=".85">
+<path d="M900,470 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.16)"/>
+<path d="M900,400 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.24)"/>
+<path d="M900,330 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.34)"/>
+<path d="M900,260 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.5)"/>
+</g>
+<g font-weight="700" letter-spacing="2" style="font-size:12px"><text x="1210" y="264" style="fill:#cbd5e1">ÉDITEURS</text><text x="1210" y="334" style="fill:#cbd5e1">KUBERNETES</text><text x="1210" y="404" style="fill:#cbd5e1">ANSIBLE</text><text x="1210" y="474" style="fill:#cbd5e1">MANUEL</text></g>
+</g></svg>
+<div class="tt">
+<span class="kick">Support de formation</span>
+<h1>Déployer OpenStack : panorama et critères de choix</h1>
+<p class="sub">Outils communautaires, distributions d'éditeurs, offres gérées — comment ils fonctionnent et comment choisir</p>
+<ul class="chips"><li>DevStack</li><li>Kolla-Ansible</li><li>OpenStack-Ansible</li><li>OpenStack-Helm</li><li>Sunbeam</li><li>RHOSO · MOSK</li></ul>
+<p class="ref">État des outils vérifié en octobre 2026 · version de référence : OpenStack 2026.2 « Hibiscus »</p>
+</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Objectif et déroulé</h2></header>
+<div class="body">
+<div class="note"><b>Objectif :</b> savoir situer chaque méthode de déploiement d'OpenStack — ce qu'elle automatise, sur quoi elle s'appuie, ce qu'elle exige de l'équipe — et disposer d'une démarche pour choisir.</div>
+<div class="cols">
+<div class="col">
+<p><b>À l'issue de ce module, vous saurez :</b></p>
+<ul class="pts">
+<li>Décomposer un déploiement en <b>couches</b> et dire quel outil couvre laquelle.</li>
+<li>Classer les méthodes selon trois axes : <b>forme de livraison</b>, <b>orchestrateur</b>, <b>socle d'exécution</b>.</li>
+<li>Décrire le fonctionnement de DevStack, Kolla-Ansible, OpenStack-Ansible, OpenStack-Helm, Sunbeam, RHOSO et MOSK.</li>
+<li>Distinguer outil communautaire, distribution supportée et offre gérée.</li>
+<li><b>Comparer</b> les méthodes sur l'exploitation : montée de version, personnalisation, fonctionnement déconnecté.</li>
+<li>Appliquer une <b>grille de critères</b> et un arbre de décision à un contexte donné.</li>
+</ul>
+</div>
+<div class="col dense">
+<div class="card"><h3>1 · Ce que « déployer » veut dire</h3>Couches, cycle de vie, axes de classement, paysage et statut des outils.</div>
+<div class="card cb"><h3>2 · Apprendre et développer</h3>DevStack, installations tout-en-un, installation manuelle.</div>
+<div class="card ct"><h3>3 · Outils communautaires de production</h3>Kolla-Ansible, OpenStack-Ansible, OpenStack-Helm et dérivés, provisionnement.</div>
+<div class="card ca"><h3>4 · Distributions et offres gérées</h3>Canonical, Red Hat, Mirantis et les autres ; modes de consommation.</div>
+<div class="card cv"><h3>5 · Comparaison transversale</h3>Technique, exploitation, compétences, déconnecté, échelle.</div>
+<div class="card cn"><h3>6 · Critères de choix</h3>Dix critères, arbre de décision, profils types, grille de notation.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 3 -->
+<section class="slide dark sec">
+<div class="num">01</div>
+<h2>Ce que « déployer OpenStack » veut dire</h2>
+<p>Installer les services n'est qu'une étape. Une méthode de déploiement se juge sur tout ce qu'elle prend en charge, de la machine nue jusqu'à la dixième montée de version.</p>
+<ol><li>Les six couches d'un déploiement</li><li>Avant, pendant, après : le cycle de vie</li><li>Trois axes pour classer les méthodes</li><li>Formes de livraison et socles d'exécution</li><li>Trois générations d'outils</li><li>Carte du paysage et statut des projets</li></ol>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+<header><span class="kick">1 · Ce que « déployer » veut dire</span><h2>Les six couches d'un déploiement</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 470">
+<g class="tc tb"><text x="235" y="20">Couche</text></g><text x="480" y="20" class="tb">Ce qu'il faut faire</text><text x="850" y="20" class="tb">Qui s'en charge, selon la méthode</text>
+<g>
+<rect x="20" y="32" width="430" height="62" rx="8" class="b-blue"/><text x="40" y="58" class="tl">6 · Configuration du cloud</text><text x="40" y="78" class="ts">ce que voient les utilisateurs</text>
+<rect x="20" y="104" width="430" height="62" rx="8" class="b-red"/><text x="40" y="130" class="tl tr">5 · Services OpenStack</text><text x="40" y="150" class="ts">Keystone, Nova, Neutron, Cinder, Glance…</text>
+<rect x="20" y="176" width="430" height="62" rx="8" class="b-amber"/><text x="40" y="202" class="tl">4 · Services d'infrastructure</text><text x="40" y="222" class="ts">base de données, bus, répartiteur, cache, stockage</text>
+<rect x="20" y="248" width="430" height="62" rx="8" class="b-teal"/><text x="40" y="274" class="tl">3 · Préparation des hôtes</text><text x="40" y="294" class="ts">système prêt à recevoir les services</text>
+<rect x="20" y="320" width="430" height="62" rx="8" class="b-grey"/><text x="40" y="346" class="tl">2 · Provisionnement des machines</text><text x="40" y="366" class="ts">du serveur nu au système installé</text>
+<rect x="20" y="392" width="430" height="62" rx="8" class="b-dark"/><text x="40" y="418" class="tl tw">1 · Matériel et réseau physique</text><text x="40" y="438" class="tw" style="font-size:12px">baies, câblage, commutateurs, adressage</text>
+</g>
+<g class="ts">
+<text x="480" y="56">réseaux externes, gabarits, images, quotas,</text><text x="480" y="74">projets, types de volumes</text>
+<text x="480" y="128">installer, configurer, initialiser les bases,</text><text x="480" y="146">enregistrer les points d'accès, démarrer</text>
+<text x="480" y="200">MariaDB Galera, RabbitMQ, HAProxy, Memcached,</text><text x="480" y="218">Ceph, OVN — en haute disponibilité</text>
+<text x="480" y="272">paquets, noyau, horloge, interfaces et ponts,</text><text x="480" y="290">moteur de conteneurs ou Kubernetes</text>
+<text x="480" y="344">amorçage PXE, installation du système,</text><text x="480" y="362">configuration des disques et du réseau</text>
+<text x="480" y="416">conception, achat, mise en baie — toujours</text><text x="480" y="434">à votre charge, sauf offre hébergée</text>
+</g>
+<g class="ts">
+<text x="850" y="56">vous, avec Terraform ou la CLI ;</text><text x="850" y="74">amorcée par certains outils (sunbeam configure)</text>
+<text x="850" y="128" class="tb">cœur de métier de tous les outils</text><text x="850" y="146">Kolla-Ansible, OSA, Helm, Sunbeam, RHOSO…</text>
+<text x="850" y="200">inclus dans la plupart des outils ;</text><text x="850" y="218">Ceph souvent déployé à part</text>
+<text x="850" y="272">en partie : bootstrap-servers (Kolla),</text><text x="850" y="290">setup-hosts (OSA), prepare-node (Sunbeam)</text>
+<text x="850" y="344">outil séparé : MAAS, Ironic / Bifrost,</text><text x="850" y="362">Metal3, Kayobe, ou à la main</text>
+<text x="850" y="416">aucun outil de déploiement</text>
+</g>
+<path d="M455,63 H470 M455,135 H470 M455,207 H470 M455,279 H470 M455,351 H470 M455,423 H470" class="nl"/>
+<path d="M820,36 V452" class="nl" stroke-dasharray="4 5"/>
+</svg>
+</div>
+<div class="note g"><b>Première question à poser à une méthode :</b> à quelle couche commence-t-elle, à laquelle s'arrête-t-elle ? Deux outils « de déploiement » peuvent ne couvrir que la couche 5 pour l'un, les couches 2 à 6 pour l'autre.</div>
+</div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+<header><span class="kick">1 · Ce que « déployer » veut dire</span><h2>Avant, pendant, après : le déploiement est un cycle</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 215">
+<rect x="20" y="20" width="330" height="170" rx="12" class="b-grey"/><text x="185" y="52" class="tc tl">Jour 0 — Concevoir</text>
+<rect x="410" y="20" width="330" height="170" rx="12" class="b-red"/><text x="575" y="52" class="tc tl tr">Jour 1 — Installer</text>
+<rect x="800" y="20" width="330" height="170" rx="12" class="b-blue"/><text x="965" y="52" class="tc tl">Jour 2 — Exploiter</text>
+<path d="M350,105 H408" class="lr"/><path d="M740,105 H798" class="lr"/>
+<path d="M965,190 V206 H575 V192" class="ln ld"/><text x="770" y="201" class="tc ts">chaque évolution repasse par l'outil de déploiement</text>
+<g class="ts">
+<text x="40" y="80">• dimensionnement, topologie, réseaux</text><text x="40" y="100">• choix du stockage et du réseau virtuel</text><text x="40" y="120">• choix de la méthode de déploiement</text><text x="40" y="140">• inventaire, nommage, adressage</text><text x="40" y="170" class="tb">quelques semaines</text>
+<text x="430" y="80">• provisionnement des machines</text><text x="430" y="100">• installation du plan de contrôle</text><text x="430" y="120">• ajout des nœuds de calcul et de stockage</text><text x="430" y="140">• validation (Tempest, Rally)</text><text x="430" y="170" class="tb">quelques heures à quelques jours</text>
+<text x="820" y="80">• reconfiguration, ajout et retrait de nœuds</text><text x="820" y="100">• correctifs de sécurité, montées de version</text><text x="820" y="120">• sauvegardes, reprise après incident</text><text x="820" y="140">• supervision, capacité</text><text x="820" y="170" class="tb">plusieurs années</text>
+</g>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<p><b>Ce que cela change dans le choix</b></p>
+<ul class="pts sm">
+<li>Une démonstration juge le <b>jour 1</b> ; l'exploitation se joue au <b>jour 2</b>. Une installation en vingt minutes ne dit rien de la montée de version dans deux ans.</li>
+<li>L'outil choisi au départ devient le <b>seul chemin</b> pour modifier le cloud : toute intervention manuelle hors outil sera écrasée à la prochaine exécution.</li>
+<li>Changer de méthode en cours de vie revient presque toujours à <b>reconstruire</b> un cloud à côté et à migrer les charges.</li>
+</ul>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Opération du jour 2</th><th>Question à poser à l'outil</th></tr></thead>
+<tbody>
+<tr><td>Changer une option</td><td>Une commande, ou un redéploiement complet ?</td></tr>
+<tr><td>Ajouter un hyperviseur</td><td>Sans toucher aux nœuds existants ?</td></tr>
+<tr><td>Monter de version</td><td>Sans interruption des API ? Saut de version possible ?</td></tr>
+<tr><td>Remplacer un contrôleur</td><td>Procédure documentée et testée ?</td></tr>
+<tr><td>Revenir en arrière</td><td>Prévu, ou restauration de sauvegarde ?</td></tr>
+</tbody></table>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+<header><span class="kick">1 · Ce que « déployer » veut dire</span><h2>Trois axes pour classer les méthodes</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card"><h3>Axe 1 · Forme de livraison</h3>Sous quelle forme le code d'OpenStack arrive sur les machines.<span class="os"><b>Options :</b> paquets de la distribution · sources dans un environnement Python · images de conteneurs · snaps</span></div>
+<div class="card cb"><h3>Axe 2 · Orchestrateur</h3>Quel moteur enchaîne les étapes, applique la configuration et la maintient.<span class="os"><b>Options :</b> scripts shell · Ansible · Puppet · Juju · opérateurs Kubernetes et Helm</span></div>
+<div class="card ct"><h3>Axe 3 · Socle d'exécution</h3>Sur quoi tourne le plan de contrôle une fois installé.<span class="os"><b>Options :</b> directement sur l'hôte · conteneurs Docker ou Podman · conteneurs LXC · pods Kubernetes</span></div>
+</div>
+<table class="tbl">
+<thead><tr><th>Méthode</th><th>Forme de livraison</th><th>Orchestrateur</th><th>Socle du plan de contrôle</th></tr></thead>
+<tbody>
+<tr><td>DevStack</td><td>Sources (git)</td><td>Scripts shell</td><td>Hôte, services systemd</td></tr>
+<tr><td>Installation manuelle</td><td>Paquets de la distribution</td><td>L'administrateur</td><td>Hôte</td></tr>
+<tr><td>Kolla-Ansible</td><td>Images de conteneurs Kolla</td><td>Ansible</td><td>Conteneurs Docker ou Podman</td></tr>
+<tr><td>OpenStack-Ansible</td><td>Sources dans des environnements Python</td><td>Ansible</td><td>Conteneurs LXC, ou hôte</td></tr>
+<tr><td>OpenStack-Helm et dérivés</td><td>Images de conteneurs (LOCI)</td><td>Helm, opérateurs</td><td>Pods Kubernetes</td></tr>
+<tr><td>Sunbeam (Canonical)</td><td>Images OCI (rocks) et snaps</td><td>Juju, Terraform</td><td>Pods Kubernetes ; snaps pour le calcul</td></tr>
+<tr><td>RHOSO (Red Hat)</td><td>Images de conteneurs</td><td>Opérateurs OpenShift, Ansible</td><td>Pods OpenShift ; RHEL pour le calcul</td></tr>
+</tbody></table>
+<div class="note g">Ces trois choix déterminent presque tout le reste : compétences nécessaires, façon de monter de version, facilité à corriger un service, comportement en environnement déconnecté.</div>
+</div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+<header><span class="kick">1 · Ce que « déployer » veut dire</span><h2>Axe 1 — Les formes de livraison du code</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Forme</th><th>Principe</th><th>Atouts</th><th>Limites</th><th>Utilisée par</th></tr></thead>
+<tbody>
+<tr><td>Paquets de la distribution</td><td>Paquets <code>.deb</code> ou <code>.rpm</code> construits par Ubuntu, Debian, RDO</td><td>Intégration au système, correctifs par le gestionnaire de paquets</td><td>Dépendances Python partagées entre services ; version liée à la distribution</td><td>Installation manuelle, Puppet, anciennes distributions</td></tr>
+<tr><td>Sources dans un environnement Python</td><td>Le code est récupéré par git et installé dans un <i>virtualenv</i> par service</td><td>Toute version, tout correctif amont ; services isolés les uns des autres</td><td>Compilation sur place, plus lente ; dépôt de sources à mettre à disposition</td><td>DevStack, OpenStack-Ansible</td></tr>
+<tr><td>Images de conteneurs</td><td>Une image par service, avec toutes ses dépendances, tirée d'un registre</td><td>Identique sur tous les nœuds ; mise à jour = changer d'image ; retour arrière simple</td><td>Registre à opérer ; images à reconstruire pour chaque correctif</td><td>Kolla-Ansible, OpenStack-Helm, RHOSO, MOSK</td></tr>
+<tr><td>Snaps</td><td>Paquet autonome et confiné, mis à jour par canaux</td><td>Installation en une commande, mises à jour transactionnelles avec retour arrière</td><td>Écosystème Ubuntu ; moins de prise sur le contenu</td><td>Sunbeam (hyperviseur, MicroCeph, CLI)</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Tendance générale :</b> la livraison par images de conteneurs s'est imposée pour le plan de contrôle. Elle supprime le problème historique des dépendances Python incompatibles entre services installés sur une même machine.</div>
+<div class="note g"><b>Deux familles d'images :</b> les images <b>Kolla</b> (un service prêt à l'emploi par image, bases Ubuntu, Debian, Rocky) et les images <b>LOCI</b> (plus légères, utilisées par OpenStack-Helm). Les éditeurs publient leurs propres images, signées et supportées.</div>
+</div>
+</div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+<header><span class="kick">1 · Ce que « déployer » veut dire</span><h2>Axe 3 — Où tourne le plan de contrôle</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 300">
+<g class="tc tl"><text x="145" y="22">Sur l'hôte</text><text x="430" y="22">Conteneurs applicatifs</text><text x="715" y="22">Conteneurs système</text><text x="1000" y="22">Pods Kubernetes</text></g>
+<g class="tc">
+<rect x="20" y="40" width="250" height="250" rx="10" class="zone"/>
+<rect x="34" y="56" width="70" height="80" rx="6" class="b-red"/><text x="69" y="100" class="tb" style="font-size:12px">nova</text><rect x="110" y="56" width="70" height="80" rx="6" class="b-red"/><text x="145" y="100" class="tb" style="font-size:12px">neutron</text><rect x="186" y="56" width="70" height="80" rx="6" class="b-red"/><text x="221" y="100" class="tb" style="font-size:12px">cinder</text>
+<rect x="34" y="146" width="222" height="40" rx="6" class="b-amber"/><text x="145" y="171" style="font-size:12.5px">Python, bibliothèques communes</text>
+<rect x="34" y="196" width="222" height="36" rx="6" class="b-grey"/><text x="145" y="219">systemd</text>
+<rect x="34" y="242" width="222" height="36" rx="6" class="b-dark"/><text x="145" y="265" class="tw">Linux</text>
+<rect x="305" y="40" width="250" height="250" rx="10" class="zone"/>
+<rect x="319" y="56" width="70" height="130" rx="6" class="b-red"/><text x="354" y="100" class="tb" style="font-size:12px">nova</text><text x="354" y="150" class="ts">+ ses</text><text x="354" y="166" class="ts" style="font-size:9.8px">dépendances</text>
+<rect x="395" y="56" width="70" height="130" rx="6" class="b-red"/><text x="430" y="100" class="tb" style="font-size:12px">neutron</text><text x="430" y="150" class="ts">+ ses</text><text x="430" y="166" class="ts" style="font-size:9.8px">dépendances</text>
+<rect x="471" y="56" width="70" height="130" rx="6" class="b-red"/><text x="506" y="100" class="tb" style="font-size:12px">cinder</text><text x="506" y="150" class="ts">+ ses</text><text x="506" y="166" class="ts" style="font-size:9.8px">dépendances</text>
+<rect x="319" y="196" width="222" height="36" rx="6" class="b-blue"/><text x="430" y="219">Docker ou Podman</text>
+<rect x="319" y="242" width="222" height="36" rx="6" class="b-dark"/><text x="430" y="265" class="tw">Linux</text>
+<rect x="590" y="40" width="250" height="250" rx="10" class="zone"/>
+<rect x="604" y="56" width="70" height="130" rx="6" class="b-red"/><text x="639" y="92" class="tb" style="font-size:12px">nova</text><text x="639" y="130" class="ts">venv</text><text x="639" y="150" class="ts">systemd</text><text x="639" y="170" class="ts">IP propre</text>
+<rect x="680" y="56" width="70" height="130" rx="6" class="b-red"/><text x="715" y="92" class="tb" style="font-size:12px">neutron</text><text x="715" y="130" class="ts">venv</text><text x="715" y="150" class="ts">systemd</text><text x="715" y="170" class="ts">IP propre</text>
+<rect x="756" y="56" width="70" height="130" rx="6" class="b-red"/><text x="791" y="92" class="tb" style="font-size:12px">cinder</text><text x="791" y="130" class="ts">venv</text><text x="791" y="150" class="ts">systemd</text><text x="791" y="170" class="ts">IP propre</text>
+<rect x="604" y="196" width="222" height="36" rx="6" class="b-teal"/><text x="715" y="219">LXC</text>
+<rect x="604" y="242" width="222" height="36" rx="6" class="b-dark"/><text x="715" y="265" class="tw">Linux</text>
+<rect x="875" y="40" width="250" height="250" rx="10" class="zone"/>
+<rect x="889" y="56" width="70" height="80" rx="6" class="b-red"/><text x="924" y="92" class="tb" style="font-size:12px">nova</text><text x="924" y="114" class="ts">pods ×3</text>
+<rect x="965" y="56" width="70" height="80" rx="6" class="b-red"/><text x="1000" y="92" class="tb" style="font-size:12px">neutron</text><text x="1000" y="114" class="ts">pods ×3</text>
+<rect x="1041" y="56" width="70" height="80" rx="6" class="b-red"/><text x="1076" y="92" class="tb" style="font-size:12px">cinder</text><text x="1076" y="114" class="ts">pods ×3</text>
+<rect x="889" y="146" width="222" height="40" rx="6" class="b-violet"/><text x="1000" y="171">Kubernetes : ordonnancement</text>
+<rect x="889" y="196" width="222" height="36" rx="6" class="b-blue"/><text x="1000" y="219">containerd</text>
+<rect x="889" y="242" width="222" height="36" rx="6" class="b-dark"/><text x="1000" y="265" class="tw">Linux, plusieurs nœuds</text>
+</g>
+</svg>
+</div>
+<table class="tbl tight">
+<thead><tr><th></th><th>Sur l'hôte</th><th>Conteneurs applicatifs</th><th>Conteneurs système (LXC)</th><th>Pods Kubernetes</th></tr></thead>
+<tbody>
+<tr><td>Isolation des dépendances</td><td>Aucune</td><td>Par service</td><td>Par service</td><td>Par service</td></tr>
+<tr><td>Redémarrage après panne</td><td>systemd, sur le même hôte</td><td>Moteur de conteneurs, même hôte</td><td>systemd dans le conteneur</td><td>Replanifié sur un autre nœud</td></tr>
+<tr><td>Diagnostic</td><td>Outils Linux habituels</td><td><code>docker logs</code>, <code>docker exec</code></td><td>Comme une machine virtuelle</td><td><code>kubectl</code> ; couche supplémentaire à maîtriser</td></tr>
+<tr><td>Exemples</td><td>DevStack, guide d'installation</td><td>Kolla-Ansible</td><td>OpenStack-Ansible</td><td>OpenStack-Helm, Sunbeam, RHOSO, MOSK</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+<header><span class="kick">1 · Ce que « déployer » veut dire</span><h2>Trois générations d'outils</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 330">
+<path d="M20,34 H1130" class="ln"/><text x="575" y="20" class="tc tb">du début des années 2010 à aujourd'hui</text>
+<rect x="20" y="52" width="350" height="270" rx="12" class="zone"/><rect x="400" y="52" width="350" height="270" rx="12" class="zone"/><rect x="780" y="52" width="350" height="270" rx="12" class="zone"/>
+<text x="38" y="78" class="tl">1 · Gestion de configuration</text><text x="38" y="98" class="ts">paquets + Puppet, Chef, scripts</text>
+<text x="418" y="78" class="tl">2 · Conteneurs pilotés par Ansible</text><text x="418" y="98" class="ts">une image ou un conteneur par service</text>
+<text x="798" y="78" class="tl tr">3 · Kubernetes comme socle</text><text x="798" y="98" class="ts">le plan de contrôle devient une application</text>
+<g class="tc" style="font-size:12.5px">
+<rect x="38" y="114" width="150" height="38" rx="7" class="bx"/><text x="113" y="138" class="tb">Puppet OpenStack</text>
+<rect x="202" y="114" width="150" height="38" rx="7" class="bx"/><text x="277" y="138" class="tb">Charms (Juju)</text>
+<rect x="38" y="162" width="150" height="38" rx="7" class="bx" style="stroke-dasharray:5 4"/><text x="113" y="186">Packstack</text>
+<rect x="202" y="162" width="150" height="38" rx="7" class="bx" style="stroke-dasharray:5 4"/><text x="277" y="186">Chef OpenStack</text>
+<rect x="38" y="210" width="150" height="38" rx="7" class="bx" style="stroke-dasharray:5 4"/><text x="113" y="234">Fuel</text>
+<rect x="202" y="210" width="150" height="38" rx="7" class="bx" style="stroke-dasharray:5 4"/><text x="277" y="234">TripleO (débuts)</text>
+<rect x="418" y="114" width="150" height="38" rx="7" class="b-red"/><text x="493" y="138" class="tb">Kolla-Ansible</text>
+<rect x="582" y="114" width="150" height="38" rx="7" class="b-red"/><text x="657" y="138" class="tb">OpenStack-Ansible</text>
+<rect x="418" y="162" width="150" height="38" rx="7" class="bx"/><text x="493" y="186" class="tb">Kayobe</text>
+<rect x="582" y="162" width="150" height="38" rx="7" class="bx" style="stroke-dasharray:5 4"/><text x="657" y="186">TripleO (conteneurs)</text>
+<rect x="798" y="114" width="150" height="38" rx="7" class="b-red"/><text x="873" y="138" class="tb">OpenStack-Helm</text>
+<rect x="962" y="114" width="150" height="38" rx="7" class="b-red"/><text x="1037" y="138" class="tb">Sunbeam</text>
+<rect x="798" y="162" width="150" height="38" rx="7" class="b-red"/><text x="873" y="186" class="tb">RHOSO</text>
+<rect x="962" y="162" width="150" height="38" rx="7" class="b-red"/><text x="1037" y="186" class="tb">MOSK</text>
+<rect x="798" y="210" width="150" height="38" rx="7" class="bx"/><text x="873" y="234" class="tb">Atmosphere</text>
+<rect x="962" y="210" width="150" height="38" rx="7" class="bx"/><text x="1037" y="234" class="tb">Genestack · Yaook</text>
+</g>
+<g class="ts"><text x="38" y="278">Un état voulu décrit dans des manifestes ;</text><text x="38" y="296">des services installés directement sur les hôtes.</text>
+<text x="418" y="278">Des playbooks idempotents ; chaque service</text><text x="418" y="296">isolé, remplaçable par changement d'image.</text>
+<text x="798" y="278">Des opérateurs qui réconcilient en continu ;</text><text x="798" y="296">Kubernetes gère santé et replanification.</text></g>
+</svg>
+</div>
+<div class="cols nf">
+<div class="note g"><b>Cadres en pointillés :</b> projets retirés ou en fin de vie. TripleO et Chef OpenStack ne figurent plus parmi les projets officiels ; Fuel a disparu depuis longtemps.</div>
+<div class="note"><b>Les générations coexistent :</b> Kolla-Ansible et OpenStack-Ansible restent très utilisés et activement maintenus. La troisième génération domine chez les éditeurs, pas encore dans toutes les équipes d'exploitation.</div>
+</div>
+</div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+<header><span class="kick">1 · Ce que « déployer » veut dire</span><h2>Carte du paysage</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 480">
+<line x1="120" y1="440" x2="1120" y2="440" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+<line x1="120" y1="440" x2="120" y2="20" stroke="#475569" stroke-width="2" marker-end="url(#ar)"/>
+<text x="620" y="470" class="tc tb">Socle du plan de contrôle</text>
+<text x="330" y="458" class="tc ts">hôte ou conteneurs, pilotés par Ansible</text><text x="900" y="458" class="tc ts">Kubernetes, piloté par des opérateurs</text>
+
+<text transform="rotate(-90 60 350)" x="60" y="350" class="tc ts">vous assemblez</text><text transform="rotate(-90 60 110)" x="60" y="110" class="tc ts">un éditeur intègre</text>
+<line x1="620" y1="30" x2="620" y2="440" class="nl" stroke-dasharray="5 5"/><line x1="120" y1="235" x2="1110" y2="235" class="nl" stroke-dasharray="5 5"/>
+<g class="tc">
+<rect x="150" y="372" width="150" height="46" rx="8" class="b-grey"/><text x="225" y="393" class="tb">DevStack</text><text x="225" y="410" class="ts">développement</text>
+<rect x="320" y="372" width="160" height="46" rx="8" class="b-grey"/><text x="400" y="393" class="tb">Installation manuelle</text><text x="400" y="410" class="ts">apprentissage</text>
+<rect x="180" y="278" width="170" height="52" rx="8" class="b-red"/><text x="265" y="301" class="tb">Kolla-Ansible</text><text x="265" y="319" class="ts">Docker / Podman</text>
+<rect x="390" y="278" width="190" height="52" rx="8" class="b-red"/><text x="485" y="301" class="tb">OpenStack-Ansible</text><text x="485" y="319" class="ts">LXC ou hôte</text>
+<rect x="180" y="168" width="190" height="52" rx="8" class="bx"/><text x="275" y="191" class="tb">Kayobe (StackHPC)</text><text x="275" y="209" class="ts">Kolla-Ansible + bare metal</text>
+<rect x="660" y="330" width="180" height="52" rx="8" class="b-red"/><text x="750" y="353" class="tb">OpenStack-Helm</text><text x="750" y="371" class="ts">charts à assembler</text>
+<rect x="880" y="330" width="180" height="52" rx="8" class="bx"/><text x="970" y="353" class="tb">Yaook</text><text x="970" y="371" class="ts">opérateurs</text>
+<rect x="660" y="258" width="180" height="52" rx="8" class="bx"/><text x="750" y="281" class="tb">Atmosphere</text><text x="750" y="299" class="ts">VEXXHOST</text>
+<rect x="880" y="258" width="180" height="52" rx="8" class="bx"/><text x="970" y="281" class="tb">Genestack</text><text x="970" y="299" class="ts">Rackspace</text>
+<rect x="660" y="130" width="180" height="52" rx="8" class="b-amber"/><text x="750" y="153" class="tb">Sunbeam</text><text x="750" y="171" class="ts">Canonical OpenStack</text>
+<rect x="880" y="130" width="180" height="52" rx="8" class="b-amber"/><text x="970" y="153" class="tb">MOSK</text><text x="970" y="171" class="ts">Mirantis</text>
+<rect x="770" y="54" width="180" height="52" rx="8" class="b-amber"/><text x="860" y="77" class="tb">RHOSO</text><text x="860" y="95" class="ts">Red Hat, sur OpenShift</text>
+<rect x="380" y="130" width="200" height="52" rx="8" class="bx" style="stroke-dasharray:5 4"/><text x="480" y="153" class="tb">Charmed OpenStack</text><text x="480" y="171" class="ts">Canonical, génération précédente</text>
+<rect x="180" y="54" width="200" height="52" rx="8" class="bx" style="stroke-dasharray:5 4"/><text x="280" y="77" class="tb">RHOSP 17.1 (director)</text><text x="280" y="95" class="ts">Red Hat, génération précédente</text>
+</g>
+</svg>
+</div>
+<div class="note g"><b>Lecture :</b> en bas, des outils libres que l'on assemble et exploite soi-même ; en haut, des distributions intégrées et supportées. À gauche, la filière Ansible ; à droite, la filière Kubernetes, vers laquelle les éditeurs ont tous basculé.</div>
+</div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+<header><span class="kick">1 · Ce que « déployer » veut dire</span><h2>Statut des projets en 2026</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Outil</th><th>Porté par</th><th>Statut</th><th>À retenir</th></tr></thead>
+<tbody>
+<tr><td>DevStack</td><td>Communauté OpenStack (assurance qualité)</td><td class="y">Actif</td><td>Outil de développement et de test ; sert à l'intégration continue du projet</td></tr>
+<tr><td>Kolla, Kolla-Ansible</td><td>Projet officiel OpenStack</td><td class="y">Actif</td><td>Suit chaque version ; hôtes Ubuntu 24.04, Debian 13, Rocky Linux 10</td></tr>
+<tr><td>OpenStack-Ansible</td><td>Projet officiel OpenStack</td><td class="y">Actif</td><td>Suit chaque version ; Ubuntu, Debian, Rocky, CentOS Stream</td></tr>
+<tr><td>OpenStack-Helm</td><td>Projet officiel OpenStack</td><td class="y">Actif</td><td>Collection de charts ; base de plusieurs distributions sur Kubernetes</td></tr>
+<tr><td>Sunbeam</td><td>Projet officiel OpenStack, mené par Canonical</td><td class="y">Actif</td><td>Base de Canonical OpenStack ; succède à MicroStack</td></tr>
+<tr><td>OpenStack Charms</td><td>Projet officiel OpenStack, mené par Canonical</td><td>Maintenu</td><td>Génération précédente de Canonical ; les nouveaux déploiements vont vers Sunbeam</td></tr>
+<tr><td>Puppet OpenStack</td><td>Projet officiel OpenStack</td><td>Maintenu</td><td>Modules de configuration, sans outil d'orchestration associé</td></tr>
+<tr><td>TripleO</td><td>Communauté, Red Hat</td><td class="n" style="color:#b3122f;font-weight:700">Retiré</td><td>Remplacé chez Red Hat par des opérateurs sur OpenShift (RHOSO)</td></tr>
+<tr><td>Chef OpenStack</td><td>Communauté</td><td class="n" style="color:#b3122f;font-weight:700">Retiré</td><td>Dépôts vidés ; plus aucun mainteneur</td></tr>
+<tr><td>Packstack</td><td>Communauté RDO</td><td>Fin de vie</td><td>À ne pas retenir pour un nouveau projet ; vérifier son état avant tout usage</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Enseignement :</b> un outil de déploiement vit et meurt. La santé du projet — nombre de contributeurs, régularité des versions, diversité des entreprises qui le portent — est un critère de choix à part entière.</div>
+<div class="note g"><b>Où vérifier :</b> la liste des équipes officielles sur <code>governance.openstack.org</code>, l'activité des dépôts sur <code>opendev.org</code>, la date de la dernière version sur <code>releases.openstack.org</code>.</div>
+</div>
+</div>
+</section>
+
+<!-- 12 -->
+<section class="slide dark sec">
+<div class="num">02</div>
+<h2>Apprendre et développer</h2>
+<p>Avant la production, il faut un cloud pour comprendre, tester et former. Ces méthodes privilégient la rapidité et la transparence, pas la robustesse.</p>
+<ol><li>DevStack : le cloud du développeur</li><li>DevStack en pratique</li><li>Les installations tout-en-un</li><li>L'installation manuelle, pas à pas</li></ol>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+<header><span class="kick">2 · Apprendre et développer</span><h2>DevStack : le cloud du développeur</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Principe :</b> un ensemble de scripts shell qui clone les dépôts de chaque service, installe leurs dépendances et lance tout sur <b>une seule machine</b>, à partir des sources.</p>
+<ul class="pts sm">
+<li><b>Pour qui :</b> contributeurs au code d'OpenStack, tests d'intégration, découverte des API.</li>
+<li><b>Ce qu'il installe :</b> Keystone, Glance, Placement, Nova, Neutron (OVN), Cinder (LVM sur fichier), Horizon ; d'autres services par greffons.</li>
+<li><b>Comment :</b> chaque service devient une unité systemd <code>devstack@&lt;service&gt;</code> ; les journaux se lisent avec <code>journalctl</code>.</li>
+<li><b>Atout :</b> n'importe quelle branche, n'importe quel correctif en cours de revue, en une variable.</li>
+</ul>
+<div class="note"><b>Jamais en production :</b> pas de haute disponibilité, mots de passe simples, système hôte profondément modifié, aucune procédure de montée de version. Un redémarrage de la machine peut laisser le cloud inutilisable.</div>
+<div class="note g">À lancer sur une machine <b>jetable</b> : une machine virtuelle dédiée, jamais son poste de travail.</div>
+</div>
+<div class="fig">
+<svg viewBox="0 0 560 440">
+<rect x="10" y="10" width="540" height="420" rx="12" class="zone"/><text x="28" y="36" class="tl">Une machine virtuelle Ubuntu</text>
+<g class="tc">
+<rect x="28" y="54" width="240" height="60" rx="8" class="b-grey"/><text x="148" y="80" class="tb">stack.sh</text><text x="148" y="100" class="ts">lit local.conf, enchaîne tout</text>
+<rect x="292" y="54" width="240" height="60" rx="8" class="bx"/><text x="412" y="80" class="tb">/opt/stack</text><text x="412" y="100" class="ts">clones git de chaque service</text>
+<rect x="28" y="146" width="504" height="34" rx="8" class="bx"/><text x="280" y="168">installation en mode développement (pip install -e)</text>
+</g>
+<path d="M268,84 H290" class="lr"/><path d="M412,114 V144" class="lr"/><path d="M280,180 V204" class="lr"/>
+<g class="tc tm tb">
+<rect x="28" y="206" width="160" height="36" rx="6" class="b-red"/><text x="108" y="229">devstack@keystone</text>
+<rect x="200" y="206" width="160" height="36" rx="6" class="b-red"/><text x="280" y="229">devstack@g-api</text>
+<rect x="372" y="206" width="160" height="36" rx="6" class="b-red"/><text x="452" y="229">devstack@n-api</text>
+<rect x="28" y="250" width="160" height="36" rx="6" class="b-red"/><text x="108" y="273">devstack@n-cpu</text>
+<rect x="200" y="250" width="160" height="36" rx="6" class="b-red"/><text x="280" y="273">devstack@q-svc</text>
+<rect x="372" y="250" width="160" height="36" rx="6" class="b-red"/><text x="452" y="273">devstack@c-vol</text>
+</g>
+<g class="tc">
+<rect x="28" y="312" width="120" height="44" rx="7" class="b-grey"/><text x="88" y="339" class="tb">MySQL</text>
+<rect x="156" y="312" width="120" height="44" rx="7" class="b-amber"/><text x="216" y="339" class="tb">RabbitMQ</text>
+<rect x="284" y="312" width="120" height="44" rx="7" class="b-teal"/><text x="344" y="339" class="tb">OVN, OVS</text>
+<rect x="412" y="312" width="120" height="44" rx="7" class="b-blue"/><text x="472" y="339" class="tb">libvirt, QEMU</text>
+</g>
+<text x="280" y="388" class="tc ts">Tout sur le même hôte, sans conteneur ni redondance.</text>
+<text x="280" y="408" class="tc ts">Modifier un fichier Python puis redémarrer l'unité suffit à tester.</text>
+</svg>
+</div>
+</div></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+<header><span class="kick">2 · Apprendre et développer</span><h2>DevStack en pratique</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:12.6px"><span class="m"># 0. Prérequis : une VM Ubuntu 24.04 neuve, 8 Go de RAM,</span>
+<span class="m">#    4 vCPU, 60 Go de disque, accès à Internet</span>
+
+<span class="m"># 1. Créer l'utilisateur dédié</span>
+<span class="c">sudo useradd</span> -s /bin/bash -d /opt/stack -m stack
+<span class="c">sudo chmod</span> +x /opt/stack
+<span class="c">echo</span> "stack ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/stack
+<span class="c">sudo -u</span> stack -i
+
+<span class="m"># 2. Récupérer DevStack sur la branche voulue</span>
+<span class="c">git clone</span> https://opendev.org/openstack/devstack <span class="k">-b</span> stable/2026.1
+<span class="c">cd</span> devstack
+
+<span class="m"># 3. Écrire local.conf (ci-contre), puis lancer</span>
+<span class="c">./stack.sh</span>
+
+<span class="m"># 4. Utiliser</span>
+<span class="c">source</span> openrc admin admin
+<span class="c">openstack</span> service list</pre>
+</div>
+<div class="col">
+<pre style="font-size:12.6px"><span class="m"># local.conf</span>
+<span class="k">[[local|localrc]]</span>
+ADMIN_PASSWORD=secret
+DATABASE_PASSWORD=$ADMIN_PASSWORD
+RABBIT_PASSWORD=$ADMIN_PASSWORD
+SERVICE_PASSWORD=$ADMIN_PASSWORD
+HOST_IP=192.168.56.10
+
+<span class="m"># Ajouter un service par greffon</span>
+enable_plugin heat https://opendev.org/openstack/heat stable/2026.1</pre>
+<table class="tbl tight">
+<thead><tr><th>Commande</th><th>Effet</th></tr></thead>
+<tbody>
+<tr><td><code>./stack.sh</code></td><td>Installe et démarre tout (20 à 40 minutes)</td></tr>
+<tr><td><code>./unstack.sh</code></td><td>Arrête les services</td></tr>
+<tr><td><code>./clean.sh</code></td><td>Supprime ce que DevStack a installé</td></tr>
+<tr><td><code>systemctl restart devstack@n-cpu</code></td><td>Redémarre un service après modification du code</td></tr>
+<tr><td><code>journalctl -f -u devstack@n-api</code></td><td>Suit le journal d'un service</td></tr>
+</tbody></table>
+<div class="note g">Plusieurs machines : un nœud « contrôleur » et des nœuds « calcul » qui déclarent <code>SERVICE_HOST</code> et la liste réduite <code>ENABLED_SERVICES</code>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+<header><span class="kick">2 · Apprendre et développer</span><h2>Les installations tout-en-un</h2></header>
+<div class="body">
+<p>La plupart des outils de production proposent un mode « une seule machine ». On y retrouve les mêmes conteneurs, les mêmes fichiers et les mêmes commandes qu'en production : c'est le meilleur terrain d'apprentissage d'un outil donné.</p>
+<table class="tbl">
+<thead><tr><th>Méthode</th><th>Ressources minimales</th><th>Mise en route</th><th>Fidélité à la production</th><th>Survit à un redémarrage</th><th>Usage conseillé</th></tr></thead>
+<tbody>
+<tr><td>DevStack</td><td>8 Go de RAM, 60 Go de disque</td><td><code>./stack.sh</code></td><td>Faible : services sur l'hôte, sources</td><td>Non garanti</td><td>Développement, lecture du code</td></tr>
+<tr><td>Kolla-Ansible « all-in-one »</td><td>8 Go de RAM, 40 Go, 2 interfaces</td><td>Inventaire <code>all-in-one</code>, trois commandes</td><td>Élevée : mêmes images, mêmes playbooks</td><td>Oui</td><td>Découvrir Kolla, lab de formation</td></tr>
+<tr><td>OpenStack-Ansible « AIO »</td><td>16 Go de RAM, 80 Go ou plus</td><td>Scripts d'amorçage AIO, puis playbooks</td><td>Élevée : mêmes rôles, conteneurs LXC</td><td>Oui</td><td>Découvrir OSA, tester une configuration</td></tr>
+<tr><td>Sunbeam, nœud unique</td><td>16 Go de RAM, 4 cœurs, 100 Go ou plus</td><td><code>sunbeam cluster bootstrap</code></td><td>Élevée : Kubernetes, Juju, snaps</td><td>Oui</td><td>Découvrir Canonical OpenStack</td></tr>
+<tr><td>Installation manuelle</td><td>2 machines virtuelles, 4 à 8 Go chacune</td><td>Guide d'installation, service par service</td><td>Moyenne : paquets, sans haute disponibilité</td><td>Oui</td><td>Comprendre chaque composant</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Limite commune :</b> aucune haute disponibilité, un seul hyperviseur, stockage sur fichier ou sur disque local. On y apprend l'outil et les API, pas le comportement en panne.</div>
+<div class="note g"><b>Pour aller plus loin sans matériel :</b> trois à cinq machines virtuelles avec virtualisation imbriquée permettent de monter un vrai plan de contrôle redondant et de simuler la perte d'un nœud.</div>
+</div>
+</div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+<header><span class="kick">2 · Apprendre et développer</span><h2>L'installation manuelle : comprendre avant d'automatiser</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 215">
+<rect x="10" y="20" width="200" height="180" rx="10" class="b-grey"/><text x="110" y="46" class="tc tb">0 · Environnement</text>
+<g class="ts"><text x="24" y="72">• réseau, résolution de noms</text><text x="24" y="92">• horloge (chrony)</text><text x="24" y="112">• dépôt de paquets OpenStack</text><text x="24" y="132">• MariaDB</text><text x="24" y="152">• RabbitMQ</text><text x="24" y="172">• Memcached, etcd</text></g>
+<g class="tc tb">
+<rect x="240" y="70" width="110" height="80" rx="9" class="b-red"/><text x="295" y="106">1</text><text x="295" y="128">Keystone</text>
+<rect x="370" y="70" width="110" height="80" rx="9" class="b-red"/><text x="425" y="106">2</text><text x="425" y="128">Glance</text>
+<rect x="500" y="70" width="110" height="80" rx="9" class="b-red"/><text x="555" y="106">3</text><text x="555" y="128">Placement</text>
+<rect x="630" y="70" width="110" height="80" rx="9" class="b-red"/><text x="685" y="106">4</text><text x="685" y="128">Nova</text>
+<rect x="760" y="70" width="110" height="80" rx="9" class="b-red"/><text x="815" y="106">5</text><text x="815" y="128">Neutron</text>
+<rect x="890" y="70" width="110" height="80" rx="9" class="bx"/><text x="945" y="106">6</text><text x="945" y="128">Horizon</text>
+<rect x="1020" y="70" width="110" height="80" rx="9" class="bx"/><text x="1075" y="106">7</text><text x="1075" y="128">Cinder</text>
+</g>
+<path d="M210,110 H238" class="lr"/><path d="M350,110 H368" class="lr"/><path d="M480,110 H498" class="lr"/><path d="M610,110 H628" class="lr"/><path d="M740,110 H758" class="lr"/><path d="M870,110 H888" class="ln"/><path d="M1000,110 H1018" class="ln"/>
+<text x="685" y="50" class="tc ts tb tr">ordre imposé par les dépendances : chaque service a besoin des précédents</text>
+<text x="685" y="182" class="tc ts">contrôleur : API, ordonnanceurs · nœud de calcul : nova-compute, agent réseau</text>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<p><b>Le même enchaînement pour chaque service</b></p>
+<table class="tbl tight">
+<tbody>
+<tr><td>1</td><td>Créer la base de données et son compte</td></tr>
+<tr><td>2</td><td>Créer l'utilisateur de service dans Keystone, lui donner le rôle <code>admin</code> sur le projet <code>service</code></td></tr>
+<tr><td>3</td><td>Enregistrer le service et ses points d'accès dans le catalogue</td></tr>
+<tr><td>4</td><td>Installer les paquets</td></tr>
+<tr><td>5</td><td>Renseigner le fichier de configuration : base, bus, Keystone</td></tr>
+<tr><td>6</td><td>Initialiser le schéma (<code>&lt;service&gt;-manage db sync</code>)</td></tr>
+<tr><td>7</td><td>Démarrer et activer les services, puis vérifier</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Valeur pédagogique irremplaçable :</b> on voit de ses yeux ce que tout outil automatise — et où chercher quand il échoue.</li>
+<li><b>Source :</b> le guide d'installation officiel, décliné pour Ubuntu, Debian et les distributions de la famille Red Hat.</li>
+<li><b>Résultat :</b> un contrôleur et un nœud de calcul, sans redondance ni chiffrement.</li>
+</ul>
+<div class="note"><b>Pas une méthode de production :</b> non reproductible, sans haute disponibilité, et chaque montée de version serait à refaire à la main, service par service, sur chaque machine.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 17 -->
+<section class="slide dark sec">
+<div class="num">03</div>
+<h2>Outils communautaires de production</h2>
+<p>Trois familles officielles, développées sous la gouvernance d'OpenStack, gratuites et sans support contractuel : des conteneurs pilotés par Ansible, des conteneurs système LXC, des charts Helm sur Kubernetes.</p>
+<ol><li>Kolla-Ansible : architecture, commandes, configuration</li><li>Kayobe : Kolla-Ansible depuis la machine nue</li><li>OpenStack-Ansible : architecture et déroulé</li><li>Kolla-Ansible et OpenStack-Ansible face à face</li><li>OpenStack-Helm et ses dérivés</li><li>Briques réutilisables et provisionnement des machines</li></ol>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+<header><span class="kick">3 · Outils communautaires</span><h2>Kolla-Ansible : un conteneur par processus</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 420">
+<rect x="20" y="96" width="250" height="304" rx="12" class="b-grey"/><text x="145" y="124" class="tc tl">Hôte de déploiement</text>
+<g class="tc">
+<rect x="36" y="140" width="218" height="44" rx="7" class="bx"/><text x="145" y="159" class="tb">kolla-ansible</text><text x="145" y="176" class="ts">dans un environnement virtuel Python</text>
+<rect x="36" y="194" width="218" height="34" rx="7" class="bx"/><text x="145" y="216" class="tm">inventaire multinode</text>
+<rect x="36" y="236" width="218" height="34" rx="7" class="bx"/><text x="145" y="258" class="tm">/etc/kolla/globals.yml</text>
+<rect x="36" y="278" width="218" height="34" rx="7" class="bx"/><text x="145" y="300" class="tm">/etc/kolla/passwords.yml</text>
+<rect x="36" y="320" width="218" height="34" rx="7" class="bx"/><text x="145" y="342" class="tm">/etc/kolla/config/</text>
+<text x="145" y="378" class="ts">aucun service OpenStack ici</text>
+</g>
+<rect x="430" y="8" width="420" height="52" rx="10" class="b-teal"/><text x="640" y="30" class="tc tb">Registre d'images</text><text x="640" y="48" class="tc ts">quay.io/openstack.kolla, ou un registre local</text>
+
+<rect x="338" y="104" width="400" height="304" rx="12" style="fill:#fff;stroke:#cbd5e1"/><rect x="330" y="96" width="400" height="304" rx="12" class="zone"/>
+<text x="346" y="120" class="tl">Contrôleur</text><text x="714" y="120" class="te tb fa">× 3</text>
+<g class="tc tm" style="font-size:11px">
+<rect x="344" y="132" width="120" height="26" rx="5" class="b-grey"/><text x="404" y="149">haproxy</text>
+<rect x="470" y="132" width="120" height="26" rx="5" class="b-grey"/><text x="530" y="149">keepalived</text>
+<rect x="596" y="132" width="120" height="26" rx="5" class="b-grey"/><text x="656" y="149">memcached</text>
+<rect x="344" y="164" width="120" height="26" rx="5" class="b-amber"/><text x="404" y="181">mariadb</text>
+<rect x="470" y="164" width="120" height="26" rx="5" class="b-amber"/><text x="530" y="181">rabbitmq</text>
+<rect x="596" y="164" width="120" height="26" rx="5" class="b-teal"/><text x="656" y="181">ovn_northd</text>
+<rect x="344" y="196" width="120" height="26" rx="5" class="b-red"/><text x="404" y="213">keystone</text>
+<rect x="470" y="196" width="120" height="26" rx="5" class="b-red"/><text x="530" y="213">glance_api</text>
+<rect x="596" y="196" width="120" height="26" rx="5" class="b-red"/><text x="656" y="213">placement_api</text>
+<rect x="344" y="228" width="120" height="26" rx="5" class="b-red"/><text x="404" y="245">nova_api</text>
+<rect x="470" y="228" width="120" height="26" rx="5" class="b-red"/><text x="530" y="245">nova_scheduler</text>
+<rect x="596" y="228" width="120" height="26" rx="5" class="b-red"/><text x="656" y="245">nova_conductor</text>
+<rect x="344" y="260" width="120" height="26" rx="5" class="b-red"/><text x="404" y="277">neutron_server</text>
+<rect x="470" y="260" width="120" height="26" rx="5" class="b-red"/><text x="530" y="277">cinder_api</text>
+<rect x="596" y="260" width="120" height="26" rx="5" class="b-red"/><text x="656" y="277">horizon</text>
+<rect x="344" y="292" width="120" height="26" rx="5" class="bx"/><text x="404" y="309">fluentd</text>
+<rect x="470" y="292" width="120" height="26" rx="5" class="bx"/><text x="530" y="309">cron</text>
+<rect x="596" y="292" width="120" height="26" rx="5" class="bx"/><text x="656" y="309">kolla_toolbox</text>
+</g>
+<rect x="344" y="330" width="372" height="58" rx="7" class="b-dark"/><text x="530" y="353" class="tc tw tb">Docker ou Podman</text><text x="530" y="373" class="tc tw" style="font-size:12px">réseau de l'hôte · /etc/kolla/&lt;service&gt;/ monté en lecture</text>
+
+<rect x="778" y="104" width="360" height="304" rx="12" style="fill:#fff;stroke:#cbd5e1"/><rect x="770" y="96" width="360" height="304" rx="12" class="zone"/>
+<text x="786" y="120" class="tl">Nœud de calcul</text><text x="1114" y="120" class="te tb fa">× N</text>
+<g class="tc tm" style="font-size:11px">
+<rect x="784" y="132" width="163" height="26" rx="5" class="b-red"/><text x="865" y="149">nova_compute</text>
+<rect x="953" y="132" width="163" height="26" rx="5" class="b-blue"/><text x="1034" y="149">nova_libvirt</text>
+<rect x="784" y="164" width="163" height="26" rx="5" class="b-blue"/><text x="865" y="181">nova_ssh</text>
+<rect x="953" y="164" width="163" height="26" rx="5" class="b-teal"/><text x="1034" y="181">ovn_controller</text>
+<rect x="784" y="196" width="163" height="26" rx="5" class="b-teal"/><text x="865" y="213">openvswitch_vswitchd</text>
+<rect x="953" y="196" width="163" height="26" rx="5" class="b-teal"/><text x="1034" y="213">openvswitch_db</text>
+<rect x="784" y="228" width="332" height="26" rx="5" class="b-teal"/><text x="950" y="245">neutron_ovn_metadata_agent</text>
+<rect x="784" y="260" width="107" height="26" rx="5" class="bx"/><text x="837" y="277">fluentd</text>
+<rect x="897" y="260" width="107" height="26" rx="5" class="bx"/><text x="950" y="277">cron</text>
+<rect x="1010" y="260" width="106" height="26" rx="5" class="bx"/><text x="1063" y="277">kolla_toolbox</text>
+</g>
+<text x="950" y="312" class="tc ts">les machines virtuelles sont des processus QEMU</text>
+<rect x="784" y="330" width="332" height="58" rx="7" class="b-dark"/><text x="950" y="353" class="tc tw tb">Docker ou Podman</text><text x="950" y="373" class="tc tw" style="font-size:12px">mêmes conventions que sur le contrôleur</text>
+
+<path d="M270,248 H328" class="lr"/><text x="299" y="238" class="tc ts tb">SSH</text>
+<path d="M300,248 V78 H1000 V94" class="lr ld" style="fill:none"/>
+<path d="M530,60 V94" class="lt"/><path d="M800,60 V94" class="lt"/><text x="862" y="30" class="ts ft">chaque nœud tire</text><text x="862" y="46" class="ts ft">ses images</text>
+</svg>
+</div>
+<div class="note g"><b>À retenir :</b> les images sont construites à l'avance par le projet <b>Kolla</b> ; <b>Kolla-Ansible</b> se contente de générer la configuration, de tirer les images et de démarrer les conteneurs. Mettre à jour un service, c'est remplacer son image.</div>
+</div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+<header><span class="kick">3 · Outils communautaires</span><h2>Kolla-Ansible : déroulé d'un déploiement</h2></header>
+<div class="body"><div class="cols w46">
+<div class="col">
+<p><b>Prérequis, avant toute commande</b></p>
+<ul class="pts sm">
+<li>Hôtes en <b>CentOS Stream 10, Debian 13, Rocky Linux 10 ou Ubuntu 24.04</b> (série 2026.1), accessibles en SSH par clé avec élévation de privilèges.</li>
+<li>Par nœud de test : <b>8 Go</b> de mémoire, <b>40 Go</b> de disque, <b>deux interfaces réseau</b>.</li>
+<li>Une <b>adresse virtuelle</b> libre sur le réseau interne, pour HAProxy.</li>
+<li>Une interface <b>sans adresse IP</b> pour le réseau externe de Neutron.</li>
+</ul>
+<p><b>Après le déploiement</b></p>
+<table class="tbl tight">
+<thead><tr><th>Besoin</th><th>Commande</th></tr></thead>
+<tbody>
+<tr><td>Appliquer une option modifiée</td><td><code>reconfigure</code></td></tr>
+<tr><td>Ne traiter qu'un service</td><td><code>--tags nova</code></td></tr>
+<tr><td>Ne traiter qu'un hôte</td><td><code>--limit calcul05</code></td></tr>
+<tr><td>Télécharger les images à l'avance</td><td><code>pull</code></td></tr>
+<tr><td>Monter de version</td><td><code>upgrade</code></td></tr>
+<tr><td>Sauvegarder MariaDB</td><td><code>mariadb-backup</code></td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<pre style="font-size:12.2px"><span class="m"># 1 · Installer l'outil sur l'hôte de déploiement</span>
+<span class="c">python3 -m venv</span> ~/kolla-venv
+<span class="c">source</span> ~/kolla-venv/bin/activate
+<span class="c">pip install</span> -U pip
+<span class="c">pip install</span> git+https://opendev.org/openstack/kolla-ansible@stable/2026.1
+<span class="c">kolla-ansible install-deps</span>
+
+<span class="m"># 2 · Préparer la configuration</span>
+<span class="c">sudo mkdir</span> -p /etc/kolla &amp;&amp; <span class="c">sudo chown</span> $USER:$USER /etc/kolla
+<span class="c">cp -r</span> ~/kolla-venv/share/kolla-ansible/etc_examples/kolla/* /etc/kolla
+<span class="c">cp</span> ~/kolla-venv/share/kolla-ansible/ansible/inventory/multinode .
+<span class="c">kolla-genpwd</span>                    <span class="m"># remplit /etc/kolla/passwords.yml</span>
+<span class="m"># éditer ./multinode et /etc/kolla/globals.yml</span>
+
+<span class="m"># 3 · Déployer</span>
+<span class="c">kolla-ansible bootstrap-servers</span> -i ./multinode  <span class="m"># moteur de conteneurs</span>
+<span class="c">kolla-ansible prechecks</span>         -i ./multinode  <span class="m"># ports, VIP, interfaces</span>
+<span class="c">kolla-ansible deploy</span>            -i ./multinode
+<span class="c">kolla-ansible post-deploy</span>       -i ./multinode  <span class="m"># écrit clouds.yaml</span></pre>
+<div class="note b"><b><code>prechecks</code> avant chaque <code>deploy</code> :</b> il détecte un port déjà occupé, une adresse virtuelle déjà utilisée ou une interface absente avant qu'un conteneur ne soit lancé.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 20 -->
+<section class="slide">
+<header><span class="kick">3 · Outils communautaires</span><h2>Kolla-Ansible : le modèle de configuration</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:12.6px"><span class="m"># /etc/kolla/globals.yml — extrait</span>
+<span class="k">kolla_base_distro</span>: "rocky"
+<span class="k">kolla_internal_vip_address</span>: "10.10.0.250"
+<span class="k">network_interface</span>: "bond0.100"
+<span class="k">neutron_external_interface</span>: "bond1"
+<span class="k">neutron_plugin_agent</span>: "ovn"
+<span class="k">kolla_enable_tls_external</span>: "yes"
+<span class="k">enable_cinder</span>: "yes"
+<span class="k">cinder_backend_ceph</span>: "yes"
+<span class="k">enable_central_logging</span>: "yes"</pre>
+<p><b>Trois niveaux de réglage</b></p>
+<ul class="pts sm">
+<li><b><code>globals.yml</code></b> — les choix d'architecture : interfaces, adresse virtuelle, services activés. Quelques dizaines de lignes suffisent.</li>
+<li><b><code>/etc/kolla/config/</code></b> — n'importe quelle option d'un service. Un fichier <code>nova.conf</code> déposé ici est <b>fusionné</b> avec celui que génère l'outil ; un sous-dossier au nom d'un hôte limite la surcharge à cet hôte.</li>
+<li><b>Images</b> — pour un correctif de code ou un pilote tiers, on reconstruit l'image avec <code>kolla-build</code> et on la pousse dans son registre.</li>
+</ul>
+</div>
+<div class="fig">
+<svg viewBox="0 0 560 450">
+<g class="tc">
+<rect x="10" y="8" width="170" height="52" rx="8" class="b-grey"/><text x="95" y="30" class="tm tb">globals.yml</text><text x="95" y="48" class="ts">architecture</text>
+<rect x="195" y="8" width="170" height="52" rx="8" class="b-grey"/><text x="280" y="30" class="tm tb">passwords.yml</text><text x="280" y="48" class="ts">secrets générés</text>
+<rect x="380" y="8" width="170" height="52" rx="8" class="b-grey"/><text x="465" y="30" class="tm tb">config/nova.conf</text><text x="465" y="48" class="ts">vos surcharges</text>
+<rect x="10" y="98" width="540" height="56" rx="8" class="b-red"/><text x="280" y="122" class="tb">Rôles Ansible de Kolla-Ansible</text><text x="280" y="141" class="ts">gabarits Jinja2, puis fusion section par section des fichiers ini</text>
+<rect x="10" y="192" width="540" height="62" rx="8" class="bx"/><text x="280" y="216" class="tb">Sur chaque nœud : /etc/kolla/nova-api/</text><text x="280" y="236" class="ts">nova.conf · config.json (où copier chaque fichier, quelle commande lancer)</text>
+<rect x="10" y="292" width="330" height="70" rx="8" class="b-blue"/><text x="175" y="316" class="tb">Conteneur nova_api</text><text x="175" y="335" class="ts">au démarrage : copie les fichiers à leur place,</text><text x="175" y="351" class="ts">puis lance le service</text>
+<rect x="372" y="292" width="178" height="70" rx="8" class="b-teal"/><text x="461" y="316" class="tb">Image</text><text x="461" y="335" class="tm" style="font-size:10.5px">nova-api:2026.1-rocky-10</text><text x="461" y="351" class="ts">tirée du registre</text>
+<rect x="10" y="396" width="540" height="46" rx="8" class="zone"/><text x="280" y="416" class="tb">Journaux : /var/log/kolla/&lt;service&gt;/ sur l'hôte</text><text x="280" y="433" class="ts">volume partagé kolla_logs, collecté par Fluentd</text>
+</g>
+<path d="M95,60 V96" class="lr"/><path d="M280,60 V96" class="lr"/><path d="M465,60 V96" class="lr"/>
+<path d="M280,154 V190" class="lr"/><path d="M175,254 V290" class="lr"/><path d="M372,327 H342" class="lt"/><path d="M175,362 V394" class="ln"/>
+</svg>
+</div>
+</div></div>
+</section>
+
+<!-- 21 -->
+<section class="slide">
+<header><span class="kick">3 · Outils communautaires</span><h2>Kayobe : Kolla-Ansible depuis la machine nue</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 240">
+<rect x="20" y="20" width="250" height="200" rx="12" class="b-grey"/><text x="145" y="48" class="tc tl">Hôte de contrôle</text>
+<g class="tc"><rect x="36" y="62" width="218" height="42" rx="7" class="bx"/><text x="145" y="81" class="tb">kayobe</text><text x="145" y="97" class="ts">commandes, rôles Ansible</text>
+<rect x="36" y="112" width="218" height="42" rx="7" class="bx"/><text x="145" y="131" class="tb">kayobe-config</text><text x="145" y="147" class="ts">dépôt git : toute la configuration</text>
+<rect x="36" y="162" width="218" height="42" rx="7" class="b-red"/><text x="145" y="181" class="tb">kolla-ansible</text><text x="145" y="197" class="ts">appelé par Kayobe</text></g>
+<rect x="350" y="20" width="290" height="200" rx="12" class="zone"/><text x="495" y="48" class="tc tl">Hôte d'amorçage (seed)</text>
+<g class="tc"><rect x="366" y="62" width="258" height="64" rx="7" class="b-amber"/><text x="495" y="84" class="tb">Bifrost</text><text x="495" y="102" class="ts">Ironic autonome, sans Keystone ni Nova</text><text x="495" y="117" class="ts">en conteneur Kolla</text>
+<rect x="366" y="134" width="125" height="36" rx="7" class="bx"/><text x="428" y="157">DHCP, PXE</text>
+<rect x="499" y="134" width="125" height="36" rx="7" class="bx"/><text x="561" y="157">images système</text>
+<text x="495" y="198" class="ts">une machine, physique ou virtuelle</text></g>
+<rect x="720" y="20" width="410" height="200" rx="12" class="zone"/><text x="925" y="48" class="tc tl">Machines du cloud (overcloud)</text>
+<g class="tc"><rect x="736" y="62" width="120" height="56" rx="7" class="b-red"/><text x="796" y="86" class="tb">contrôleurs</text><text x="796" y="104" class="ts">× 3</text>
+<rect x="865" y="62" width="120" height="56" rx="7" class="b-blue"/><text x="925" y="86" class="tb">calcul</text><text x="925" y="104" class="ts">× N</text>
+<rect x="994" y="62" width="120" height="56" rx="7" class="b-amber"/><text x="1054" y="86" class="tb">stockage</text><text x="1054" y="104" class="ts">× N</text>
+<rect x="736" y="130" width="378" height="36" rx="7" class="b-dark"/><text x="925" y="153" class="tw tb">cartes de gestion (IPMI, Redfish)</text>
+<text x="925" y="198" class="ts">serveurs nus au départ, conteneurs Kolla à l'arrivée</text></g>
+<path d="M270,84 H348" class="lr"/><text x="309" y="76" class="tc ts">① configure</text>
+<path d="M640,94 H718" class="la"/><text x="679" y="86" class="tc ts fa">② installe</text>
+<path d="M640,150 H734" class="la2 ld"/>
+<path d="M270,184 H320 V232 H925 V222" class="lr" style="fill:none"/><text x="600" y="227" class="tc ts tb" style="paint-order:stroke;stroke:#fff;stroke-width:5px">③ configure les hôtes, puis déploie les conteneurs avec Kolla-Ansible</text>
+</svg>
+</div>
+<div class="cols nf">
+<div class="col">
+<pre style="font-size:12.4px"><span class="c">kayobe control host bootstrap</span>
+<span class="c">kayobe seed host configure</span>
+<span class="c">kayobe seed service deploy</span>          <span class="m"># lance Bifrost</span>
+<span class="c">kayobe overcloud inventory discover</span>
+<span class="c">kayobe overcloud provision</span>          <span class="m"># installe le système</span>
+<span class="c">kayobe overcloud host configure</span>     <span class="m"># réseau, disques, noyau</span>
+<span class="c">kayobe overcloud service deploy</span>     <span class="m"># Kolla-Ansible</span></pre>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Ce que Kayobe ajoute :</b> les couches 2 et 3 — installation du système par PXE, liaisons réseau agrégées, VLAN, partitionnement, pare-feu, utilisateurs.</li>
+<li><b>Ce qu'il ne change pas :</b> les services restent ceux de Kolla-Ansible, avec les mêmes images et les mêmes fichiers de surcharge.</li>
+<li><b>Intérêt :</b> toute l'infrastructure décrite dans <b>un seul dépôt git</b>, de la configuration du commutateur d'un port jusqu'à une option de Nova.</li>
+<li>Livré par le projet Kolla, donc versionné avec lui.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 22 -->
+<section class="slide">
+<header><span class="kick">3 · Outils communautaires</span><h2>OpenStack-Ansible : des services isolés dans des conteneurs LXC</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 440">
+<rect x="20" y="14" width="210" height="268" rx="12" class="b-grey"/><text x="125" y="42" class="tc tl">Hôte de déploiement</text>
+<g class="tc"><rect x="34" y="58" width="182" height="46" rx="7" class="bx"/><text x="125" y="78" class="tb">openstack-ansible</text><text x="125" y="95" class="ts">enveloppe d'ansible-playbook</text>
+<rect x="34" y="114" width="182" height="46" rx="7" class="bx"/><text x="125" y="134" class="tm" style="font-size:11px">/etc/openstack_deploy/</text><text x="125" y="151" class="ts">inventaire et variables</text>
+<rect x="34" y="170" width="182" height="46" rx="7" class="bx"/><text x="125" y="190" class="tb">rôles Ansible</text><text x="125" y="207" class="ts">un dépôt par service</text>
+<text x="125" y="244" class="ts">souvent le premier</text><text x="125" y="260" class="ts">hôte d'infrastructure</text></g>
+
+<rect x="278" y="22" width="500" height="268" rx="12" style="fill:#fff;stroke:#cbd5e1"/><rect x="270" y="14" width="500" height="268" rx="12" class="zone"/>
+<text x="286" y="40" class="tl">Hôte d'infrastructure</text><text x="754" y="40" class="te tb fa">× 3</text>
+<text x="286" y="62" class="ts tb">Conteneurs LXC — un par service, chacun avec ses interfaces</text>
+<g class="tc tm" style="font-size:11px">
+<rect x="284" y="72" width="114" height="28" rx="5" class="b-amber"/><text x="341" y="90">galera</text>
+<rect x="404" y="72" width="114" height="28" rx="5" class="b-amber"/><text x="461" y="90">rabbit_mq</text>
+<rect x="524" y="72" width="114" height="28" rx="5" class="b-grey"/><text x="581" y="90">memcached</text>
+<rect x="644" y="72" width="114" height="28" rx="5" class="b-grey"/><text x="701" y="90">repo</text>
+<rect x="284" y="106" width="114" height="28" rx="5" class="b-red"/><text x="341" y="124">keystone</text>
+<rect x="404" y="106" width="114" height="28" rx="5" class="b-red"/><text x="461" y="124">glance</text>
+<rect x="524" y="106" width="114" height="28" rx="5" class="b-red"/><text x="581" y="124">placement</text>
+<rect x="644" y="106" width="114" height="28" rx="5" class="b-red"/><text x="701" y="124">nova_api</text>
+<rect x="284" y="140" width="114" height="28" rx="5" class="b-red"/><text x="341" y="158">neutron_server</text>
+<rect x="404" y="140" width="114" height="28" rx="5" class="b-red"/><text x="461" y="158">cinder_api</text>
+<rect x="524" y="140" width="114" height="28" rx="5" class="b-red"/><text x="581" y="158">horizon</text>
+<rect x="644" y="140" width="114" height="28" rx="5" class="bx"/><text x="701" y="158">utility</text>
+</g>
+<rect x="284" y="180" width="474" height="38" rx="7" class="b-blue"/><text x="521" y="204" class="tc" style="font-size:11.5px">dans chaque conteneur : environnement virtuel Python, construit depuis les sources</text>
+<rect x="284" y="228" width="474" height="42" rx="7" class="b-dark"/><text x="521" y="246" class="tc tw tb">Directement sur l'hôte</text><text x="521" y="262" class="tc tw" style="font-size:12px">HAProxy · keepalived · LXC · ponts Linux</text>
+
+<rect x="818" y="22" width="320" height="268" rx="12" style="fill:#fff;stroke:#cbd5e1"/><rect x="810" y="14" width="320" height="268" rx="12" class="zone"/>
+<text x="826" y="40" class="tl">Hôte de calcul</text><text x="1114" y="40" class="te tb fa">× N</text>
+<text x="826" y="62" class="ts tb">Aucun conteneur : tout tourne sur l'hôte</text>
+<g class="tc">
+<rect x="824" y="72" width="292" height="40" rx="7" class="b-red"/><text x="970" y="90" class="tb">nova-compute</text><text x="970" y="105" class="ts">environnement virtuel Python, unité systemd</text>
+<rect x="824" y="120" width="142" height="34" rx="7" class="b-blue"/><text x="895" y="142">libvirt, QEMU</text>
+<rect x="974" y="120" width="142" height="34" rx="7" class="b-teal"/><text x="1045" y="142">ovn-controller, OVS</text>
+<rect x="824" y="162" width="292" height="34" rx="7" class="bx"/><text x="970" y="184">machines virtuelles des utilisateurs</text>
+<text x="970" y="232" class="ts">le stockage bloc (cinder-volume) tourne</text><text x="970" y="248" class="ts">lui aussi hors conteneur, près des disques</text>
+</g>
+<path d="M230,148 H268" class="lr"/><text x="249" y="138" class="tc ts tb">SSH</text>
+<path d="M249,148 V298 H970 V284" class="lr ld" style="fill:none"/>
+
+<g>
+<rect x="270" y="318" width="860" height="22" rx="5" class="b-red"/><rect x="270" y="346" width="860" height="22" rx="5" class="b-amber"/><rect x="270" y="374" width="860" height="22" rx="5" class="b-teal"/><rect x="270" y="402" width="860" height="22" rx="5" class="b-grey"/>
+<g class="tc tb" style="font-size:12px"><text x="700" y="334">gestion : accès SSH aux conteneurs, API internes, base de données, bus de messages</text><text x="700" y="362">stockage : accès de Glance, Cinder et des hyperviseurs aux données</text><text x="700" y="390">tunnels : réseau superposé des projets, entre hyperviseurs et passerelles</text><text x="700" y="418">VLAN : réseaux fournisseurs et accès externe</text></g>
+<g class="te tm tb" style="font-size:12.5px"><text x="258" y="334">br-mgmt</text><text x="258" y="362">br-storage</text><text x="258" y="390">br-vxlan</text><text x="258" y="418">br-vlan</text></g>
+<text x="20" y="334" class="ts">Ponts à créer</text><text x="20" y="352" class="ts">sur chaque hôte</text><text x="20" y="370" class="ts tb">avant de lancer</text><text x="20" y="388" class="ts tb">l'outil</text>
+</g>
+</svg>
+</div>
+<div class="note g"><b>À retenir :</b> OpenStack-Ansible ne télécharge pas d'images. Il <b>construit</b> les services depuis les sources au moment du déploiement, dans des conteneurs système qui se comportent comme de petites machines ; un mode sans conteneur (« metal ») existe aussi.</div>
+</div>
+</section>
+
+<!-- 23 -->
+<section class="slide">
+<header><span class="kick">3 · Outils communautaires</span><h2>OpenStack-Ansible : déroulé d'un déploiement</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Prérequis, avant toute commande</b></p>
+<ul class="pts sm">
+<li>Hôtes en <b>Ubuntu 24.04 ou 26.04, Debian 13, CentOS Stream 10 ou Rocky Linux 10</b> (série 2026.1).</li>
+<li>Hôtes d'infrastructure : au moins <b>100 Go</b> de disque, pour les conteneurs et leurs journaux.</li>
+<li>Les <b>ponts réseau</b> créés et adressés sur chaque hôte.</li>
+<li>Pour le stockage LVM : un groupe de volumes nommé <code>cinder-volume</code>.</li>
+</ul>
+<pre style="font-size:12.2px"><span class="c">git clone</span> -b stable/2026.1 \
+  https://opendev.org/openstack/openstack-ansible \
+  /opt/openstack-ansible
+<span class="c">cd</span> /opt/openstack-ansible
+<span class="c">scripts/bootstrap-ansible.sh</span>
+<span class="c">cp -r</span> etc/openstack_deploy /etc/openstack_deploy
+<span class="m"># éditer openstack_user_config.yml, user_variables.yml</span>
+<span class="c">scripts/pw-token-gen.py</span> \
+  --file /etc/openstack_deploy/user_secrets.yml
+<span class="c">openstack-ansible</span> openstack.osa.setup_hosts
+<span class="c">openstack-ansible</span> openstack.osa.setup_infrastructure
+<span class="c">openstack-ansible</span> openstack.osa.setup_openstack</pre>
+</div>
+<div class="col">
+<pre style="font-size:12.2px"><span class="m"># /etc/openstack_deploy/openstack_user_config.yml</span>
+<span class="k">cidr_networks</span>:
+  management: 172.29.236.0/22
+  tunnel:     172.29.240.0/22
+  storage:    172.29.244.0/22
+<span class="k">shared-infra_hosts</span>:        <span class="m"># Galera, RabbitMQ, Memcached</span>
+  infra1: { ip: 172.29.236.11 }
+  infra2: { ip: 172.29.236.12 }
+  infra3: { ip: 172.29.236.13 }
+<span class="k">compute_hosts</span>:
+  calcul1: { ip: 172.29.236.21 }</pre>
+<table class="tbl tight">
+<thead><tr><th>Étape</th><th>Ce qu'elle fait</th></tr></thead>
+<tbody>
+<tr><td><code>setup_hosts</code></td><td>prépare les hôtes, crée les conteneurs LXC</td></tr>
+<tr><td><code>setup_infrastructure</code></td><td>Galera, RabbitMQ, Memcached, HAProxy, dépôt</td></tr>
+<tr><td><code>setup_openstack</code></td><td>construit puis installe chaque service</td></tr>
+</tbody></table>
+<div class="note b">Le fichier décrit <b>quels hôtes portent quels groupes</b> ; l'inventaire détaillé, conteneurs compris, est calculé par l'outil. Montée de version : <code>scripts/run-upgrade.sh</code>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 24 -->
+<section class="slide">
+<header><span class="kick">3 · Outils communautaires</span><h2>Kolla-Ansible et OpenStack-Ansible face à face</h2></header>
+<div class="body">
+<table class="tbl tight os">
+<thead><tr><th style="width:19%">Critère</th><th style="width:40%">Kolla-Ansible</th><th>OpenStack-Ansible</th></tr></thead>
+<tbody>
+<tr><td><b>Forme de livraison</b></td><td>images de conteneurs construites à l'avance</td><td>code source installé dans des environnements virtuels Python</td></tr>
+<tr><td><b>Isolation</b></td><td>conteneurs applicatifs Docker ou Podman, réseau de l'hôte</td><td>conteneurs système LXC reliés à des ponts, ou directement sur l'hôte</td></tr>
+<tr><td><b>Un service =</b></td><td>un conteneur par processus (<code>nova_api</code>, <code>nova_scheduler</code>…)</td><td>un conteneur par service, plusieurs unités systemd à l'intérieur</td></tr>
+<tr><td><b>Réseau à préparer</b></td><td>deux interfaces et une adresse virtuelle</td><td>quatre ponts créés et adressés sur chaque hôte</td></tr>
+<tr><td><b>Régler une option</b></td><td>fichier ini déposé dans <code>/etc/kolla/config/</code></td><td>variable <code>nova_nova_conf_overrides</code> dans <code>user_variables.yml</code></td></tr>
+<tr><td><b>Embarquer un correctif</b></td><td>reconstruire l'image avec <code>kolla-build</code></td><td>pointer la variable de dépôt du service vers sa propre branche git</td></tr>
+<tr><td><b>Durée d'un déploiement</b></td><td>courte : les images sont déjà prêtes</td><td>plus longue : chaque service est construit sur place</td></tr>
+<tr><td><b>Montée de version</b></td><td><code>kolla-ansible upgrade</code> : nouvelle image, migration de schéma</td><td><code>run-upgrade.sh</code> : nouveaux environnements virtuels, puis migration</td></tr>
+<tr><td><b>Machine nue</b></td><td>par Kayobe, projet frère</td><td>hors périmètre</td></tr>
+<tr><td><b>Dépannage</b></td><td><code>docker logs</code>, <code>/var/log/kolla</code>, <code>docker exec</code></td><td><code>lxc-attach</code>, puis <code>journalctl</code> comme sur un serveur classique</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note b"><b>Kolla-Ansible convient</b> à qui veut un résultat reproductible et rapide, accepte les choix d'architecture de l'outil et maîtrise Docker ou Podman.</div>
+<div class="note"><b>OpenStack-Ansible convient</b> à qui veut garder la main sur chaque service, suivre des branches du code de près et raisonner en « serveurs » plutôt qu'en images.</div>
+</div>
+</div>
+</section>
+
+<!-- 25 -->
+<section class="slide">
+<header><span class="kick">3 · Outils communautaires</span><h2>OpenStack-Helm : OpenStack comme application Kubernetes</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 440">
+<rect x="20" y="14" width="200" height="338" rx="12" class="b-grey"/><text x="120" y="42" class="tc tl">Poste d'administration</text>
+<g class="tc"><rect x="34" y="58" width="172" height="40" rx="7" class="bx"/><text x="120" y="83" class="tb">helm · kubectl</text>
+<rect x="34" y="106" width="172" height="56" rx="7" class="bx"/><text x="120" y="128" class="tb">charts</text><text x="120" y="146" class="ts">un par service OpenStack</text>
+<rect x="34" y="170" width="172" height="56" rx="7" class="bx"/><text x="120" y="192" class="tb">fichiers de valeurs</text><text x="120" y="210" class="ts">toute la configuration</text>
+<rect x="34" y="234" width="172" height="56" rx="7" class="b-teal"/><text x="120" y="256" class="tb">images LOCI</text><text x="120" y="274" class="ts">légères, depuis les sources</text>
+<text x="120" y="316" class="ts">souvent remplacé par</text><text x="120" y="332" class="ts">Flux ou Argo CD (GitOps)</text></g>
+<path d="M220,128 H258" class="lr"/><text x="239" y="118" class="tc ts tb">API</text>
+
+<rect x="260" y="14" width="870" height="338" rx="12" class="zone"/><text x="276" y="40" class="tl">Cluster Kubernetes — espace de noms « openstack »</text>
+<rect x="274" y="54" width="520" height="286" rx="10" style="fill:#fff;stroke:#cbd5e1"/><text x="288" y="76" class="tb">Nœuds</text><text x="780" y="76" class="te tm" style="font-size:11px">openstack-control-plane=enabled</text>
+<text x="288" y="100" class="ts tb">Deployments — services sans état, répliqués</text>
+<g class="tc tm" style="font-size:11px">
+<rect x="288" y="108" width="118" height="26" rx="5" class="b-red"/><text x="347" y="125">keystone-api</text>
+<rect x="412" y="108" width="118" height="26" rx="5" class="b-red"/><text x="471" y="125">glance-api</text>
+<rect x="536" y="108" width="118" height="26" rx="5" class="b-red"/><text x="595" y="125">placement-api</text>
+<rect x="660" y="108" width="120" height="26" rx="5" class="b-red"/><text x="720" y="125">nova-api-osapi</text>
+<rect x="288" y="140" width="118" height="26" rx="5" class="b-red"/><text x="347" y="157">nova-scheduler</text>
+<rect x="412" y="140" width="118" height="26" rx="5" class="b-red"/><text x="471" y="157">nova-conductor</text>
+<rect x="536" y="140" width="118" height="26" rx="5" class="b-red"/><text x="595" y="157">neutron-server</text>
+<rect x="660" y="140" width="120" height="26" rx="5" class="b-red"/><text x="720" y="157">cinder-api</text>
+</g>
+<text x="288" y="192" class="ts tb">StatefulSets — services à état, sur volumes persistants</text>
+<g class="tc tm" style="font-size:11px">
+<rect x="288" y="200" width="160" height="26" rx="5" class="b-amber"/><text x="368" y="217">mariadb-server</text>
+<rect x="454" y="200" width="160" height="26" rx="5" class="b-amber"/><text x="534" y="217">rabbitmq</text>
+<rect x="620" y="200" width="160" height="26" rx="5" class="b-teal"/><text x="700" y="217">ovn-ovsdb-nb / -sb</text>
+</g>
+<text x="288" y="252" class="ts tb">Jobs — exécutés une fois, dans l'ordre, à chaque installation ou mise à jour</text>
+<g class="tc tm" style="font-size:11px">
+<rect x="288" y="260" width="94" height="26" rx="5" class="b-grey"/><text x="335" y="277">db-init</text>
+<rect x="388" y="260" width="94" height="26" rx="5" class="b-grey"/><text x="435" y="277">db-sync</text>
+<rect x="488" y="260" width="94" height="26" rx="5" class="b-grey"/><text x="535" y="277">ks-user</text>
+<rect x="588" y="260" width="94" height="26" rx="5" class="b-grey"/><text x="635" y="277">ks-service</text>
+<rect x="688" y="260" width="92" height="26" rx="5" class="b-grey"/><text x="734" y="277">ks-endpoints</text>
+</g>
+<text x="534" y="314" class="tc ts">création de la base et du compte, migration du schéma,</text><text x="534" y="330" class="tc ts">enregistrement dans Keystone : ce que l'on fait à la main ailleurs</text>
+
+<rect x="808" y="54" width="308" height="286" rx="10" style="fill:#fff;stroke:#cbd5e1"/><text x="822" y="76" class="tb">Nœuds</text><text x="1102" y="76" class="te tm" style="font-size:11px">openstack-compute-node=enabled</text>
+<text x="822" y="100" class="ts tb">DaemonSets — un pod par nœud étiqueté</text>
+<g class="tc tm" style="font-size:11px">
+<rect x="822" y="108" width="137" height="26" rx="5" class="b-red"/><text x="890" y="125">nova-compute</text>
+<rect x="965" y="108" width="137" height="26" rx="5" class="b-blue"/><text x="1033" y="125">libvirt</text>
+<rect x="822" y="140" width="137" height="26" rx="5" class="b-teal"/><text x="890" y="157">openvswitch</text>
+<rect x="965" y="140" width="137" height="26" rx="5" class="b-teal"/><text x="1033" y="157">ovn-controller</text>
+</g>
+<text x="962" y="196" class="tc ts">pods privilégiés, sur le réseau de l'hôte :</text><text x="962" y="212" class="tc ts">ils pilotent le noyau et les périphériques</text>
+<rect x="822" y="232" width="280" height="40" rx="7" class="bx"/><text x="962" y="257" class="tc">machines virtuelles des utilisateurs</text>
+<text x="962" y="300" class="tc ts">étiqueter un nœud suffit</text><text x="962" y="316" class="tc ts">à en faire un hyperviseur</text>
+
+<rect x="20" y="368" width="1110" height="60" rx="10" class="b-dark"/><text x="575" y="392" class="tc tw tb">Ce que les charts supposent déjà en place — et que vous devez fournir</text><text x="575" y="413" class="tc tw" style="font-size:12.5px">Kubernetes · réseau de pods (Calico, Cilium…) · contrôleur d'entrée · adresses de service (MetalLB) · stockage persistant (Rook-Ceph ou autre)</text>
+</svg>
+</div></div>
+</section>
+
+<!-- 26 -->
+<section class="slide">
+<header><span class="kick">3 · Outils communautaires</span><h2>OpenStack-Helm : déroulé et points d'attention</h2></header>
+<div class="body"><div class="cols w46">
+<div class="col">
+<p><b>Prérequis, avant toute commande</b></p>
+<ul class="pts sm">
+<li>Un cluster <b>Kubernetes 1.33 à 1.35</b> sur <b>Ubuntu 24.04</b> : la combinaison testée par le projet pour OpenStack 2025.1 à 2026.1.</li>
+<li>Réseau de pods, contrôleur d'entrée, classe de stockage par défaut, adresses de service.</li>
+<li><code>helm</code> et <code>kubectl</code> sur le poste d'administration.</li>
+</ul>
+<p><b>Ordre d'installation des charts</b></p>
+<ul class="pts sm">
+<li><b>Socle :</b> RabbitMQ, MariaDB, Memcached.</li>
+<li><b>Cœur :</b> Keystone, Heat, Glance, Cinder.</li>
+<li><b>Calcul et réseau :</b> Open vSwitch, libvirt, Placement, Nova, Neutron.</li>
+<li><b>Interface :</b> Horizon.</li>
+</ul>
+<div class="note"><b>OpenStack-Helm est une boîte de charts, pas un produit :</b> le cluster, son stockage, ses sauvegardes et l'enchaînement des charts restent à assembler et à maintenir.</div>
+</div>
+<div class="col">
+<pre style="font-size:12.2px"><span class="m"># Dépôt de charts et greffon d'aide</span>
+<span class="c">helm repo add</span> openstack-helm \
+  https://tarballs.opendev.org/openstack/openstack-helm
+<span class="c">helm plugin install</span> \
+  https://opendev.org/openstack/openstack-helm-plugin
+
+<span class="m"># Répartition des rôles par étiquettes</span>
+<span class="c">kubectl label</span> --overwrite nodes --all \
+  openstack-control-plane=enabled
+<span class="c">kubectl label</span> --overwrite nodes --all \
+  openstack-compute-node=enabled
+
+<span class="m"># Un service = une installation de chart</span>
+<span class="c">helm upgrade --install</span> keystone openstack-helm/keystone \
+  --namespace=openstack \
+  $(<span class="c">helm osh get-values-overrides</span> -c keystone ${FEATURES})
+<span class="c">helm osh wait-for-pods</span> openstack</pre>
+<table class="tbl tight">
+<thead><tr><th>Opération</th><th>Avec Helm</th></tr></thead>
+<tbody>
+<tr><td>Changer une option</td><td>modifier les valeurs, <code>helm upgrade</code></td></tr>
+<tr><td>Monter de version</td><td>nouvelles images et nouveau chart, <code>helm upgrade</code></td></tr>
+<tr><td>Revenir en arrière</td><td><code>helm rollback</code> — hors schéma de base de données</td></tr>
+</tbody></table>
+</div>
+</div></div>
+</section>
+
+<!-- 27 -->
+<section class="slide">
+<header><span class="kick">3 · Outils communautaires</span><h2>Sur Kubernetes : les assemblages construits au-dessus des charts</h2></header>
+<div class="body">
+<p>Les charts seuls ne suffisent pas à exploiter un cloud. Plusieurs projets ouverts les complètent par un cluster, un stockage, une supervision et un enchaînement automatisé.</p>
+<table class="tbl os">
+<thead><tr><th style="width:14%">Projet</th><th style="width:17%">Porté par</th><th style="width:37%">Principe</th><th>À regarder si…</th></tr></thead>
+<tbody>
+<tr><td><b>Atmosphere</b></td><td>VEXXHOST</td><td>Ansible installe Kubernetes puis les charts ; Ceph, Keycloak pour l'identité, Prometheus et Loki pour la supervision, Cluster API pour Magnum</td><td>vous voulez un ensemble complet et ouvert, avec un support commercial possible</td></tr>
+<tr><td><b>Genestack</b></td><td>Rackspace</td><td>Kubernetes, charts Helm et surcouches Kustomize ; socle de l'offre OpenStack de Rackspace</td><td>vous pratiquez déjà Kustomize et le GitOps</td></tr>
+<tr><td><b>Yaook</b></td><td>communauté européenne</td><td>des opérateurs Kubernetes dédiés pilotent chaque service, au lieu de charts Helm</td><td>vous préférez des opérateurs qui réconcilient en continu</td></tr>
+<tr><td><b>StarlingX</b></td><td>Open Infrastructure Foundation</td><td>plateforme complète pour sites distants : Kubernetes en socle, OpenStack en application optionnelle</td><td>vous déployez de nombreux petits sites en périphérie</td></tr>
+<tr><td><b>MOSK, RHOSO</b></td><td>Mirantis, Red Hat</td><td>même idée, sous forme de produits supportés — voir la partie 4</td><td>vous voulez un contrat de support</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Point commun :</b> le plan de contrôle est un ensemble de pods ; Kubernetes se charge du redémarrage, de la répartition et des mises à jour progressives.</div>
+<div class="note"><b>Contrepartie :</b> il faut exploiter <b>deux plateformes</b>. Une panne de Kubernetes devient une panne d'OpenStack. Genestack et Yaook sont décrits ici d'après leur documentation publique : vérifiez leur état avant de vous engager.</div>
+</div>
+</div>
+</section>
+
+<!-- 28 -->
+<section class="slide">
+<header><span class="kick">3 · Outils communautaires</span><h2>Briques et assembleurs : qui réutilise quoi</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 266">
+<text x="20" y="22" class="tl">Assembleurs — ce que vous lancez</text>
+<g class="tc tb">
+<rect x="20" y="34" width="200" height="50" rx="8" class="b-grey"/><text x="120" y="56">Installation manuelle</text><text x="120" y="73" class="ts" style="font-weight:400">Packstack</text>
+<rect x="248" y="34" width="200" height="50" rx="8" class="b-red"/><text x="348" y="56">Kolla-Ansible</text><text x="348" y="73" class="ts" style="font-weight:400">Kayobe</text>
+<rect x="476" y="34" width="200" height="50" rx="8" class="b-red"/><text x="576" y="64">OpenStack-Ansible</text>
+<rect x="704" y="34" width="200" height="50" rx="8" class="b-red"/><text x="804" y="56">OpenStack-Helm</text><text x="804" y="73" class="ts" style="font-weight:400">Atmosphere, Genestack</text>
+<rect x="932" y="34" width="200" height="50" rx="8" class="b-red"/><text x="1032" y="56">Sunbeam</text><text x="1032" y="73" class="ts" style="font-weight:400">Charmed OpenStack</text>
+</g>
+<text x="20" y="258" class="tl">Briques — ce qu'ils assemblent</text>
+<g class="tc tb">
+<rect x="20" y="178" width="170" height="56" rx="8" class="b-amber"/><text x="105" y="202">Paquets</text><text x="105" y="220" class="ts" style="font-weight:400">RDO, Ubuntu, Debian</text>
+<rect x="208" y="178" width="170" height="56" rx="8" class="b-amber"/><text x="293" y="202">Modules Puppet</text><text x="293" y="220" class="ts" style="font-weight:400">puppet-nova…</text>
+<rect x="396" y="178" width="170" height="56" rx="8" class="b-teal"/><text x="481" y="202">Images Kolla</text><text x="481" y="220" class="ts" style="font-weight:400">un processus par image</text>
+<rect x="584" y="178" width="170" height="56" rx="8" class="b-blue"/><text x="669" y="202">Dépôts git</text><text x="669" y="220" class="ts" style="font-weight:400">sources de chaque service</text>
+<rect x="772" y="178" width="170" height="56" rx="8" class="b-teal"/><text x="857" y="202">Images LOCI</text><text x="857" y="220" class="ts" style="font-weight:400">légères, depuis les sources</text>
+<rect x="960" y="178" width="172" height="56" rx="8" class="b-violet"/><text x="1046" y="202">Charms, snaps, rocks</text><text x="1046" y="220" class="ts" style="font-weight:400">Canonical</text>
+</g>
+<g class="nl" style="stroke-width:1.6">
+<path d="M105,178 L120,86"/><path d="M293,178 L140,86"/><path d="M481,178 L348,86"/><path d="M669,178 L576,86"/><path d="M857,178 L804,86"/><path d="M1046,178 L1032,86"/>
+</g>
+</svg>
+</div>
+<div class="cols c3 nf dense">
+<div class="card ca"><h3>Puppet OpenStack</h3>Un module par service, maintenu par une équipe officielle. Sert de fondation à Packstack et a longtemps servi de fondation à TripleO. Pertinent si Puppet gère déjà tout votre parc ; peu de nouveaux déploiements partent de là.</div>
+<div class="card ct"><h3>Images Kolla et LOCI</h3>Deux projets officiels qui ne font <b>que</b> des images. Kolla : images complètes, par distribution. LOCI : images minimales construites depuis les sources. Réutilisables par votre propre orchestrateur.</div>
+<div class="card cn"><h3>Construire son propre outil ?</h3>Possible à partir de ces briques, et pratiqué par de très grands opérateurs. À réserver aux équipes capables de maintenir l'outil pendant dix ans : c'est un produit interne à part entière.</div>
+</div>
+</div>
+</section>
+
+<!-- 29 -->
+<section class="slide">
+<header><span class="kick">3 · Outils communautaires</span><h2>Avant les services : provisionner les machines</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 190">
+<g class="tc">
+<rect x="20" y="30" width="170" height="120" rx="10" class="b-dark"/><text x="105" y="58" class="tw tb">① Carte de gestion</text><text x="105" y="82" class="tw" style="font-size:12px">IPMI ou Redfish :</text><text x="105" y="99" class="tw" style="font-size:12px">amorçage réseau forcé,</text><text x="105" y="116" class="tw" style="font-size:12px">mise sous tension</text>
+<rect x="212" y="30" width="170" height="120" rx="10" class="b-grey"/><text x="297" y="58" class="tb">② DHCP</text><text x="297" y="82" class="ts">adresse temporaire,</text><text x="297" y="99" class="ts">nom du fichier</text><text x="297" y="116" class="ts">d'amorçage</text>
+<rect x="404" y="30" width="170" height="120" rx="10" class="b-grey"/><text x="489" y="58" class="tb">③ TFTP puis HTTP</text><text x="489" y="82" class="ts">iPXE, puis noyau</text><text x="489" y="99" class="ts">et image mémoire</text><text x="489" y="116" class="ts">de déploiement</text>
+<rect x="596" y="30" width="170" height="120" rx="10" class="b-amber"/><text x="681" y="58" class="tb">④ Agent en mémoire</text><text x="681" y="82" class="ts">inventaire du matériel,</text><text x="681" y="99" class="ts">nettoyage des disques,</text><text x="681" y="116" class="ts">écriture de l'image</text>
+<rect x="788" y="30" width="170" height="120" rx="10" class="b-blue"/><text x="873" y="58" class="tb">⑤ Redémarrage</text><text x="873" y="82" class="ts">sur le disque ;</text><text x="873" y="99" class="ts">cloud-init pose réseau,</text><text x="873" y="116" class="ts">nom et clés SSH</text>
+<rect x="980" y="30" width="150" height="120" rx="10" class="b-red"/><text x="1055" y="58" class="tb">⑥ Hôte prêt</text><text x="1055" y="82" class="ts">l'outil de</text><text x="1055" y="99" class="ts">déploiement</text><text x="1055" y="116" class="ts">prend le relais</text>
+</g>
+<path d="M190,90 H210" class="lr"/><path d="M382,90 H402" class="lr"/><path d="M574,90 H594" class="lr"/><path d="M766,90 H786" class="lr"/><path d="M958,90 H978" class="lr"/>
+<text x="575" y="176" class="tc ts">Réseau dédié au provisionnement, non routé, sur lequel le serveur d'amorçage est le seul serveur DHCP.</text>
+</svg>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:19%">Outil</th><th style="width:34%">Principe</th><th style="width:25%">Utilisé par</th><th>Remarque</th></tr></thead>
+<tbody>
+<tr><td><b>MAAS</b></td><td>service autonome de Canonical : découverte, inventaire, installation, réseau</td><td>Sunbeam, Charmed OpenStack</td><td>interface web, API ; Ubuntu d'abord</td></tr>
+<tr><td><b>Ironic autonome, Bifrost</b></td><td>le service bare metal d'OpenStack, utilisé seul, sans Keystone ni Nova</td><td>Kayobe</td><td>même code que celui qu'offrira ensuite le cloud</td></tr>
+<tr><td><b>Metal3</b></td><td>Ironic piloté par des ressources Kubernetes (<code>BareMetalHost</code>)</td><td>RHOSO, plateformes Kubernetes</td><td>cohérent si tout est déjà déclaré dans Kubernetes</td></tr>
+<tr><td><b>Installateur existant</b></td><td>Kickstart, autoinstall, Foreman, images maison</td><td>Kolla-Ansible, OSA, OpenStack-Helm</td><td>souvent déjà en place dans l'entreprise : à réutiliser</td></tr>
+</tbody></table>
+<div class="note g"><b>À trancher tôt :</b> un outil qui « commence au système installé » suppose que vous savez réinstaller quarante serveurs à l'identique. Sans provisionnement automatisé, le remplacement d'un nœud devient une opération manuelle.</div>
+</div>
+</section>
+
+<!-- 30 -->
+<section class="slide">
+<header><span class="kick">3 · Outils communautaires</span><h2>Outils communautaires : ce qu'il faut retenir</h2></header>
+<div class="body">
+<div class="cols c3 big">
+<div class="card cb"><h3>Kolla-Ansible</h3>
+<ul class="pts sm"><li>Images prêtes, un conteneur par processus.</li><li>Déploiement et montée de version rapides et reproductibles.</li><li>Configuration courte, surcharges par fichiers.</li><li>Kayobe pour partir de la machine nue.</li></ul>
+<span class="os"><b>Limite :</b> sortir des choix d'architecture de l'outil demande de reconstruire des images ou d'écrire ses propres rôles.</span></div>
+<div class="card ct"><h3>OpenStack-Ansible</h3>
+<ul class="pts sm"><li>Services construits depuis les sources.</li><li>Conteneurs LXC proches d'un serveur classique.</li><li>Très grande liberté de réglage, service par service.</li><li>Suivre une branche ou un correctif est simple.</li></ul>
+<span class="os"><b>Limite :</b> préparation réseau exigeante, déploiements plus longs, davantage de variables à comprendre.</span></div>
+<div class="card cv"><h3>OpenStack-Helm</h3>
+<ul class="pts sm"><li>Plan de contrôle en pods Kubernetes.</li><li>Redémarrage, répartition et mises à jour progressives par la plateforme.</li><li>S'intègre à une chaîne GitOps.</li><li>Base de plusieurs assemblages et produits.</li></ul>
+<span class="os"><b>Limite :</b> des charts, pas un produit ; Kubernetes, son réseau et son stockage sont à exploiter en plus.</span></div>
+</div>
+<div class="note g"><b>Dans les trois cas :</b> le code est gratuit, le support est celui de la communauté (listes de diffusion, IRC, suivi d'anomalies), et l'équipe d'exploitation porte seule la responsabilité des montées de version. Les distributions d'éditeurs, partie suivante, reprennent souvent ces mêmes briques en y ajoutant un contrat.</div>
+</div>
+</section>
+
+<style>
+.tbl.xs td{font-size:12.8px;padding:5px 9px;line-height:1.32}
+.tbl.xs th{font-size:12.2px;padding:7px 9px}
+.tbl.xs td:first-child{white-space:normal}
+.tbl.xs code{white-space:nowrap}
+</style>
+
+<!-- 31 -->
+<section class="slide dark sec">
+<div class="num">04</div>
+<h2>Distributions d'éditeurs et offres gérées</h2>
+<p>Le même code, mais emballé, testé et maintenu par une entreprise qui s'engage par contrat — ou qui exploite le cloud à votre place.</p>
+<ol><li>Canonical : Sunbeam et Charmed OpenStack</li><li>Red Hat : OpenStack Services on OpenShift</li><li>Mirantis et les autres éditeurs</li><li>Qui fait quoi : les modes de consommation</li><li>Communautaire ou éditeur : ce que l'on achète</li></ol>
+</section>
+
+<!-- 32 -->
+<section class="slide">
+<header><span class="kick">4 · Distributions et offres gérées</span><h2>Canonical : Sunbeam et Charmed OpenStack</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 450">
+<g class="tc">
+<rect x="10" y="8" width="540" height="50" rx="8" class="b-grey"/><text x="280" y="30" class="tb">snap « openstack » : commande sunbeam et base du cluster (clusterd)</text><text x="280" y="47" class="ts">installé sur chaque machine</text>
+<rect x="10" y="88" width="262" height="46" rx="8" class="b-violet"/><text x="141" y="108" class="tb">Juju</text><text x="141" y="125" class="ts">déploie et relie les charms</text>
+<rect x="288" y="88" width="262" height="46" rx="8" class="b-violet"/><text x="419" y="108" class="tb">Terraform</text><text x="419" y="125" class="ts">décrit ce que Juju doit déployer</text>
+</g>
+<path d="M141,58 V86" class="lr"/><path d="M419,58 V86" class="lr"/><path d="M288,111 H274" class="ln"/>
+<rect x="10" y="164" width="330" height="218" rx="10" class="zone"/><text x="24" y="186" class="tb">Kubernetes — modèle « openstack »</text>
+<g class="tc tm" style="font-size:10.5px">
+<rect x="22" y="196" width="100" height="24" rx="5" class="b-red"/><text x="72" y="212">keystone-k8s</text>
+<rect x="126" y="196" width="100" height="24" rx="5" class="b-red"/><text x="176" y="212">glance-k8s</text>
+<rect x="230" y="196" width="100" height="24" rx="5" class="b-red"/><text x="280" y="212">placement-k8s</text>
+<rect x="22" y="224" width="100" height="24" rx="5" class="b-red"/><text x="72" y="240">nova-k8s</text>
+<rect x="126" y="224" width="100" height="24" rx="5" class="b-red"/><text x="176" y="240">neutron-k8s</text>
+<rect x="230" y="224" width="100" height="24" rx="5" class="b-red"/><text x="280" y="240">cinder-k8s</text>
+<rect x="22" y="252" width="100" height="24" rx="5" class="b-amber"/><text x="72" y="268">mysql-k8s</text>
+<rect x="126" y="252" width="100" height="24" rx="5" class="b-amber"/><text x="176" y="268">rabbitmq-k8s</text>
+<rect x="230" y="252" width="100" height="24" rx="5" class="b-grey"/><text x="280" y="268">traefik-k8s</text>
+<rect x="22" y="280" width="152" height="24" rx="5" class="b-teal"/><text x="98" y="296">ovn-central-k8s</text>
+<rect x="178" y="280" width="152" height="24" rx="5" class="b-teal"/><text x="254" y="296">ovn-relay-k8s</text>
+</g>
+<text x="175" y="330" class="tc ts">chaque charm est un opérateur :</text><text x="175" y="346" class="tc ts">il installe, configure et relie son service</text><text x="175" y="366" class="tc ts">images OCI « rocks »</text>
+<rect x="356" y="164" width="194" height="218" rx="10" class="zone"/><text x="370" y="186" class="tb">Machines — snaps</text>
+<g class="tc tm" style="font-size:10.5px">
+<rect x="368" y="196" width="170" height="30" rx="5" class="b-blue"/><text x="453" y="215">openstack-hypervisor</text>
+<rect x="368" y="232" width="170" height="30" rx="5" class="b-amber"/><text x="453" y="251">microceph</text>
+<rect x="368" y="268" width="170" height="30" rx="5" class="b-amber"/><text x="453" y="287">cinder-volume</text>
+<rect x="368" y="304" width="170" height="30" rx="5" class="b-dark"/><text x="453" y="323" class="tw">k8s</text>
+</g>
+<text x="453" y="358" class="tc ts">ce qui touche au matériel</text><text x="453" y="373" class="tc ts">reste hors de Kubernetes</text>
+<path d="M141,134 V162" class="lr"/><path d="M200,134 V148 H453 V162" class="lr" style="fill:none"/>
+<rect x="10" y="398" width="540" height="44" rx="8" class="b-dark"/><text x="280" y="418" class="tc tw tb">MAAS — facultatif</text><text x="280" y="434" class="tc tw" style="font-size:12px">fournit les machines nues quand le cloud dépasse quelques nœuds</text>
+</svg>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th></th><th>Sunbeam</th><th>Charmed OpenStack</th></tr></thead>
+<tbody>
+<tr><td>Plan de contrôle</td><td>pods Kubernetes</td><td>conteneurs LXD sur des machines</td></tr>
+<tr><td>Pilotage</td><td>commande <code>sunbeam</code>, qui orchestre Juju</td><td>Juju directement, par lots de charms</td></tr>
+<tr><td>Machines nues</td><td>MAAS facultatif</td><td>MAAS dans la pratique</td></tr>
+<tr><td>Taille minimale</td><td>une seule machine</td><td>plusieurs machines</td></tr>
+<tr><td>Stockage</td><td>MicroCeph</td><td>Ceph, par charms</td></tr>
+<tr><td>Réseau</td><td>OVN</td><td>OVN</td></tr>
+<tr><td>Position</td><td>voie recommandée pour un nouveau cloud</td><td>maintenu pour les clouds existants</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>« Canonical OpenStack »</b> est le nom commercial de la distribution fondée sur Sunbeam ; le code de Sunbeam est un projet officiel d'OpenStack.</li>
+<li><b>Gratuit sans contrat</b> : le support s'ajoute par abonnement Ubuntu Pro, sans changer de logiciel.</li>
+<li><b>Peu de réglages exposés</b> : l'outil fait les choix d'architecture à votre place. C'est sa force pour démarrer et sa limite pour les cas atypiques.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 33 -->
+<section class="slide">
+<header><span class="kick">4 · Distributions et offres gérées</span><h2>Sunbeam : déroulé et cycle de vie</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Prérequis :</b> Ubuntu Server LTS, un compte avec <code>sudo</code>, un nom de machine pleinement qualifié, une plage d'adresses libre pour les points d'accès.</p>
+<pre style="font-size:12.2px"><span class="m"># Première machine — le canal fixe la version d'OpenStack</span>
+<span class="c">sudo snap install</span> openstack --channel 2024.1/stable
+<span class="c">sunbeam prepare-node-script</span> --bootstrap | bash -x
+<span class="c">newgrp</span> snap_daemon
+<span class="c">sunbeam cluster bootstrap</span> \
+  --role control,compute,storage
+<span class="c">sunbeam configure</span> --openrc demo-openrc
+
+<span class="m"># Machines suivantes</span>
+<span class="c">sunbeam cluster add</span> noeud2.exemple.lan   <span class="m"># sur la première</span>
+<span class="c">sunbeam cluster join</span> \
+  --role control,compute,storage &lt;jeton&gt;  <span class="m"># sur la nouvelle</span>
+<span class="c">sunbeam cluster resize</span>                   <span class="m"># passe en HA à 3</span>
+
+<span class="m"># Vie du cloud</span>
+<span class="c">sunbeam enable</span> observability
+<span class="c">sunbeam cluster refresh</span>                  <span class="m"># mises à jour</span></pre>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Sujet</th><th>Ce que propose Canonical</th></tr></thead>
+<tbody>
+<tr><td>Versions à long terme</td><td>2024.1 et 2026.1, alignées sur Ubuntu LTS</td></tr>
+<tr><td>Durée de maintenance</td><td>jusqu'à 12 ans sur une version LTS, avec abonnement</td></tr>
+<tr><td>Support</td><td>abonnement Ubuntu Pro, par nœud</td></tr>
+<tr><td>Offre gérée</td><td>exploitation par Canonical, sur votre matériel</td></tr>
+<tr><td>Fonctions optionnelles</td><td><code>sunbeam enable</code> : supervision, équilibrage de charge, orchestration, validation…</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Même outil de un à plusieurs centaines de nœuds :</b> on commence sur une machine, on ajoute des nœuds sans réinstaller.</li>
+<li><b>Mises à jour par canaux :</b> les snaps et les charms suivent un canal ; changer de canal fait monter de version.</li>
+<li><b>Diagnostic :</b> <code>juju status</code> donne l'état de chaque charm, <code>kubectl</code> celui des pods, <code>snap logs</code> celui des services sur l'hôte.</li>
+</ul>
+<div class="note g">Les durées et le contenu des offres évoluent : à confirmer sur le site de l'éditeur au moment du choix.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 34 -->
+<section class="slide">
+<header><span class="kick">4 · Distributions et offres gérées</span><h2>Red Hat OpenStack Services on OpenShift (RHOSO)</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 440">
+<rect x="20" y="12" width="690" height="416" rx="12" class="zone"/><text x="36" y="38" class="tl">Cluster Red Hat OpenShift — plan de contrôle</text>
+<rect x="36" y="52" width="210" height="150" rx="10" class="b-violet"/><text x="141" y="76" class="tc tb">Opérateurs</text>
+<g class="tc"><rect x="48" y="86" width="186" height="34" rx="6" class="bx"/><text x="141" y="108" class="tm" style="font-size:11.5px">openstack-operator</text>
+<rect x="48" y="126" width="186" height="64" rx="6" class="bx"/><text x="141" y="146" class="ts">un opérateur par service :</text><text x="141" y="162" class="tm" style="font-size:10.5px">keystone-, nova-, neutron-,</text><text x="141" y="178" class="tm" style="font-size:10.5px">glance-, cinder-, ovn-…</text></g>
+<rect x="36" y="222" width="210" height="88" rx="10" class="b-grey"/><text x="141" y="246" class="tc tb">Ressources déclarées</text><text x="141" y="268" class="tc tm" style="font-size:11.5px">OpenStackControlPlane</text><text x="141" y="288" class="tc ts">un fichier YAML décrit le cloud</text>
+<path d="M141,222 V204" class="ln"/><text x="150" y="216" class="ts">observe</text>
+<path d="M246,140 H284" class="lr"/><text x="265" y="130" class="tc ts tb">crée</text>
+
+<rect x="286" y="52" width="408" height="258" rx="10" style="fill:#fff;stroke:#cbd5e1"/><text x="300" y="76" class="tb">Pods du plan de contrôle</text>
+<g class="tc tm" style="font-size:11px">
+<rect x="300" y="88" width="124" height="26" rx="5" class="b-red"/><text x="362" y="105">keystone</text>
+<rect x="430" y="88" width="124" height="26" rx="5" class="b-red"/><text x="492" y="105">glance</text>
+<rect x="560" y="88" width="122" height="26" rx="5" class="b-red"/><text x="621" y="105">placement</text>
+<rect x="300" y="120" width="124" height="26" rx="5" class="b-red"/><text x="362" y="137">nova-api</text>
+<rect x="430" y="120" width="124" height="26" rx="5" class="b-red"/><text x="492" y="137">nova-scheduler</text>
+<rect x="560" y="120" width="122" height="26" rx="5" class="b-red"/><text x="621" y="137">nova-conductor</text>
+<rect x="300" y="152" width="124" height="26" rx="5" class="b-red"/><text x="362" y="169">neutron</text>
+<rect x="430" y="152" width="124" height="26" rx="5" class="b-red"/><text x="492" y="169">cinder</text>
+<rect x="560" y="152" width="122" height="26" rx="5" class="b-red"/><text x="621" y="169">horizon</text>
+<rect x="300" y="196" width="124" height="26" rx="5" class="b-amber"/><text x="362" y="213">Galera</text>
+<rect x="430" y="196" width="124" height="26" rx="5" class="b-amber"/><text x="492" y="213">RabbitMQ</text>
+<rect x="560" y="196" width="122" height="26" rx="5" class="b-grey"/><text x="621" y="213">memcached</text>
+<rect x="300" y="228" width="189" height="26" rx="5" class="b-teal"/><text x="394" y="245">OVN : bases nord et sud</text>
+<rect x="495" y="228" width="187" height="26" rx="5" class="b-teal"/><text x="588" y="245">ovn-northd</text>
+</g>
+<text x="490" y="280" class="tc ts">OpenShift assure la répartition, le redémarrage</text><text x="490" y="296" class="tc ts">et les mises à jour progressives des pods</text>
+<rect x="36" y="326" width="658" height="88" rx="10" class="b-dark"/><text x="365" y="350" class="tc tw tb">Réseau du cluster</text><text x="365" y="372" class="tc tw" style="font-size:12.5px">NMState configure les interfaces des nœuds · Multus attache aux pods les réseaux isolés d'OpenStack</text><text x="365" y="392" class="tc tw" style="font-size:12.5px">MetalLB publie les adresses de service internes (API, base de données, bus)</text>
+
+<rect x="770" y="12" width="360" height="416" rx="12" class="zone"/><text x="786" y="38" class="tl">Plan de données — hors du cluster</text>
+<rect x="786" y="52" width="328" height="112" rx="10" class="b-grey"/><text x="950" y="76" class="tc tb">Ressources déclarées</text>
+<text x="950" y="98" class="tc tm" style="font-size:11.5px">OpenStackDataPlaneNodeSet</text><text x="950" y="114" class="tc ts">un groupe de nœuds et sa configuration</text>
+<text x="950" y="136" class="tc tm" style="font-size:11.5px">OpenStackDataPlaneDeployment</text><text x="950" y="152" class="tc ts">« applique maintenant »</text>
+<rect x="786" y="190" width="328" height="42" rx="8" class="b-violet"/><text x="950" y="208" class="tc tb">Tâches Ansible</text><text x="950" y="224" class="tc ts">lancées en pods par l'opérateur du plan de données</text>
+<path d="M950,164 V188" class="lr"/><path d="M950,232 V262" class="lr"/><text x="962" y="252" class="ts tb">SSH</text>
+<rect x="786" y="264" width="328" height="110" rx="10" style="fill:#fff;stroke:#cbd5e1"/><text x="800" y="286" class="tb">Nœuds de calcul RHEL</text><text x="1100" y="286" class="te tb fa">× N</text>
+<g class="tc tm" style="font-size:11px">
+<rect x="798" y="296" width="150" height="26" rx="5" class="b-red"/><text x="873" y="313">nova-compute</text>
+<rect x="954" y="296" width="148" height="26" rx="5" class="b-blue"/><text x="1028" y="313">libvirt, QEMU</text>
+<rect x="798" y="328" width="150" height="26" rx="5" class="b-teal"/><text x="873" y="345">ovn-controller</text>
+<rect x="954" y="328" width="148" height="26" rx="5" class="b-teal"/><text x="1028" y="345">Open vSwitch</text>
+</g>
+<rect x="786" y="386" width="328" height="30" rx="8" class="b-amber"/><text x="950" y="406" class="tc tb">Stockage : Red Hat Ceph, cluster distinct</text>
+<path d="M710,278 H784" class="lt2"/><text x="747" y="268" class="tc ts ft">bus, OVN</text>
+</svg>
+</div>
+<div class="note g"><b>À retenir :</b> le plan de contrôle est une application OpenShift décrite par des ressources Kubernetes ; les hyperviseurs restent des serveurs RHEL classiques, configurés par Ansible — mais Ansible est déclenché par un opérateur, plus par un administrateur.</div>
+</div>
+</section>
+
+<!-- 35 -->
+<section class="slide">
+<header><span class="kick">4 · Distributions et offres gérées</span><h2>Red Hat : de director à OpenShift</h2></header>
+<div class="body">
+<table class="tbl tight os">
+<thead><tr><th style="width:19%">Sujet</th><th style="width:39%">RHOSO 18 — génération actuelle</th><th>RHOSP 17.1 — génération précédente</th></tr></thead>
+<tbody>
+<tr><td>Version d'OpenStack</td><td>fondée sur 2023.1 « Antelope »</td><td>fondée sur « Wallaby »</td></tr>
+<tr><td>Outil de déploiement</td><td>opérateurs sur OpenShift</td><td>director, issu du projet TripleO (retiré en amont)</td></tr>
+<tr><td>Prérequis</td><td>un cluster OpenShift, trois nœuds au minimum</td><td>une machine « undercloud » qui déploie l'« overcloud »</td></tr>
+<tr><td>Plan de contrôle</td><td>pods ; haute disponibilité assurée par OpenShift</td><td>trois contrôleurs, conteneurs Podman, Pacemaker</td></tr>
+<tr><td>Description du cloud</td><td>ressources personnalisées Kubernetes</td><td>gabarits Heat et fichiers d'environnement</td></tr>
+<tr><td>Nœuds de calcul</td><td>RHEL, configurés par Ansible à la demande d'un opérateur</td><td>RHEL, configurés par Ansible depuis l'undercloud</td></tr>
+<tr><td>Machines nues</td><td>Metal3, intégré à OpenShift</td><td>Ironic de l'undercloud</td></tr>
+<tr><td>Mises à jour</td><td>progressives, pilotées par les opérateurs</td><td>procédure longue, en plusieurs phases</td></tr>
+<tr><td>Passage de l'une à l'autre</td><td colspan="2" style="color:var(--ink);font-weight:400">« adoption » : le plan de contrôle est recréé sur OpenShift à partir des bases existantes ; les nœuds de calcul et les machines virtuelles sont conservés</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note b"><b>Ce que cela exige :</b> des compétences OpenShift dans l'équipe d'exploitation, et un cluster OpenShift à maintenir en plus du cloud. La souscription couvre les deux.</div>
+<div class="note"><b>Pourquoi ce changement :</b> le projet amont TripleO a été retiré. Red Hat a remplacé un outil complexe et spécifique par les mécanismes standard de Kubernetes, déjà maîtrisés pour ses autres produits.</div>
+</div>
+</div>
+</section>
+
+<!-- 36 -->
+<section class="slide">
+<header><span class="kick">4 · Distributions et offres gérées</span><h2>Mirantis et les autres éditeurs</h2></header>
+<div class="body"><div class="cols w46">
+<div class="fig">
+<svg viewBox="0 0 480 450">
+<text x="240" y="20" class="tc tl">Mirantis OpenStack for Kubernetes (MOSK)</text>
+<g class="tc">
+<rect x="10" y="34" width="460" height="56" rx="8" class="b-grey"/><text x="240" y="57" class="tb">Cluster de gestion</text><text x="240" y="76" class="ts">provisionne les machines nues, crée et met à jour les clusters</text>
+<rect x="10" y="120" width="460" height="322" rx="10" class="zone"/><text x="240" y="142" class="tb">Cluster géré : Kubernetes de Mirantis</text>
+<rect x="24" y="154" width="432" height="48" rx="7" class="b-violet"/><text x="240" y="174" class="tb">Opérateur OpenStack (Rockoon)</text><text x="240" y="191" class="ts">lit une ressource « OpenStackDeployment »</text>
+<rect x="24" y="230" width="432" height="48" rx="7" class="b-red"/><text x="240" y="250" class="tb">Services OpenStack en pods</text><text x="240" y="267" class="ts">charts dérivés d'OpenStack-Helm</text>
+<rect x="24" y="290" width="140" height="62" rx="7" class="b-amber"/><text x="94" y="315" class="tb">Ceph</text><text x="94" y="333" class="ts">piloté par Rook</text>
+<rect x="170" y="290" width="140" height="62" rx="7" class="b-teal"/><text x="240" y="315" class="tb">Réseau</text><text x="240" y="333" class="ts">OVS, OVN</text>
+<rect x="316" y="290" width="140" height="62" rx="7" class="b-blue"/><text x="386" y="315" class="tb">StackLight</text><text x="386" y="333" class="ts">supervision incluse</text>
+<rect x="24" y="364" width="432" height="34" rx="7" class="b-dark"/><text x="240" y="386" class="tw tb">Nœuds Ubuntu, installés par le cluster de gestion</text>
+<text x="240" y="424" class="ts">version 26.1 (mars 2026) : assistant IA, VPNaaS sur OVN, inventaire SBOM</text>
+</g>
+<path d="M240,90 V118" class="lr"/><path d="M240,202 V228" class="lr"/>
+</svg>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Éditeur</th><th>Offre</th><th>Socle technique</th></tr></thead>
+<tbody>
+<tr><td>Canonical</td><td>Canonical OpenStack, Charmed OpenStack</td><td>Juju, Kubernetes, snaps</td></tr>
+<tr><td>Red Hat</td><td>RHOSO</td><td>opérateurs sur OpenShift</td></tr>
+<tr><td>Mirantis</td><td>MOSK</td><td>Kubernetes, opérateur, charts Helm</td></tr>
+<tr><td>VEXXHOST</td><td>Atmosphere, avec support ou hébergé</td><td>Kubernetes, charts Helm</td></tr>
+<tr><td>Rackspace</td><td>OpenStack exploité par Rackspace</td><td>Genestack</td></tr>
+<tr><td>Wind River</td><td>plateforme pour la périphérie</td><td>StarlingX</td></tr>
+<tr><td>Platform9</td><td>plan de contrôle fourni en service</td><td>propre à l'éditeur</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Tendance commune :</b> tous les éditeurs ont déplacé le plan de contrôle sur Kubernetes ces dernières années.</li>
+<li><b>Intégrateurs :</b> beaucoup de clouds en production reposent sur Kolla-Ansible ou OpenStack-Ansible, avec le support d'une société de services spécialisée plutôt que d'un éditeur.</li>
+<li><b>Éditeurs sortis du marché :</b> SUSE a arrêté sa distribution ; un éditeur peut se retirer, d'où l'intérêt d'un socle ouvert.</li>
+</ul>
+<div class="note g">Catalogue et noms d'offres changeants : à vérifier auprès de chaque éditeur.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 37 -->
+<section class="slide">
+<header><span class="kick">4 · Distributions et offres gérées</span><h2>Qui fait quoi : cinq modes de consommation</h2></header>
+<div class="body">
+<table class="resp">
+<thead><tr><th></th><th>Outil communautaire<small>Kolla-Ansible, OSA, Helm</small></th><th>Distribution supportée<small>Canonical, Red Hat, Mirantis</small></th><th>Cloud privé géré<small>sur votre site, exploité par un tiers</small></th><th>Cloud privé hébergé<small>matériel dédié chez un tiers</small></th><th>Cloud public OpenStack<small>OVHcloud, Infomaniak, Cleura…</small></th></tr></thead>
+<tbody>
+<tr><th>Matériel, centre de données</th><td class="u">vous</td><td class="u">vous</td><td class="u">vous</td><td class="p">fournisseur</td><td class="p">fournisseur</td></tr>
+<tr><th>Conception de l'architecture</th><td class="u">vous</td><td class="u">vous, guidé par l'éditeur</td><td class="p">fournisseur</td><td class="p">fournisseur</td><td class="p">fournisseur</td></tr>
+<tr><th>Déploiement</th><td class="u">vous</td><td class="u">vous, outil de l'éditeur</td><td class="p">fournisseur</td><td class="p">fournisseur</td><td class="p">fournisseur</td></tr>
+<tr><th>Correctifs du code</th><td class="u">vous, depuis l'amont</td><td class="p">éditeur</td><td class="p">fournisseur</td><td class="p">fournisseur</td><td class="p">fournisseur</td></tr>
+<tr><th>Montées de version</th><td class="u">vous</td><td class="u">vous, procédure de l'éditeur</td><td class="p">fournisseur</td><td class="p">fournisseur</td><td class="p">fournisseur</td></tr>
+<tr><th>Supervision, astreinte</th><td class="u">vous</td><td class="u">vous</td><td class="p">fournisseur</td><td class="p">fournisseur</td><td class="p">fournisseur</td></tr>
+<tr><th>Projets, quotas, images</th><td class="u">vous</td><td class="u">vous</td><td class="u">vous</td><td class="u">vous</td><td class="p">fournisseur</td></tr>
+<tr><th>Applications, données</th><td class="u">vous</td><td class="u">vous</td><td class="u">vous</td><td class="u">vous</td><td class="u">vous</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Lecture :</b> de gauche à droite, on échange de la maîtrise et du temps d'ingénieur contre une facture et une dépendance. Le logiciel, lui, reste le même : les API sont identiques dans les cinq colonnes.</div>
+<div class="note b"><b>Avant de choisir un outil, choisir une colonne.</b> Une équipe de trois personnes qui prend la première colonne consacrera l'essentiel de son temps à l'exploitation de la plateforme, pas aux utilisateurs.</div>
+</div>
+</div>
+</section>
+
+<!-- 38 -->
+<section class="slide">
+<header><span class="kick">4 · Distributions et offres gérées</span><h2>Communautaire ou éditeur : ce que l'on achète vraiment</h2></header>
+<div class="body">
+<p>Une souscription n'achète pas le logiciel — il est libre. Elle achète quatre services, qu'il faut sinon produire en interne.</p>
+<div class="cols c4 nf">
+<div class="card cb"><h3>Correctifs rétroportés</h3>Les failles et anomalies sont corrigées dans <b>votre</b> version, pendant des années, sans vous imposer de monter de version pour un correctif.</div>
+<div class="card ct"><h3>Combinaisons certifiées</h3>Matériel, pilotes de stockage et de réseau, systèmes invités : une matrice testée, et un engagement de l'éditeur si elle ne fonctionne pas.</div>
+<div class="card ca"><h3>Durée de vie longue</h3>Une version amont est maintenue environ dix-huit mois. Un éditeur la maintient plusieurs années : moins de montées de version, mieux préparées.</div>
+<div class="card cv"><h3>Un responsable à appeler</h3>Délai d'intervention contractuel, escalade jusqu'aux développeurs, et un seul interlocuteur pour le système, Ceph et OpenStack.</div>
+</div>
+<div class="cols">
+<div class="col">
+<p><b>Ce que l'on cède en échange</b></p>
+<ul class="pts sm">
+<li><b>Le rythme :</b> les nouveautés arrivent quand l'éditeur les intègre, parfois plusieurs versions après l'amont.</li>
+<li><b>Les choix techniques :</b> système hôte, réseau virtuel et stockage sont ceux que l'éditeur supporte.</li>
+<li><b>La liberté de modifier :</b> un correctif maison ou un pilote non certifié peut faire sortir du support.</li>
+<li><b>Le budget :</b> coût récurrent, généralement par nœud ou par processeur.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Trois questions pour trancher</b></p>
+<ul class="pts sm">
+<li>Avez-vous, en interne, quelqu'un capable de <b>lire le code</b> d'un service et de proposer un correctif en amont ?</li>
+<li>Pouvez-vous tenir un rythme d'<b>une montée de version par an</b> au minimum ?</li>
+<li>Une réglementation ou un client vous impose-t-il un <b>support contractuel</b> ?</li>
+</ul>
+<div class="note">Deux « non » puis un « oui » : une distribution supportée ou une offre gérée s'impose. La voie intermédiaire existe : outil communautaire, plus un contrat avec un intégrateur.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 39 -->
+<section class="slide dark sec">
+<div class="num">05</div>
+<h2>Comparaison transversale</h2>
+<p>Les mêmes questions posées à toutes les méthodes : sur quoi reposent-elles, comment se comportent-elles en exploitation, que demandent-elles à l'équipe ?</p>
+<ol><li>Fiche technique comparée</li><li>Opérations courantes</li><li>Compétences requises</li><li>Montées de version</li><li>Personnalisation</li><li>Fonctionnement déconnecté</li><li>Intégration du stockage</li><li>Supervision et validation</li><li>Tailles et topologies</li></ol>
+</section>
+
+<!-- 40 -->
+<section class="slide">
+<header><span class="kick">5 · Comparaison transversale</span><h2>Fiche technique comparée</h2></header>
+<div class="body">
+<table class="tbl xs">
+<thead><tr><th style="width:11%"></th><th>Kolla-Ansible</th><th>OpenStack-Ansible</th><th>OpenStack-Helm</th><th>Sunbeam</th><th>RHOSO</th><th>MOSK</th></tr></thead>
+<tbody>
+<tr><td>Statut</td><td>projet officiel, communautaire</td><td>projet officiel, communautaire</td><td>projet officiel, communautaire</td><td>projet officiel ; support Canonical</td><td>produit Red Hat, sous souscription</td><td>produit Mirantis, sous souscription</td></tr>
+<tr><td>Orchestrateur</td><td>Ansible</td><td>Ansible</td><td>Helm</td><td>Juju, Terraform</td><td>opérateurs, Ansible pour le calcul</td><td>opérateur, Helm</td></tr>
+<tr><td>Socle du plan de contrôle</td><td>Docker ou Podman</td><td>LXC, ou l'hôte</td><td>Kubernetes de votre choix</td><td>Kubernetes de Canonical</td><td>OpenShift</td><td>Kubernetes de Mirantis</td></tr>
+<tr><td>Forme de livraison</td><td>images Kolla</td><td>sources, environnements virtuels</td><td>images LOCI</td><td>rocks et snaps</td><td>images Red Hat</td><td>images Mirantis</td></tr>
+<tr><td>Système hôte</td><td>CentOS Stream, Debian, Rocky, Ubuntu</td><td>Ubuntu, Debian, CentOS Stream, Rocky</td><td>Ubuntu 24.04 testé</td><td>Ubuntu LTS</td><td>RHEL, RHCOS</td><td>Ubuntu</td></tr>
+<tr><td>Réseau virtuel</td><td>OVN ou OVS, au choix</td><td>OVN par défaut</td><td>OVN ou OVS</td><td>OVN</td><td>OVN</td><td>OVN ou OVS</td></tr>
+<tr><td>Ceph</td><td>externe, à déployer à part</td><td>externe, ou rôles intégrés</td><td>Rook, dans le cluster</td><td>MicroCeph, inclus</td><td>Red Hat Ceph, externe</td><td>Rook, inclus</td></tr>
+<tr><td>Machines nues</td><td>avec Kayobe</td><td>non</td><td>non</td><td>avec MAAS</td><td>Metal3</td><td>inclus</td></tr>
+<tr><td>Haute disponibilité</td><td>HAProxy, keepalived, Galera</td><td>HAProxy, keepalived, Galera</td><td>réplicas, services Kubernetes</td><td>réplicas, Traefik</td><td>réplicas, MetalLB, Galera</td><td>réplicas, services Kubernetes</td></tr>
+<tr><td>Taille minimale</td><td>une machine (tout-en-un)</td><td>une machine (tout-en-un)</td><td>un cluster à un nœud</td><td>une machine</td><td>cluster OpenShift compact et un nœud de calcul</td><td>cluster de gestion et cluster géré</td></tr>
+</tbody></table>
+<div class="note g"><b>Lecture :</b> les trois colonnes de gauche sont des outils que l'on assemble soi-même ; les trois de droite sont des ensembles intégrés où l'outil choisit pour vous le système, le réseau et le stockage. Valeurs relevées dans les documentations en octobre 2026.</div>
+</div>
+</section>
+
+<!-- 41 -->
+<section class="slide">
+<header><span class="kick">5 · Comparaison transversale</span><h2>Opérations courantes : la même tâche, cinq façons</h2></header>
+<div class="body">
+<table class="tbl xs">
+<thead><tr><th style="width:13%">Opération</th><th>Kolla-Ansible</th><th>OpenStack-Ansible</th><th>OpenStack-Helm</th><th>Sunbeam</th><th>RHOSO</th></tr></thead>
+<tbody>
+<tr><td>Changer une option d'un service</td><td>fichier dans <code>/etc/kolla/config</code>, puis <code>reconfigure --tags</code></td><td>variable de surcharge, puis rejouer le rôle du service</td><td>fichier de valeurs, puis <code>helm upgrade</code></td><td><code>juju config</code>, dans la limite des options exposées</td><td>modifier la ressource du plan de contrôle</td></tr>
+<tr><td>Ajouter un hyperviseur</td><td>l'ajouter à l'inventaire, <code>deploy --limit</code></td><td>l'ajouter au fichier de configuration, rejouer avec <code>--limit</code></td><td>joindre le nœud au cluster, l'étiqueter</td><td><code>cluster add</code>, puis <code>cluster join</code></td><td>l'ajouter au groupe de nœuds, créer un déploiement</td></tr>
+<tr><td>Monter de version</td><td><code>kolla-ansible upgrade</code></td><td><code>run-upgrade.sh</code></td><td><code>helm upgrade</code>, chart par chart</td><td><code>cluster refresh</code>, changement de canal</td><td>opérateurs, puis version cible déclarée</td></tr>
+<tr><td>Redémarrer un service</td><td><code>docker restart nova_api</code></td><td><code>systemctl restart</code> dans le conteneur LXC</td><td><code>kubectl rollout restart</code></td><td><code>kubectl</code>, ou <code>snap restart</code> sur l'hôte</td><td><code>oc rollout restart</code></td></tr>
+<tr><td>Lire les journaux</td><td><code>/var/log/kolla</code>, <code>docker logs</code></td><td><code>journalctl</code> dans le conteneur</td><td><code>kubectl logs</code></td><td><code>kubectl logs</code>, <code>snap logs</code></td><td><code>oc logs</code></td></tr>
+<tr><td>Sauvegarder la base</td><td>commande intégrée <code>mariadb-backup</code></td><td>à organiser</td><td>tâche planifiée du chart MariaDB</td><td>à organiser</td><td>procédure de l'éditeur</td></tr>
+<tr><td>Remplacer un contrôleur</td><td>réinstaller l'hôte, <code>deploy --limit</code>, rejoindre Galera</td><td>recréer les conteneurs de l'hôte par les rôles</td><td>remplacer le nœud Kubernetes ; les pods sont replanifiés</td><td>retirer puis rejoindre le nœud</td><td>remplacer le nœud OpenShift</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note b"><b>Outils Ansible :</b> rien ne se passe tant que personne ne lance une commande. L'état réel peut dériver de l'état décrit sans que l'outil le sache.</div>
+<div class="note"><b>Outils Kubernetes :</b> un contrôleur compare en continu l'état réel à l'état décrit et corrige. Une modification manuelle est annulée en quelques secondes.</div>
+</div>
+</div>
+</section>
+
+<!-- 42 -->
+<section class="slide">
+<header><span class="kick">5 · Comparaison transversale</span><h2>Compétences à réunir dans l'équipe</h2></header>
+<div class="body">
+<div class="fig"><svg viewBox="0 0 1150 400">
+<text x="285" y="28" class="tc tb" style="font-size:12.5px">Linux, réseau</text>
+<text x="413" y="28" class="tc tb" style="font-size:12.5px">OpenStack</text>
+<text x="541" y="28" class="tc tb" style="font-size:12.5px">Ansible</text>
+<text x="669" y="28" class="tc tb" style="font-size:12.5px">Conteneurs</text>
+<text x="797" y="28" class="tc tb" style="font-size:12.5px">Kubernetes</text>
+<text x="925" y="20" class="tc tb" style="font-size:12.5px">Outil propre</text><text x="925" y="36" class="tc tb" style="font-size:12.5px">à la méthode</text>
+<text x="1053" y="28" class="tc tb" style="font-size:12.5px">Construction d'images</text>
+<rect x="20" y="50" width="1110" height="44" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<text x="36" y="77" class="tl">Kolla-Ansible</text>
+<circle cx="285" cy="72" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<circle cx="413" cy="72" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<circle cx="541" cy="72" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<circle cx="621" cy="72" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<text x="645" y="76" class="ts" style="font-size:11px">Docker, Podman</text>
+<path d="M790,72 h14" class="nl"/>
+<circle cx="877" cy="72" r="8" style="fill:#fecdd3;stroke:#9f1239;stroke-width:1"/>
+<text x="901" y="76" class="ts" style="font-size:11px">Kolla</text>
+<circle cx="1053" cy="72" r="12" style="fill:#fb7185;stroke:#9f1239;stroke-width:1"/>
+<rect x="20" y="100" width="1110" height="44" rx="8" style="fill:#fff;stroke:#e2e8f0"/>
+<text x="36" y="127" class="tl">OpenStack-Ansible</text>
+<circle cx="285" cy="122" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<circle cx="413" cy="122" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<circle cx="541" cy="122" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<circle cx="621" cy="122" r="12" style="fill:#fb7185;stroke:#9f1239;stroke-width:1"/>
+<text x="645" y="126" class="ts" style="font-size:11px">LXC</text>
+<path d="M790,122 h14" class="nl"/>
+<circle cx="877" cy="122" r="8" style="fill:#fecdd3;stroke:#9f1239;stroke-width:1"/>
+<text x="901" y="126" class="ts" style="font-size:11px">rôles OSA</text>
+<circle cx="1053" cy="122" r="12" style="fill:#fb7185;stroke:#9f1239;stroke-width:1"/>
+<rect x="20" y="150" width="1110" height="44" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<text x="36" y="177" class="tl">OpenStack-Helm</text>
+<circle cx="285" cy="172" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<circle cx="413" cy="172" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<circle cx="541" cy="172" r="8" style="fill:#fecdd3;stroke:#9f1239;stroke-width:1"/>
+<circle cx="621" cy="172" r="12" style="fill:#fb7185;stroke:#9f1239;stroke-width:1"/>
+<text x="645" y="176" class="ts" style="font-size:11px">pods</text>
+<circle cx="797" cy="172" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<circle cx="877" cy="172" r="12" style="fill:#fb7185;stroke:#9f1239;stroke-width:1"/>
+<text x="901" y="176" class="ts" style="font-size:11px">Helm, charts</text>
+<circle cx="1053" cy="172" r="12" style="fill:#fb7185;stroke:#9f1239;stroke-width:1"/>
+<rect x="20" y="200" width="1110" height="44" rx="8" style="fill:#fff;stroke:#e2e8f0"/>
+<text x="36" y="227" class="tl">Sunbeam</text>
+<circle cx="285" cy="222" r="12" style="fill:#fb7185;stroke:#9f1239;stroke-width:1"/>
+<circle cx="413" cy="222" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<path d="M534,222 h14" class="nl"/>
+<circle cx="621" cy="222" r="8" style="fill:#fecdd3;stroke:#9f1239;stroke-width:1"/>
+<text x="645" y="226" class="ts" style="font-size:11px">pods, snaps</text>
+<circle cx="797" cy="222" r="12" style="fill:#fb7185;stroke:#9f1239;stroke-width:1"/>
+<circle cx="877" cy="222" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<text x="901" y="226" class="ts" style="font-size:11px">Juju, snaps</text>
+<path d="M1046,222 h14" class="nl"/>
+<rect x="20" y="250" width="1110" height="44" rx="8" style="fill:#f8fafc;stroke:#e2e8f0"/>
+<text x="36" y="277" class="tl">RHOSO</text>
+<circle cx="285" cy="272" r="12" style="fill:#fb7185;stroke:#9f1239;stroke-width:1"/>
+<circle cx="413" cy="272" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<circle cx="541" cy="272" r="12" style="fill:#fb7185;stroke:#9f1239;stroke-width:1"/>
+<circle cx="621" cy="272" r="8" style="fill:#fecdd3;stroke:#9f1239;stroke-width:1"/>
+<text x="645" y="276" class="ts" style="font-size:11px">pods, Podman</text>
+<circle cx="797" cy="272" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<circle cx="877" cy="272" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<text x="901" y="276" class="ts" style="font-size:11px">OpenShift, opérateurs</text>
+<path d="M1046,272 h14" class="nl"/>
+<rect x="20" y="300" width="1110" height="44" rx="8" style="fill:#fff;stroke:#e2e8f0"/>
+<text x="36" y="327" class="tl">MOSK</text>
+<circle cx="285" cy="322" r="12" style="fill:#fb7185;stroke:#9f1239;stroke-width:1"/>
+<circle cx="413" cy="322" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<path d="M534,322 h14" class="nl"/>
+<circle cx="621" cy="322" r="8" style="fill:#fecdd3;stroke:#9f1239;stroke-width:1"/>
+<text x="645" y="326" class="ts" style="font-size:11px">pods</text>
+<circle cx="797" cy="322" r="16" style="fill:#e4002b;stroke:#9f1239;stroke-width:1"/>
+<circle cx="877" cy="322" r="12" style="fill:#fb7185;stroke:#9f1239;stroke-width:1"/>
+<text x="901" y="326" class="ts" style="font-size:11px">opérateur Mirantis</text>
+<path d="M1046,322 h14" class="nl"/>
+<circle cx="320" cy="374" r="16" style="fill:#e4002b;stroke:#9f1239"/><text x="344" y="379" class="ts">indispensable au quotidien</text>
+<circle cx="560" cy="374" r="12" style="fill:#fb7185;stroke:#9f1239"/><text x="580" y="379" class="ts">nécessaire pour dépanner</text>
+<circle cx="790" cy="374" r="8" style="fill:#fecdd3;stroke:#9f1239"/><text x="806" y="379" class="ts">utile, sollicité à l'occasion</text>
+<path d="M1010,374 h14" class="nl"/><text x="1032" y="379" class="ts">non requis</text>
+</svg></div>
+<div class="cols nf">
+<div class="note g"><b>Constante :</b> aucune méthode ne dispense de comprendre Linux, le réseau et OpenStack lui-même. L'outil automatise l'installation, pas le diagnostic d'une instance qui ne démarre pas.</div>
+<div class="note"><b>Variable :</b> la technologie d'orchestration. Appréciation qualitative, à adapter : une équipe qui exploite déjà Kubernetes n'a pas à l'apprendre pour OpenStack-Helm.</div>
+</div>
+</div>
+</section>
+
+<!-- 43 -->
+<section class="slide">
+<header><span class="kick">5 · Comparaison transversale</span><h2>Montées de version : le vrai test d'une méthode</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 170">
+<g class="tc">
+<rect x="20" y="70" width="190" height="60" rx="10" class="b-red"/><text x="115" y="95" class="tb">2025.1 Epoxy</text><text x="115" y="114" class="ts">version SLURP</text>
+<rect x="250" y="70" width="190" height="60" rx="10" class="bx"/><text x="345" y="95" class="tb">2025.2 Flamingo</text><text x="345" y="114" class="ts">version intermédiaire</text>
+<rect x="480" y="70" width="190" height="60" rx="10" class="b-red"/><text x="575" y="95" class="tb">2026.1 Gazpacho</text><text x="575" y="114" class="ts">version SLURP</text>
+<rect x="710" y="70" width="190" height="60" rx="10" class="bx"/><text x="805" y="95" class="tb">2026.2 Hibiscus</text><text x="805" y="114" class="ts">version intermédiaire</text>
+<rect x="940" y="70" width="190" height="60" rx="10" class="b-red" stroke-dasharray="5 4"/><text x="1035" y="95" class="tb">2027.1</text><text x="1035" y="114" class="ts">version SLURP, à venir</text>
+</g>
+<path d="M210,100 H248" class="ln"/><path d="M440,100 H478" class="ln"/><path d="M670,100 H708" class="ln"/><path d="M900,100 H938" class="ln"/>
+<path d="M115,70 C115,10 575,10 575,68" class="lr"/><path d="M575,70 C575,10 1035,10 1035,68" class="lr"/>
+<text x="345" y="20" class="tc tb tr">saut direct autorisé, une fois par an</text><text x="805" y="20" class="tc tb tr">saut direct autorisé</text>
+<text x="575" y="158" class="tc ts">Une version sort tous les six mois. Depuis 2023.1, les versions « .1 » sont dites SLURP : on peut passer de l'une à la suivante sans s'arrêter sur la version intermédiaire.</text>
+</svg>
+</div>
+<div class="cols nf">
+<div class="col">
+<p><b>Ce que fait toute montée de version</b></p>
+<ul class="pts sm">
+<li><b>Plan de contrôle d'abord :</b> nouveau code, migration du schéma des bases, redémarrage des API une à une.</li>
+<li><b>Nœuds de calcul ensuite</b>, par lots : les agents acceptent de dialoguer avec un contrôleur plus récent qu'eux.</li>
+<li><b>Les machines virtuelles continuent de tourner :</b> seule l'API est brièvement perturbée, pas le trafic des instances.</li>
+<li><b>Pas de retour en arrière simple :</b> une fois le schéma migré, revenir exige de restaurer la sauvegarde.</li>
+</ul>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Méthode</th><th>Ce qui change concrètement</th></tr></thead>
+<tbody>
+<tr><td>Kolla-Ansible</td><td>nouvelle version de l'outil, nouvelles images, <code>upgrade</code></td></tr>
+<tr><td>OpenStack-Ansible</td><td>nouvelle étiquette git, environnements reconstruits</td></tr>
+<tr><td>OpenStack-Helm</td><td>nouveaux charts et images, <code>helm upgrade</code> ordonné</td></tr>
+<tr><td>Sunbeam</td><td>nouveau canal de snaps et de charms</td></tr>
+<tr><td>RHOSO, MOSK</td><td>l'opérateur enchaîne les étapes après validation</td></tr>
+</tbody></table>
+<div class="note">À vérifier pour chaque outil : le saut SLURP est-il supporté par <b>l'outil</b>, et la version du système hôte doit-elle changer en même temps ?</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 44 -->
+<section class="slide">
+<header><span class="kick">5 · Comparaison transversale</span><h2>Personnalisation : jusqu'où peut-on s'écarter du standard ?</h2></header>
+<div class="body">
+<div class="cols c4 nf dense">
+<div class="card cb"><h3>Niveau 1 — Une option</h3>Changer une valeur dans un fichier de configuration d'un service. <b>Toutes</b> les méthodes le permettent, avec plus ou moins d'options exposées.</div>
+<div class="card ct"><h3>Niveau 2 — Un pilote tiers</h3>Baie de stockage, équipement réseau : le pilote doit être <b>présent dans l'image</b> ou le paquet. Souvent une image à reconstruire.</div>
+<div class="card ca"><h3>Niveau 3 — Un correctif de code</h3>Embarquer un correctif pas encore publié. Facile quand l'outil installe depuis les sources, plus lourd avec des images figées.</div>
+<div class="card cv"><h3>Niveau 4 — L'architecture</h3>Changer de répartiteur, de base, de topologie. Revient à <b>modifier l'outil</b> : à éviter, ou à contribuer en amont.</div>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:17%">Méthode</th><th style="width:36%">Régler une option de Nova</th><th>Embarquer un correctif ou un pilote</th><th style="width:13%" class="c">Liberté</th></tr></thead>
+<tbody>
+<tr><td>Kolla-Ansible</td><td>fichier <code>/etc/kolla/config/nova.conf</code></td><td>reconstruire l'image avec <code>kolla-build</code>, la publier dans son registre</td><td class="c">élevée</td></tr>
+<tr><td>OpenStack-Ansible</td><td>variable <code>nova_nova_conf_overrides</code></td><td>pointer le dépôt et la branche du service vers les siens</td><td class="c">très élevée</td></tr>
+<tr><td>OpenStack-Helm</td><td>clé <code>conf.nova</code> du fichier de valeurs</td><td>reconstruire l'image LOCI, changer l'étiquette dans les valeurs</td><td class="c">élevée</td></tr>
+<tr><td>Sunbeam</td><td>options du charm, par <code>juju config</code></td><td>attendre la publication dans le canal ; peu d'ouverture</td><td class="c">limitée</td></tr>
+<tr><td>RHOSO</td><td>champ <code>customServiceConfig</code> de la ressource</td><td>images certifiées ; correctif par le support de l'éditeur</td><td class="c">encadrée</td></tr>
+</tbody></table>
+<div class="note g"><b>Règle de prudence :</b> chaque écart au standard est une ligne de plus à vérifier à chaque montée de version. Tenir un registre des écarts, dans le même dépôt que la configuration.</div>
+</div>
+</section>
+
+<!-- 45 -->
+<section class="slide">
+<header><span class="kick">5 · Comparaison transversale</span><h2>Déployer sans accès à Internet</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 300">
+<rect x="20" y="14" width="250" height="272" rx="12" class="zone"/><text x="145" y="40" class="tc tl">Internet</text>
+<g class="tc">
+<rect x="36" y="54" width="218" height="36" rx="7" class="bx"/><text x="145" y="77">registres d'images publics</text>
+<rect x="36" y="98" width="218" height="36" rx="7" class="bx"/><text x="145" y="121">dépôts de paquets du système</text>
+<rect x="36" y="142" width="218" height="36" rx="7" class="bx"/><text x="145" y="165">index Python, dépôts git</text>
+<rect x="36" y="186" width="218" height="36" rx="7" class="bx"/><text x="145" y="209">dépôts de charts Helm</text>
+<rect x="36" y="230" width="218" height="36" rx="7" class="bx"/><text x="145" y="253">magasin de snaps, de charms</text>
+</g>
+<rect x="330" y="80" width="180" height="140" rx="12" class="b-amber"/><text x="420" y="110" class="tc tl">Sas de transfert</text><text x="420" y="136" class="tc ts">copie, analyse antivirale,</text><text x="420" y="153" class="tc ts">contrôle des signatures,</text><text x="420" y="170" class="tc ts">figeage des versions</text><text x="420" y="198" class="tc ts tb">à chaque mise à jour</text>
+<path d="M270,150 H328" class="la"/><path d="M510,150 H568" class="la"/>
+<rect x="570" y="14" width="560" height="272" rx="12" class="zone"/><text x="850" y="40" class="tc tl">Réseau isolé</text>
+<g class="tc">
+<rect x="586" y="54" width="230" height="36" rx="7" class="b-teal"/><text x="701" y="77" class="tb">registre d'images privé</text>
+<rect x="586" y="98" width="230" height="36" rx="7" class="b-teal"/><text x="701" y="121" class="tb">miroir de paquets</text>
+<rect x="586" y="142" width="230" height="36" rx="7" class="b-teal"/><text x="701" y="165" class="tb">miroir Python et git</text>
+<rect x="586" y="186" width="230" height="36" rx="7" class="b-teal"/><text x="701" y="209" class="tb">dépôt de charts</text>
+<rect x="586" y="230" width="230" height="36" rx="7" class="b-teal"/><text x="701" y="253" class="tb">relais du magasin de snaps</text>
+<rect x="884" y="54" width="230" height="64" rx="8" class="b-grey"/><text x="999" y="80" class="tb">hôte de déploiement</text><text x="999" y="100" class="ts">ne vise que les miroirs internes</text>
+<rect x="884" y="150" width="230" height="116" rx="8" class="b-red"/><text x="999" y="180" class="tb">nœuds du cloud</text><text x="999" y="204" class="ts">aucune route vers l'extérieur ;</text><text x="999" y="221" class="ts">tout est tiré depuis</text><text x="999" y="238" class="ts">le réseau isolé</text>
+</g>
+<path d="M882,86 H818" class="ln"/><path d="M882,208 H818" class="ln"/><path d="M999,118 V148" class="lr"/>
+</svg>
+</div>
+<table class="tbl tight">
+<thead><tr><th style="width:18%">Méthode</th><th style="width:44%">Ce qu'il faut rendre disponible en interne</th><th>Difficulté</th></tr></thead>
+<tbody>
+<tr><td>Kolla-Ansible</td><td>les images Kolla, les paquets du système, les dépendances Python de l'outil</td><td>modérée : une seule variable désigne le registre</td></tr>
+<tr><td>OpenStack-Ansible</td><td>miroirs de paquets, de l'index Python et des dépôts git de chaque service</td><td>élevée : de nombreuses sources à refléter</td></tr>
+<tr><td>OpenStack-Helm</td><td>images, charts, et tout ce qu'exige déjà le cluster Kubernetes</td><td>modérée si le cluster est déjà déconnecté</td></tr>
+<tr><td>Sunbeam</td><td>relais du magasin de snaps, registre pour les rocks, charms</td><td>prévue par l'éditeur, à valider en maquette</td></tr>
+<tr><td>RHOSO, MOSK</td><td>registre miroir alimenté par les outils de l'éditeur</td><td>procédure documentée et supportée</td></tr>
+</tbody></table>
+</div>
+</section>
+
+<!-- 46 -->
+<section class="slide">
+<header><span class="kick">5 · Comparaison transversale</span><h2>Stockage : trois façons d'intégrer Ceph</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 250">
+<g class="tc">
+<rect x="20" y="10" width="350" height="230" rx="12" class="zone"/><text x="195" y="36" class="tl">① Externe</text>
+<rect x="36" y="50" width="140" height="80" rx="8" class="b-red"/><text x="106" y="84" class="tb">Cloud</text><text x="106" y="103" class="ts">OpenStack</text>
+<rect x="214" y="50" width="140" height="80" rx="8" class="b-amber"/><text x="284" y="84" class="tb">Cluster Ceph</text><text x="284" y="103" class="ts">déployé à part</text>
+<text x="195" y="158" class="ts">deux outils, deux cycles de vie ;</text><text x="195" y="175" class="ts">on fournit au cloud l'adresse des moniteurs</text><text x="195" y="192" class="ts">et une clé par service</text>
+<text x="195" y="222" class="tb" style="font-size:12.5px">Kolla-Ansible, OSA, RHOSO</text>
+
+<rect x="400" y="10" width="350" height="230" rx="12" class="zone"/><text x="575" y="36" class="tl">② Intégré</text>
+<rect x="416" y="50" width="318" height="80" rx="8" class="b-grey"/>
+<rect x="430" y="62" width="140" height="56" rx="7" class="b-red"/><text x="500" y="86" class="tb">Cloud</text><text x="500" y="104" class="ts">OpenStack</text>
+<rect x="580" y="62" width="140" height="56" rx="7" class="b-amber"/><text x="650" y="86" class="tb">Ceph</text><text x="650" y="104" class="ts">même outil</text>
+<text x="575" y="158" class="ts">l'outil de déploiement installe Ceph</text><text x="575" y="175" class="ts">et le relie aux services ;</text><text x="575" y="192" class="ts">nœuds de stockage dédiés</text>
+<text x="575" y="222" class="tb" style="font-size:12.5px">Sunbeam (MicroCeph), MOSK et Helm (Rook)</text>
+
+<rect x="780" y="10" width="350" height="230" rx="12" class="zone"/><text x="955" y="36" class="tl">③ Hyperconvergé</text>
+<rect x="796" y="50" width="100" height="80" rx="8" class="b-blue"/><text x="846" y="78" class="tb">calcul</text><text x="846" y="98" class="ts">+ disques</text><text x="846" y="114" class="ts">Ceph</text>
+<rect x="905" y="50" width="100" height="80" rx="8" class="b-blue"/><text x="955" y="78" class="tb">calcul</text><text x="955" y="98" class="ts">+ disques</text><text x="955" y="114" class="ts">Ceph</text>
+<rect x="1014" y="50" width="100" height="80" rx="8" class="b-blue"/><text x="1064" y="78" class="tb">calcul</text><text x="1064" y="98" class="ts">+ disques</text><text x="1064" y="114" class="ts">Ceph</text>
+<text x="955" y="158" class="ts">chaque hyperviseur porte aussi du stockage ;</text><text x="955" y="175" class="ts">moins de machines, mais processeur</text><text x="955" y="192" class="ts">et mémoire à réserver pour Ceph</text>
+<text x="955" y="222" class="tb" style="font-size:12.5px">possible avec la plupart des méthodes</text>
+</g>
+<path d="M176,90 H212" class="la2"/>
+</svg>
+</div>
+<div class="cols nf">
+<div class="col">
+<p><b>Ce que l'outil doit toujours faire, quel que soit le mode</b></p>
+<ul class="pts sm">
+<li>Distribuer <code>ceph.conf</code> et les <b>clés</b> à Glance, Cinder et Nova.</li>
+<li>Déclarer le <b>secret libvirt</b> sur chaque hyperviseur, pour que QEMU ouvre les volumes.</li>
+<li>Configurer les <b>pools</b> attendus : images, volumes, sauvegardes, disques éphémères.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Et quand le stockage n'est pas Ceph</b></p>
+<ul class="pts sm">
+<li><b>Baie du commerce :</b> vérifier que le pilote Cinder est dans l'image ou le paquet livré, et que l'éditeur le supporte.</li>
+<li><b>LVM local :</b> suffisant pour une maquette ; un seul nœud porte les volumes, sans redondance.</li>
+<li><b>Réseau de stockage :</b> à dimensionner et à isoler quelle que soit la méthode.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 47 -->
+<section class="slide">
+<header><span class="kick">5 · Comparaison transversale</span><h2>Supervision et validation : ce qui est fourni</h2></header>
+<div class="body">
+<table class="tbl tight os">
+<thead><tr><th style="width:16%">Méthode</th><th style="width:28%">Journaux centralisés</th><th style="width:28%">Métriques et tableaux de bord</th><th>Validation du cloud</th></tr></thead>
+<tbody>
+<tr><td>Kolla-Ansible</td><td>Fluentd vers OpenSearch, à activer</td><td style="color:var(--ink);font-weight:400">Prometheus et Grafana, à activer</td><td>à lancer soi-même (Tempest, Rally)</td></tr>
+<tr><td>OpenStack-Ansible</td><td>journald sur chaque hôte ; centralisation à votre charge</td><td style="color:var(--ink);font-weight:400">à votre charge</td><td>rôle Tempest fourni</td></tr>
+<tr><td>OpenStack-Helm</td><td>charts de collecte fournis, à assembler</td><td style="color:var(--ink);font-weight:400">charts Prometheus et Grafana fournis</td><td>tests Helm par chart, Tempest en pod</td></tr>
+<tr><td>Sunbeam</td><td>Loki, par <code>sunbeam enable observability</code></td><td style="color:var(--ink);font-weight:400">Prometheus et Grafana, même commande</td><td><code>sunbeam enable validation</code></td></tr>
+<tr><td>RHOSO</td><td>journalisation d'OpenShift</td><td style="color:var(--ink);font-weight:400">opérateur de télémétrie, supervision d'OpenShift</td><td>opérateur de tests</td></tr>
+<tr><td>MOSK</td><td>StackLight, inclus</td><td style="color:var(--ink);font-weight:400">StackLight, inclus</td><td>tests intégrés au produit</td></tr>
+</tbody></table>
+<div class="cols c3 nf dense">
+<div class="card cb"><h3>Tempest</h3>La suite de tests officielle : elle appelle les API comme un utilisateur et vérifie les réponses. Sert à prouver qu'un cloud tout juste déployé, ou tout juste mis à jour, fonctionne.</div>
+<div class="card ct"><h3>Rally</h3>Mesure le comportement sous charge : combien d'instances par minute, en combien de temps, avec quel taux d'échec. Utile pour comparer avant et après un changement.</div>
+<div class="card ca"><h3>À prévoir dans tous les cas</h3>Alertes sur la base de données, le bus de messages et les certificats ; sonde externe qui crée réellement une instance à intervalle régulier.</div>
+</div>
+<div class="note g"><b>Critère souvent oublié :</b> une méthode qui livre la supervision déjà branchée fait gagner des semaines. Sinon, compter ce chantier dans le projet.</div>
+</div>
+</section>
+
+<!-- 48 -->
+<section class="slide">
+<header><span class="kick">5 · Comparaison transversale</span><h2>Tailles et topologies : du nœud unique au multi-site</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 290">
+<g class="tc">
+<rect x="20" y="10" width="250" height="270" rx="12" class="zone"/><text x="145" y="36" class="tl">Nœud unique</text>
+<rect x="95" y="60" width="100" height="70" rx="8" class="b-red"/><text x="145" y="90" class="tb">tout</text><text x="145" y="108" class="ts">sur une machine</text>
+<text x="145" y="164" class="ts">maquette, formation,</text><text x="145" y="181" class="ts">site très réduit</text><text x="145" y="208" class="ts tb">aucune redondance</text>
+<text x="145" y="246" class="ts">DevStack, Kolla tout-en-un,</text><text x="145" y="262" class="ts">Sunbeam, OSA tout-en-un</text>
+
+<rect x="300" y="10" width="250" height="270" rx="12" class="zone"/><text x="425" y="36" class="tl">Trois nœuds convergés</text>
+<rect x="316" y="60" width="68" height="70" rx="8" class="b-red"/><rect x="391" y="60" width="68" height="70" rx="8" class="b-red"/><rect x="466" y="60" width="68" height="70" rx="8" class="b-red"/>
+<text x="350" y="100" class="ts">tout</text><text x="425" y="100" class="ts">tout</text><text x="500" y="100" class="ts">tout</text>
+<text x="425" y="164" class="ts">contrôle, calcul et stockage</text><text x="425" y="181" class="ts">sur les mêmes machines</text><text x="425" y="208" class="ts tb">tolère la perte d'un nœud</text>
+<text x="425" y="246" class="ts">Sunbeam, Kolla-Ansible,</text><text x="425" y="262" class="ts">plateformes Kubernetes</text>
+
+<rect x="580" y="10" width="250" height="270" rx="12" class="zone"/><text x="705" y="36" class="tl">Rôles séparés</text>
+<rect x="596" y="60" width="68" height="30" rx="6" class="b-red"/><rect x="671" y="60" width="68" height="30" rx="6" class="b-red"/><rect x="746" y="60" width="68" height="30" rx="6" class="b-red"/>
+<rect x="596" y="98" width="50" height="32" rx="6" class="b-blue"/><rect x="652" y="98" width="50" height="32" rx="6" class="b-blue"/><rect x="708" y="98" width="50" height="32" rx="6" class="b-amber"/><rect x="764" y="98" width="50" height="32" rx="6" class="b-amber"/>
+<text x="630" y="80" class="ts" style="font-size:10.5px">contrôle</text><text x="705" y="80" class="ts" style="font-size:10.5px">contrôle</text><text x="780" y="80" class="ts" style="font-size:10.5px">contrôle</text><g style="font-size:9.5px"><text x="621" y="118">calcul</text><text x="677" y="118">calcul</text><text x="733" y="118">stockage</text><text x="789" y="118">stockage</text></g>
+<text x="705" y="164" class="ts">l'architecture de référence :</text><text x="705" y="181" class="ts">chaque rôle grandit séparément</text><text x="705" y="208" class="ts tb">la cible de tous les outils</text>
+<text x="705" y="246" class="ts">toutes les méthodes</text><text x="705" y="262" class="ts">de production</text>
+
+<rect x="860" y="10" width="270" height="270" rx="12" class="zone"/><text x="995" y="36" class="tl">Grande échelle, multi-site</text>
+<rect x="876" y="60" width="238" height="30" rx="6" class="b-red"/><text x="995" y="80" class="ts">API et cellule de tête</text>
+<rect x="876" y="98" width="74" height="32" rx="6" class="b-blue"/><rect x="958" y="98" width="74" height="32" rx="6" class="b-blue"/><rect x="1040" y="98" width="74" height="32" rx="6" class="b-blue"/>
+<text x="913" y="119" class="ts">cellule 1</text><text x="995" y="119" class="ts">cellule 2</text><text x="1077" y="119" class="ts">région B</text>
+<text x="995" y="164" class="ts">cellules Nova, zones de disponibilité,</text><text x="995" y="181" class="ts">régions, sites distants</text><text x="995" y="208" class="ts tb">une base et un bus par cellule</text>
+<text x="995" y="246" class="ts">à valider outil par outil :</text><text x="995" y="262" class="ts">tous ne gèrent pas les cellules</text>
+</g>
+<path d="M270,95 H298" class="ln"/><path d="M550,95 H578" class="ln"/><path d="M830,95 H858" class="ln"/>
+</svg>
+</div>
+<div class="cols nf">
+<div class="col">
+<ul class="pts sm">
+<li><b>La méthode doit couvrir la taille visée, pas seulement la taille de départ.</b> Passer de trois à trente nœuds ne doit pas imposer de changer d'outil.</li>
+<li><b>Ce qui limite en premier :</b> la durée d'une exécution complète de l'outil, qui croît avec le nombre d'hôtes ; puis la base de données et le bus de messages.</li>
+</ul>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Sites distants :</b> vérifier si l'outil sait déployer des nœuds de calcul éloignés du plan de contrôle, et ce qui se passe quand le lien tombe.</li>
+<li><b>Plusieurs clouds :</b> un dépôt de configuration par cloud, un tronc commun partagé — possible avec tous les outils pilotés par fichiers.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 49 -->
+<section class="slide dark sec">
+<div class="num">06</div>
+<h2>Critères de choix</h2>
+<p>Il n'existe pas de meilleure méthode, seulement une méthode adaptée à une équipe, à un besoin et à un horizon de temps. Voici comment la trouver.</p>
+<ol><li>Dix critères à instruire</li><li>Le critère dominant : les compétences</li><li>Durée de vie et support</li><li>Coût complet</li><li>Arbre de décision</li><li>Profils types</li><li>Grille de notation et maquette</li><li>Erreurs fréquentes</li></ol>
+</section>
+
+<!-- 50 -->
+<section class="slide">
+<header><span class="kick">6 · Critères de choix</span><h2>Dix critères à instruire avant de choisir</h2></header>
+<div class="body">
+<div class="cols c5 nf dense">
+<div class="card"><h3>1 · Compétences</h3>Ce que l'équipe sait déjà dépanner : Ansible, Kubernetes, Juju, OpenShift.</div>
+<div class="card"><h3>2 · Taille de l'équipe</h3>Combien de personnes, et quelle part de leur temps pour la plateforme.</div>
+<div class="card"><h3>3 · Support</h3>Contrat exigé, ou entraide communautaire acceptable.</div>
+<div class="card"><h3>4 · Durée de vie</h3>Fréquence des montées de version que l'on peut réellement tenir.</div>
+<div class="card"><h3>5 · Budget</h3>Souscriptions d'un côté, salaires et formation de l'autre.</div>
+</div>
+<div class="cols c5 nf dense">
+<div class="card cb"><h3>6 · Échelle</h3>Nombre de nœuds aujourd'hui et dans trois ans ; un site ou plusieurs.</div>
+<div class="card cb"><h3>7 · Existant</h3>Système d'exploitation imposé, Kubernetes déjà en place, outillage maison.</div>
+<div class="card cb"><h3>8 · Personnalisation</h3>Pilotes tiers, correctifs maison, architecture atypique.</div>
+<div class="card cb"><h3>9 · Contraintes</h3>Réseau isolé, certification, souveraineté, matériel imposé.</div>
+<div class="card cb"><h3>10 · Réversibilité</h3>Peut-on changer d'éditeur ou d'outil sans tout reconstruire ?</div>
+</div>
+<div class="cols">
+<div class="col">
+<p><b>Critères liés à l'organisation (1 à 5)</b></p>
+<ul class="pts sm">
+<li>Ils pèsent <b>plus lourd</b> que les critères techniques : toutes les méthodes de production savent déployer un cloud correct.</li>
+<li>Ils sont <b>stables</b> : une équipe ne change pas de culture technique en six mois.</li>
+<li>Ils se vérifient par des questions simples, pas par une maquette.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Critères liés au projet (6 à 10)</b></p>
+<ul class="pts sm">
+<li>Ils servent surtout à <b>éliminer</b> : une contrainte non satisfaite écarte une méthode, quelle que soit sa note par ailleurs.</li>
+<li>Ils se vérifient par la <b>documentation</b>, puis par une maquette.</li>
+<li>Ils évoluent : les réévaluer à chaque étape importante du projet.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 51 -->
+<section class="slide">
+<header><span class="kick">6 · Critères de choix</span><h2>Le critère dominant : ce que l'équipe sait dépanner</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 660 440">
+<text x="130" y="20" class="tc tl">L'équipe maîtrise déjà…</text><text x="500" y="20" class="tc tl">…méthodes naturelles</text>
+<g class="tc">
+<rect x="10" y="36" width="240" height="64" rx="10" class="b-grey"/><text x="130" y="62" class="tb">Linux et Ansible</text><text x="130" y="82" class="ts">administration système classique</text>
+<rect x="10" y="114" width="240" height="64" rx="10" class="b-grey"/><text x="130" y="140" class="tb">Kubernetes en production</text><text x="130" y="160" class="ts">Helm, opérateurs, GitOps</text>
+<rect x="10" y="192" width="240" height="64" rx="10" class="b-grey"/><text x="130" y="218" class="tb">Ubuntu, Juju, MAAS</text><text x="130" y="238" class="ts">écosystème Canonical</text>
+<rect x="10" y="270" width="240" height="64" rx="10" class="b-grey"/><text x="130" y="296" class="tb">RHEL et OpenShift</text><text x="130" y="316" class="ts">écosystème Red Hat</text>
+<rect x="10" y="348" width="240" height="64" rx="10" class="b-dark"/><text x="130" y="374" class="tb tw">Rien de tout cela</text><text x="130" y="394" class="tw" style="font-size:12px">ou une équipe trop réduite</text>
+
+<rect x="350" y="36" width="300" height="64" rx="10" class="b-red"/><text x="500" y="62" class="tb">Kolla-Ansible, OpenStack-Ansible</text><text x="500" y="82" class="ts">Kayobe pour la machine nue</text>
+<rect x="350" y="114" width="300" height="64" rx="10" class="b-red"/><text x="500" y="140" class="tb">OpenStack-Helm, Atmosphere</text><text x="500" y="160" class="ts">ou MOSK avec support</text>
+<rect x="350" y="192" width="300" height="64" rx="10" class="b-red"/><text x="500" y="218" class="tb">Sunbeam</text><text x="500" y="238" class="ts">Charmed OpenStack pour l'existant</text>
+<rect x="350" y="270" width="300" height="64" rx="10" class="b-red"/><text x="500" y="296" class="tb">RHOSO</text><text x="500" y="316" class="ts">même socle que les autres produits</text>
+<rect x="350" y="348" width="300" height="64" rx="10" class="b-blue"/><text x="500" y="374" class="tb">Offre gérée ou hébergée</text><text x="500" y="394" class="ts">ou Sunbeam pour démarrer petit</text>
+</g>
+<path d="M250,68 H348" class="lr"/><path d="M250,146 H348" class="lr"/><path d="M250,224 H348" class="lr"/><path d="M250,302 H348" class="lr"/><path d="M250,380 H348" class="lb"/>
+<text x="330" y="432" class="tc ts">Point de départ, pas verdict : les autres critères peuvent le remettre en cause.</text>
+</svg>
+</div>
+<div class="col">
+<div class="note"><b>Le test décisif :</b> un incident survient en pleine nuit. La personne d'astreinte sait-elle où regarder <b>sans ouvrir la documentation de l'outil</b> ?</div>
+<ul class="pts sm">
+<li><b>L'outil devient une compétence à part entière.</b> On ne dépanne pas Nova dans Kubernetes comme Nova sur un serveur : il faut d'abord trouver le pod, son journal, sa configuration.</li>
+<li><b>Deux technologies à apprendre en même temps</b> — OpenStack et son orchestrateur — est le premier facteur d'échec des projets.</li>
+<li><b>Compter les personnes, pas l'équipe :</b> si une seule personne connaît l'outil, le cloud dépend de ses congés.</li>
+<li><b>Recruter :</b> les profils Ansible et Kubernetes sont nombreux ; les profils Juju ou spécialistes d'un outil précis sont plus rares.</li>
+</ul>
+<div class="note g">Former l'équipe à l'orchestrateur <b>avant</b> le projet, pas pendant la mise en production.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 52 -->
+<section class="slide">
+<header><span class="kick">6 · Critères de choix</span><h2>Durée de vie et support : combien de temps une version tient-elle ?</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 250">
+<g class="ts"><text x="250" y="18">sortie</text><text x="430" y="18" class="tc">+ 1 an</text><text x="610" y="18" class="tc">+ 2 ans</text><text x="790" y="18" class="tc">+ 3 ans</text><text x="970" y="18" class="tc">+ 4 ans</text><text x="1120" y="18" class="te">au-delà</text></g>
+<path d="M250,26 V216 M430,26 V216 M610,26 V216 M790,26 V216 M970,26 V216" class="nl" stroke-dasharray="3 5"/>
+<g class="te tb"><text x="236" y="62">Version amont</text><text x="236" y="122">Amont, en sautant</text><text x="236" y="140">d'une SLURP à l'autre</text><text x="236" y="192">Distribution d'éditeur</text><text x="236" y="210" style="font-weight:400" class="ts">version à long terme</text></g>
+<rect x="250" y="40" width="270" height="34" rx="6" class="b-red"/><text x="385" y="62" class="tc tb">maintenue ≈ 18 mois</text>
+<rect x="520" y="40" width="270" height="34" rx="6" class="b-grey" stroke-dasharray="5 4"/><text x="655" y="62" class="tc ts">non maintenue : correctifs au bon vouloir</text>
+<rect x="250" y="106" width="180" height="34" rx="6" class="b-red"/><text x="340" y="128" class="tc tb">2025.1</text>
+<rect x="430" y="106" width="180" height="34" rx="6" class="b-red"/><text x="520" y="128" class="tc tb">2026.1</text>
+<rect x="610" y="106" width="180" height="34" rx="6" class="b-red"/><text x="700" y="128" class="tc tb">2027.1</text>
+<rect x="790" y="106" width="180" height="34" rx="6" class="b-red"/><text x="880" y="128" class="tc tb">2028.1</text>
+<text x="1050" y="128" class="tc ts">une montée par an</text>
+<rect x="250" y="176" width="880" height="34" rx="6" class="b-blue"/><text x="690" y="198" class="tc tb">une même version maintenue plusieurs années — jusqu'à 12 ans annoncés par Canonical sur ses versions LTS</text>
+<text x="690" y="236" class="tc ts">Schéma de principe : les durées exactes dépendent de chaque version et de chaque contrat.</text>
+</svg>
+</div>
+<div class="cols c3 nf">
+<div class="card"><h3>Suivre l'amont</h3>Une montée de version tous les six mois, ou une par an en ne prenant que les versions SLURP. Exige une chaîne de test et une équipe rodée. En retour : les nouveautés tout de suite, aucun coût de licence.</div>
+<div class="card cb"><h3>S'appuyer sur un éditeur</h3>Une version garde ses correctifs de sécurité pendant des années. Les montées de version deviennent rares, mais chacune franchit plusieurs versions amont : à préparer comme un projet.</div>
+<div class="card cn"><h3>Le piège : ne rien faire</h3>Un cloud communautaire laissé trois ans sans mise à jour n'a plus de correctifs et ne peut plus monter que version par version. Rattraper le retard coûte plus cher que de le prévenir.</div>
+</div>
+<div class="note g"><b>Question à poser en comité :</b> « Qui, nommément, fera la prochaine montée de version, et quand ? » Sans réponse, privilégier une version à long terme sous contrat.</div>
+</div>
+</section>
+
+<!-- 53 -->
+<section class="slide">
+<header><span class="kick">6 · Critères de choix</span><h2>Coût complet : où va l'argent selon le mode choisi</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 660 430">
+<text x="330" y="18" class="tc ts tb">Répartition illustrative des postes de coût sur cinq ans — proportions de principe, pas des chiffres mesurés</text>
+<path d="M60,360 H650" class="nl"/>
+<g>
+<rect x="80" y="280" width="110" height="80" class="b-grey"/><rect x="80" y="100" width="110" height="180" class="b-red"/><rect x="80" y="80" width="110" height="20" class="b-amber"/><rect x="80" y="76" width="110" height="4" class="b-blue"/>
+<rect x="225" y="280" width="110" height="80" class="b-grey"/><rect x="225" y="140" width="110" height="140" class="b-red"/><rect x="225" y="110" width="110" height="30" class="b-amber"/><rect x="225" y="76" width="110" height="34" class="b-blue"/>
+<rect x="370" y="280" width="110" height="80" class="b-grey"/><rect x="370" y="180" width="110" height="100" class="b-red"/><rect x="370" y="160" width="110" height="20" class="b-amber"/><rect x="370" y="76" width="110" height="84" class="b-blue"/>
+<rect x="515" y="280" width="110" height="80" class="b-grey"/><rect x="515" y="230" width="110" height="50" class="b-red"/><rect x="515" y="220" width="110" height="10" class="b-amber"/><rect x="515" y="76" width="110" height="144" class="b-blue"/>
+</g>
+<g class="tc tb" style="font-size:12.5px"><text x="135" y="380">Communautaire</text><text x="280" y="380">Communautaire</text><text x="425" y="380">Distribution</text><text x="570" y="380">Cloud privé</text></g>
+<g class="tc ts"><text x="135" y="396">en autonomie</text><text x="280" y="396">+ intégrateur</text><text x="425" y="396">supportée</text><text x="570" y="396">géré</text></g>
+<g class="tc ts"><text x="135" y="324">matériel</text><text x="280" y="324">matériel</text><text x="425" y="324">matériel</text><text x="570" y="324">matériel</text>
+<text x="135" y="194" class="tb">équipe interne</text><text x="280" y="214" class="tb">équipe interne</text><text x="425" y="234" class="tb">équipe interne</text><text x="570" y="259" class="tb">équipe</text>
+<text x="425" y="122" class="tb">souscription</text><text x="570" y="152" class="tb">prestation</text><text x="280" y="97">contrat</text></g>
+<g class="ts"><rect x="80" y="412" width="12" height="12" class="b-grey"/><text x="98" y="423">matériel, hébergement</text><rect x="240" y="412" width="12" height="12" class="b-red"/><text x="258" y="423">salaires</text><rect x="320" y="412" width="12" height="12" class="b-amber"/><text x="338" y="423">formation, outillage</text><rect x="470" y="412" width="12" height="12" class="b-blue"/><text x="488" y="423">éditeur ou prestataire</text></g>
+</svg>
+</div>
+<div class="col">
+<p><b>Ce que le graphique veut montrer</b></p>
+<ul class="pts sm">
+<li><b>Le matériel ne dépend pas de la méthode.</b> Il représente pourtant souvent le premier poste : la méthode se joue sur le reste.</li>
+<li><b>« Gratuit » déplace le coût vers les salaires.</b> Un cloud communautaire en autonomie exige une équipe plus nombreuse et plus expérimentée.</li>
+<li><b>Une souscription ne supprime pas l'équipe :</b> il faut toujours des personnes pour exploiter, même avec un éditeur.</li>
+<li><b>Le total n'est pas forcément différent.</b> Ce qui change, c'est la part fixe, la part variable et qui porte le risque.</li>
+</ul>
+<p><b>Coûts que l'on oublie</b></p>
+<ul class="pts sm">
+<li>L'environnement de <b>préproduction</b>, indispensable pour répéter les montées de version.</li>
+<li>La <b>rotation du personnel</b> : former un remplaçant sur l'outil prend des mois.</li>
+<li>Le coût d'une <b>sortie</b> : migrer les charges si l'éditeur ou l'outil disparaît.</li>
+</ul>
+<div class="note">Demander des devis réels et chiffrer ses propres salaires : aucun ordre de grandeur générique ne vaut pour votre contexte.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 54 -->
+<section class="slide">
+<header><span class="kick">6 · Critères de choix</span><h2>Arbre de décision</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 480">
+<g class="tc">
+<rect x="20" y="14" width="250" height="60" rx="10" class="b-dark"/><text x="145" y="38" class="tw tb">Apprendre, tester,</text><text x="145" y="57" class="tw tb">développer ?</text>
+<rect x="20" y="126" width="250" height="60" rx="10" class="b-dark"/><text x="145" y="150" class="tw tb">Voulez-vous exploiter</text><text x="145" y="169" class="tw tb">la plateforme vous-même ?</text>
+<rect x="20" y="238" width="250" height="60" rx="10" class="b-dark"/><text x="145" y="262" class="tw tb">Un support contractuel</text><text x="145" y="281" class="tw tb">est-il exigé ?</text>
+<rect x="20" y="350" width="250" height="60" rx="10" class="b-dark"/><text x="145" y="374" class="tw tb">L'équipe exploite-t-elle</text><text x="145" y="393" class="tw tb">déjà Kubernetes ?</text>
+
+<rect x="370" y="14" width="250" height="60" rx="10" class="b-grey"/><text x="495" y="38" class="tb">Contribuer au code ?</text><text x="495" y="57" class="ts">ou seulement utiliser les API</text>
+<rect x="720" y="4" width="410" height="36" rx="8" class="b-green"/><text x="925" y="27" class="tb">oui → DevStack</text>
+<rect x="720" y="48" width="410" height="36" rx="8" class="b-green"/><text x="925" y="71" class="tb">non → Sunbeam ou Kolla-Ansible tout-en-un</text>
+
+<rect x="370" y="126" width="250" height="60" rx="10" class="b-grey"/><text x="495" y="150" class="tb">Sur votre matériel ?</text><text x="495" y="169" class="ts">contrainte de localisation, d'amortissement</text>
+<rect x="720" y="116" width="410" height="36" rx="8" class="b-blue"/><text x="925" y="139" class="tb">oui → cloud privé géré par un éditeur</text>
+<rect x="720" y="160" width="410" height="36" rx="8" class="b-blue"/><text x="925" y="183" class="tb">non → cloud privé hébergé ou cloud public OpenStack</text>
+
+<rect x="370" y="238" width="250" height="60" rx="10" class="b-grey"/><text x="495" y="262" class="tb">Quel écosystème en place ?</text><text x="495" y="281" class="ts">système, contrats, compétences</text>
+<rect x="720" y="212" width="410" height="32" rx="8" class="b-violet"/><text x="925" y="233" class="tb">Red Hat, OpenShift → RHOSO</text>
+<rect x="720" y="250" width="410" height="32" rx="8" class="b-violet"/><text x="925" y="271" class="tb">Ubuntu → Canonical OpenStack (Sunbeam)</text>
+<rect x="720" y="288" width="410" height="32" rx="8" class="b-violet"/><text x="925" y="309" class="tb">Kubernetes, sans préférence → MOSK, Atmosphere</text>
+
+<rect x="720" y="346" width="410" height="32" rx="8" class="b-red"/><text x="925" y="367" class="tb">oui → OpenStack-Helm, Atmosphere</text>
+<rect x="370" y="402" width="250" height="60" rx="10" class="b-grey"/><text x="495" y="426" class="tb">Besoin d'adapter finement</text><text x="495" y="445" class="tb">chaque service ?</text>
+<rect x="720" y="392" width="410" height="32" rx="8" class="b-red"/><text x="925" y="413" class="tb">oui → OpenStack-Ansible</text>
+<rect x="720" y="438" width="410" height="32" rx="8" class="b-red"/><text x="925" y="459" class="tb">non → Kolla-Ansible (avec Kayobe), ou Sunbeam</text>
+</g>
+<g class="ts tb">
+<path d="M270,44 H368" class="lr"/><text x="319" y="36" class="tc">oui</text>
+<path d="M145,74 V124" class="ln"/><text x="156" y="104">non</text>
+<path d="M270,156 H368" class="lr"/><text x="319" y="148" class="tc">non</text>
+<path d="M145,186 V236" class="ln"/><text x="156" y="216">oui</text>
+<path d="M270,268 H368" class="lr"/><text x="319" y="260" class="tc">oui</text>
+<path d="M145,298 V348" class="ln"/><text x="156" y="328">non</text>
+<path d="M270,368 H718" class="lr"/><text x="319" y="360" class="tc">oui</text>
+<path d="M145,410 V432 H368" class="ln"/><text x="156" y="428">non</text>
+</g>
+<path d="M620,34 H670 V22 H718" class="ln"/><path d="M620,54 H670 V66 H718" class="ln"/>
+<path d="M620,146 H670 V134 H718" class="ln"/><path d="M620,166 H670 V178 H718" class="ln"/>
+<path d="M620,258 H670 V228 H718" class="ln"/><path d="M620,268 H718" class="ln"/><path d="M620,278 H670 V304 H718" class="ln"/>
+<path d="M620,422 H670 V408 H718" class="ln"/><path d="M620,442 H670 V454 H718" class="ln"/>
+</svg>
+</div>
+<div class="note g"><b>Mode d'emploi :</b> l'arbre donne une <b>première</b> piste en moins d'une minute. Il ne remplace ni la grille de notation ni la maquette : une contrainte forte (réseau isolé, matériel imposé) peut invalider la branche obtenue.</div>
+</div>
+</section>
+
+<!-- 55 -->
+<section class="slide">
+<header><span class="kick">6 · Critères de choix</span><h2>Profils types : quelle méthode pour quel contexte ?</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:22%">Contexte</th><th style="width:25%">Piste principale</th><th style="width:22%">Alternative</th><th>Pourquoi</th></tr></thead>
+<tbody>
+<tr><td>Formation, découverte des API</td><td>Sunbeam sur une machine</td><td style="color:var(--ink);font-weight:400">Kolla-Ansible tout-en-un</td><td>installation courte, proche d'un vrai cloud</td></tr>
+<tr><td>Développement d'OpenStack</td><td>DevStack</td><td style="color:var(--ink);font-weight:400">—</td><td>seul outil pensé pour modifier le code</td></tr>
+<tr><td>Laboratoire, université</td><td>Kolla-Ansible</td><td style="color:var(--ink);font-weight:400">Sunbeam</td><td>gratuit, bien documenté, large communauté</td></tr>
+<tr><td>PME, équipe de 2 à 4 personnes</td><td>Sunbeam avec support</td><td style="color:var(--ink);font-weight:400">offre gérée</td><td>peu de décisions à prendre, version à long terme</td></tr>
+<tr><td>Hébergeur, cloud public régional</td><td>Kolla-Ansible avec Kayobe</td><td style="color:var(--ink);font-weight:400">OpenStack-Ansible, Atmosphere</td><td>maîtrise complète, pas de coût par nœud</td></tr>
+<tr><td>Grande entreprise déjà sur OpenShift</td><td>RHOSO</td><td style="color:var(--ink);font-weight:400">MOSK</td><td>même socle, mêmes équipes, même contrat</td></tr>
+<tr><td>Opérateur télécom, sites en périphérie</td><td>distribution d'éditeur certifiée</td><td style="color:var(--ink);font-weight:400">StarlingX</td><td>certification des fonctions réseau, sites nombreux</td></tr>
+<tr><td>Secteur réglementé, réseau isolé</td><td>distribution supportée</td><td style="color:var(--ink);font-weight:400">Kolla-Ansible et registre local</td><td>procédure déconnectée documentée, engagement écrit</td></tr>
+<tr><td>Équipe plateforme centrée Kubernetes</td><td>OpenStack-Helm, Atmosphere</td><td style="color:var(--ink);font-weight:400">MOSK</td><td>réutilise GitOps, supervision et savoir-faire</td></tr>
+</tbody></table>
+<div class="note g"><b>À lire comme des tendances, pas comme des règles.</b> Chaque ligne suppose le contexte « typique » ; votre équipe, vos contrats en cours et vos contraintes peuvent inverser la recommandation.</div>
+</div>
+</section>
+
+<!-- 56 -->
+<section class="slide">
+<header><span class="kick">6 · Critères de choix</span><h2>Grille de notation pondérée et maquette</h2></header>
+<div class="body"><div class="cols w64">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Critère</th><th class="c">Poids</th><th class="c">Méthode A</th><th class="c">Méthode B</th><th class="c">Méthode C</th></tr></thead>
+<tbody>
+<tr><td>Compétences déjà présentes</td><td class="c">5</td><td class="c">4</td><td class="c">2</td><td class="c">3</td></tr>
+<tr><td>Montées de version</td><td class="c">4</td><td class="c">4</td><td class="c">4</td><td class="c">5</td></tr>
+<tr><td>Support disponible</td><td class="c">3</td><td class="c">2</td><td class="c">2</td><td class="c">5</td></tr>
+<tr><td>Personnalisation</td><td class="c">3</td><td class="c">4</td><td class="c">4</td><td class="c">2</td></tr>
+<tr><td>Fonctionnement déconnecté</td><td class="c">2</td><td class="c">4</td><td class="c">3</td><td class="c">4</td></tr>
+<tr><td>Coût sur cinq ans</td><td class="c">3</td><td class="c">4</td><td class="c">3</td><td class="c">2</td></tr>
+<tr><td><b>Total pondéré</b></td><td class="c"><b>sur 100</b></td><td class="c"><b>74</b></td><td class="c"><b>59</b></td><td class="c"><b>70</b></td></tr>
+</tbody></table>
+<div class="note"><b>Exemple entièrement fictif</b>, pour montrer la mécanique : notes de 1 à 5, multipliées par le poids, total ramené à 100. Les poids se fixent <b>avant</b> de noter, et par le commanditaire, pas par l'équipe technique seule.</div>
+<ul class="pts sm">
+<li><b>Deux totaux proches</b> (ici A et C) : la grille ne tranche pas, la maquette le fera.</li>
+<li><b>Un critère éliminatoire</b> ne se note pas : il écarte la méthode avant la grille.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>La maquette : sept épreuves à faire passer</b></p>
+<ul class="pts sm">
+<li><b>1 ·</b> Déployer trois contrôleurs et deux nœuds de calcul <b>depuis zéro</b>, en suivant uniquement la documentation.</li>
+<li><b>2 ·</b> Changer une option de Nova et vérifier qu'elle est appliquée.</li>
+<li><b>3 ·</b> Ajouter un nœud de calcul, puis en retirer un.</li>
+<li><b>4 ·</b> Éteindre brutalement un contrôleur, constater, le réintégrer.</li>
+<li><b>5 ·</b> <b>Monter de version</b>, avec des instances en fonctionnement.</li>
+<li><b>6 ·</b> Restaurer la base de données depuis une sauvegarde.</li>
+<li><b>7 ·</b> Tout détruire et redéployer : le résultat est-il identique ?</li>
+</ul>
+<div class="note b"><b>Ce que l'on mesure :</b> le temps passé, le nombre de recours à l'aide extérieure, et surtout ce que l'équipe a <b>compris</b> de ce que faisait l'outil.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 57 -->
+<section class="slide">
+<header><span class="kick">6 · Critères de choix</span><h2>Huit erreurs fréquentes</h2></header>
+<div class="body">
+<div class="cols c4 nf dense">
+<div class="card"><h3>Choisir sur la démonstration</h3>Juger l'outil sur l'installation du premier jour, alors que le coût se joue sur les années d'exploitation.</div>
+<div class="card"><h3>Mettre DevStack en production</h3>Ou tout autre outil de maquette « parce qu'il fonctionne déjà ». Aucune montée de version n'est prévue.</div>
+<div class="card"><h3>Suivre la mode</h3>Adopter Kubernetes pour OpenStack sans équipe Kubernetes : deux plateformes à apprendre en même temps.</div>
+<div class="card"><h3>Modifier hors de l'outil</h3>Corriger un fichier à la main sur un nœud. Le changement disparaît à la prochaine exécution, souvent au pire moment.</div>
+</div>
+<div class="cols c4 nf dense">
+<div class="card cb"><h3>Oublier la machine nue</h3>Choisir un outil qui commence « au système installé » sans avoir de moyen de réinstaller un serveur à l'identique.</div>
+<div class="card cb"><h3>Reporter les montées de version</h3>Chaque version sautée rend la suivante plus risquée, jusqu'à imposer une reconstruction complète.</div>
+<div class="card cb"><h3>Ne pas avoir de préproduction</h3>Répéter la montée de version directement en production. La maquette du projet doit devenir un environnement permanent.</div>
+<div class="card cb"><h3>Dépendre d'une seule personne</h3>Un outil connu d'un seul ingénieur est un risque d'exploitation, quel que soit l'outil.</div>
+</div>
+<div class="cols">
+<div class="col">
+<p><b>Les signes d'un bon choix</b></p>
+<ul class="pts sm">
+<li>Toute la configuration tient dans <b>un dépôt git</b>, relu et versionné.</li>
+<li>Un nouveau venu redéploie la préproduction <b>en suivant le dépôt</b>, sans aide.</li>
+<li>La dernière montée de version date de <b>moins d'un an</b>.</li>
+</ul>
+</div>
+<div class="col">
+<div class="note"><b>Changer d'avis coûte cher.</b> Passer d'une méthode à une autre revient à construire un second cloud et à migrer les charges. Mieux vaut trois semaines de maquette que trois ans avec le mauvais outil.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 58 -->
+<section class="slide">
+<header><span class="kick">Synthèse</span><h2>Ce qu'il faut retenir</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card"><h3>Le paysage</h3>
+<ul class="pts sm"><li><b>Apprendre :</b> DevStack, installations tout-en-un.</li><li><b>Communautaire :</b> Kolla-Ansible, OpenStack-Ansible, OpenStack-Helm.</li><li><b>Éditeurs :</b> Canonical (Sunbeam), Red Hat (RHOSO), Mirantis (MOSK).</li><li><b>Retirés :</b> TripleO, les recettes Chef — ne plus démarrer avec.</li></ul></div>
+<div class="card cb"><h3>La grille de lecture</h3>
+<ul class="pts sm"><li><b>Six couches :</b> quelle part l'outil couvre-t-il ?</li><li><b>Trois axes :</b> forme de livraison, orchestrateur, socle d'exécution.</li><li><b>Cinq modes :</b> de l'autonomie complète au cloud public.</li><li><b>Tendance :</b> le plan de contrôle migre vers Kubernetes.</li></ul></div>
+<div class="card cn"><h3>La démarche</h3>
+<ul class="pts sm"><li>Choisir d'abord <b>qui exploite</b>, ensuite l'outil.</li><li>Partir des <b>compétences</b> de l'équipe.</li><li>Éliminer par les <b>contraintes</b>, classer par la grille.</li><li>Trancher par une <b>maquette</b> incluant une montée de version.</li></ul></div>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:22%">Si vous ne retenez qu'une ligne</th><th style="width:26%">Méthode</th><th>En une phrase</th></tr></thead>
+<tbody>
+<tr><td>Le plus direct</td><td>Kolla-Ansible</td><td>des conteneurs prêts à l'emploi, pilotés par Ansible ; très présent en production</td></tr>
+<tr><td>Le plus ajustable</td><td>OpenStack-Ansible</td><td>tout depuis les sources, chaque service réglable et remplaçable</td></tr>
+<tr><td>Le plus « natif Kubernetes »</td><td>OpenStack-Helm et dérivés</td><td>OpenStack comme une application du cluster, pour les équipes déjà outillées</td></tr>
+<tr><td>Le plus simple à démarrer</td><td>Sunbeam</td><td>d'une machine à un cloud complet avec le même outil, support optionnel</td></tr>
+<tr><td>Le plus encadré</td><td>RHOSO, MOSK</td><td>un produit, un contrat, un socle Kubernetes imposé</td></tr>
+</tbody></table>
+<div class="note g"><b>Sources :</b> docs.openstack.org (guides Kolla-Ansible, OpenStack-Ansible, OpenStack-Helm, Sunbeam), governance.openstack.org, documentations Red Hat, Canonical, Mirantis et VEXXHOST — consultées en octobre 2026.</div>
+</div>
+</section>
+
+</div>
+<div id="bar"></div>
+<div id="nav"><button id="bO" title="Vue d'ensemble (O)">▦</button><button id="bF" title="Plein écran (F)">⛶</button><button id="bP" title="Précédent (←)">←</button><button id="bN" title="Suivant (→)">→</button></div>
+<script>
+(function(){
+var stage=document.getElementById('stage'),bar=document.getElementById('bar'),body=document.body;
+var slides=Array.prototype.slice.call(document.querySelectorAll('.slide')),N=slides.length,cur=0;
+slides.forEach(function(s,i){
+  var f=document.createElement('div');f.className='foot';
+  f.innerHTML='<span>OpenStack — méthodes de déploiement</span><span>'+(i+1)+' / '+N+'</span>';
+  s.appendChild(f);
+  s.addEventListener('click',function(){if(body.classList.contains('ov')){body.classList.remove('ov');go(i);fit();}});
+});
+function go(n){
+  cur=Math.max(0,Math.min(N-1,n));
+  slides.forEach(function(s,i){s.classList.toggle('active',i===cur);});
+  bar.style.width=((cur+1)/N*100)+'%';
+  try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+}
+function fit(){
+  if(body.classList.contains('ov')){
+    stage.style.transform='';
+    document.documentElement.style.setProperty('--z',Math.max(.1,(window.innerWidth-40-4*14-20)/5/1280));
+  }else{
+    stage.style.transform='scale('+Math.min(window.innerWidth/1280,window.innerHeight/720)+')';
+  }
+}
+function overview(){body.classList.toggle('ov');fit();if(body.classList.contains('ov')){slides[cur].scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}}
+function full(){if(document.fullscreenElement){document.exitFullscreen();}else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen();}}
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'||k===' '||k==='ArrowDown'){e.preventDefault();go(cur+1);}
+  else if(k==='ArrowLeft'||k==='PageUp'||k==='ArrowUp'){e.preventDefault();go(cur-1);}
+  else if(k==='Home'){go(0);}
+  else if(k==='End'){go(N-1);}
+  else if(k==='o'||k==='O'||k==='Escape'){if(k!=='Escape'||body.classList.contains('ov'))overview();}
+  else if(k==='f'||k==='F'){full();}
+});
+document.getElementById('bN').onclick=function(){go(cur+1);};
+document.getElementById('bP').onclick=function(){go(cur-1);};
+document.getElementById('bO').onclick=overview;
+document.getElementById('bF').onclick=full;
+var tx=null;
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){if(tx===null||body.classList.contains('ov'))return;var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1));tx=null;},{passive:true});
+window.addEventListener('resize',fit);
+window.addEventListener('hashchange',function(){var h=parseInt(location.hash.slice(1),10);if(h&&h-1!==cur)go(h-1);});
+var h=parseInt(location.hash.slice(1),10);
+go(h?h-1:0);fit();
+})();
+</script>
+</body>
+</html>

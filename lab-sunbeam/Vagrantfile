@@ -1,0 +1,42 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "bento/ubuntu-24.04"
+  config.vm.box_version = ENV["LAB_BOX_VERSION"] if ENV["LAB_BOX_VERSION"]
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+  config.vm.boot_timeout = 900
+  config.vm.define "services" do |s|
+    s.vm.hostname = "services"
+    s.vm.network "private_network", ip: "192.168.56.20", mac: "080027560020", auto_config: false
+    s.vm.network "private_network", ip: "192.168.57.2", mac: "080027570002", auto_config: false
+    s.vm.disk :disk, size: "40GB", primary: true
+    s.vm.provider "virtualbox" do |vb|
+      vb.name = "lab-services"
+      vb.memory = 3072
+      vb.cpus = 2
+    end
+    s.vm.provision "shell", inline: "install -d -o vagrant -g vagrant /home/vagrant/lab"
+    s.vm.provision "file", source: "scripts", destination: "/home/vagrant/lab/scripts"
+    s.vm.provision "file", source: "keycloak", destination: "/home/vagrant/lab/keycloak"
+    s.vm.provision "shell", path: "scripts/services.sh"
+  end
+  config.vm.define "sunbeam" do |s|
+    s.vm.hostname = "sunbeam"
+    s.vm.network "private_network", ip: "192.168.56.10", mac: "080027560010", auto_config: false
+    # Address is a Vagrant network-selection hint only. No guest IP is set here.
+    s.vm.network "private_network", ip: "192.168.57.10", mac: "080027570010", auto_config: false
+ #   s.vm.disk :disk, size: "160GB", primary: true
+    s.vm.disk :disk, size: "100GB", name: "ceph-data"
+    s.vm.provider "virtualbox" do |vb|
+      vb.name = "lab-sunbeam"
+      vb.memory = Integer(ENV.fetch("LAB_RAM_MB", "20480"))
+      vb.cpus = Integer(ENV.fetch("LAB_CPUS", "8"))
+      vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
+      vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+      vb.customize ["modifyvm", :id, "--nicpromisc3", "allow-all"]
+    end
+    s.vm.provision "shell", inline: "install -d -o vagrant -g vagrant /home/vagrant/lab"
+    s.vm.provision "file", source: "scripts", destination: "/home/vagrant/lab/scripts"
+    s.vm.provision "file", source: "sunbeam.yaml", destination: "/home/vagrant/lab/sunbeam.yaml"
+    s.vm.provision "file", source: "mapping.json", destination: "/home/vagrant/lab/mapping.json"
+    s.vm.provision "shell", path: "scripts/sunbeam-os.sh"
+  end
+end

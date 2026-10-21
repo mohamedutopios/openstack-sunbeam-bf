@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenStack — Keystone en profondeur</title>
+<style>
+:root{--ink:#0f172a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;--navy:#101a33;--red:#e4002b;--red2:#b3122f;--blue:#2563eb;--teal:#0d9488;--amber:#d97706;--violet:#7c3aed;--green:#16a34a;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;--z:.2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#070b17;overflow:hidden;font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:#fff;color:var(--ink);padding:38px 64px 46px;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide>header{border-left:5px solid var(--red);padding:2px 0 2px 18px;margin-bottom:18px;flex:none}
+.kick{display:block;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+h2{font-size:32px;line-height:1.15;letter-spacing:-.012em;font-weight:750}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;font-size:17.5px;line-height:1.45;color:var(--ink2)}
+.body b,.body strong{color:var(--ink);font-weight:680}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;min-height:0}
+.cols.c3{grid-template-columns:repeat(3,1fr);gap:18px}
+.cols.c4{grid-template-columns:repeat(4,1fr);gap:14px}
+.cols.c5{grid-template-columns:repeat(5,1fr);gap:12px}
+.cols.w64{grid-template-columns:1.45fr 1fr}
+.cols.w46{grid-template-columns:1fr 1.35fr}
+.cols.nf{flex:none}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+ul.pts{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.pts li{padding-left:22px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.52em;width:8px;height:8px;border-radius:2px;background:var(--red)}
+ul.pts.sm{gap:5px;font-size:15px;line-height:1.38}
+ul.pts.sm li{padding-left:17px}
+ul.pts.sm li::before{width:6px;height:6px;top:.5em}
+.card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--c,var(--red));border-radius:10px;padding:13px 16px;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:15px;line-height:1.4;min-width:0}
+.card h3{font-size:16.5px;color:var(--ink);margin-bottom:5px;line-height:1.2}
+.card .os{display:block;margin-top:7px;font-size:13px;color:var(--mut)}
+.card .os b{color:var(--red2)}
+.cb{--c:var(--blue)}.ct{--c:var(--teal)}.ca{--c:var(--amber)}.cv{--c:var(--violet)}.cg{--c:var(--green)}.cn{--c:var(--navy)}
+.note{background:#fff5f6;border-left:4px solid var(--red);padding:9px 16px;border-radius:0 8px 8px 0;font-size:15.5px;color:var(--ink);flex:none}
+.note.b{background:#eff5ff;border-color:var(--blue)}
+.note.g{background:#f1f5f9;border-color:#64748b}
+table.tbl{width:100%;border-collapse:collapse;font-size:14.5px;line-height:1.35}
+.tbl th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-size:13px;letter-spacing:.03em;font-weight:650}
+.tbl td{padding:6.5px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:nth-child(even) td{background:#f8fafc}
+.tbl td:first-child{font-weight:680;color:var(--ink);white-space:nowrap}
+.tbl.os td:nth-child(2){color:var(--red2);font-weight:650}
+.tbl.tight td{padding:5px 12px;font-size:14px}
+table.resp{width:100%;border-collapse:separate;border-spacing:5px 4px;font-size:14.5px;text-align:center}
+.resp thead th{font-size:15px;color:var(--ink);padding:2px 4px 6px;line-height:1.2}
+.resp thead small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+.resp tbody th{text-align:right;padding-right:12px;font-weight:650;color:var(--ink);white-space:nowrap;width:210px}
+.resp td{padding:6px;border-radius:6px;font-weight:600}
+.resp .u{background:#e3edff;color:#1d4ed8}
+.resp .p{background:#fde8ec;color:var(--red2)}
+code{font-family:var(--mono);font-size:.87em;background:#f1f5f9;padding:1px 6px;border-radius:4px;color:var(--ink)}
+pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;font:13.5px/1.5 var(--mono);white-space:pre;overflow:hidden}
+pre .c{color:#7dd3fc}pre .k{color:#fda4af}pre .m{color:#94a3b8}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:#fde8ec;color:var(--red2);letter-spacing:.03em}
+.fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:100%}
+.foot{position:absolute;left:64px;right:64px;bottom:15px;display:flex;justify-content:space-between;font-size:11.5px;color:#94a3b8;letter-spacing:.02em}
+/* dark slides */
+.slide.dark{background:radial-gradient(1100px 600px at 85% 15%,#1c2a55 0%,var(--navy) 55%,#0b1226 100%);color:#fff;justify-content:center}
+.dark .foot{color:#64748b}
+.dark .kick{color:#ff6b84}
+h1{font-size:68px;line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:10px 0 14px}
+.sub{font-size:27px;color:#cbd5e1;font-weight:400}
+.chips{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin-top:34px}
+.chips li{border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:7px 16px;font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.04)}
+.ref{margin-top:36px;font-size:14px;color:#94a3b8}
+.deco{position:absolute;right:0;top:0;width:1280px;height:720px;pointer-events:none}
+.tt{position:relative;max-width:760px}
+.sec .num{font-size:150px;font-weight:800;line-height:.9;color:transparent;-webkit-text-stroke:2px #ff4d6a;letter-spacing:-.04em}
+.sec h2{font-size:50px;margin:16px 0 12px;letter-spacing:-.02em}
+.sec p{font-size:20px;color:#cbd5e1;max-width:820px;line-height:1.45}
+.sec ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:9px 40px;margin-top:30px;max-width:980px;font-size:16.5px;color:#e2e8f0}
+.sec ol li{padding-left:20px;position:relative}
+.sec ol li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:3px;background:#ff4d6a}
+/* svg */
+svg{display:block}
+svg{font-size:14px}
+svg text{font-family:inherit;fill:#0f172a}
+svg g.ts text{fill:#475569}svg g.tw text{fill:#fff}
+.big .card{font-size:17px;padding:18px 16px;display:flex;flex-direction:column;line-height:1.42}.big .card h3{font-size:19px;margin-bottom:12px}.big .card .os{font-size:14.5px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line);line-height:1.4}
+.dense .card{font-size:14px;padding:10px 14px;line-height:1.36}.dense .card h3{font-size:15.5px;margin-bottom:3px}
+.tc{text-anchor:middle}.te{text-anchor:end}
+svg .tb{font-weight:700}svg .ts{font-size:12px;fill:#475569}svg .tl{font-size:17px;font-weight:750}svg .tw{fill:#fff}svg .tr{fill:#b3122f}
+svg .tm{font-family:var(--mono);font-size:12px}
+.bx{fill:#fff;stroke:#94a3b8;stroke-width:1.5}
+.b-red{fill:#fde8ec;stroke:#e4002b;stroke-width:1.5}
+.b-blue{fill:#e3edff;stroke:#2563eb;stroke-width:1.5}
+.b-teal{fill:#d8f3ee;stroke:#0d9488;stroke-width:1.5}
+.b-amber{fill:#fdf0d5;stroke:#d97706;stroke-width:1.5}
+.b-violet{fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5}
+.b-green{fill:#dcf5e3;stroke:#16a34a;stroke-width:1.5}
+.b-grey{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5}
+.b-dark{fill:#101a33;stroke:#101a33}
+.f-red{fill:#e4002b}
+.zone{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 4}
+.ln{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar)}
+.ln2{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar);marker-start:url(#ar)}
+.lr{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr)}
+.lr2{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr);marker-start:url(#arr)}
+.ld{stroke-dasharray:5 4}
+.nl{stroke:#94a3b8;stroke-width:1.5;fill:none}
+/* ui */
+#bar{position:fixed;left:0;bottom:0;height:3px;background:var(--red);width:0;transition:width .2s;z-index:5}
+#nav{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;display:flex;gap:6px;z-index:6;opacity:.07;transition:opacity .2s}
+#nav:hover{opacity:1}
+#nav button{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;font:600 13px/1 inherit;padding:7px 10px;cursor:pointer}
+#nav button:hover{background:var(--red);border-color:var(--red)}
+body.ov{overflow:auto}
+body.ov #stage{position:static;margin:0;width:auto;height:auto;transform:none!important;display:flex;flex-wrap:wrap;gap:14px;padding:20px}
+body.ov .slide{display:flex;position:relative;inset:auto;flex:none;width:1280px;height:720px;zoom:var(--z);cursor:pointer;border-radius:8px}
+body.ov .slide.active{outline:14px solid var(--red)}
+@page{size:1280px 720px;margin:0}
+@media print{
+html,body{height:auto;overflow:visible;background:#fff}
+#stage{position:static;margin:0;width:1280px;height:auto;transform:none!important;display:block}
+.slide{display:flex!important;position:relative;inset:auto;width:1280px;height:720px;break-after:page;page-break-after:always;zoom:1!important}
+#bar,#nav{display:none}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.la{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA)}.la2{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA);marker-start:url(#arA)}
+.lt{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT)}.lt2{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT);marker-start:url(#arT)}
+.lb{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB)}.lb2{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB);marker-start:url(#arB)}
+svg text.fa,svg .fa{fill:#b45309}svg text.ft,svg .ft{fill:#0f766e}svg text.fb,svg .fb{fill:#1d4ed8}
+.tbl td.c,.tbl th.c{text-align:center}.tbl td.y{color:#16a34a;font-weight:800}.tbl td.n{color:#cbd5e1}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e4002b"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+<marker id="arT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker>
+<marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+</defs></svg>
+<div id="stage">
+
+<style>
+.tbl.xs td{font-size:12.8px;padding:5px 9px;line-height:1.32}
+.tbl.xs th{font-size:12.2px;padding:7px 9px}
+.tbl.xs td:first-child{white-space:normal}
+.body code{white-space:nowrap}
+.tbl.wrap td:first-child{white-space:normal}
+.tbl.wrap td:first-child code{white-space:normal}
+</style>
+
+<!-- 1 -->
+<section class="slide dark">
+<svg class="deco" viewBox="0 0 1280 720" aria-hidden="true"><g transform="translate(-60,0)">
+<g fill="none" stroke="#ff4d6a" stroke-width="2" opacity=".85">
+<path d="M900,470 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.16)"/>
+<path d="M900,400 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.24)"/>
+<path d="M900,330 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.34)"/>
+<path d="M900,260 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.5)"/>
+</g>
+<g font-weight="700" letter-spacing="2" style="font-size:12px"><text x="1210" y="264" style="fill:#cbd5e1">POLITIQUES</text><text x="1210" y="334" style="fill:#cbd5e1">JETONS</text><text x="1210" y="404" style="fill:#cbd5e1">CATALOGUE</text><text x="1210" y="474" style="fill:#cbd5e1">ENTITÉS</text></g>
+</g></svg>
+<div class="tt">
+<span class="kick">Support de formation</span>
+<h1>Keystone en profondeur</h1>
+<p class="sub">Entités, catalogue de services, jetons d'authentification, sources d'identité, politiques d'accès — sur Canonical OpenStack (Sunbeam)</p>
+<ul class="chips"><li>Domaines · projets · rôles</li><li>Catalogue</li><li>Fernet</li><li>LDAP · OIDC · SAML</li><li>RBAC</li></ul>
+<p class="ref">Références : OpenStack 2026.1 · Canonical OpenStack 2026.1 LTS · documentations consultées en octobre 2026</p>
+</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Objectif et déroulé</h2></header>
+<div class="body">
+<div class="note"><b>Objectif :</b> comprendre comment Keystone répond aux quatre questions que pose toute requête dans OpenStack — qui es-tu, sur quoi agis-tu, où est le service, en as-tu le droit — et savoir le configurer et le diagnostiquer sur un cloud Sunbeam.</div>
+<div class="cols">
+<div class="col">
+<p><b>À l'issue de ce module, vous saurez :</b></p>
+<ul class="pts">
+<li>Décrire les <b>entités</b> de Keystone et leurs relations.</li>
+<li>Lire et exploiter le <b>catalogue de services</b>.</li>
+<li>Expliquer le cycle de vie d'un <b>jeton</b> : émission, contenu, validation, expiration, rotation des clés.</li>
+<li>Raccorder une <b>source d'identité</b> externe : annuaire LDAP ou fournisseur OIDC / SAML.</li>
+<li>Lire une <b>règle de politique</b> et prévoir qui peut faire quoi.</li>
+<li>Diagnostiquer un refus : <b>401</b>, <b>403</b>, service introuvable.</li>
+</ul>
+</div>
+<div class="col dense">
+<div class="card"><h3>1 · Keystone dans le cloud</h3>Rôle, architecture, déploiement sur Sunbeam, premiers pas.</div>
+<div class="card cb"><h3>2 · Les entités</h3>Domaines, projets, utilisateurs, groupes, rôles, affectations, portées.</div>
+<div class="card ct"><h3>3 · Le catalogue de services</h3>Services, points d'accès, régions, interfaces.</div>
+<div class="card ca"><h3>4 · Les jetons</h3>Types, Fernet, clés, validation, autres moyens d'authentification.</div>
+<div class="card cv"><h3>5 · Les sources d'identité</h3>Base locale, LDAP, fédération.</div>
+<div class="card cn"><h3>6 · Politiques d'accès et exploitation</h3>Règles, portées, rôles par défaut, diagnostic.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 3 -->
+<section class="slide dark sec">
+<div class="num">01</div>
+<h2>Keystone dans le cloud</h2>
+<p>Le premier service appelé par toute requête et le dernier que l'on peut se permettre de perdre : sans lui, plus personne ne s'authentifie et plus aucun service ne trouve les autres.</p>
+<ol><li>Quatre questions, un service</li><li>Une requête de bout en bout</li><li>Architecture interne</li><li>Keystone sur Sunbeam</li><li>Premiers pas : s'authentifier</li></ol>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+<header><span class="kick">1 · Keystone dans le cloud</span><h2>Quatre questions, un service</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 330">
+<g class="tc">
+<rect x="20" y="10" width="260" height="150" rx="12" class="b-blue"/><text x="150" y="38" class="tl">① Qui es-tu ?</text><text x="150" y="62" class="tb">Authentification</text><text x="150" y="86" class="ts">vérifie une preuve d'identité :</text><text x="150" y="102" class="ts">mot de passe, jeton, identifiant</text><text x="150" y="118" class="ts">d'application, assertion d'un</text><text x="150" y="134" class="ts">fournisseur d'identité externe</text>
+<rect x="303" y="10" width="260" height="150" rx="12" class="b-violet"/><text x="433" y="38" class="tl">② Sur quoi agis-tu ?</text><text x="433" y="62" class="tb">Portée</text><text x="433" y="86" class="ts">rattache la session à une cible :</text><text x="433" y="102" class="ts">un projet, un domaine</text><text x="433" y="118" class="ts">ou le système entier,</text><text x="433" y="134" class="ts">et en déduit les rôles détenus</text>
+<rect x="586" y="10" width="260" height="150" rx="12" class="b-teal"/><text x="716" y="38" class="tl">③ Où est le service ?</text><text x="716" y="62" class="tb">Catalogue</text><text x="716" y="86" class="ts">tient l'annuaire des services</text><text x="716" y="102" class="ts">du cloud et de leurs adresses,</text><text x="716" y="118" class="ts">par région et par type d'accès</text>
+<rect x="869" y="10" width="261" height="150" rx="12" class="b-red"/><text x="1000" y="38" class="tl tr">④ En as-tu le droit ?</text><text x="1000" y="62" class="tb">Politique</text><text x="1000" y="86" class="ts">fournit les rôles et la portée</text><text x="1000" y="102" class="ts">que chaque service confronte</text><text x="1000" y="118" class="ts">à ses propres règles</text>
+<rect x="20" y="196" width="1110" height="60" rx="12" class="b-amber"/><text x="575" y="222" class="tl">Le jeton</text><text x="575" y="244" class="ts">la réponse aux questions ① et ②, datée et scellée ; il accompagne ensuite chaque requête vers chaque service</text>
+<rect x="20" y="270" width="1110" height="50" rx="12" class="b-dark"/><text x="575" y="292" class="tw tb">Keystone répond à ①, ② et ③ — et donne à chaque service de quoi répondre lui-même à ④</text><text x="575" y="310" class="tw" style="font-size:12px">Nova, Neutron, Cinder ou Glance ne connaissent ni mots de passe ni annuaires : ils font confiance au jeton</text>
+</g>
+<path d="M150,160 V194 M433,160 V194" class="la"/><path d="M716,160 V194" class="nl"/><path d="M1000,194 V162" class="la"/>
+</svg>
+</div>
+<div class="cols nf">
+<div class="note g"><b>Ce que Keystone ne fait pas :</b> il ne décide pas si l'on peut créer une instance ou supprimer un volume. Cette décision appartient à Nova ou à Cinder, à partir de ce que Keystone a certifié.</div>
+<div class="note b"><b>Version de l'API :</b> une seule, la v3. Les notions de domaine, de groupe et de portée système n'existent que dans celle-ci.</div>
+</div>
+</div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+<header><span class="kick">1 · Keystone dans le cloud</span><h2>Une requête de bout en bout</h2></header>
+<div class="body">
+<div class="fig"><svg viewBox="0 0 1150 364">
+<path d="M130,46 V360" class="nl" stroke-dasharray="4 5"/>
+<path d="M430,46 V360" class="nl" stroke-dasharray="4 5"/>
+<path d="M730,46 V360" class="nl" stroke-dasharray="4 5"/>
+<path d="M1030,46 V360" class="nl" stroke-dasharray="4 5"/>
+<rect x="10.0" y="4" width="240" height="40" rx="8" class="b-grey"/><text x="130" y="29" class="tc tb">Utilisateur</text>
+<rect x="310.0" y="4" width="240" height="40" rx="8" class="b-red"/><text x="430" y="29" class="tc tb">Keystone</text>
+<rect x="610.0" y="4" width="240" height="40" rx="8" class="b-blue"/><text x="730" y="29" class="tc tb">Nova</text>
+<rect x="910.0" y="4" width="240" height="40" rx="8" class="b-teal"/><text x="1030" y="29" class="tc tb">Neutron, Glance…</text>
+<path d="M140,78 H427" class="lr"/>
+<text x="280.0" y="72" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">POST /v3/auth/tokens : identité + portée</text>
+<circle cx="130" cy="78" r="10" class="f-red"/><text x="130" y="82" class="tc tw tb" style="font-size:11px">1</text>
+<path d="M420,107 H133" class="ln ld"/>
+<text x="280.0" y="101" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">jeton + catalogue</text>
+<circle cx="430" cy="107" r="10" class="f-red"/><text x="430" y="111" class="tc tw tb" style="font-size:11px">2</text>
+<rect x="6" y="121" width="400" height="24" rx="6" class="b-grey"/><text x="218.0" y="138" class="tc" style="font-size:12px">cherche dans le catalogue l'adresse du service « compute »</text>
+<circle cx="20" cy="136" r="10" class="f-red"/><text x="20" y="140" class="tc tw tb" style="font-size:11px">3</text>
+<path d="M140,165 H727" class="lr"/>
+<text x="430.0" y="159" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">POST /servers, avec le jeton en en-tête</text>
+<circle cx="130" cy="165" r="10" class="f-red"/><text x="130" y="169" class="tc tw tb" style="font-size:11px">4</text>
+<path d="M720,194 H433" class="lr"/>
+<text x="580.0" y="188" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">valide le jeton</text>
+<circle cx="730" cy="194" r="10" class="f-red"/><text x="730" y="198" class="tc tw tb" style="font-size:11px">5</text>
+<path d="M440,223 H727" class="ln ld"/>
+<text x="580.0" y="217" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">identité, projet, rôles</text>
+<circle cx="430" cy="223" r="10" class="f-red"/><text x="430" y="227" class="tc tw tb" style="font-size:11px">6</text>
+<rect x="530.0" y="237" width="400" height="24" rx="6" class="b-grey"/><text x="742.0" y="254" class="tc" style="font-size:12px">politique : ce rôle peut-il créer une instance ici ?</text>
+<circle cx="544.0" cy="252" r="10" class="f-red"/><text x="544.0" y="256" class="tc tw tb" style="font-size:11px">7</text>
+<path d="M740,281 H1027" class="lr"/>
+<text x="880.0" y="275" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">appels avec le jeton de l'utilisateur</text>
+<circle cx="730" cy="281" r="10" class="f-red"/><text x="730" y="285" class="tc tw tb" style="font-size:11px">8</text>
+<path d="M1020,310 H433" class="lr"/>
+<text x="730.0" y="304" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">chacun valide le jeton à son tour</text>
+<circle cx="1030" cy="310" r="10" class="f-red"/><text x="1030" y="314" class="tc tw tb" style="font-size:11px">9</text>
+<path d="M720,339 H133" class="ln ld"/>
+<text x="430.0" y="333" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">202 Accepted : création en cours</text>
+<circle cx="730" cy="339" r="10" class="f-red"/><text x="730" y="343" class="tc tw tb" style="font-size:11px">10</text>
+</svg></div>
+<div class="cols nf">
+<div class="note g"><b>Deux appels à Keystone par opération :</b> l'un par l'utilisateur, pour obtenir le jeton ; l'autre par le service, pour le valider. Le second est mis en cache par le service pour ne pas être répété à chaque requête.</div>
+<div class="note"><b>Conséquence d'exploitation :</b> si Keystone est lent, tout le cloud est lent ; s'il est indisponible, les jetons déjà validés et encore en cache fonctionnent quelques minutes, puis tout s'arrête.</div>
+</div>
+</div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+<header><span class="kick">1 · Keystone dans le cloud</span><h2>Architecture interne</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 440">
+<rect x="20" y="10" width="1110" height="54" rx="10" class="b-grey"/><text x="575" y="32" class="tc tb">Serveur web — Apache avec le module WSGI</text><text x="575" y="50" class="tc ts">termine HTTP, exécute l'application Python ; porte aussi les modules de fédération (OpenID Connect, SAML)</text>
+<path d="M575,64 V82" class="lr"/>
+<rect x="20" y="84" width="1110" height="46" rx="10" class="b-red"/><text x="575" y="104" class="tc tb">API REST v3 — /v3/auth/tokens, /v3/users, /v3/projects, /v3/roles, /v3/services, /v3/endpoints…</text><text x="575" y="121" class="tc ts">chaque appel passe par le contrôle de politique avant d'atteindre un gestionnaire</text>
+<path d="M575,130 V148" class="lr"/>
+<g class="tc">
+<rect x="20" y="150" width="148" height="110" rx="9" class="b-blue"/><text x="94" y="174" class="tb">Identité</text><text x="94" y="196" class="ts">utilisateurs,</text><text x="94" y="212" class="ts">groupes,</text><text x="94" y="228" class="ts">mots de passe</text>
+<rect x="180" y="150" width="148" height="110" rx="9" class="b-violet"/><text x="254" y="174" class="tb">Ressources</text><text x="254" y="196" class="ts">domaines,</text><text x="254" y="212" class="ts">projets</text>
+<rect x="340" y="150" width="148" height="110" rx="9" class="b-violet"/><text x="414" y="174" class="tb">Affectation</text><text x="414" y="196" class="ts">rôles et</text><text x="414" y="212" class="ts">attributions</text>
+<rect x="500" y="150" width="148" height="110" rx="9" class="b-amber"/><text x="574" y="174" class="tb">Jetons</text><text x="574" y="196" class="ts">émission,</text><text x="574" y="212" class="ts">validation,</text><text x="574" y="228" class="ts">révocation</text>
+<rect x="660" y="150" width="148" height="110" rx="9" class="b-teal"/><text x="734" y="174" class="tb">Catalogue</text><text x="734" y="196" class="ts">services,</text><text x="734" y="212" class="ts">points d'accès,</text><text x="734" y="228" class="ts">régions</text>
+<rect x="820" y="150" width="148" height="110" rx="9" class="b-grey"/><text x="894" y="174" class="tb">Fédération</text><text x="894" y="196" class="ts">fournisseurs,</text><text x="894" y="212" class="ts">protocoles,</text><text x="894" y="228" class="ts">correspondances</text>
+<rect x="980" y="150" width="150" height="110" rx="9" class="b-grey"/><text x="1055" y="174" class="tb">Autres</text><text x="1055" y="196" class="ts">identifiants</text><text x="1055" y="212" class="ts">d'application,</text><text x="1055" y="228" class="ts">délégations, limites</text>
+</g>
+<text x="575" y="284" class="tc ts tb">Chaque gestionnaire délègue le stockage à un pilote interchangeable</text>
+<g class="tc tm" style="font-size:11.5px">
+<rect x="20" y="296" width="148" height="34" rx="6" class="bx"/><text x="94" y="318">sql · ldap</text>
+<rect x="180" y="296" width="148" height="34" rx="6" class="bx"/><text x="254" y="318">sql</text>
+<rect x="340" y="296" width="148" height="34" rx="6" class="bx"/><text x="414" y="318">sql</text>
+<rect x="500" y="296" width="148" height="34" rx="6" class="bx"/><text x="574" y="318">fernet · jws</text>
+<rect x="660" y="296" width="148" height="34" rx="6" class="bx"/><text x="734" y="318">sql</text>
+<rect x="820" y="296" width="148" height="34" rx="6" class="bx"/><text x="894" y="318">sql</text>
+<rect x="980" y="296" width="150" height="34" rx="6" class="bx"/><text x="1055" y="318">sql</text>
+</g>
+<g class="nl"><path d="M94,260 V294 M254,260 V294 M414,260 V294 M574,260 V294 M734,260 V294 M894,260 V294 M1055,260 V294"/></g>
+<g class="tc">
+<rect x="20" y="364" width="468" height="62" rx="10" class="b-amber"/><text x="254" y="388" class="tb">Base de données MySQL</text><text x="254" y="408" class="ts">tout l'état durable : entités, attributions, catalogue</text>
+<rect x="500" y="364" width="148" height="62" rx="10" class="b-dark"/><text x="574" y="388" class="tb tw">Clés Fernet</text><text x="574" y="408" class="tw" style="font-size:11.5px">fichiers, hors base</text>
+<rect x="660" y="364" width="230" height="62" rx="10" class="b-grey"/><text x="775" y="388" class="tb">Cache mémoire</text><text x="775" y="408" class="ts">accélère validation et catalogue</text>
+<rect x="902" y="364" width="228" height="62" rx="10" class="b-blue"/><text x="1016" y="388" class="tb">Annuaire LDAP</text><text x="1016" y="408" class="ts">facultatif, par domaine</text>
+</g>
+<path d="M254,330 V362" class="la"/><path d="M414,330 V346 H300 V362" class="la" style="fill:none"/><path d="M574,330 V362" class="ln"/><path d="M734,330 V346 H420 V362" class="la" style="fill:none"/>
+<path d="M94,330 V346 H200 V362" class="la" style="fill:none"/><path d="M130,330 V352 H1016 V362" class="lb ld" style="fill:none"/>
+</svg>
+</div></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+<header><span class="kick">1 · Keystone dans le cloud</span><h2>Keystone sur Sunbeam : où il tourne</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 660 440">
+<g class="tc">
+<rect x="10" y="6" width="310" height="46" rx="9" class="b-grey"/><text x="165" y="26" class="tb">Utilisateurs, Horizon</text><text x="165" y="43" class="ts">réseau public</text>
+<rect x="340" y="6" width="310" height="46" rx="9" class="b-grey"/><text x="495" y="26" class="tb">Autres services du cloud</text><text x="495" y="43" class="ts">réseau interne</text>
+<rect x="10" y="86" width="310" height="52" rx="9" class="b-teal"/><text x="165" y="108" class="tb">Traefik « public »</text><text x="165" y="126" class="tm" style="font-size:10.5px">https://&lt;adresse&gt;/openstack-keystone/v3</text>
+<rect x="340" y="86" width="310" height="52" rx="9" class="b-teal"/><text x="495" y="108" class="tb">Traefik « interne »</text><text x="495" y="126" class="tm" style="font-size:10.5px">http://&lt;adresse&gt;/openstack-keystone/v3</text>
+</g>
+<path d="M165,52 V84" class="lr"/><path d="M495,52 V84" class="lr"/>
+<rect x="10" y="170" width="640" height="150" rx="12" class="zone"/><text x="26" y="194" class="tl">Application « keystone » — charm keystone-k8s</text><text x="634" y="194" class="te tb fa">× 3 pods</text>
+<g class="tc">
+<rect x="26" y="206" width="300" height="100" rx="9" class="b-red"/><text x="176" y="228" class="tb">conteneur « keystone »</text><text x="176" y="248" class="ts">Apache + application Keystone</text><text x="176" y="264" class="ts">keystone.conf, clés Fernet,</text><text x="176" y="280" class="ts">configuration de fédération</text><text x="176" y="298" class="ts tb">image rock</text>
+<rect x="334" y="206" width="300" height="100" rx="9" class="b-violet"/><text x="484" y="228" class="tb">conteneur « charm »</text><text x="484" y="248" class="ts">écrit la configuration, migre le schéma,</text><text x="484" y="264" class="ts">crée domaines et comptes de base,</text><text x="484" y="280" class="ts">fait tourner et distribue les clés</text><text x="484" y="298" class="ts tb">piloté par Juju</text>
+</g>
+<path d="M165,138 V168" class="lr"/><path d="M495,138 V168" class="lr"/>
+<g class="tc">
+<rect x="10" y="352" width="200" height="76" rx="9" class="b-amber"/><text x="110" y="376" class="tb">MySQL</text><text x="110" y="396" class="ts">par mysql-router,</text><text x="110" y="412" class="ts">grappe répliquée</text>
+<rect x="230" y="352" width="200" height="76" rx="9" class="b-dark"/><text x="330" y="376" class="tb tw">Secrets Juju</text><text x="330" y="396" class="tw" style="font-size:11.5px">clés Fernet, mots de passe</text><text x="330" y="412" class="tw" style="font-size:11.5px">partagés entre les pods</text>
+<rect x="450" y="352" width="200" height="76" rx="9" class="b-grey"/><text x="550" y="376" class="tb">Relations Juju</text><text x="550" y="396" class="ts">chaque service s'y enregistre</text><text x="550" y="412" class="ts">et reçoit ses identifiants</text>
+</g>
+<path d="M110,320 V350" class="la"/><path d="M330,320 V350" class="ln"/><path d="M550,350 V322" class="ln"/>
+</svg>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Un pod par unité</b>, trois unités en haute disponibilité : n'importe laquelle traite n'importe quelle requête, car l'état est dans la base et les clés sont identiques partout.</li>
+<li><b>Deux entrées :</b> les points d'accès public et interne passent par deux Traefik distincts, sous un préfixe de chemin.</li>
+<li><b>Aucun fichier édité à la main :</b> <code>keystone.conf</code> est produit par le charm à partir de ses options et de ses relations.</li>
+<li><b>Les autres services</b> n'ont pas de compte créé à la main : la relation avec Keystone crée leur utilisateur de service et inscrit leurs points d'accès.</li>
+</ul>
+<pre style="font-size:12px"><span class="c">juju status</span> -m openstack keystone
+<span class="c">juju config</span> -m openstack keystone
+<span class="c">juju actions</span> -m openstack keystone
+<span class="c">sudo k8s kubectl</span> -n openstack get pods \
+  -l app.kubernetes.io/name=keystone</pre>
+<div class="note g">Options, actions et noms exacts varient selon la révision du charm : ces quatre commandes les montrent pour votre cloud.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+<header><span class="kick">1 · Keystone dans le cloud</span><h2>Premiers pas : s'authentifier sur un cloud Sunbeam</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:12.2px"><span class="m"># Identifiants de l'administrateur du cloud</span>
+<span class="c">sunbeam openrc</span> &gt; admin-openrc
+<span class="c">source</span> admin-openrc
+
+<span class="m"># Identifiants de l'utilisateur de démonstration</span>
+<span class="c">sunbeam configure</span> --openrc demo-openrc
+
+<span class="m"># Vérifier : obtenir un jeton</span>
+<span class="c">openstack token issue</span>
+
+<span class="m"># Qui suis-je, avec quels rôles ?</span>
+<span class="c">openstack role assignment list</span> \
+  --user admin --names
+
+<span class="m"># Que contient le cloud ?</span>
+<span class="c">openstack catalog list</span></pre>
+<div class="note"><b>Prérequis :</b> le client <code>openstack</code> installé sur le poste, et l'adresse publique de Keystone joignable depuis ce poste. Avec TLS activé, le certificat de l'autorité doit être connu du client (<code>OS_CACERT</code>).</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Variable</th><th>Rôle</th></tr></thead>
+<tbody>
+<tr><td><code>OS_AUTH_URL</code></td><td>adresse publique de Keystone, se terminant par <code>/v3</code></td></tr>
+<tr><td><code>OS_USERNAME</code>, <code>OS_PASSWORD</code></td><td>la preuve d'identité</td></tr>
+<tr><td><code>OS_USER_DOMAIN_NAME</code></td><td>le domaine où chercher l'utilisateur</td></tr>
+<tr><td><code>OS_PROJECT_NAME</code></td><td>le projet visé : la <b>portée</b> demandée</td></tr>
+<tr><td><code>OS_PROJECT_DOMAIN_NAME</code></td><td>le domaine de ce projet</td></tr>
+<tr><td><code>OS_REGION_NAME</code></td><td>la région à choisir dans le catalogue</td></tr>
+<tr><td><code>OS_INTERFACE</code></td><td>public, internal ou admin</td></tr>
+<tr><td><code>OS_IDENTITY_API_VERSION</code></td><td>3</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Un nom ne suffit jamais :</b> utilisateur et projet sont toujours désignés avec leur domaine, car deux domaines peuvent porter les mêmes noms.</li>
+<li><b>Alternative au fichier de variables :</b> un fichier <code>clouds.yaml</code> et l'option <code>--os-cloud</code>, plus pratique pour jongler entre plusieurs comptes.</li>
+<li><b>Ne pas laisser traîner</b> le fichier de l'administrateur : il contient un mot de passe en clair.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 9 -->
+<section class="slide dark sec">
+<div class="num">02</div>
+<h2>Les entités</h2>
+<p>Peu d'objets, mais des relations précises. Toute la gestion des droits d'OpenStack se ramène à une phrase : tel acteur détient tel rôle sur telle cible.</p>
+<ol><li>Carte des entités</li><li>Domaines</li><li>Projets</li><li>Utilisateurs et groupes</li><li>Rôles et rôles impliqués</li><li>Affectations de rôles</li><li>Les trois portées</li><li>Les profils par défaut</li><li>Ce que Sunbeam a créé pour vous</li><li>Commandes essentielles</li></ol>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+<header><span class="kick">2 · Les entités</span><h2>Carte des entités</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 440">
+<rect x="20" y="10" width="740" height="330" rx="14" class="zone"/><text x="36" y="36" class="tl">Domaine — frontière d'administration et espace de noms</text>
+<g class="tc">
+<rect x="36" y="52" width="330" height="270" rx="12" class="b-blue"/><text x="201" y="78" class="tl">Acteurs</text>
+<rect x="52" y="92" width="298" height="92" rx="9" class="bx"/><text x="201" y="116" class="tb">Utilisateur</text><text x="201" y="136" class="ts">une personne ou un programme ;</text><text x="201" y="152" class="ts">détient des preuves d'identité</text><text x="201" y="170" class="ts tb">appartient à un seul domaine</text>
+<rect x="52" y="212" width="298" height="92" rx="9" class="bx"/><text x="201" y="236" class="tb">Groupe</text><text x="201" y="256" class="ts">un ensemble d'utilisateurs,</text><text x="201" y="272" class="ts">pour attribuer des rôles en une fois</text><text x="201" y="290" class="ts tb">appartient à un seul domaine</text>
+<rect x="414" y="52" width="330" height="270" rx="12" class="b-violet"/><text x="579" y="78" class="tl">Cibles</text>
+<rect x="430" y="92" width="298" height="92" rx="9" class="bx"/><text x="579" y="116" class="tb">Projet</text><text x="579" y="136" class="ts">conteneur de ressources : instances,</text><text x="579" y="152" class="ts">réseaux, volumes, images</text><text x="579" y="170" class="ts tb">appartient à un seul domaine</text>
+<rect x="430" y="212" width="298" height="92" rx="9" class="bx"/><text x="579" y="236" class="tb">Le domaine lui-même</text><text x="579" y="256" class="ts">cible des opérations d'administration :</text><text x="579" y="272" class="ts">créer des utilisateurs, des projets</text>
+</g>
+<path d="M201,184 V210" class="ln2"/><text x="211" y="202" class="ts">est membre de</text>
+<rect x="800" y="10" width="330" height="150" rx="14" class="b-red"/><text x="965" y="38" class="tc tl tr">Rôle</text><text x="965" y="62" class="tc ts">un simple nom — admin, member, reader…</text><text x="965" y="80" class="tc ts">qui n'a de sens que dans les règles</text><text x="965" y="98" class="tc ts">de politique des services</text><text x="965" y="124" class="tc ts tb">global par défaut ;</text><text x="965" y="140" class="tc ts tb">peut aussi être propre à un domaine</text>
+<rect x="800" y="190" width="330" height="150" rx="14" class="b-dark"/><text x="965" y="218" class="tc tl tw">Système</text><text x="965" y="244" class="tc tw" style="font-size:12px">la cible « le cloud entier » :</text><text x="965" y="262" class="tc tw" style="font-size:12px">catalogue, régions, hyperviseurs,</text><text x="965" y="280" class="tc tw" style="font-size:12px">ce qui n'appartient à aucun projet</text><text x="965" y="312" class="tc tw tb" style="font-size:12px">hors de tout domaine</text>
+<rect x="20" y="362" width="1110" height="66" rx="12" class="b-amber"/><text x="575" y="388" class="tc tl">Affectation de rôle = acteur + rôle + cible</text><text x="575" y="412" class="tc ts">« le groupe développeurs détient le rôle member sur le projet web » — c'est le seul objet qui donne des droits</text>
+<path d="M366,268 H412" class="la"/><path d="M366,140 H412" class="la"/>
+<path d="M800,90 H770 V375" class="la" style="fill:none"/><path d="M800,270 H780" class="nl" style="stroke:#d97706;stroke-width:2"/>
+</svg>
+</div></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+<header><span class="kick">2 · Les entités</span><h2>Domaines : la frontière d'administration</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Ce qu'est un domaine</b></p>
+<ul class="pts sm">
+<li><b>Un espace de noms :</b> les noms d'utilisateur, de groupe et de projet ne sont uniques qu'à l'intérieur d'un domaine. Deux domaines peuvent chacun avoir un projet « web ».</li>
+<li><b>Une frontière de délégation :</b> on peut confier à quelqu'un l'administration d'un domaine — créer ses utilisateurs, ses projets, attribuer des rôles — sans lui donner la main sur le reste du cloud.</li>
+<li><b>Un point de raccordement :</b> chaque domaine peut avoir sa propre source d'identité — la base locale pour l'un, l'annuaire de l'entreprise pour un autre.</li>
+<li><b>La racine d'une hiérarchie de projets :</b> techniquement, un domaine est lui-même un projet particulier, sommet de son arbre.</li>
+</ul>
+<div class="note"><b>Un domaine ne se supprime pas d'un geste :</b> il faut d'abord le désactiver, et la suppression emporte tout ce qu'il contient.</div>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:36%">Usage</th><th>Un domaine par…</th></tr></thead>
+<tbody>
+<tr><td>Hébergeur</td><td>client : chacun gère ses utilisateurs et ses projets</td></tr>
+<tr><td>Grand groupe</td><td>filiale ou direction</td></tr>
+<tr><td>Source d'identité</td><td>annuaire raccordé : un domaine LDAP, un domaine fédéré</td></tr>
+<tr><td>Séparation technique</td><td>les comptes des services d'un côté, les humains de l'autre</td></tr>
+</tbody></table>
+<pre style="font-size:12.2px"><span class="c">openstack domain list</span>
+<span class="c">openstack domain create</span> --description "Filiale Nord" nord
+<span class="c">openstack domain show</span> nord
+
+<span class="m"># Désactiver puis supprimer</span>
+<span class="c">openstack domain set</span> --disable nord
+<span class="c">openstack domain delete</span> nord</pre>
+<div class="note g"><b>Désactiver un domaine</b> coupe immédiatement l'authentification de tous ses utilisateurs et invalide leurs jetons : c'est l'interrupteur d'urgence pour un locataire.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+<header><span class="kick">2 · Les entités</span><h2>Projets : le conteneur des ressources</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 400">
+<g class="tc">
+<rect x="180" y="6" width="200" height="50" rx="9" class="b-violet"/><text x="280" y="28" class="tb">domaine « nord »</text><text x="280" y="45" class="ts">racine de l'arbre</text>
+<rect x="40" y="110" width="200" height="50" rx="9" class="bx"/><text x="140" y="132" class="tb">projet « production »</text><text x="140" y="149" class="ts">parent : le domaine</text>
+<rect x="320" y="110" width="200" height="50" rx="9" class="bx"/><text x="420" y="132" class="tb">projet « recherche »</text><text x="420" y="149" class="ts">parent : le domaine</text>
+<rect x="10" y="214" width="130" height="50" rx="9" class="bx"/><text x="75" y="236" class="tb">« web »</text><text x="75" y="253" class="ts">sous-projet</text>
+<rect x="150" y="214" width="130" height="50" rx="9" class="bx"/><text x="215" y="236" class="tb">« bases »</text><text x="215" y="253" class="ts">sous-projet</text>
+<rect x="355" y="214" width="130" height="50" rx="9" class="bx"/><text x="420" y="236" class="tb">« labo-ia »</text><text x="420" y="253" class="ts">sous-projet</text>
+<rect x="10" y="304" width="540" height="84" rx="10" class="b-blue"/><text x="280" y="328" class="tb">Dans chaque projet</text><text x="280" y="348" class="ts">instances, volumes, réseaux, images privées, clés…</text><text x="280" y="366" class="ts">chaque ressource d'OpenStack porte l'identifiant d'un projet, et d'un seul</text>
+</g>
+<path d="M240,56 L150,108" class="ln"/><path d="M320,56 L410,108" class="ln"/>
+<path d="M110,160 L80,212" class="ln"/><path d="M170,160 L205,212" class="ln"/><path d="M420,160 V212" class="ln"/>
+<path d="M75,264 V302 M215,264 V302 M420,264 V302" class="nl"/>
+</svg>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>C'est l'unité de propriété :</b> quotas, facturation et isolation réseau se raisonnent par projet.</li>
+<li><b>C'est la portée la plus courante</b> d'un jeton : on travaille « dans » un projet.</li>
+<li><b>Hiérarchie :</b> un projet peut avoir des sous-projets ; un rôle peut être <b>hérité</b> vers le bas de l'arbre. L'isolation des ressources, elle, reste par projet.</li>
+<li><b>Étiquettes</b> libres pour classer : environnement, centre de coût.</li>
+<li><b>Désactivé</b>, un projet refuse toute nouvelle authentification vers lui, sans que ses ressources soient détruites.</li>
+</ul>
+<pre style="font-size:12.2px"><span class="c">openstack project create</span> --domain nord production
+<span class="c">openstack project create</span> --domain nord \
+  --parent production web
+<span class="c">openstack project list</span> --domain nord --long
+<span class="c">openstack project set</span> --tag prod web</pre>
+<div class="note g">Hiérarchie et quotas font l'objet du module suivant ; on en retient ici le principe.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+<header><span class="kick">2 · Les entités</span><h2>Utilisateurs et groupes</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Utilisateur</b></p>
+<ul class="pts sm">
+<li><b>Identifiant unique</b> dans tout le cloud ; <b>nom</b> unique dans son domaine seulement.</li>
+<li><b>Trois origines possibles :</b> créé dans la base locale, lu dans un annuaire LDAP, ou créé à la volée lors d'une connexion fédérée.</li>
+<li><b>Projet par défaut :</b> facultatif ; sert quand une authentification ne précise pas de portée.</li>
+<li><b>Options par utilisateur :</b> dispense de changement de mot de passe, exemption de verrouillage, règles d'authentification multifacteur.</li>
+</ul>
+<p><b>Groupe</b></p>
+<ul class="pts sm">
+<li>Contient des utilisateurs <b>du même domaine</b>.</li>
+<li>Un rôle attribué au groupe vaut pour tous ses membres, présents et futurs.</li>
+<li>Avec un annuaire ou une fédération, les groupes viennent de la source externe : on attribue les rôles aux groupes, <b>jamais</b> aux personnes.</li>
+</ul>
+</div>
+<div class="col">
+<pre style="font-size:12.2px"><span class="c">openstack user create</span> --domain nord \
+  --password-prompt --email alice@exemple.fr alice
+<span class="c">openstack group create</span> --domain nord developpeurs
+<span class="c">openstack group add user</span> \
+  --group-domain nord --user-domain nord \
+  developpeurs alice
+<span class="c">openstack user set</span> --disable alice    <span class="m"># coupe l'accès</span></pre>
+<table class="tbl tight">
+<thead><tr><th>Type de compte</th><th>Particularité</th></tr></thead>
+<tbody>
+<tr><td>Humain</td><td>mot de passe ou connexion fédérée ; à rattacher à des groupes</td></tr>
+<tr><td>Service du cloud</td><td>un compte par service (nova, neutron…), créé par le charm, rôle <code>service</code> ou <code>admin</code></td></tr>
+<tr><td>Automatisation</td><td>plutôt un <b>identifiant d'application</b> qu'un utilisateur dédié</td></tr>
+</tbody></table>
+<div class="note"><b>Désactiver plutôt que supprimer :</b> la suppression d'un utilisateur efface aussi ses attributions et ses identifiants d'application ; la désactivation est réversible.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+<header><span class="kick">2 · Les entités</span><h2>Rôles et rôles impliqués</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 420">
+<g class="tc">
+<rect x="150" y="6" width="260" height="62" rx="10" class="b-red"/><text x="280" y="30" class="tb tr">admin</text><text x="280" y="50" class="ts">les opérations les plus sensibles de la portée</text>
+<rect x="150" y="100" width="260" height="62" rx="10" class="b-amber"/><text x="280" y="124" class="tb">manager</text><text x="280" y="144" class="ts">gérer utilisateurs et projets d'un domaine</text>
+<rect x="150" y="194" width="260" height="62" rx="10" class="b-blue"/><text x="280" y="218" class="tb">member</text><text x="280" y="238" class="ts">créer et modifier des ressources</text>
+<rect x="150" y="288" width="260" height="62" rx="10" class="b-green"/><text x="280" y="312" class="tb">reader</text><text x="280" y="332" class="ts">consulter, sans rien modifier</text>
+<rect x="450" y="194" width="100" height="62" rx="10" class="b-grey"/><text x="500" y="218" class="tb">service</text><text x="500" y="238" class="ts">à part</text>
+</g>
+<path d="M280,68 V98" class="lr"/><path d="M280,162 V192" class="lr"/><path d="M280,256 V286" class="lr"/>
+<text x="292" y="88" class="ts tb">implique</text><text x="292" y="182" class="ts tb">implique</text><text x="292" y="276" class="ts tb">implique</text>
+<text x="20" y="40" class="ts">le plus</text><text x="20" y="56" class="ts">de droits</text><text x="20" y="316" class="ts">le moins</text><text x="20" y="332" class="ts">de droits</text>
+<path d="M60,70 V290" class="ln"/>
+<text x="280" y="382" class="tc ts">Détenir « admin » donne automatiquement manager, member et reader.</text><text x="280" y="402" class="tc ts">« service » est réservé aux échanges entre services et n'entre pas dans la chaîne.</text>
+</svg>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Un rôle est une étiquette.</b> Keystone ne sait pas ce que « member » permet dans Nova : ce sont les règles de politique de Nova qui lui donnent un sens.</li>
+<li><b>Cinq rôles fournis d'office :</b> <code>admin</code>, <code>member</code>, <code>reader</code> depuis longtemps ; <code>manager</code> et <code>service</code> depuis la version 2023.2.</li>
+<li><b>Rôle impliqué :</b> une règle « tel rôle entraîne tel autre », résolue par Keystone à l'émission du jeton. Le jeton d'un administrateur contient donc aussi les rôles inférieurs.</li>
+<li><b>Rôles supplémentaires :</b> certains services en définissent — par exemple pour l'équilibrage de charge ou l'orchestration.</li>
+<li><b>Rôle propre à un domaine :</b> un alias local qui implique des rôles globaux ; rarement nécessaire.</li>
+</ul>
+<pre style="font-size:12.2px"><span class="c">openstack role list</span>
+<span class="c">openstack implied role list</span>
+<span class="c">openstack role create</span> auditeur
+<span class="c">openstack implied role create</span> auditeur \
+  --implied-role reader</pre>
+<div class="note">Créer un rôle ne donne <b>aucun</b> droit tant qu'aucune règle de politique ne le mentionne : préférer les rôles par défaut, compris par tous les services.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+<header><span class="kick">2 · Les entités</span><h2>Affectations de rôles : acteur, rôle, cible</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:21%">Acteur</th><th style="width:13%">Rôle</th><th style="width:26%">Cible</th><th>Effet</th></tr></thead>
+<tbody>
+<tr><td>utilisateur alice</td><td>member</td><td style="color:var(--ink);font-weight:400">projet « web »</td><td>alice crée et gère des ressources dans web</td></tr>
+<tr><td>groupe developpeurs</td><td>reader</td><td style="color:var(--ink);font-weight:400">projet « production »</td><td>tous les développeurs consultent production, sans rien modifier</td></tr>
+<tr><td>groupe exploitants</td><td>member</td><td style="color:var(--ink);font-weight:400">projet « production », <b>hérité</b></td><td>le rôle vaut aussi pour tous les sous-projets, présents et futurs</td></tr>
+<tr><td>utilisateur bob</td><td>manager</td><td style="color:var(--ink);font-weight:400">domaine « nord »</td><td>bob gère utilisateurs, groupes et projets du domaine</td></tr>
+<tr><td>groupe plateforme</td><td>admin</td><td style="color:var(--ink);font-weight:400">système</td><td>administration du cloud entier</td></tr>
+<tr><td>utilisateur nova</td><td>service</td><td style="color:var(--ink);font-weight:400">projet « services »</td><td>Nova s'identifie auprès des autres services</td></tr>
+</tbody></table>
+<div class="cols">
+<div class="col">
+<pre style="font-size:12.2px"><span class="m"># Attribuer</span>
+<span class="c">openstack role add</span> --user alice --user-domain nord \
+  --project web --project-domain nord member
+<span class="c">openstack role add</span> --group exploitants \
+  --group-domain nord --project production \
+  --project-domain nord --inherited member
+<span class="c">openstack role add</span> --user bob --user-domain nord \
+  --domain nord manager
+<span class="c">openstack role add</span> --group plateforme \
+  --group-domain nord --system all admin</pre>
+</div>
+<div class="col">
+<pre style="font-size:12.2px"><span class="m"># Ce qui a été saisi</span>
+<span class="c">openstack role assignment list</span> --names \
+  --project web --project-domain nord
+
+<span class="m"># Ce qui s'applique réellement : groupes,</span>
+<span class="m"># héritage et rôles impliqués résolus</span>
+<span class="c">openstack role assignment list</span> --names \
+  --user alice --user-domain nord --effective</pre>
+<div class="note g"><b>Réflexe de diagnostic :</b> l'option <code>--effective</code> répond à la question « pourquoi cette personne a-t-elle, ou n'a-t-elle pas, ce droit ? ».</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+<header><span class="kick">2 · Les entités</span><h2>Les trois portées</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 280">
+<g class="tc">
+<rect x="20" y="10" width="1110" height="260" rx="14" class="b-dark"/><text x="575" y="38" class="tl tw">Portée système — le cloud entier</text><text x="575" y="58" class="tw" style="font-size:12px">catalogue, régions, domaines, agrégats d'hôtes, hyperviseurs, réseaux fournisseurs, types de volumes</text>
+<rect x="44" y="76" width="520" height="180" rx="12" class="b-violet"/><text x="304" y="102" class="tl">Portée domaine — « nord »</text><text x="304" y="122" class="ts">utilisateurs, groupes, projets et attributions de ce domaine</text>
+<rect x="64" y="138" width="230" height="104" rx="10" class="bx"/><text x="179" y="162" class="tb">Portée projet — « web »</text><text x="179" y="184" class="ts">instances, volumes,</text><text x="179" y="200" class="ts">réseaux, images du projet</text>
+<rect x="314" y="138" width="230" height="104" rx="10" class="bx"/><text x="429" y="162" class="tb">Portée projet — « bases »</text><text x="429" y="184" class="ts">instances, volumes,</text><text x="429" y="200" class="ts">réseaux, images du projet</text>
+<rect x="586" y="76" width="520" height="180" rx="12" class="b-violet"/><text x="846" y="102" class="tl">Portée domaine — « sud »</text><text x="846" y="122" class="ts">utilisateurs, groupes, projets et attributions de ce domaine</text>
+<rect x="606" y="138" width="480" height="104" rx="10" class="bx"/><text x="846" y="162" class="tb">Portée projet — « web »</text><text x="846" y="184" class="ts">même nom que dans « nord », autre projet :</text><text x="846" y="200" class="ts">identifiant différent, ressources séparées</text>
+</g>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Portée</th><th>Demandée avec</th><th>Sert à</th></tr></thead>
+<tbody>
+<tr><td>projet</td><td><code>--os-project-name</code></td><td>le travail courant sur les ressources</td></tr>
+<tr><td>domaine</td><td><code>--os-domain-name</code></td><td>gérer identités et projets d'un domaine</td></tr>
+<tr><td>système</td><td><code>--os-system-scope all</code></td><td>administrer le cloud</td></tr>
+<tr><td>aucune</td><td>—</td><td>prouver son identité, lister ses projets</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Un jeton n'a qu'une portée.</b> Pour agir dans un autre projet, on demande un autre jeton — le client le fait seul, à partir des identifiants.</li>
+<li><b>Les droits ne débordent pas :</b> être <code>admin</code> d'un domaine ne donne rien sur le domaine voisin.</li>
+<li><b>La portée fait partie de la décision :</b> une règle de politique peut exiger « rôle reader <b>et</b> portée système ».</li>
+</ul>
+<div class="note">Tous les services n'exploitent pas encore la portée système de la même façon : dans la pratique, beaucoup d'opérations d'administration passent par un jeton de portée projet avec le rôle <code>admin</code>.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+<header><span class="kick">2 · Les entités</span><h2>Les profils par défaut : rôle × portée</h2></header>
+<div class="body">
+<table class="tbl tight os">
+<thead><tr><th style="width:12%">Portée</th><th style="width:12%">Rôle</th><th style="width:42%">Ce que le profil peut faire dans Keystone</th><th>Usage type</th></tr></thead>
+<tbody>
+<tr><td>Système</td><td>admin</td><td style="color:var(--ink);font-weight:400">gérer toutes les ressources de Keystone : domaines, catalogue, rôles, tout utilisateur</td><td>équipe plateforme</td></tr>
+<tr><td>Système</td><td>member, reader</td><td style="color:var(--ink);font-weight:400">consulter toutes les ressources ; les deux rôles sont équivalents à ce niveau</td><td>audit, supervision, support</td></tr>
+<tr><td>Domaine</td><td>admin</td><td style="color:var(--ink);font-weight:400">gérer la plupart des aspects de son domaine : projets, utilisateurs, groupes, attributions ; rien au-dehors</td><td>responsable d'un locataire</td></tr>
+<tr><td>Domaine</td><td>manager</td><td style="color:var(--ink);font-weight:400">gérer identités et attributions du domaine, sans pouvoir attribuer ni retirer <code>admin</code>, ni modifier le domaine lui-même</td><td>délégation sans risque d'escalade</td></tr>
+<tr><td>Domaine</td><td>member, reader</td><td style="color:var(--ink);font-weight:400">consulter les ressources et informations de son domaine</td><td>audit d'un locataire</td></tr>
+<tr><td>Projet</td><td>admin</td><td style="color:var(--ink);font-weight:400">voir et modifier les données de son projet, poser des étiquettes ; peu de pouvoir dans Keystone</td><td>chef de projet technique</td></tr>
+<tr><td>Projet</td><td>member, reader</td><td style="color:var(--ink);font-weight:400">découvrir les informations de son projet, par exemple ses limites ; rien hors du projet</td><td>développeurs, lecture seule</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Dans les autres services</b>, la différence entre <code>member</code> et <code>reader</code> redevient essentielle : un <code>member</code> crée une instance, un <code>reader</code> ne peut que la lister.</div>
+<div class="note"><b>Le rôle <code>reader</code> n'est pas anodin :</b> il donne accès en lecture à tout ce que contient la portée. La documentation déconseille de le croire suffisant pour protéger des données sensibles.</div>
+</div>
+</div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+<header><span class="kick">2 · Les entités</span><h2>Ce que Sunbeam a créé pour vous</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 420">
+<g class="tc">
+<rect x="10" y="8" width="540" height="110" rx="12" class="zone"/><text x="26" y="32" class="tl" style="text-anchor:start">Domaine d'administration</text>
+<rect x="26" y="46" width="160" height="58" rx="8" class="b-blue"/><text x="106" y="70" class="tb">utilisateur admin</text><text x="106" y="90" class="ts">celui de sunbeam openrc</text>
+<rect x="200" y="46" width="160" height="58" rx="8" class="b-violet"/><text x="280" y="70" class="tb">projet admin</text><text x="280" y="90" class="ts">sa portée par défaut</text>
+<rect x="374" y="46" width="160" height="58" rx="8" class="b-red"/><text x="454" y="70" class="tb">rôle admin</text><text x="454" y="90" class="ts">sur le projet, le domaine</text>
+<rect x="10" y="138" width="540" height="124" rx="12" class="zone"/><text x="26" y="162" class="tl" style="text-anchor:start">Domaine des services</text>
+<rect x="26" y="176" width="246" height="72" rx="8" class="b-blue"/><text x="149" y="198" class="tb">un utilisateur par service</text><text x="149" y="218" class="ts">nova, neutron, glance, cinder,</text><text x="149" y="234" class="ts">placement… créés par relation Juju</text>
+<rect x="288" y="176" width="246" height="72" rx="8" class="b-violet"/><text x="411" y="198" class="tb">projet « services »</text><text x="411" y="218" class="ts">portée commune des comptes</text><text x="411" y="234" class="ts">de service</text>
+<rect x="10" y="282" width="540" height="110" rx="12" class="zone"/><text x="26" y="306" class="tl" style="text-anchor:start">Domaine des utilisateurs — après « sunbeam configure »</text>
+<rect x="26" y="320" width="160" height="58" rx="8" class="b-blue"/><text x="106" y="344" class="tb">utilisateur demo</text><text x="106" y="364" class="ts">celui de demo-openrc</text>
+<rect x="200" y="320" width="160" height="58" rx="8" class="b-violet"/><text x="280" y="344" class="tb">projet demo</text><text x="280" y="364" class="ts">avec réseau et routeur</text>
+<rect x="374" y="320" width="160" height="58" rx="8" class="b-green"/><text x="454" y="344" class="tb">rôle member</text><text x="454" y="364" class="ts">sur le projet demo</text>
+</g>
+<text x="280" y="412" class="tc ts">Schéma de principe : noms exacts à relever sur votre cloud.</text>
+</svg>
+</div>
+<div class="col">
+<pre style="font-size:12.2px"><span class="m"># Relever ce qui existe réellement</span>
+<span class="c">openstack domain list</span>
+<span class="c">openstack project list</span> --long
+<span class="c">openstack user list</span> --long
+<span class="c">openstack role list</span>
+<span class="c">openstack role assignment list</span> --names</pre>
+<ul class="pts sm">
+<li><b>Séparer humains et services :</b> les comptes des services vivent dans leur propre domaine, à ne jamais utiliser pour des personnes.</li>
+<li><b>Ne pas travailler avec le compte <code>admin</code> initial :</b> créer un domaine pour l'organisation, des comptes nominatifs, et réserver ce compte au secours.</li>
+<li><b>Le compte de démonstration</b> sert à valider l'installation ; il n'a pas vocation à rester sur un cloud de production.</li>
+<li><b>Comptes de service :</b> leurs mots de passe sont générés et tournés par les charms ; ne pas les modifier à la main, la relation les réécrirait.</li>
+</ul>
+<div class="note g">Le charm expose des actions pour retrouver le mot de passe de l'administrateur ou créer un compte de service : <code>juju actions keystone</code> en donne la liste.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+<header><span class="kick">2 · Les entités</span><h2>Mettre en place un locataire : la séquence complète</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:12px"><span class="m"># 0 · Prérequis : jeton d'administrateur chargé</span>
+<span class="c">source</span> admin-openrc
+
+<span class="m"># 1 · Le domaine</span>
+<span class="c">openstack domain create</span> --description "Filiale Nord" nord
+
+<span class="m"># 2 · Un projet</span>
+<span class="c">openstack project create</span> --domain nord web
+
+<span class="m"># 3 · Des groupes, plutôt que des droits individuels</span>
+<span class="c">openstack group create</span> --domain nord web-dev
+<span class="c">openstack group create</span> --domain nord web-lecture
+
+<span class="m"># 4 · Les rôles, sur les groupes</span>
+<span class="c">openstack role add</span> --group web-dev --group-domain nord \
+  --project web --project-domain nord member
+<span class="c">openstack role add</span> --group web-lecture --group-domain nord \
+  --project web --project-domain nord reader
+
+<span class="m"># 5 · Les personnes, dans les groupes</span>
+<span class="c">openstack user create</span> --domain nord --password-prompt alice
+<span class="c">openstack group add user</span> --group-domain nord \
+  --user-domain nord web-dev alice</pre>
+</div>
+<div class="col">
+<pre style="font-size:12px"><span class="m"># 6 · Déléguer l'administration du domaine</span>
+<span class="c">openstack user create</span> --domain nord --password-prompt bob
+<span class="c">openstack role add</span> --user bob --user-domain nord \
+  --domain nord manager
+
+<span class="m"># 7 · Vérifier, du point de vue d'alice</span>
+<span class="c">openstack</span> --os-username alice --os-user-domain-name nord \
+  --os-project-name web --os-project-domain-name nord \
+  <span class="c">token issue</span>          <span class="m"># le mot de passe est demandé</span></pre>
+<table class="tbl tight">
+<thead><tr><th>Étape</th><th>Pourquoi dans cet ordre</th></tr></thead>
+<tbody>
+<tr><td>Domaine d'abord</td><td>tout le reste lui appartient</td></tr>
+<tr><td>Groupes avant personnes</td><td>les droits survivent aux arrivées et aux départs</td></tr>
+<tr><td>Délégation</td><td>bob gère ensuite son domaine sans solliciter la plateforme</td></tr>
+<tr><td>Vérification</td><td>un jeton obtenu prouve identité, portée et rôle</td></tr>
+</tbody></table>
+<div class="note g">Cette séquence se décrit aussi en Terraform, avec le fournisseur OpenStack : c'est la forme à préférer dès qu'il y a plusieurs locataires.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 20 -->
+<section class="slide dark sec">
+<div class="num">03</div>
+<h2>Le catalogue de services</h2>
+<p>L'annuaire du cloud : quels services existent, à quelles adresses, dans quelle région. Aucun client et aucun service ne connaît une adresse « en dur » — tous la lisent ici.</p>
+<ol><li>Services, points d'accès, régions, interfaces</li><li>Du catalogue à la requête</li><li>Le catalogue sur Sunbeam</li><li>Commandes et pannes typiques</li></ol>
+</section>
+
+<!-- 21 -->
+<section class="slide">
+<header><span class="kick">3 · Le catalogue</span><h2>Services, points d'accès, régions, interfaces</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 300">
+<rect x="20" y="10" width="1110" height="280" rx="14" class="zone"/><text x="36" y="36" class="tl">Région « RegionOne »</text><text x="1114" y="36" class="te ts">un ensemble de services déployés ensemble, avec leurs propres adresses</text>
+<g class="tc">
+<rect x="36" y="52" width="250" height="224" rx="12" class="b-red"/><text x="161" y="78" class="tl tr">Service</text><text x="161" y="102" class="ts">nom : nova</text><text x="161" y="120" class="ts tb">type : compute</text><text x="161" y="146" class="ts">le <tspan class="tb">type</tspan> est ce que cherchent</text><text x="161" y="162" class="ts">les clients ; le nom est libre</text>
+<rect x="52" y="184" width="218" height="78" rx="8" class="bx"/><text x="161" y="206" class="ts tb">autres exemples de types</text><text x="161" y="224" class="ts">identity, image, network,</text><text x="161" y="240" class="ts">volumev3, placement,</text><text x="161" y="256" class="ts">orchestration, load-balancer</text>
+<rect x="330" y="52" width="784" height="66" rx="10" class="b-blue"/><text x="722" y="76" class="tb">Point d'accès — interface « public »</text><text x="722" y="98" class="tm" style="font-size:12px">https://cloud.exemple.fr/openstack-nova/v2.1</text>
+<rect x="330" y="130" width="784" height="66" rx="10" class="b-teal"/><text x="722" y="154" class="tb">Point d'accès — interface « internal »</text><text x="722" y="176" class="tm" style="font-size:12px">http://10.10.100.20/openstack-nova/v2.1</text>
+<rect x="330" y="208" width="784" height="66" rx="10" class="b-grey"/><text x="722" y="232" class="tb">Point d'accès — interface « admin »</text><text x="722" y="254" class="tm" style="font-size:12px">http://10.10.100.20/openstack-nova/v2.1</text>
+</g>
+<path d="M286,85 H328" class="ln"/><path d="M286,163 H328" class="ln"/><path d="M286,241 H328" class="ln"/>
+</svg>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:16%">Interface</th><th style="width:34%">Qui l'utilise</th><th>Sur quel réseau</th><th style="width:22%">Chiffrement</th></tr></thead>
+<tbody>
+<tr><td>public</td><td>utilisateurs, outils externes, Horizon côté navigateur</td><td style="color:var(--ink);font-weight:400">réseau public du cloud, adresse ou nom publié</td><td style="color:var(--ink);font-weight:400">TLS attendu</td></tr>
+<tr><td>internal</td><td>les services entre eux</td><td style="color:var(--ink);font-weight:400">réseau interne, non exposé</td><td style="color:var(--ink);font-weight:400">selon la configuration</td></tr>
+<tr><td>admin</td><td>historique ; rarement distingué aujourd'hui</td><td style="color:var(--ink);font-weight:400">souvent identique à l'interface interne</td><td style="color:var(--ink);font-weight:400">selon la configuration</td></tr>
+</tbody></table>
+<div class="note g"><b>Adresses d'exemple.</b> Un point d'accès est l'association d'un service, d'une région, d'une interface et d'une URL ; il peut être désactivé sans être supprimé.</div>
+</div>
+</section>
+
+<!-- 22 -->
+<section class="slide">
+<header><span class="kick">3 · Le catalogue</span><h2>Du catalogue à la requête</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># Extrait de la réponse à une demande de jeton</span>
+"catalog": [
+  {
+    "type": "<span class="k">compute</span>",
+    "name": "nova",
+    "endpoints": [
+      { "interface": "<span class="k">public</span>",
+        "region": "RegionOne",
+        "url": "https://cloud.exemple.fr/openstack-nova/v2.1" },
+      { "interface": "internal",
+        "region": "RegionOne",
+        "url": "http://10.10.100.20/openstack-nova/v2.1" }
+    ]
+  },
+  {
+    "type": "image",
+    "name": "glance",
+    "endpoints": [ … ]
+  }
+]</pre>
+<div class="note g">Le catalogue voyage <b>dans la réponse d'authentification</b>, pas dans le jeton lui-même : le jeton reste court, quel que soit le nombre de services.</div>
+</div>
+<div class="col">
+<p><b>Ce que fait le client, à chaque commande</b></p>
+<div class="fig" style="flex:none">
+<svg viewBox="0 0 560 250">
+<g class="tc">
+<rect x="10" y="6" width="540" height="40" rx="8" class="b-grey"/><text x="280" y="31" class="tb">« openstack server list »</text>
+<rect x="10" y="66" width="540" height="40" rx="8" class="bx"/><text x="280" y="91">① s'authentifie : reçoit jeton + catalogue</text>
+<rect x="10" y="126" width="540" height="52" rx="8" class="b-teal"/><text x="280" y="147" class="tb">② cherche dans le catalogue</text><text x="280" y="166" class="ts">type = compute · interface = public · région = RegionOne</text>
+<rect x="10" y="198" width="540" height="44" rx="8" class="b-red"/><text x="280" y="218" class="tb">③ appelle l'URL trouvée, jeton en en-tête</text><text x="280" y="234" class="tm" style="font-size:10.5px">GET …/openstack-nova/v2.1/servers · X-Auth-Token</text>
+</g>
+<path d="M280,46 V64" class="lr"/><path d="M280,106 V124" class="lr"/><path d="M280,178 V196" class="lr"/>
+</svg>
+</div>
+<ul class="pts sm">
+<li><b>Trois critères de sélection :</b> le type de service, l'interface, la région. Les deux derniers se règlent par <code>OS_INTERFACE</code> et <code>OS_REGION_NAME</code>.</li>
+<li><b>Les services font de même :</b> Nova trouve Neutron, Glance et Cinder dans le catalogue, en demandant l'interface <b>interne</b>.</li>
+<li><b>Une seule adresse à connaître</b> pour utiliser tout le cloud : celle de Keystone.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 23 -->
+<section class="slide">
+<header><span class="kick">3 · Le catalogue</span><h2>Le catalogue sur Sunbeam</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 660 430">
+<g class="tc">
+<rect x="10" y="6" width="200" height="76" rx="10" class="b-red"/><text x="110" y="30" class="tb">charm glance-k8s</text><text x="110" y="50" class="ts">« je suis le service image,</text><text x="110" y="66" class="ts">voici mes trois URL »</text>
+<rect x="450" y="6" width="200" height="76" rx="10" class="b-red"/><text x="550" y="30" class="tb">charm keystone-k8s</text><text x="550" y="50" class="ts">inscrit service et points</text><text x="550" y="66" class="ts">d'accès, crée le compte</text>
+<rect x="230" y="18" width="200" height="52" rx="10" class="b-violet"/><text x="330" y="40" class="tb">relation Juju</text><text x="330" y="58" class="ts">« identity-service »</text>
+<rect x="10" y="130" width="640" height="56" rx="10" class="b-amber"/><text x="330" y="153" class="tb">Catalogue dans Keystone</text><text x="330" y="172" class="ts">une entrée par service, trois points d'accès chacune — sans intervention de l'administrateur</text>
+<rect x="10" y="232" width="310" height="76" rx="10" class="b-teal"/><text x="165" y="254" class="tb">Traefik « public »</text><text x="165" y="274" class="ts">une adresse du réseau public</text><text x="165" y="292" class="ts">TLS si activé</text>
+<rect x="340" y="232" width="310" height="76" rx="10" class="b-teal"/><text x="495" y="254" class="tb">Traefik « interne »</text><text x="495" y="274" class="ts">une adresse du réseau interne</text><text x="495" y="292" class="ts">pour les services</text>
+<rect x="10" y="346" width="640" height="76" rx="10" class="b-grey"/><text x="330" y="368" class="tb">Une adresse, un chemin par service</text><text x="330" y="390" class="tm" style="font-size:10.2px">/openstack-keystone · /openstack-nova · /openstack-glance · /openstack-neutron · /openstack-cinder…</text><text x="330" y="410" class="ts">Traefik aiguille vers le bon ensemble de pods d'après le préfixe</text>
+</g>
+<path d="M210,44 H228" class="lr"/><path d="M430,44 H448" class="lr"/><path d="M550,82 V128" class="lr"/>
+<path d="M165,186 V230" class="ln"/><path d="M495,186 V230" class="ln"/><text x="330" y="214" class="tc ts">les URL publiées pointent vers…</text>
+<path d="M165,308 V344" class="lt"/><path d="M495,308 V344" class="lt"/>
+</svg>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Le catalogue se remplit seul :</b> chaque charm de service déclare ses points d'accès à Keystone par une relation ; l'ajout d'une fonctionnalité Sunbeam ajoute ses entrées.</li>
+<li><b>Adresses de service :</b> prises dans les plages réservées aux API, l'une sur le réseau public, l'autre sur le réseau interne.</li>
+<li><b>Un seul port, des chemins :</b> tous les services partagent l'adresse de Traefik et se distinguent par leur préfixe.</li>
+<li><b>TLS :</b> en activant la fonctionnalité correspondante, les URL publiques passent en <code>https</code> et le catalogue est mis à jour par les charms.</li>
+<li><b>Nom d'hôte :</b> on peut publier un nom plutôt qu'une adresse IP ; le manifeste prévoit ce réglage pour chaque entrée.</li>
+</ul>
+<div class="note"><b>Ne pas corriger le catalogue à la main :</b> une URL modifiée par <code>openstack endpoint set</code> sera réécrite par le charm au prochain événement. Le bon levier est la configuration de Sunbeam.</div>
+<div class="note g">Le nom exact de la relation et des préfixes se lit dans <code>juju status --relations</code> et <code>openstack endpoint list</code>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 24 -->
+<section class="slide">
+<header><span class="kick">3 · Le catalogue</span><h2>Commandes et pannes typiques</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:12.2px"><span class="m"># Le catalogue tel que je le reçois</span>
+<span class="c">openstack catalog list</span>
+<span class="c">openstack catalog show</span> compute
+
+<span class="m"># Les objets sous-jacents (administrateur)</span>
+<span class="c">openstack service list</span>
+<span class="c">openstack endpoint list</span> --service compute
+<span class="c">openstack region list</span>
+
+<span class="m"># Forcer une interface ou une région</span>
+<span class="c">openstack</span> --os-interface internal server list
+<span class="c">openstack</span> --os-region-name RegionOne image list
+
+<span class="m"># Voir quelle URL est réellement appelée</span>
+<span class="c">openstack</span> --debug server list 2&gt;&amp;1 | grep -i "REQ: curl"
+
+<span class="m"># Tester un point d'accès sans client OpenStack</span>
+<span class="c">curl</span> -s https://cloud.exemple.fr/openstack-keystone/v3 | jq .</pre>
+</div>
+<div class="col">
+<table class="tbl tight os wrap">
+<thead><tr><th style="width:38%">Symptôme</th><th>Cause probable</th></tr></thead>
+<tbody>
+<tr><td>« public endpoint for compute service not found »</td><td>service absent du catalogue, mauvaise région, ou interface inexistante</td></tr>
+<tr><td>délai dépassé depuis un poste, alors que tout marche sur le cloud</td><td>le client utilise l'interface interne, ou l'adresse publique n'est pas routée</td></tr>
+<tr><td>erreur de certificat</td><td>autorité inconnue du client ; nom du certificat différent de l'URL du catalogue</td></tr>
+<tr><td>un service n'en trouve pas un autre</td><td>point d'accès interne injoignable depuis le pod ; résolution de noms</td></tr>
+<tr><td>URL en <code>http</code> après activation de TLS</td><td>catalogue pas encore mis à jour : vérifier l'état des charms</td></tr>
+<tr><td>404 sur une URL correcte</td><td>préfixe de chemin oublié ou version d'API absente de l'URL</td></tr>
+</tbody></table>
+<div class="note g"><b>Méthode :</b> lire l'URL dans le catalogue, l'appeler avec <code>curl</code> depuis l'endroit où l'erreur se produit. On sépare ainsi un problème de catalogue d'un problème de réseau.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 25 -->
+<section class="slide dark sec">
+<div class="num">04</div>
+<h2>Les jetons d'authentification</h2>
+<p>La pièce centrale : une preuve datée et scellée de « qui, sur quoi, avec quels rôles », que l'on présente à chaque service au lieu de son mot de passe.</p>
+<ol><li>Jetons et portées</li><li>Obtenir un jeton</li><li>Anatomie d'un jeton Fernet</li><li>Les clés et leur rotation</li><li>Dimensionner la rotation</li><li>La validation par les services</li><li>Opérations longues et jetons de service</li><li>Durée de vie et révocation</li><li>Fernet ou JWS</li><li>Autres façons de s'authentifier</li></ol>
+</section>
+
+<!-- 26 -->
+<section class="slide">
+<header><span class="kick">4 · Les jetons</span><h2>Jetons et portées</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:17%">Type de jeton</th><th style="width:27%">Contient</th><th style="width:27%">Sert à</th><th>S'obtient en demandant</th></tr></thead>
+<tbody>
+<tr><td>Sans portée</td><td>l'identité seule : ni rôles, ni catalogue</td><td style="color:var(--ink);font-weight:400">prouver qui l'on est ; lister ses projets ; obtenir ensuite des jetons à portée sans redonner son mot de passe</td><td style="color:var(--ink);font-weight:400">aucune portée</td></tr>
+<tr><td>Portée projet</td><td>identité, projet, rôles sur ce projet, catalogue</td><td style="color:var(--ink);font-weight:400">le travail courant : instances, volumes, réseaux</td><td style="color:var(--ink);font-weight:400">un projet et son domaine</td></tr>
+<tr><td>Portée domaine</td><td>identité, domaine, rôles sur ce domaine, catalogue</td><td style="color:var(--ink);font-weight:400">gérer utilisateurs, groupes et projets du domaine</td><td style="color:var(--ink);font-weight:400">un domaine</td></tr>
+<tr><td>Portée système</td><td>identité, rôles sur le système, catalogue</td><td style="color:var(--ink);font-weight:400">opérations sur le cloud entier</td><td style="color:var(--ink);font-weight:400">le système (« all »)</td></tr>
+<tr><td>Issu d'une délégation</td><td>seulement ce que la délégation transmet</td><td style="color:var(--ink);font-weight:400">agir au nom d'un autre utilisateur, sur un projet donné</td><td style="color:var(--ink);font-weight:400">une délégation existante</td></tr>
+</tbody></table>
+<div class="cols c3 nf dense">
+<div class="card ca"><h3>Un jeton est un « porteur »</h3>Quiconque le détient peut s'en servir jusqu'à son expiration. Il se protège comme un mot de passe : jamais dans un journal, un ticket ou un dépôt.</div>
+<div class="card cb"><h3>Un jeton ne se modifie pas</h3>Si les rôles changent, le jeton déjà émis garde l'ancienne liste jusqu'à ce que le service le revalide ; un retrait de rôle provoque sa révocation.</div>
+<div class="card ct"><h3>Un jeton est court</h3>Une heure par défaut dans Keystone. Les clients en redemandent un automatiquement à partir des identifiants.</div>
+</div>
+<div class="note g"><b>Changer de projet = changer de jeton.</b> C'est ce que fait Horizon quand on sélectionne un autre projet dans son menu : il échange son jeton contre un jeton de l'autre portée.</div>
+</div>
+</section>
+
+<!-- 27 -->
+<section class="slide">
+<header><span class="kick">4 · Les jetons</span><h2>Obtenir un jeton : la requête et la réponse</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># POST /v3/auth/tokens</span>
+{ "auth": {
+    "<span class="k">identity</span>": {
+      "methods": ["password"],
+      "password": {
+        "user": {
+          "name": "alice",
+          "domain": { "name": "nord" },
+          "password": "••••••••"
+        }
+      }
+    },
+    "<span class="k">scope</span>": {
+      "project": {
+        "name": "web",
+        "domain": { "name": "nord" }
+      }
+    }
+} }</pre>
+<table class="tbl tight">
+<thead><tr><th>Bloc</th><th>Question posée</th></tr></thead>
+<tbody>
+<tr><td><code>identity</code></td><td>qui es-tu, et comment le prouves-tu ?</td></tr>
+<tr><td><code>scope</code></td><td>sur quoi veux-tu agir ?</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Réponse : 201 Created</span>
+<span class="k">X-Subject-Token</span>: gAAAAABl…          <span class="m">← le jeton lui-même</span>
+
+{ "token": {
+    "methods": ["password"],
+    "user": { "id": "3f1c…", "name": "alice",
+              "domain": { "name": "nord" } },
+    "project": { "id": "9a7e…", "name": "web",
+                 "domain": { "name": "nord" } },
+    "roles": [ { "name": "member" }, { "name": "reader" } ],
+    "issued_at":  "2026-10-09T12:00:00Z",
+    "expires_at": "2026-10-09T13:00:00Z",
+    "audit_ids": ["Xc1…"],
+    "catalog": [ … ]
+} }</pre>
+<ul class="pts sm">
+<li><b>Le jeton est dans un en-tête</b>, pas dans le corps. Le corps décrit ce qu'il certifie.</li>
+<li><b><code>roles</code></b> contient déjà les rôles impliqués : <code>member</code> entraîne <code>reader</code>.</li>
+<li><b><code>methods</code></b> garde la trace de la façon dont l'identité a été prouvée.</li>
+<li><b><code>audit_ids</code></b> permet de relier un jeton à celui dont il est issu.</li>
+</ul>
+<div class="note g">Avec le client : <code>openstack token issue</code> fait cette requête ; <code>--debug</code> la montre en entier.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 28 -->
+<section class="slide">
+<header><span class="kick">4 · Les jetons</span><h2>Anatomie d'un jeton Fernet</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 330">
+<text x="20" y="22" class="tl">① Le contenu utile, sérialisé de façon compacte (MessagePack)</text>
+<g class="tc">
+<rect x="20" y="34" width="120" height="56" rx="8" class="b-grey"/><text x="80" y="58" class="tb">version</text><text x="80" y="76" class="ts">type de contenu</text>
+<rect x="150" y="34" width="150" height="56" rx="8" class="b-blue"/><text x="225" y="58" class="tb">utilisateur</text><text x="225" y="76" class="ts">identifiant</text>
+<rect x="310" y="34" width="150" height="56" rx="8" class="b-grey"/><text x="385" y="58" class="tb">méthodes</text><text x="385" y="76" class="ts">password, token…</text>
+<rect x="470" y="34" width="190" height="56" rx="8" class="b-violet"/><text x="565" y="58" class="tb">portée</text><text x="565" y="76" class="ts">projet, domaine ou système</text>
+<rect x="670" y="34" width="150" height="56" rx="8" class="b-amber"/><text x="745" y="58" class="tb">expiration</text><text x="745" y="76" class="ts">date et heure</text>
+<rect x="830" y="34" width="150" height="56" rx="8" class="b-grey"/><text x="905" y="58" class="tb">audit</text><text x="905" y="76" class="ts">identifiants de suivi</text>
+<rect x="990" y="34" width="140" height="56" rx="8" class="bx" stroke-dasharray="5 4"/><text x="1060" y="58" class="tb">selon le cas</text><text x="1060" y="76" class="ts">délégation, fédération</text>
+</g>
+<path d="M575,90 V118" class="lr"/><text x="590" y="110" class="ts tb">chiffré avec la clé primaire</text>
+<text x="20" y="140" class="tl">② Le jeton Fernet</text>
+<g class="tc">
+<rect x="20" y="152" width="110" height="56" rx="8" class="b-dark"/><text x="75" y="176" class="tb tw">version</text><text x="75" y="194" class="tw" style="font-size:11.5px">1 octet</text>
+<rect x="140" y="152" width="170" height="56" rx="8" class="b-dark"/><text x="225" y="176" class="tb tw">horodatage</text><text x="225" y="194" class="tw" style="font-size:11.5px">date de création</text>
+<rect x="320" y="152" width="170" height="56" rx="8" class="b-dark"/><text x="405" y="176" class="tb tw">vecteur d'initialisation</text><text x="405" y="194" class="tw" style="font-size:11.5px">aléatoire</text>
+<rect x="500" y="152" width="390" height="56" rx="8" class="b-red"/><text x="695" y="176" class="tb">contenu chiffré</text><text x="695" y="194" class="ts">AES en mode CBC</text>
+<rect x="900" y="152" width="230" height="56" rx="8" class="b-amber"/><text x="1015" y="176" class="tb">signature</text><text x="1015" y="194" class="ts">HMAC SHA-256 de tout ce qui précède</text>
+</g>
+<path d="M575,208 V236" class="lr"/><text x="590" y="228" class="ts tb">encodé en texte</text>
+<rect x="20" y="240" width="1110" height="38" rx="8" class="b-grey"/><text x="575" y="264" class="tc tm" style="font-size:12px">gAAAAABnBlV8kq3X0y1mQJ4R7fK2hT9wZc5uE…  — moins de 250 octets, quel que soit le nombre de services ou de rôles</text>
+<text x="575" y="304" class="tc ts">Ce que le jeton ne contient <tspan class="tb">pas</tspan> : les rôles et le catalogue. Ils sont recalculés par Keystone à chaque validation,</text><text x="575" y="320" class="tc ts">ce qui explique qu'un jeton Fernet ne puisse être vérifié que par Keystone.</text>
+</svg>
+</div>
+<div class="cols nf">
+<div class="note g"><b>Rien n'est stocké :</b> Keystone ne garde aucune trace des jetons émis. Il lui suffit de la clé pour déchiffrer et vérifier celui qu'on lui présente — d'où l'absence de table de jetons à purger.</div>
+<div class="note"><b>Chiffré, donc opaque :</b> impossible de lire ou de modifier un jeton sans les clés. Qui détient les clés, en revanche, peut <b>fabriquer</b> des jetons pour n'importe qui.</div>
+</div>
+</div>
+</section>
+
+<!-- 29 -->
+<section class="slide">
+<header><span class="kick">4 · Les jetons</span><h2>Les clés Fernet et leur rotation</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 250">
+<rect x="20" y="6" width="350" height="238" rx="12" class="zone"/><text x="195" y="30" class="tc tl">État initial</text>
+<rect x="36" y="44" width="56" height="40" rx="6" class="b-dark"/><text x="64" y="70" class="tc tw tm tb" style="font-size:14px">0</text>
+<rect x="100" y="44" width="254" height="40" rx="6" class="b-grey"/><text x="227" y="62" class="tc tb">en attente</text><text x="227" y="78" class="tc ts">déchiffre ; future primaire</text>
+<rect x="36" y="92" width="56" height="40" rx="6" class="b-dark"/><text x="64" y="118" class="tc tw tm tb" style="font-size:14px">1</text>
+<rect x="100" y="92" width="254" height="40" rx="6" class="b-red"/><text x="227" y="110" class="tc tb">primaire</text><text x="227" y="126" class="tc ts">chiffre et déchiffre</text>
+<rect x="400" y="6" width="350" height="238" rx="12" class="zone"/><text x="575" y="30" class="tc tl">Après une rotation</text>
+<rect x="416" y="44" width="56" height="40" rx="6" class="b-dark"/><text x="444" y="70" class="tc tw tm tb" style="font-size:14px">0</text>
+<rect x="480" y="44" width="254" height="40" rx="6" class="b-grey"/><text x="607" y="62" class="tc tb">en attente</text><text x="607" y="78" class="tc ts">déchiffre ; future primaire</text>
+<rect x="416" y="92" width="56" height="40" rx="6" class="b-dark"/><text x="444" y="118" class="tc tw tm tb" style="font-size:14px">1</text>
+<rect x="480" y="92" width="254" height="40" rx="6" class="b-amber"/><text x="607" y="110" class="tc tb">secondaire</text><text x="607" y="126" class="tc ts">déchiffre seulement</text>
+<rect x="416" y="140" width="56" height="40" rx="6" class="b-dark"/><text x="444" y="166" class="tc tw tm tb" style="font-size:14px">2</text>
+<rect x="480" y="140" width="254" height="40" rx="6" class="b-red"/><text x="607" y="158" class="tc tb">primaire</text><text x="607" y="174" class="tc ts">chiffre et déchiffre</text>
+<rect x="780" y="6" width="350" height="238" rx="12" class="zone"/><text x="955" y="30" class="tc tl">Après une deuxième rotation</text>
+<rect x="796" y="44" width="56" height="40" rx="6" class="b-dark"/><text x="824" y="70" class="tc tw tm tb" style="font-size:14px">0</text>
+<rect x="860" y="44" width="254" height="40" rx="6" class="b-grey"/><text x="987" y="62" class="tc tb">en attente</text><text x="987" y="78" class="tc ts">déchiffre ; future primaire</text>
+<rect x="796" y="92" width="56" height="40" rx="6" class="b-dark"/><text x="824" y="118" class="tc tw tm tb" style="font-size:14px">1</text>
+<rect x="860" y="92" width="254" height="40" rx="6" class="b-amber"/><text x="987" y="110" class="tc tb">secondaire</text><text x="987" y="126" class="tc ts">déchiffre seulement</text>
+<rect x="796" y="140" width="56" height="40" rx="6" class="b-dark"/><text x="824" y="166" class="tc tw tm tb" style="font-size:14px">2</text>
+<rect x="860" y="140" width="254" height="40" rx="6" class="b-amber"/><text x="987" y="158" class="tc tb">secondaire</text><text x="987" y="174" class="tc ts">déchiffre seulement</text>
+<rect x="796" y="188" width="56" height="40" rx="6" class="b-dark"/><text x="824" y="214" class="tc tw tm tb" style="font-size:14px">3</text>
+<rect x="860" y="188" width="254" height="40" rx="6" class="b-red"/><text x="987" y="206" class="tc tb">primaire</text><text x="987" y="222" class="tc ts">chiffre et déchiffre</text>
+<path d="M370,64 C385,64 385,160 398,160" class="lr"/><path d="M750,64 C765,64 765,208 778,208" class="lr"/>
+<text x="195" y="170" class="tc ts">fichiers numérotés du dépôt :</text><text x="195" y="188" class="tc ts">0 est toujours la clé en attente,</text><text x="195" y="206" class="tc ts">le plus grand numéro la primaire</text>
+<text x="575" y="214" class="tc ts">l'ancienne clé 0 devient primaire (2) ;</text><text x="575" y="232" class="tc ts">une nouvelle clé 0 est créée</text>
+</svg></div>
+<div class="cols nf">
+<table class="tbl tight">
+<thead><tr><th>Clé</th><th>Numéro</th><th>Chiffre ?</th><th>Déchiffre ?</th><th>Rôle</th></tr></thead>
+<tbody>
+<tr><td>primaire</td><td>le plus élevé</td><td>oui</td><td>oui</td><td>émet tous les nouveaux jetons</td></tr>
+<tr><td>secondaire</td><td>entre les deux</td><td>non</td><td>oui</td><td>ancienne primaire : valide les jetons encore en circulation</td></tr>
+<tr><td>en attente</td><td>0</td><td>non</td><td>oui</td><td>future primaire, déjà distribuée partout</td></tr>
+</tbody></table>
+<div class="col">
+<ul class="pts sm">
+<li><b>Pourquoi une clé en attente :</b> quand elle devient primaire, tous les serveurs la connaissent déjà et savent valider les jetons qu'elle émet.</li>
+<li><b>Dépôt de clés :</b> un répertoire de fichiers, hors base de données, qui doit être <b>identique</b> sur tous les serveurs Keystone.</li>
+</ul>
+<div class="note">Rotation et distribution vont ensemble : une rotation non distribuée, et une partie des serveurs refuse des jetons valides.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 30 -->
+<section class="slide">
+<header><span class="kick">4 · Les jetons</span><h2>Dimensionner la rotation — et ce qu'en fait Sunbeam</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>La règle de calcul</b></p>
+<div class="fig" style="flex:none">
+<svg viewBox="0 0 560 150">
+<rect x="10" y="8" width="540" height="62" rx="10" class="b-dark"/><text x="280" y="32" class="tc tw tb">nombre de clés actives =</text><text x="280" y="54" class="tc tw tm" style="font-size:12.5px">(durée de vie du jeton ÷ fréquence de rotation) + 2</text>
+<text x="280" y="96" class="tc ts">Les deux clés supplémentaires : celle en attente, et une de marge.</text>
+<text x="280" y="116" class="tc ts">Si des jetons expirés restent acceptés pour les opérations longues,</text><text x="280" y="134" class="tc ts">ajouter cette fenêtre à la durée de vie dans le calcul.</text>
+</svg>
+</div>
+<table class="tbl tight">
+<thead><tr><th>Durée de vie</th><th>Fenêtre</th><th>Rotation</th><th>Clés actives</th></tr></thead>
+<tbody>
+<tr><td>1 h</td><td>—</td><td>toutes les heures</td><td>1 + 2 = <b>3</b></td></tr>
+<tr><td>24 h</td><td>—</td><td>toutes les 6 h</td><td>4 + 2 = <b>6</b></td></tr>
+<tr><td>1 h</td><td>48 h</td><td>toutes les 12 h</td><td>5 + 2 = <b>7</b></td></tr>
+</tbody></table>
+<div class="note"><b>Trop peu de clés :</b> une clé encore nécessaire est supprimée, et des jetons non expirés deviennent invérifiables — erreurs 401 sans raison apparente.</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Option de keystone.conf</th><th>Rôle</th></tr></thead>
+<tbody>
+<tr><td><code>[token] provider</code></td><td>format des jetons : <code>fernet</code> par défaut</td></tr>
+<tr><td><code>[token] expiration</code></td><td>durée de vie, en secondes ; 3600 par défaut en amont</td></tr>
+<tr><td><code>[token] allow_expired_window</code></td><td>durée pendant laquelle un jeton expiré reste récupérable pour un service</td></tr>
+<tr><td><code>[fernet_tokens] key_repository</code></td><td>répertoire des clés</td></tr>
+<tr><td><code>[fernet_tokens] max_active_keys</code></td><td>nombre de clés conservées</td></tr>
+</tbody></table>
+<p><b>Sur Sunbeam</b></p>
+<ul class="pts sm">
+<li><b>Vous ne lancez pas</b> <code>keystone-manage fernet_rotate</code> : le charm crée le dépôt, fait tourner les clés et les distribue à tous les pods.</li>
+<li><b>Les clés sont partagées par Juju</b>, pas par un volume commun : un nouveau pod les reçoit avant de servir.</li>
+<li><b>Les valeurs effectives</b> se lisent dans le pod ; les réglages exposés, dans <code>juju config keystone</code>.</li>
+</ul>
+<pre style="font-size:11.8px"><span class="c">sudo k8s kubectl</span> -n openstack exec keystone-0 \
+  -c keystone -- grep -A4 '^\[token\]' \
+  /etc/keystone/keystone.conf</pre>
+</div>
+</div></div>
+</section>
+
+<!-- 31 -->
+<section class="slide">
+<header><span class="kick">4 · Les jetons</span><h2>La validation par les services</h2></header>
+<div class="body">
+<div class="fig"><svg viewBox="0 0 1150 335">
+<path d="M130,46 V331" class="nl" stroke-dasharray="4 5"/>
+<path d="M430,46 V331" class="nl" stroke-dasharray="4 5"/>
+<path d="M730,46 V331" class="nl" stroke-dasharray="4 5"/>
+<path d="M1030,46 V331" class="nl" stroke-dasharray="4 5"/>
+<rect x="10.0" y="4" width="240" height="40" rx="8" class="b-grey"/><text x="130" y="29" class="tc tb">Client</text>
+<rect x="310.0" y="4" width="240" height="40" rx="8" class="b-violet"/><text x="430" y="29" class="tc tb">Intergiciel devant Nova</text>
+<rect x="610.0" y="4" width="240" height="40" rx="8" class="b-red"/><text x="730" y="29" class="tc tb">Keystone</text>
+<rect x="910.0" y="4" width="240" height="40" rx="8" class="b-blue"/><text x="1030" y="29" class="tc tb">Code de Nova</text>
+<path d="M140,78 H427" class="lr"/>
+<text x="280.0" y="72" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">requête + X-Auth-Token</text>
+<circle cx="130" cy="78" r="10" class="f-red"/><text x="130" y="82" class="tc tw tb" style="font-size:11px">1</text>
+<rect x="230.0" y="92" width="400" height="24" rx="6" class="b-grey"/><text x="442.0" y="109" class="tc" style="font-size:12px">jeton déjà validé récemment ? sinon…</text>
+<circle cx="244.0" cy="107" r="10" class="f-red"/><text x="244.0" y="111" class="tc tw tb" style="font-size:11px">2</text>
+<path d="M440,136 H727" class="lr"/>
+<text x="580.0" y="130" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">GET /v3/auth/tokens, jeton à vérifier</text>
+<circle cx="430" cy="136" r="10" class="f-red"/><text x="430" y="140" class="tc tw tb" style="font-size:11px">3</text>
+<rect x="530.0" y="150" width="400" height="24" rx="6" class="b-grey"/><text x="742.0" y="167" class="tc" style="font-size:12px">déchiffre, vérifie expiration et révocation, calcule les rôles</text>
+<circle cx="544.0" cy="165" r="10" class="f-red"/><text x="544.0" y="169" class="tc tw tb" style="font-size:11px">4</text>
+<path d="M720,194 H433" class="ln ld"/>
+<text x="580.0" y="188" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">identité, portée, rôles</text>
+<circle cx="730" cy="194" r="10" class="f-red"/><text x="730" y="198" class="tc tw tb" style="font-size:11px">5</text>
+<rect x="230.0" y="208" width="400" height="24" rx="6" class="b-grey"/><text x="442.0" y="225" class="tc" style="font-size:12px">met en cache ; ajoute X-User-Id, X-Project-Id, X-Roles</text>
+<circle cx="244.0" cy="223" r="10" class="f-red"/><text x="244.0" y="227" class="tc tw tb" style="font-size:11px">6</text>
+<path d="M440,252 H1027" class="lr"/>
+<text x="730.0" y="246" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">transmet la requête enrichie — ou répond 401 si le jeton est invalide</text>
+<circle cx="430" cy="252" r="10" class="f-red"/><text x="430" y="256" class="tc tw tb" style="font-size:11px">7</text>
+<rect x="744" y="266" width="400" height="24" rx="6" class="b-grey"/><text x="956.0" y="283" class="tc" style="font-size:12px">applique sa politique, exécute</text>
+<circle cx="758" cy="281" r="10" class="f-red"/><text x="758" y="285" class="tc tw tb" style="font-size:11px">8</text>
+<path d="M1020,310 H133" class="ln ld"/>
+<text x="580.0" y="304" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">réponse</text>
+<circle cx="1030" cy="310" r="10" class="f-red"/><text x="1030" y="314" class="tc tw tb" style="font-size:11px">9</text>
+</svg></div>
+<div class="cols nf">
+<div class="col">
+<ul class="pts sm">
+<li><b>Chaque service embarque le même composant</b> — <code>keystonemiddleware</code> — placé devant son API. C'est lui qui parle à Keystone ; le code du service ne voit que des en-têtes.</li>
+<li><b>Le service a son propre compte</b> dans Keystone : il s'authentifie pour avoir le droit de valider les jetons des autres.</li>
+</ul>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Cache :</b> le résultat d'une validation est gardé quelques minutes. C'est aussi le délai pendant lequel un jeton révoqué peut encore passer.</li>
+<li><b>Section à connaître</b> dans la configuration de tout service : <code>[keystone_authtoken]</code> — adresse de Keystone, compte de service, cache.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 32 -->
+<section class="slide">
+<header><span class="kick">4 · Les jetons</span><h2>Opérations longues et jetons de service</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 400">
+<g class="tc">
+<rect x="10" y="6" width="150" height="50" rx="9" class="b-grey"/><text x="85" y="36" class="tb">utilisateur</text>
+<rect x="205" y="6" width="150" height="50" rx="9" class="b-red"/><text x="280" y="36" class="tb">Nova</text>
+<rect x="400" y="6" width="150" height="50" rx="9" class="b-red"/><text x="475" y="36" class="tb">Cinder</text>
+</g>
+<path d="M85,56 V390 M280,56 V390 M475,56 V390" class="nl" stroke-dasharray="4 5"/>
+<path d="M85,96 H277" class="lr"/><text x="182" y="88" class="tc ts" style="paint-order:stroke;stroke:#fff;stroke-width:5px">« migre » + jeton utilisateur</text>
+<rect x="190" y="116" width="180" height="64" rx="8" class="b-amber"/><text x="280" y="138" class="tc tb">opération longue</text><text x="280" y="156" class="tc ts">copie de disques, attente…</text><text x="280" y="172" class="tc ts tb">le jeton utilisateur expire</text>
+<path d="M280,220 H472" class="lr"/><text x="378" y="212" class="tc ts" style="paint-order:stroke;stroke:#fff;stroke-width:5px">« détache le volume »</text><text x="378" y="238" class="tc ts" style="paint-order:stroke;stroke:#fff;stroke-width:5px">jeton utilisateur <tspan class="tb">expiré</tspan></text><text x="378" y="254" class="tc ts" style="paint-order:stroke;stroke:#fff;stroke-width:5px">+ jeton de service valide</text>
+<rect x="375" y="272" width="180" height="64" rx="8" class="b-green"/><text x="465" y="294" class="tc tb">accepté</text><text x="465" y="312" class="tc ts">le rôle « service » couvre</text><text x="465" y="328" class="tc ts">l'expiration du premier</text>
+<path d="M472,360 H283" class="ln ld"/><text x="378" y="352" class="tc ts" style="paint-order:stroke;stroke:#fff;stroke-width:5px">fait</text>
+</svg>
+</div>
+<div class="col">
+<p><b>Le problème</b></p>
+<ul class="pts sm">
+<li>Un jeton dure une heure ; une migration à chaud ou la création d'une grosse image peut durer plus.</li>
+<li>En cours de route, Nova doit encore appeler Cinder, Neutron ou Glance <b>au nom de l'utilisateur</b>.</li>
+</ul>
+<p><b>La solution : deux jetons dans la requête</b></p>
+<ul class="pts sm">
+<li><b>Le jeton de l'utilisateur</b>, dans <code>X-Auth-Token</code> : il dit pour qui l'on agit.</li>
+<li><b>Le jeton du service appelant</b>, dans <code>X-Service-Token</code> : il prouve que la requête vient bien d'un service du cloud.</li>
+<li>Si le second est valide et porte le rôle <code>service</code>, le service appelé accepte le premier <b>même expiré</b>, dans la limite de <code>allow_expired_window</code>.</li>
+</ul>
+<div class="note g"><b>C'est pour cela que le rôle <code>service</code> existe</b>, à part de la chaîne des autres : il ne donne aucun droit sur les ressources, seulement cette confiance entre services.</div>
+<div class="note">Symptôme d'une mauvaise configuration : des opérations longues qui échouent en 401 au bout d'une heure pile.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 33 -->
+<section class="slide">
+<header><span class="kick">4 · Les jetons</span><h2>Durée de vie et révocation</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Ce qui invalide un jeton avant son expiration</b></p>
+<table class="tbl tight os">
+<thead><tr><th style="width:44%">Événement</th><th>Jetons touchés</th></tr></thead>
+<tbody>
+<tr><td>révocation explicite</td><td>ce jeton, et ceux qui en sont issus</td></tr>
+<tr><td>changement de mot de passe</td><td>tous ceux de l'utilisateur</td></tr>
+<tr><td>utilisateur désactivé ou supprimé</td><td>tous les siens</td></tr>
+<tr><td>rôle retiré</td><td>ceux qui portaient ce rôle sur cette cible</td></tr>
+<tr><td>projet ou domaine désactivé</td><td>tous ceux de cette portée</td></tr>
+<tr><td>suppression des clés Fernet</td><td><b>tous</b> les jetons du cloud</td></tr>
+</tbody></table>
+<pre style="font-size:12.2px"><span class="c">openstack token revoke</span> gAAAAABn…</pre>
+<div class="note g"><b>Mécanisme :</b> Keystone n'ayant pas de liste des jetons, il enregistre des <b>événements de révocation</b> — « tout ce qui concerne cet utilisateur avant telle heure » — consultés à chaque validation.</div>
+</div>
+<div class="col">
+<p><b>Régler la durée de vie</b></p>
+<table class="tbl tight">
+<thead><tr><th>Durée</th><th>Avantage</th><th>Inconvénient</th></tr></thead>
+<tbody>
+<tr><td>courte : 1 h</td><td>un jeton volé sert peu de temps</td><td>plus d'authentifications ; dépend des jetons de service</td></tr>
+<tr><td>longue : 12 à 24 h</td><td>confort des sessions Horizon et des scripts</td><td>fenêtre d'abus plus grande ; plus de clés à garder</td></tr>
+</tbody></table>
+<p><b>Bonnes pratiques</b></p>
+<ul class="pts sm">
+<li><b>Garder la durée courte</b> et s'appuyer sur les identifiants d'application pour l'automatisation.</li>
+<li><b>Ne jamais copier un jeton</b> dans un script : y mettre de quoi en obtenir un.</li>
+<li><b>Délai de prise d'effet :</b> une révocation n'est vue par un service qu'à l'expiration de son cache de validation.</li>
+<li><b>Fuite des clés suspectée :</b> remplacer tout le dépôt de clés — cela déconnecte tout le monde, c'est le but.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 34 -->
+<section class="slide">
+<header><span class="kick">4 · Les jetons</span><h2>Fernet ou JWS : deux fournisseurs de jetons</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:22%"></th><th style="width:38%">Fernet — le défaut</th><th>JWS</th></tr></thead>
+<tbody>
+<tr><td>Apparu en</td><td>Kilo</td><td style="color:var(--ink);font-weight:400">Stein</td></tr>
+<tr><td>Principe</td><td>contenu <b>chiffré</b> et signé avec une clé symétrique</td><td style="color:var(--ink);font-weight:400">contenu <b>signé</b>, non chiffré, avec une paire de clés asymétriques</td></tr>
+<tr><td>Algorithmes</td><td>AES pour le chiffrement, HMAC SHA-256 pour l'intégrité</td><td style="color:var(--ink);font-weight:400">ES256 uniquement</td></tr>
+<tr><td>Lisible par un tiers</td><td>non : opaque</td><td style="color:var(--ink);font-weight:400">oui : le contenu se décode sans clé</td></tr>
+<tr><td>Stockage côté serveur</td><td>aucun</td><td style="color:var(--ink);font-weight:400">aucun</td></tr>
+<tr><td>Clés à protéger</td><td>le dépôt entier : qui le lit peut émettre des jetons</td><td style="color:var(--ink);font-weight:400">la clé privée ; les clés publiques peuvent circuler</td></tr>
+<tr><td>Validation</td><td>toujours auprès de Keystone</td><td style="color:var(--ink);font-weight:400">recommandée auprès de Keystone : le format du contenu n'est pas un contrat</td></tr>
+<tr><td>Rotation</td><td>primaire, secondaires, en attente</td><td style="color:var(--ink);font-weight:400">ajout et retrait de paires de clés</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Dans la pratique :</b> Fernet est le choix de presque tous les déploiements, et celui de Sunbeam. JWS intéresse les architectures où distribuer une clé secrète à tous les sites pose problème.</div>
+<div class="note b"><b>Pour mémoire :</b> les anciens formats — jetons UUID stockés en base, jetons PKI de plusieurs kilo-octets — ont disparu. Leurs défauts expliquent la conception de Fernet : rien à stocker, taille fixe.</div>
+</div>
+</div>
+</section>
+
+<!-- 35 -->
+<section class="slide">
+<header><span class="kick">4 · Les jetons</span><h2>Autres façons de s'authentifier</h2></header>
+<div class="body">
+<table class="tbl tight os">
+<thead><tr><th style="width:19%">Méthode</th><th style="width:36%">Principe</th><th style="width:22%">Usage</th><th>À savoir</th></tr></thead>
+<tbody>
+<tr><td>Mot de passe</td><td>nom, domaine, mot de passe</td><td style="color:var(--ink);font-weight:400">humains, base locale ou LDAP</td><td style="color:var(--ink);font-weight:400">à ne jamais mettre dans un script</td></tr>
+<tr><td>Jeton</td><td>échanger un jeton contre un autre, d'une autre portée</td><td style="color:var(--ink);font-weight:400">changement de projet</td><td style="color:var(--ink);font-weight:400">le nouveau n'expire pas plus tard que l'ancien</td></tr>
+<tr><td>Identifiant d'application</td><td>un secret créé par l'utilisateur, limité à <b>un projet</b> et à un sous-ensemble de ses rôles</td><td style="color:var(--ink);font-weight:400">scripts, CI, Terraform, applications</td><td style="color:var(--ink);font-weight:400">révocable sans toucher au mot de passe ; meurt avec l'utilisateur</td></tr>
+<tr><td>Règles d'accès</td><td>restreint un identifiant d'application à certains appels d'API</td><td style="color:var(--ink);font-weight:400">moindre privilège</td><td style="color:var(--ink);font-weight:400">liste de couples méthode + chemin</td></tr>
+<tr><td>Délégation</td><td>un utilisateur confie certains de ses rôles sur un projet à un autre</td><td style="color:var(--ink);font-weight:400">Heat agissant plus tard au nom de l'utilisateur</td><td style="color:var(--ink);font-weight:400">avec ou sans usurpation d'identité</td></tr>
+<tr><td>Second facteur</td><td>code à usage unique (TOTP) exigé en plus du mot de passe</td><td style="color:var(--ink);font-weight:400">comptes sensibles</td><td style="color:var(--ink);font-weight:400">règles définies par utilisateur</td></tr>
+<tr><td>Externe, fédérée</td><td>le serveur web ou un fournisseur d'identité atteste l'identité</td><td style="color:var(--ink);font-weight:400">connexion unique d'entreprise</td><td style="color:var(--ink);font-weight:400">voir la partie 5</td></tr>
+</tbody></table>
+<div class="cols nf">
+<pre style="font-size:12px"><span class="m"># Créer un identifiant d'application, en lecture seule, 90 jours</span>
+<span class="c">openstack application credential create</span> ci-lecture \
+  --role reader --expiration 2027-01-07T00:00:00
+<span class="m"># → noter « id » et « secret » : le secret n'est montré qu'une fois</span></pre>
+<pre style="font-size:12px"><span class="m"># S'en servir</span>
+<span class="c">export</span> OS_AUTH_TYPE=v3applicationcredential
+<span class="c">export</span> OS_APPLICATION_CREDENTIAL_ID=&lt;id&gt;
+<span class="c">export</span> OS_APPLICATION_CREDENTIAL_SECRET=&lt;secret&gt;
+<span class="c">openstack server list</span></pre>
+</div>
+</div>
+</section>
+
+<!-- 36 -->
+<section class="slide dark sec">
+<div class="num">05</div>
+<h2>Les sources d'identité</h2>
+<p>D'où viennent les utilisateurs ? De la base de Keystone, de l'annuaire de l'entreprise, ou d'un fournisseur d'identité qui les authentifie à sa place.</p>
+<ol><li>Trois familles de sources</li><li>La base locale et sa politique de sécurité</li><li>LDAP : un annuaire par domaine</li><li>LDAP sur Sunbeam</li><li>La fédération : principe</li><li>Une connexion fédérée pas à pas</li><li>La fédération sur Sunbeam</li><li>Les règles de correspondance</li><li>Comparatif</li></ol>
+</section>
+
+<!-- 37 -->
+<section class="slide">
+<header><span class="kick">5 · Les sources d'identité</span><h2>Trois familles de sources</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 320">
+<g class="tc">
+<rect x="20" y="10" width="350" height="300" rx="12" class="zone"/><text x="195" y="36" class="tl">① Base locale (SQL)</text>
+<rect x="36" y="52" width="318" height="56" rx="8" class="b-grey"/><text x="195" y="76" class="tb">utilisateur</text><text x="195" y="94" class="ts">nom, domaine, mot de passe</text>
+<rect x="36" y="140" width="318" height="56" rx="8" class="b-red"/><text x="195" y="164" class="tb">Keystone</text><text x="195" y="182" class="ts">compare à l'empreinte stockée</text>
+<rect x="36" y="228" width="318" height="64" rx="8" class="b-amber"/><text x="195" y="252" class="tb">base MySQL de Keystone</text><text x="195" y="270" class="ts">comptes, empreintes de mots de passe,</text><text x="195" y="284" class="ts">groupes</text>
+
+<rect x="400" y="10" width="350" height="300" rx="12" class="zone"/><text x="575" y="36" class="tl">② Annuaire LDAP</text>
+<rect x="416" y="52" width="318" height="56" rx="8" class="b-grey"/><text x="575" y="76" class="tb">utilisateur</text><text x="575" y="94" class="ts">nom, domaine, mot de passe</text>
+<rect x="416" y="140" width="318" height="56" rx="8" class="b-red"/><text x="575" y="164" class="tb">Keystone</text><text x="575" y="182" class="ts">tente une connexion à l'annuaire</text>
+<rect x="416" y="228" width="318" height="64" rx="8" class="b-blue"/><text x="575" y="252" class="tb">annuaire de l'entreprise</text><text x="575" y="270" class="ts">Active Directory, OpenLDAP…</text><text x="575" y="284" class="ts">en lecture seule</text>
+
+<rect x="780" y="10" width="350" height="300" rx="12" class="zone"/><text x="955" y="36" class="tl">③ Fédération</text>
+<rect x="796" y="52" width="318" height="56" rx="8" class="b-grey"/><text x="955" y="76" class="tb">utilisateur</text><text x="955" y="94" class="ts">s'authentifie <tspan class="tb">ailleurs</tspan></text>
+<rect x="796" y="140" width="150" height="56" rx="8" class="b-violet"/><text x="871" y="164" class="tb">fournisseur</text><text x="871" y="182" class="ts">d'identité</text>
+<rect x="964" y="140" width="150" height="56" rx="8" class="b-red"/><text x="1039" y="164" class="tb">Keystone</text><text x="1039" y="182" class="ts">reçoit une attestation</text>
+<rect x="796" y="228" width="318" height="64" rx="8" class="b-violet"/><text x="955" y="252" class="tb">OpenID Connect ou SAML</text><text x="955" y="270" class="ts">Keystone ne voit jamais</text><text x="955" y="284" class="ts">le mot de passe</text>
+</g>
+<path d="M195,108 V138" class="lr"/><path d="M195,196 V226" class="la"/>
+<path d="M575,108 V138" class="lr"/><path d="M575,196 V226" class="lb"/>
+<path d="M871,108 V138" class="lr"/><path d="M946,168 H962" class="lr"/><path d="M871,196 V226" class="nl"/>
+</svg>
+</div>
+<div class="cols nf">
+<div class="note g"><b>Point commun :</b> seule l'<b>identité</b> change de source. Projets, rôles et attributions restent toujours dans la base de Keystone — l'annuaire ne sait rien d'OpenStack.</div>
+<div class="note b"><b>Elles se combinent, par domaine :</b> un domaine local pour les services et le secours, un domaine LDAP pour les employés, un domaine fédéré pour les partenaires.</div>
+</div>
+</div>
+</section>
+
+<!-- 38 -->
+<section class="slide">
+<header><span class="kick">5 · Les sources d'identité</span><h2>La base locale et sa politique de sécurité</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Comment sont gardés les mots de passe</b></p>
+<ul class="pts sm">
+<li>Jamais en clair : une <b>empreinte</b> calculée par un algorithme volontairement lent — bcrypt par défaut — avec un sel propre à chaque compte.</li>
+<li>L'historique des empreintes est conservé, pour interdire la réutilisation.</li>
+</ul>
+<p><b>Ce que la base locale sait faire</b></p>
+<ul class="pts sm">
+<li>Créer, modifier, désactiver des comptes et des groupes par l'API.</li>
+<li>Laisser l'utilisateur changer lui-même son mot de passe.</li>
+<li>Appliquer une politique de sécurité : verrouillage, expiration, complexité.</li>
+<li>Exiger un second facteur, compte par compte.</li>
+</ul>
+<div class="note"><b>Ces règles ne valent que pour la base locale.</b> Pour LDAP ou la fédération, c'est la source externe qui applique sa propre politique.</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Option de <code>[security_compliance]</code></th><th>Effet</th></tr></thead>
+<tbody>
+<tr><td><code>lockout_failure_attempts</code></td><td>nombre d'échecs avant verrouillage</td></tr>
+<tr><td><code>lockout_duration</code></td><td>durée du verrouillage</td></tr>
+<tr><td><code>password_expires_days</code></td><td>durée de validité d'un mot de passe</td></tr>
+<tr><td><code>unique_last_password_count</code></td><td>nombre d'anciens mots de passe interdits</td></tr>
+<tr><td><code>minimum_password_age</code></td><td>délai minimal entre deux changements</td></tr>
+<tr><td><code>password_regex</code></td><td>règle de complexité</td></tr>
+<tr><td><code>disable_user_account_days_inactive</code></td><td>désactivation après inactivité</td></tr>
+<tr><td><code>change_password_upon_first_use</code></td><td>changement imposé à la première connexion</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Exempter un compte :</b> des options par utilisateur lèvent telle ou telle règle — indispensable pour les comptes de service, qui ne doivent ni expirer ni se verrouiller.</li>
+<li><b>Sur Sunbeam :</b> ces options ne sont réglables que si le charm les expose ; à vérifier dans <code>juju config keystone</code>.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 39 -->
+<section class="slide">
+<header><span class="kick">5 · Les sources d'identité</span><h2>LDAP : un annuaire par domaine</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 660 430">
+<rect x="10" y="8" width="640" height="232" rx="12" class="zone"/><text x="26" y="32" class="tl">Keystone</text>
+<g class="tc">
+<rect x="26" y="46" width="290" height="84" rx="10" class="b-grey"/><text x="171" y="70" class="tb">domaines locaux</text><text x="171" y="90" class="ts">administration, services, démonstration</text><text x="171" y="110" class="ts tb">pilote d'identité : sql</text>
+<rect x="344" y="46" width="290" height="84" rx="10" class="b-blue"/><text x="489" y="70" class="tb">domaine « entreprise »</text><text x="489" y="90" class="ts">configuration propre au domaine</text><text x="489" y="110" class="ts tb">pilote d'identité : ldap</text>
+<rect x="26" y="146" width="608" height="80" rx="10" class="b-violet"/><text x="330" y="170" class="tb">Commun à tous les domaines, toujours en SQL</text><text x="330" y="190" class="ts">projets · rôles · attributions de rôles · correspondance des identifiants</text><text x="330" y="210" class="ts">« le groupe LDAP cn=dev détient member sur le projet web »</text>
+<rect x="26" y="286" width="290" height="70" rx="10" class="b-amber"/><text x="171" y="310" class="tb">MySQL</text><text x="171" y="330" class="ts">comptes locaux et tout le reste</text>
+<rect x="344" y="286" width="290" height="70" rx="10" class="b-blue"/><text x="489" y="310" class="tb">annuaire LDAP</text><text x="489" y="330" class="ts">utilisateurs, groupes, mots de passe</text>
+</g>
+<path d="M171,130 V144" class="nl"/><path d="M489,130 V144" class="nl"/>
+<path d="M171,226 V284" class="la"/><path d="M330,226 V262 H200 V284" class="la" style="fill:none"/>
+<path d="M634,100 H643 V320 H637" class="lb ld" style="fill:none"/><text x="489" y="266" class="tc ts fb tb">recherches et connexion, à chaque authentification</text>
+<text x="330" y="388" class="tc ts">Keystone lit l'annuaire à chaque authentification et à chaque liste d'utilisateurs :</text><text x="330" y="406" class="tc ts">il n'en fait pas de copie, et n'y écrit rien.</text>
+</svg>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Une configuration par domaine :</b> chaque domaine peut pointer vers un annuaire différent, ou vers une branche différente du même.</li>
+<li><b>Authentification :</b> Keystone cherche l'entrée de l'utilisateur, puis tente de s'y connecter avec le mot de passe fourni. C'est l'annuaire qui dit oui ou non.</li>
+<li><b>Lecture seule :</b> on ne crée ni ne modifie de compte LDAP par l'API d'OpenStack.</li>
+<li><b>Identifiants :</b> Keystone attribue à chaque entrée LDAP un identifiant stable, gardé dans une table de correspondance.</li>
+<li><b>Groupes :</b> ceux de l'annuaire sont visibles ; on leur attribue des rôles comme à des groupes locaux.</li>
+</ul>
+<table class="tbl tight">
+<thead><tr><th>Réglage LDAP</th><th>Rôle</th></tr></thead>
+<tbody>
+<tr><td><code>url</code>, <code>user</code>, <code>password</code></td><td>serveur et compte de recherche</td></tr>
+<tr><td><code>suffix</code></td><td>racine de l'annuaire</td></tr>
+<tr><td><code>user_tree_dn</code>, <code>user_filter</code></td><td>où et quels utilisateurs</td></tr>
+<tr><td><code>user_name_attribute</code></td><td>attribut servant de nom de connexion</td></tr>
+<tr><td><code>group_tree_dn</code></td><td>où chercher les groupes</td></tr>
+</tbody></table>
+</div>
+</div></div>
+</section>
+
+<!-- 40 -->
+<section class="slide">
+<header><span class="kick">5 · Les sources d'identité</span><h2>LDAP sur Sunbeam</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Prérequis :</b> l'annuaire joignable depuis les nœuds de contrôle ; un compte de recherche en lecture ; le certificat de l'autorité si la liaison est en TLS.</p>
+<pre style="font-size:12px"><span class="m"># entreprise.yaml — les quatre clés obligatoires</span>
+<span class="k">url</span>: ldaps://ldap.exemple.fr:636
+<span class="k">user</span>: cn=keystone,ou=services,dc=exemple,dc=fr
+<span class="k">password</span>: "••••••••"
+<span class="k">suffix</span>: dc=exemple,dc=fr
+<span class="m"># puis, selon l'annuaire :</span>
+<span class="k">user_tree_dn</span>: ou=personnes,dc=exemple,dc=fr
+<span class="k">user_objectclass</span>: inetOrgPerson
+<span class="k">user_id_attribute</span>: uid
+<span class="k">user_name_attribute</span>: uid
+<span class="k">group_tree_dn</span>: ou=groupes,dc=exemple,dc=fr
+<span class="k">group_objectclass</span>: groupOfNames</pre>
+<div class="note"><b>Le compte de recherche</b> n'a besoin que de lire utilisateurs et groupes. Son mot de passe est dans ce fichier : le traiter comme un secret et le supprimer après usage.</div>
+</div>
+<div class="col">
+<pre style="font-size:12px"><span class="m"># 1 · Activer la fonctionnalité, une fois</span>
+<span class="c">sunbeam enable</span> ldap
+
+<span class="m"># 2 · Raccorder un domaine à l'annuaire</span>
+<span class="c">sunbeam ldap add-domain</span> \
+  --domain-config-file ./entreprise.yaml \
+  --ca-cert-file ./ca-entreprise.pem entreprise
+
+<span class="m"># 3 · Vérifier</span>
+<span class="c">sunbeam ldap list-domains</span>
+<span class="c">openstack user list</span> --domain entreprise
+<span class="c">openstack group list</span> --domain entreprise
+
+<span class="m"># 4 · Donner des droits — aux groupes de l'annuaire</span>
+<span class="c">openstack role add</span> --group dev --group-domain entreprise \
+  --project web --project-domain nord member
+
+<span class="m"># Modifier, retirer</span>
+<span class="c">sunbeam ldap update-domain</span> \
+  --domain-config-file ./entreprise.yaml entreprise
+<span class="c">sunbeam ldap remove-domain</span> entreprise</pre>
+<div class="note g"><b>Retirer</b> ne supprime que la liaison avec l'annuaire : le domaine, ses projets et ses attributions restent. Pour tout enlever, <code>openstack domain delete</code>.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 41 -->
+<section class="slide">
+<header><span class="kick">5 · Les sources d'identité</span><h2>La fédération : principe</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 270">
+<g class="tc">
+<rect x="20" y="20" width="290" height="230" rx="12" class="b-violet"/><text x="165" y="48" class="tl">Fournisseur d'identité</text>
+<rect x="36" y="64" width="258" height="50" rx="8" class="bx"/><text x="165" y="84" class="tb">authentifie l'utilisateur</text><text x="165" y="102" class="ts">mot de passe, second facteur, carte…</text>
+<rect x="36" y="124" width="258" height="50" rx="8" class="bx"/><text x="165" y="144" class="tb">émet une attestation signée</text><text x="165" y="162" class="ts">identifiant, courriel, groupes</text>
+<text x="165" y="204" class="ts">Entra ID, Okta, Google,</text><text x="165" y="222" class="ts">Canonical Identity Platform, Keycloak…</text>
+
+<rect x="430" y="20" width="700" height="230" rx="12" class="zone"/><text x="446" y="48" class="tl" style="text-anchor:start">Keystone — « fournisseur de service »</text>
+<rect x="446" y="64" width="210" height="110" rx="8" class="b-grey"/><text x="551" y="88" class="tb">module Apache</text><text x="551" y="108" class="ts">OpenID Connect ou SAML :</text><text x="551" y="124" class="ts">vérifie l'attestation,</text><text x="551" y="140" class="ts">en extrait des attributs</text><text x="551" y="160" class="ts tb">REMOTE_USER, groupes…</text>
+<rect x="676" y="64" width="210" height="110" rx="8" class="b-red"/><text x="781" y="88" class="tb">règles de correspondance</text><text x="781" y="108" class="ts">attributs reçus</text><text x="781" y="124" class="ts">→ utilisateur local</text><text x="781" y="140" class="ts">→ groupes locaux</text>
+<rect x="906" y="64" width="208" height="110" rx="8" class="b-amber"/><text x="1010" y="88" class="tb">jeton sans portée</text><text x="1010" y="108" class="ts">puis jeton à portée,</text><text x="1010" y="124" class="ts">selon les rôles</text><text x="1010" y="140" class="ts">des groupes obtenus</text>
+<text x="780" y="206" class="ts">L'utilisateur est créé à la volée dans le domaine du fournisseur — un « utilisateur fantôme » —</text><text x="780" y="224" class="ts">afin de pouvoir lui rattacher des ressources ; son appartenance aux groupes est recalculée à chaque connexion.</text>
+</g>
+<path d="M310,148 H428" class="lr"/><text x="369" y="138" class="tc ts tb">attestation</text><text x="369" y="166" class="tc ts">via le navigateur</text>
+<path d="M656,119 H674" class="lr"/><path d="M886,119 H904" class="lr"/>
+</svg>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:22%">Objet Keystone</th><th style="width:40%">Ce qu'il représente</th><th>Exemple</th></tr></thead>
+<tbody>
+<tr><td>Fournisseur d'identité</td><td>la source externe, reconnue par son identifiant distant ; rattaché à un domaine</td><td style="color:var(--ink);font-weight:400">« entra-groupe », domaine « partenaires »</td></tr>
+<tr><td>Protocole</td><td>la façon de dialoguer avec lui</td><td style="color:var(--ink);font-weight:400"><code>openid</code> ou <code>saml2</code></td></tr>
+<tr><td>Correspondance</td><td>les règles qui traduisent les attributs reçus en utilisateur et groupes locaux</td><td style="color:var(--ink);font-weight:400">« groupe cloud-dev → groupe developpeurs »</td></tr>
+</tbody></table>
+<div class="note g"><b>Ce que l'on y gagne :</b> connexion unique, second facteur et cycle de vie des comptes gérés par l'entreprise ; un départ coupe l'accès au cloud sans rien faire dans OpenStack.</div>
+</div>
+</section>
+
+<!-- 42 -->
+<section class="slide">
+<header><span class="kick">5 · Les sources d'identité</span><h2>Une connexion fédérée, pas à pas</h2></header>
+<div class="body">
+<div class="fig"><svg viewBox="0 0 1150 371">
+<path d="M130,46 V367" class="nl" stroke-dasharray="4 5"/>
+<path d="M430,46 V367" class="nl" stroke-dasharray="4 5"/>
+<path d="M730,46 V367" class="nl" stroke-dasharray="4 5"/>
+<path d="M1030,46 V367" class="nl" stroke-dasharray="4 5"/>
+<rect x="10.0" y="4" width="240" height="40" rx="8" class="b-grey"/><text x="130" y="29" class="tc tb">Navigateur</text>
+<rect x="310.0" y="4" width="240" height="40" rx="8" class="b-blue"/><text x="430" y="29" class="tc tb">Horizon</text>
+<rect x="610.0" y="4" width="240" height="40" rx="8" class="b-red"/><text x="730" y="29" class="tc tb">Keystone</text>
+<rect x="910.0" y="4" width="240" height="40" rx="8" class="b-violet"/><text x="1030" y="29" class="tc tb">Fournisseur d'identité</text>
+<path d="M140,78 H427" class="lr"/>
+<text x="280.0" y="72" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">page de connexion : choix du fournisseur</text>
+<circle cx="130" cy="78" r="10" class="f-red"/><text x="130" y="82" class="tc tw tb" style="font-size:11px">1</text>
+<path d="M140,105 H727" class="lr"/>
+<text x="430.0" y="99" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">appelle l'URL de connexion fédérée de Keystone</text>
+<circle cx="130" cy="105" r="10" class="f-red"/><text x="130" y="109" class="tc tw tb" style="font-size:11px">2</text>
+<path d="M720,132 H133" class="ln ld"/>
+<text x="430.0" y="126" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">redirection vers le fournisseur</text>
+<circle cx="730" cy="132" r="10" class="f-red"/><text x="730" y="136" class="tc tw tb" style="font-size:11px">3</text>
+<path d="M140,159 H1027" class="lr"/>
+<text x="580.0" y="153" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">authentification : mot de passe, second facteur</text>
+<circle cx="130" cy="159" r="10" class="f-red"/><text x="130" y="163" class="tc tw tb" style="font-size:11px">4</text>
+<path d="M1020,186 H133" class="ln ld"/>
+<text x="580.0" y="180" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">redirection de retour, avec un code à usage unique</text>
+<circle cx="1030" cy="186" r="10" class="f-red"/><text x="1030" y="190" class="tc tw tb" style="font-size:11px">5</text>
+<path d="M140,213 H727" class="lr"/>
+<text x="430.0" y="207" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">présente le code</text>
+<circle cx="130" cy="213" r="10" class="f-red"/><text x="130" y="217" class="tc tw tb" style="font-size:11px">6</text>
+<path d="M740,240 H1027" class="lr"/>
+<text x="880.0" y="234" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">échange le code contre l'attestation signée</text>
+<circle cx="730" cy="240" r="10" class="f-red"/><text x="730" y="244" class="tc tw tb" style="font-size:11px">7</text>
+<rect x="530.0" y="252" width="400" height="24" rx="6" class="b-grey"/><text x="742.0" y="269" class="tc" style="font-size:12px">règles de correspondance : utilisateur et groupes locaux</text>
+<circle cx="544.0" cy="267" r="10" class="f-red"/><text x="544.0" y="271" class="tc tw tb" style="font-size:11px">8</text>
+<path d="M720,294 H433" class="lr"/>
+<text x="580.0" y="288" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">jeton sans portée, remis via le navigateur</text>
+<circle cx="730" cy="294" r="10" class="f-red"/><text x="730" y="298" class="tc tw tb" style="font-size:11px">9</text>
+<path d="M440,321 H727" class="lr"/>
+<text x="580.0" y="315" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">demande un jeton pour un projet</text>
+<circle cx="430" cy="321" r="10" class="f-red"/><text x="430" y="325" class="tc tw tb" style="font-size:11px">10</text>
+<path d="M420,348 H133" class="ln ld"/>
+<text x="280.0" y="342" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">tableau de bord : session ouverte</text>
+<circle cx="430" cy="348" r="10" class="f-red"/><text x="430" y="352" class="tc tw tb" style="font-size:11px">11</text>
+</svg></div>
+<div class="cols nf">
+<div class="note g"><b>Le mot de passe ne passe jamais par OpenStack :</b> il est saisi chez le fournisseur d'identité, qui ne renvoie qu'une attestation signée, à durée de vie très courte.</div>
+<div class="note"><b>Et en ligne de commande ?</b> Le parcours par navigateur ne s'y prête pas : l'usage courant est de se connecter une fois à Horizon, d'y créer un <b>identifiant d'application</b>, et de s'en servir pour les scripts.</div>
+</div>
+</div>
+</section>
+
+<!-- 43 -->
+<section class="slide">
+<header><span class="kick">5 · Les sources d'identité</span><h2>La fédération sur Sunbeam</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Fournisseur</th><th>OpenID Connect</th><th>SAML2</th></tr></thead>
+<tbody>
+<tr><td>Canonical Identity Platform</td><td class="y">oui</td><td class="n">—</td></tr>
+<tr><td>Google</td><td class="y">oui</td><td class="y">oui</td></tr>
+<tr><td>Okta</td><td class="y">oui</td><td class="y">oui</td></tr>
+<tr><td>Entra ID</td><td class="y">oui</td><td class="y">oui</td></tr>
+<tr><td>Générique</td><td class="y">oui</td><td class="y">oui</td></tr>
+</tbody></table>
+<p><b>Prérequis</b></p>
+<ul class="pts sm">
+<li><b>TLS</b> sur les points d'accès publics — par la fonctionnalité Vault : la plupart des fournisseurs exigent une URL de retour en <code>https</code>.</li>
+<li><b>Un nom d'hôte</b> pour le cloud : certains fournisseurs refusent une adresse IP.</li>
+<li><b>Pour SAML2 :</b> un certificat de signature, déposé par <code>sunbeam identity set-saml-x509</code>.</li>
+<li>Côté fournisseur : une application déclarée, avec son identifiant client et son secret.</li>
+</ul>
+<pre style="font-size:12px"><span class="m"># entra.yaml</span>
+<span class="k">client-id</span>: 5d1f…
+<span class="k">client-secret</span>: "••••••••"
+<span class="k">microsoft-tenant</span>: 8a2c…</pre>
+</div>
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># 1 · URL de retour à déclarer chez le fournisseur</span>
+<span class="c">sunbeam identity provider get-oidc-redirect-url</span>
+
+<span class="m"># 2 · Déclarer le fournisseur : type, protocole, nom</span>
+<span class="c">sunbeam identity provider add</span> \
+  entra openid entra-groupe --config entra.yaml
+<span class="c">sunbeam identity provider list</span>
+
+<span class="m"># 3 · Côté Keystone : domaine, fournisseur, groupe, rôle</span>
+<span class="c">openstack domain create</span> partenaires
+REMOTE_ID=$(sunbeam identity provider list --format=yaml \
+  | yq -r '.openid."entra-groupe".remote_id')
+<span class="c">openstack identity provider create</span> \
+  --remote-id $REMOTE_ID --domain partenaires entra-groupe
+<span class="c">openstack group create</span> --domain partenaires federes
+<span class="c">openstack role add</span> --group federes \
+  --group-domain partenaires --project web \
+  --project-domain nord member
+
+<span class="m"># 4 · Règles de correspondance, puis protocole</span>
+<span class="c">openstack mapping create</span> --rules regles.json entra_openid
+<span class="c">openstack federation protocol create</span> \
+  --identity-provider entra-groupe \
+  --mapping entra_openid openid</pre>
+<div class="note g">Sunbeam règle Apache et les secrets ; les objets Keystone restent à créer par l'administrateur. Tant que la correspondance manque, le fournisseur apparaît dans Horizon mais personne ne peut se connecter.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 44 -->
+<section class="slide">
+<header><span class="kick">5 · Les sources d'identité</span><h2>Les règles de correspondance</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.8px"><span class="m"># regles.json — règle simple : tout utilisateur authentifié</span>
+[
+  {
+    "<span class="k">local</span>": [
+      { "user":  { "name": "{0}" } },
+      { "group": { "name": "federes",
+                   "domain": { "name": "partenaires" } } }
+    ],
+    "<span class="k">remote</span>": [
+      { "type": "REMOTE_USER" }
+    ]
+  }
+]</pre>
+<pre style="font-size:11.8px"><span class="m"># Règle conditionnelle : seulement un groupe du fournisseur</span>
+"<span class="k">remote</span>": [
+  { "type": "OIDC-preferred_username" },
+  { "type": "OIDC-groups", "any_one_of": ["cloud-dev"] }
+]</pre>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Élément</th><th>Signification</th></tr></thead>
+<tbody>
+<tr><td><code>remote</code></td><td>conditions sur les attributs transmis par le fournisseur ; toutes doivent être satisfaites</td></tr>
+<tr><td><code>local</code></td><td>ce que l'on en fait : nom de l'utilisateur local, groupes d'affectation</td></tr>
+<tr><td><code>{0}</code>, <code>{1}</code>…</td><td>valeur du premier, du deuxième attribut de <code>remote</code></td></tr>
+<tr><td><code>any_one_of</code></td><td>la valeur doit figurer dans la liste</td></tr>
+<tr><td><code>not_any_of</code></td><td>la valeur ne doit pas y figurer</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Les règles sont évaluées dans l'ordre ;</b> un utilisateur peut cumuler les groupes de plusieurs règles satisfaites.</li>
+<li><b>Aucune règle satisfaite :</b> connexion refusée, même si l'authentification chez le fournisseur a réussi.</li>
+<li><b>Une seule correspondance</b> par couple fournisseur + protocole ; une même correspondance peut servir à plusieurs fournisseurs.</li>
+<li><b>Noms des attributs :</b> ils dépendent du module et du fournisseur ; les journaux de Keystone en mode détaillé montrent ceux qui arrivent réellement.</li>
+</ul>
+<div class="note"><b>Piège classique :</b> une règle trop large donne un rôle à <b>tout</b> compte du fournisseur. Toujours conditionner à un groupe dédié au cloud.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 45 -->
+<section class="slide">
+<header><span class="kick">5 · Les sources d'identité</span><h2>Comparatif des sources d'identité</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:20%"></th><th style="width:25%">Base locale</th><th style="width:27%">LDAP</th><th>Fédération</th></tr></thead>
+<tbody>
+<tr><td>Où est le mot de passe</td><td>empreinte dans la base de Keystone</td><td style="color:var(--ink);font-weight:400">dans l'annuaire ; il transite par Keystone</td><td style="color:var(--ink);font-weight:400">chez le fournisseur ; Keystone ne le voit jamais</td></tr>
+<tr><td>Création des comptes</td><td>par l'API d'OpenStack</td><td style="color:var(--ink);font-weight:400">dans l'annuaire</td><td style="color:var(--ink);font-weight:400">chez le fournisseur ; utilisateur local créé à la première connexion</td></tr>
+<tr><td>Second facteur</td><td>TOTP de Keystone</td><td style="color:var(--ink);font-weight:400">non, sauf dispositif de l'annuaire</td><td style="color:var(--ink);font-weight:400">celui du fournisseur</td></tr>
+<tr><td>Connexion unique</td><td>non</td><td style="color:var(--ink);font-weight:400">même mot de passe, mais ressaisi</td><td style="color:var(--ink);font-weight:400">oui</td></tr>
+<tr><td>Ligne de commande</td><td>directe</td><td style="color:var(--ink);font-weight:400">directe</td><td style="color:var(--ink);font-weight:400">par identifiant d'application</td></tr>
+<tr><td>Départ d'un employé</td><td>à traiter dans OpenStack</td><td style="color:var(--ink);font-weight:400">automatique, dès la désactivation dans l'annuaire</td><td style="color:var(--ink);font-weight:400">automatique pour les nouvelles connexions</td></tr>
+<tr><td>Dépendance</td><td>aucune</td><td style="color:var(--ink);font-weight:400">l'annuaire doit être joignable à chaque authentification</td><td style="color:var(--ink);font-weight:400">le fournisseur doit être joignable à la connexion</td></tr>
+<tr><td>Sur Sunbeam</td><td>d'origine</td><td style="color:var(--ink);font-weight:400"><code>sunbeam enable ldap</code></td><td style="color:var(--ink);font-weight:400"><code>sunbeam identity provider add</code></td></tr>
+<tr><td>Usage type</td><td>comptes de service, secours, maquettes</td><td style="color:var(--ink);font-weight:400">employés, quand l'annuaire est la référence</td><td style="color:var(--ink);font-weight:400">employés et partenaires, avec connexion unique</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Toujours garder un compte local de secours</b>, hors annuaire et hors fédération : le jour où la source externe est en panne, c'est le seul moyen d'entrer.</div>
+<div class="note g"><b>Avec la fédération, penser aux identifiants d'application :</b> ils survivent tant que l'utilisateur local existe ; prévoir leur nettoyage quand un compte est retiré chez le fournisseur.</div>
+</div>
+</div>
+</section>
+
+<!-- 46 -->
+<section class="slide dark sec">
+<div class="num">06</div>
+<h2>Les politiques d'accès</h2>
+<p>Keystone dit qui vous êtes et quels rôles vous portez. C'est chaque service, règle par règle, qui décide si cela suffit pour l'opération demandée.</p>
+<ol><li>De la requête à la décision</li><li>Anatomie d'une règle</li><li>Règles par défaut et surcharges</li><li>Portées et nouveaux rôles par défaut</li><li>Qui peut faire quoi dans Keystone</li><li>Chaque service a ses politiques</li><li>Bonnes pratiques</li></ol>
+</section>
+
+<!-- 47 -->
+<section class="slide">
+<header><span class="kick">6 · Politiques d'accès</span><h2>De la requête à la décision</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 330">
+<g class="tc">
+<rect x="20" y="20" width="250" height="130" rx="12" class="b-amber"/><text x="145" y="46" class="tl">Ce que dit le jeton</text><text x="145" y="72" class="ts">utilisateur : alice</text><text x="145" y="90" class="ts">portée : projet web (domaine nord)</text><text x="145" y="108" class="ts">rôles : member, reader</text><text x="145" y="134" class="ts tb">« les justificatifs »</text>
+<rect x="20" y="180" width="250" height="130" rx="12" class="b-blue"/><text x="145" y="206" class="tl">Ce que vise la requête</text><text x="145" y="232" class="ts">DELETE /servers/42</text><text x="145" y="250" class="ts">instance 42 : projet web</text><text x="145" y="268" class="ts">propriétaire : bob</text><text x="145" y="294" class="ts tb">« la cible »</text>
+<rect x="380" y="60" width="330" height="210" rx="12" class="b-red"/><text x="545" y="88" class="tl tr">Moteur de politique</text><text x="545" y="108" class="ts">bibliothèque oslo.policy, dans chaque service</text>
+<rect x="396" y="124" width="298" height="62" rx="8" class="bx"/><text x="545" y="146" class="tb">① quelle règle pour cette opération ?</text><text x="545" y="166" class="tm" style="font-size:10.5px">os_compute_api:servers:delete</text>
+<rect x="396" y="196" width="298" height="62" rx="8" class="bx"/><text x="545" y="218" class="tb">② l'expression est-elle vraie ?</text><text x="545" y="238" class="ts">rôle member et même projet</text>
+<rect x="820" y="40" width="310" height="100" rx="12" class="b-green"/><text x="975" y="70" class="tl">Vrai → la requête continue</text><text x="975" y="96" class="ts">le service exécute l'opération</text><text x="975" y="114" class="ts">alice peut supprimer l'instance de bob</text>
+<rect x="820" y="190" width="310" height="100" rx="12" class="b-dark"/><text x="975" y="220" class="tl tw">Faux → 403 Forbidden</text><text x="975" y="246" class="tw" style="font-size:12px">« Policy doesn't allow … to be performed »</text><text x="975" y="264" class="tw" style="font-size:12px">rien n'est exécuté</text>
+</g>
+<path d="M270,85 H378" class="la"/><path d="M270,245 H378" class="lb"/>
+<path d="M710,130 H818" class="lr"/><path d="M710,220 H818" class="ln"/>
+</svg>
+</div>
+<div class="cols nf">
+<div class="col">
+<ul class="pts sm">
+<li><b>La décision est locale :</b> Nova applique les règles de Nova, Cinder celles de Cinder. Keystone n'est pas consulté pour décider, seulement pour valider le jeton.</li>
+<li><b>Une règle par opération d'API :</b> plusieurs centaines dans un cloud complet.</li>
+</ul>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>401 ou 403 ?</b> 401 : le jeton est absent, expiré ou invalide — on ne sait pas qui vous êtes. 403 : on le sait, et la règle dit non.</li>
+<li><b>Le rôle seul ne suffit pas :</b> la plupart des règles vérifient aussi que la cible appartient à la portée du jeton.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 48 -->
+<section class="slide">
+<header><span class="kick">6 · Politiques d'accès</span><h2>Anatomie d'une règle</h2></header>
+<div class="body">
+<pre style="font-size:12px"><span class="m"># Règles par défaut de Keystone — extraits</span>
+"<span class="k">admin_required</span>":         "role:admin or is_admin:1"
+"<span class="k">service_role</span>":           "role:service"
+
+"<span class="k">identity:list_users</span>":    "(rule:admin_required)
+                           or (role:reader and system_scope:all)
+                           or (role:reader and domain_id:%(target.domain_id)s)"
+
+"<span class="k">identity:get_user</span>":      "(rule:admin_required) or (role:reader and system_scope:all)
+                           or (role:reader and token.domain.id:%(target.user.domain_id)s)
+                           or user_id:%(target.user.id)s"
+
+"<span class="k">identity:create_project</span>": "(rule:admin_required)
+                            or (role:manager and domain_id:%(target.project.domain_id)s …)"</pre>
+<div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Élément</th><th>Signification</th></tr></thead>
+<tbody>
+<tr><td><code>role:reader</code></td><td>le jeton porte ce rôle</td></tr>
+<tr><td><code>rule:admin_required</code></td><td>renvoi à une autre règle, réutilisable</td></tr>
+<tr><td><code>system_scope:all</code></td><td>le jeton est de portée système</td></tr>
+<tr><td><code>domain_id:%(target.domain_id)s</code></td><td>le domaine du jeton est celui de la cible</td></tr>
+<tr><td><code>user_id:%(target.user.id)s</code></td><td>l'appelant est l'utilisateur visé</td></tr>
+<tr><td><code>and</code>, <code>or</code>, <code>not</code>, parenthèses</td><td>combinaisons logiques</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<p><b>Lecture de <code>identity:get_user</code></b></p>
+<ul class="pts sm">
+<li>un <b>administrateur</b> ; ou</li>
+<li>un <b>lecteur de portée système</b> ; ou</li>
+<li>un <b>lecteur du domaine</b> de l'utilisateur consulté ; ou</li>
+<li><b>l'utilisateur lui-même</b>, quel que soit son rôle.</li>
+</ul>
+<div class="note"><b>À remarquer :</b> <code>admin_required</code> ne mentionne aucune portée. Dans Keystone, le rôle <code>admin</code> reste très puissant <b>quelle que soit la cible</b> sur laquelle il est détenu : ne jamais l'attribuer « sur un projet » en pensant le cantonner.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 49 -->
+<section class="slide">
+<header><span class="kick">6 · Politiques d'accès</span><h2>Règles par défaut et surcharges</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<div class="fig" style="flex:none">
+<svg viewBox="0 0 560 220">
+<g class="tc">
+<rect x="10" y="6" width="540" height="56" rx="10" class="b-grey"/><text x="280" y="28" class="tb">Règles par défaut, écrites dans le code du service</text><text x="280" y="46" class="ts">livrées et mises à jour avec chaque version</text>
+<rect x="10" y="84" width="540" height="56" rx="10" class="b-amber"/><text x="280" y="106" class="tb">Fichier policy.yaml — facultatif</text><text x="280" y="124" class="ts">seulement les règles que l'on veut changer</text>
+<rect x="10" y="162" width="540" height="50" rx="10" class="b-red"/><text x="280" y="184" class="tb">Règles effectives</text><text x="280" y="202" class="ts">défaut, remplacé règle par règle par la surcharge</text>
+</g>
+<path d="M280,62 V82" class="lr"/><path d="M280,140 V160" class="lr"/>
+</svg>
+</div>
+<ul class="pts sm">
+<li><b>Pas de fichier, pas de problème :</b> un service sans <code>policy.yaml</code> applique les règles de sa version. C'est l'état recommandé.</li>
+<li><b>Format :</b> YAML ; l'ancien format JSON est déprécié depuis Wallaby.</li>
+<li><b>Rechargement :</b> le fichier est relu à chaud, sans redémarrage.</li>
+<li><b>Chaque surcharge est une dette :</b> à chaque montée de version, il faut vérifier qu'elle a encore un sens face aux nouveaux défauts.</li>
+</ul>
+</div>
+<div class="col">
+<pre style="font-size:12px"><span class="m"># Voir les règles par défaut d'un service</span>
+<span class="c">oslopolicy-sample-generator</span> --namespace keystone
+
+<span class="m"># Voir les règles effectives, surcharges comprises</span>
+<span class="c">oslopolicy-policy-generator</span> --namespace keystone
+
+<span class="m"># Repérer les surcharges devenues inutiles</span>
+<span class="c">oslopolicy-list-redundant</span> --namespace keystone</pre>
+<pre style="font-size:12px"><span class="m"># policy.yaml — exemple de surcharge</span>
+<span class="m"># autoriser le rôle « auditeur » à lister les utilisateurs</span>
+"<span class="k">identity:list_users</span>": "(rule:admin_required)
+   or (role:reader and system_scope:all)
+   or role:auditeur"</pre>
+<p><b>Sur Sunbeam</b></p>
+<ul class="pts sm">
+<li>Les fichiers de configuration sont dans les pods et <b>réécrits par les charms</b> : un <code>policy.yaml</code> déposé à la main ne survit pas.</li>
+<li>Une surcharge passe par ce que le charm expose ; à défaut, s'en tenir aux rôles et règles par défaut.</li>
+<li>Les outils <code>oslopolicy-*</code> s'exécutent dans le conteneur du service, par <code>kubectl exec</code>.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 50 -->
+<section class="slide">
+<header><span class="kick">6 · Politiques d'accès</span><h2>Portées et nouveaux rôles par défaut</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>D'où l'on vient</b></p>
+<ul class="pts sm">
+<li>Longtemps, les règles se résumaient à « <code>admin</code> ou propriétaire ». Le rôle <code>admin</code>, attribué sur <b>n'importe quel</b> projet, valait administrateur du cloud entier.</li>
+<li>Pas de lecture seule : pour voir, il fallait pouvoir modifier.</li>
+</ul>
+<p><b>Ce qui a changé — le « RBAC sécurisé »</b></p>
+<ul class="pts sm">
+<li><b>Des rôles gradués</b> partout : <code>reader</code>, <code>member</code>, <code>manager</code>, <code>admin</code>.</li>
+<li><b>Des portées déclarées :</b> chaque règle annonce les portées de jeton qu'elle accepte (<code>scope_types</code>) — système, domaine, projet.</li>
+<li><b>Deux interrupteurs</b>, dans la section <code>[oslo_policy]</code> de chaque service :</li>
+</ul>
+<table class="tbl tight">
+<thead><tr><th>Option</th><th>Quand elle est active</th></tr></thead>
+<tbody>
+<tr><td><code>enforce_new_defaults</code></td><td>seules les nouvelles règles s'appliquent ; les anciennes, plus permissives, ne sont plus acceptées en parallèle</td></tr>
+<tr><td><code>enforce_scope</code></td><td>un jeton de la mauvaise portée est refusé, même avec le bon rôle</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<div class="fig" style="flex:none">
+<svg viewBox="0 0 560 190">
+<g class="tc">
+<rect x="10" y="8" width="250" height="80" rx="10" class="b-grey"/><text x="135" y="32" class="tb">jeton de portée projet</text><text x="135" y="52" class="ts">rôle admin</text><text x="135" y="72" class="ts">« liste tous les hyperviseurs »</text>
+<rect x="300" y="8" width="250" height="80" rx="10" class="b-red"/><text x="425" y="32" class="tb">règle</text><text x="425" y="52" class="ts">rôle : admin</text><text x="425" y="72" class="ts">portées acceptées : celles déclarées</text>
+<rect x="10" y="118" width="250" height="62" rx="10" class="b-green"/><text x="135" y="142" class="tb">portée acceptée</text><text x="135" y="162" class="ts">la règle est évaluée normalement</text>
+<rect x="300" y="118" width="250" height="62" rx="10" class="b-dark"/><text x="425" y="142" class="tb tw">portée non acceptée</text><text x="425" y="162" class="tw" style="font-size:12px">refus si enforce_scope est actif</text>
+</g>
+<path d="M260,48 H298" class="lr"/><path d="M360,88 L170,116" class="ln"/><path d="M425,88 V116" class="ln"/>
+</svg>
+</div>
+<ul class="pts sm">
+<li><b>État des lieux :</b> ces options sont actives par défaut dans les versions récentes de la bibliothèque, mais chaque service a avancé à son rythme. Vérifier la valeur <b>service par service</b>.</li>
+<li><b>Conséquence pratique :</b> selon le service, une opération d'administration attend un jeton de portée système <b>ou</b> un jeton de projet avec <code>admin</code>.</li>
+<li><b>En cas de 403 inattendu</b> pour un administrateur : regarder d'abord la <b>portée</b> du jeton, pas le rôle.</li>
+</ul>
+<pre style="font-size:11.8px"><span class="c">sudo k8s kubectl</span> -n openstack exec nova-0 -c nova-api -- \
+  grep -A3 '^\[oslo_policy\]' /etc/nova/nova.conf</pre>
+<div class="note g">Noms de pod et de conteneur à adapter : <code>kubectl get pods -n openstack</code> les donne.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 51 -->
+<section class="slide">
+<header><span class="kick">6 · Politiques d'accès</span><h2>Qui peut faire quoi dans Keystone</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th style="width:30%">Opération</th><th class="c">admin système</th><th class="c">lecteur système</th><th class="c">admin de domaine</th><th class="c">manager de domaine</th><th class="c">lecteur de domaine</th><th class="c">membre de projet</th></tr></thead>
+<tbody>
+<tr><td>Créer, supprimer un domaine</td><td class="c y">oui</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td></tr>
+<tr><td>Modifier le catalogue</td><td class="c y">oui</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td></tr>
+<tr><td>Lister tous les utilisateurs du cloud</td><td class="c y">oui</td><td class="c y">oui</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td><td class="c n">—</td></tr>
+<tr><td>Lister les utilisateurs de son domaine</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td><td class="c n">—</td></tr>
+<tr><td>Créer un utilisateur dans son domaine</td><td class="c y">oui</td><td class="c n">—</td><td class="c y">oui</td><td class="c y">oui</td><td class="c n">—</td><td class="c n">—</td></tr>
+<tr><td>Créer un projet dans son domaine</td><td class="c y">oui</td><td class="c n">—</td><td class="c y">oui</td><td class="c y">oui</td><td class="c n">—</td><td class="c n">—</td></tr>
+<tr><td>Attribuer member ou reader dans son domaine</td><td class="c y">oui</td><td class="c n">—</td><td class="c y">oui</td><td class="c y">oui</td><td class="c n">—</td><td class="c n">—</td></tr>
+<tr><td>Attribuer le rôle admin</td><td class="c y">oui</td><td class="c n">—</td><td class="c y">oui</td><td class="c" style="color:#b91c1c;font-weight:700">non</td><td class="c n">—</td><td class="c n">—</td></tr>
+<tr><td>Consulter son propre compte</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td></tr>
+<tr><td>Changer son mot de passe</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td></tr>
+<tr><td>Créer un identifiant d'application pour soi</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td><td class="c y">oui</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Le profil à retenir : manager de domaine.</b> Il permet de déléguer toute la gestion courante d'un locataire sans donner le moyen de s'élever au rang d'administrateur.</div>
+<div class="note"><b>Tableau de synthèse</b>, construit à partir de la description des profils par défaut ; pour une opération précise, la règle effective fait foi (<code>oslopolicy-policy-generator</code>).</div>
+</div>
+</div>
+</section>
+
+<!-- 52 -->
+<section class="slide">
+<header><span class="kick">6 · Politiques d'accès</span><h2>Chaque service a ses politiques</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:14%">Service</th><th style="width:27%">Un <code>reader</code> du projet peut</th><th style="width:28%">Un <code>member</code> du projet peut en plus</th><th>Réservé à l'administration</th></tr></thead>
+<tbody>
+<tr><td>Nova</td><td>lister et consulter les instances</td><td style="color:var(--ink);font-weight:400">créer, démarrer, arrêter, redimensionner, supprimer</td><td style="color:var(--ink);font-weight:400">migrer, évacuer, gérer hôtes, agrégats et gabarits</td></tr>
+<tr><td>Neutron</td><td>consulter réseaux, ports, routeurs</td><td style="color:var(--ink);font-weight:400">créer réseaux, sous-réseaux, routeurs, groupes de sécurité</td><td style="color:var(--ink);font-weight:400">réseaux fournisseurs, réseaux partagés, agents</td></tr>
+<tr><td>Cinder</td><td>consulter volumes et instantanés</td><td style="color:var(--ink);font-weight:400">créer, attacher, étendre, supprimer</td><td style="color:var(--ink);font-weight:400">types de volumes, quotas, migration de volumes</td></tr>
+<tr><td>Glance</td><td>lister et télécharger les images visibles</td><td style="color:var(--ink);font-weight:400">téléverser des images privées, les partager</td><td style="color:var(--ink);font-weight:400">publier une image pour tout le cloud</td></tr>
+<tr><td>Keystone</td><td>voir son projet, ses limites</td><td style="color:var(--ink);font-weight:400">rien de plus dans Keystone</td><td style="color:var(--ink);font-weight:400">identités, catalogue, domaines</td></tr>
+</tbody></table>
+<div class="cols">
+<div class="col">
+<ul class="pts sm">
+<li><b>Les mêmes quatre rôles partout :</b> c'est ce qui rend l'ensemble prévisible. Un utilisateur <code>member</code> d'un projet y est membre dans tous les services.</li>
+<li><b>Le rôle <code>service</code> :</b> certaines opérations ne sont ouvertes qu'aux autres services — par exemple, Neutron signalant à Nova qu'un port est prêt.</li>
+<li><b>Rôles propres à un service :</b> l'équilibrage de charge et l'orchestration, entre autres, définissent des rôles supplémentaires à attribuer explicitement.</li>
+</ul>
+</div>
+<div class="col">
+<pre style="font-size:12px"><span class="m"># Lire une règle d'un autre service</span>
+<span class="c">oslopolicy-policy-generator</span> --namespace nova \
+  | grep 'servers:delete'
+
+<span class="m"># Namespaces courants</span>
+<span class="m"># keystone · nova · neutron · cinder · glance · placement</span></pre>
+<div class="note g"><b>Tableau indicatif</b> des règles par défaut récentes ; les détails varient selon la version et les options <code>[oslo_policy]</code> de chaque service.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 53 -->
+<section class="slide">
+<header><span class="kick">6 · Politiques d'accès</span><h2>Bonnes pratiques</h2></header>
+<div class="body">
+<div class="cols c4 nf dense">
+<div class="card"><h3>Des groupes, pas des personnes</h3>Toute attribution vise un groupe. Les arrivées et départs se règlent dans l'annuaire, pas dans OpenStack.</div>
+<div class="card"><h3>Le moindre privilège</h3><code>reader</code> par défaut, <code>member</code> pour ceux qui déploient, <code>manager</code> pour déléguer. <code>admin</code> reste l'exception.</div>
+<div class="card"><h3>Très peu d'administrateurs</h3>Le rôle <code>admin</code> déborde encore de sa portée dans plusieurs services : le traiter comme un accès au cloud entier.</div>
+<div class="card"><h3>Les rôles par défaut</h3>Éviter les rôles maison : aucun service ne les comprend sans surcharge de politique.</div>
+</div>
+<div class="cols c4 nf dense">
+<div class="card cb"><h3>Pas de surcharge sans nécessité</h3>Chaque règle modifiée est à revalider à chaque montée de version, service par service.</div>
+<div class="card cb"><h3>Des identifiants d'application</h3>Pour tout ce qui n'est pas humain : limités à un projet, à un rôle, à une durée, révocables un par un.</div>
+<div class="card cb"><h3>Un compte de secours</h3>Local, hors annuaire et hors fédération, mot de passe au coffre, usage tracé.</div>
+<div class="card cb"><h3>Une revue périodique</h3>Extraire les attributions effectives et les faire valider par les responsables de projets.</div>
+</div>
+<div class="cols">
+<div class="col">
+<pre style="font-size:12px"><span class="m"># Qui est administrateur, où que ce soit ?</span>
+<span class="c">openstack role assignment list</span> --names --role admin
+
+<span class="m"># Tout ce que détient un groupe</span>
+<span class="c">openstack role assignment list</span> --names \
+  --group dev --group-domain entreprise --effective
+
+<span class="m"># Les identifiants d'application d'un utilisateur</span>
+<span class="c">openstack application credential list</span> --user alice \
+  --user-domain nord</pre>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Erreur fréquente</th><th>Conséquence</th></tr></thead>
+<tbody>
+<tr><td>donner <code>admin</code> « sur son projet »</td><td>droits bien plus larges que prévu</td></tr>
+<tr><td>attribuer des rôles à des personnes</td><td>droits orphelins après un départ</td></tr>
+<tr><td>partager le compte <code>admin</code> initial</td><td>aucune traçabilité</td></tr>
+<tr><td>mot de passe dans un script</td><td>fuite ; rotation impossible sans tout casser</td></tr>
+<tr><td>correspondance fédérée trop large</td><td>tout l'annuaire a accès au cloud</td></tr>
+</tbody></table>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 54 -->
+<section class="slide dark sec">
+<div class="num">07</div>
+<h2>Exploiter Keystone sur Sunbeam</h2>
+<p>Savoir où regarder quand une authentification échoue, et ce qu'il faut protéger pour que cela n'arrive pas.</p>
+<ol><li>Diagnostiquer un refus</li><li>Où regarder sur Sunbeam</li><li>Disponibilité, sécurité, traçabilité</li><li>Synthèse</li></ol>
+</section>
+
+<!-- 55 -->
+<section class="slide">
+<header><span class="kick">7 · Exploitation</span><h2>Diagnostiquer un refus</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 420">
+<g class="tc">
+<rect x="20" y="10" width="250" height="56" rx="10" class="b-dark"/><text x="145" y="34" class="tw tb">Quel code renvoie l'API ?</text><text x="145" y="52" class="tw" style="font-size:12px">openstack --debug …</text>
+
+<rect x="20" y="104" width="250" height="56" rx="10" class="b-amber"/><text x="145" y="128" class="tb">401 Unauthorized</text><text x="145" y="146" class="ts">identité non établie</text>
+<rect x="20" y="186" width="250" height="56" rx="10" class="b-red"/><text x="145" y="210" class="tb">403 Forbidden</text><text x="145" y="228" class="ts">identité établie, droit refusé</text>
+<rect x="20" y="268" width="250" height="56" rx="10" class="b-blue"/><text x="145" y="292" class="tb">« endpoint not found »</text><text x="145" y="310" class="ts">service introuvable</text>
+<rect x="20" y="350" width="250" height="56" rx="10" class="b-grey"/><text x="145" y="374" class="tb">500, 503, délai dépassé</text><text x="145" y="392" class="ts">le service lui-même va mal</text>
+
+<rect x="330" y="92" width="800" height="80" rx="10" class="bx"/>
+<rect x="330" y="178" width="800" height="72" rx="10" class="bx"/>
+<rect x="330" y="256" width="800" height="80" rx="10" class="bx"/>
+<rect x="330" y="342" width="800" height="72" rx="10" class="bx"/>
+</g>
+<g class="ts">
+<text x="346" y="112" class="tb">Vérifier, dans l'ordre :</text>
+<text x="346" y="130">• mot de passe, nom <tspan class="tb">et domaine</tspan> de l'utilisateur ; compte ou domaine désactivé ; compte verrouillé</text>
+<text x="346" y="146">• projet demandé : existe-t-il, dans ce domaine, et l'utilisateur y a-t-il au moins un rôle ?</text>
+<text x="346" y="162">• sur un service : jeton expiré, horloges désynchronisées, clés Fernet désalignées entre pods</text>
+<text x="346" y="198" class="tb">Vérifier, dans l'ordre :</text>
+<text x="346" y="216">• les rôles effectifs sur la cible : openstack role assignment list --effective --names</text>
+<text x="346" y="232">• la <tspan class="tb">portée</tspan> du jeton : projet, domaine ou système — puis la règle de politique de l'opération</text>
+<text x="346" y="276" class="tb">Vérifier, dans l'ordre :</text>
+<text x="346" y="294">• openstack catalog list : le service y figure-t-il, dans la bonne région ?</text>
+<text x="346" y="310">• l'interface demandée (OS_INTERFACE) existe-t-elle pour ce service ?</text>
+<text x="346" y="326">• la fonctionnalité Sunbeam correspondante est-elle activée ?</text>
+<text x="346" y="362" class="tb">Vérifier, dans l'ordre :</text>
+<text x="346" y="380">• juju status -m openstack : unités de keystone, de la base, de Traefik</text>
+<text x="346" y="396">• journaux du pod keystone ; état de la grappe MySQL ; joignabilité de l'adresse publique</text>
+</g>
+<path d="M145,66 V102" class="ln"/><path d="M270,132 H328" class="la"/><path d="M270,214 H328" class="lr"/><path d="M270,296 H328" class="lb"/><path d="M270,378 H328" class="ln"/>
+<path d="M100,160 V184 M100,242 V266 M100,324 V348" class="nl"/>
+</svg>
+</div></div>
+</section>
+
+<!-- 56 -->
+<section class="slide">
+<header><span class="kick">7 · Exploitation</span><h2>Où regarder sur Sunbeam</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:12px"><span class="m"># 1 · L'application et ses relations</span>
+<span class="c">juju status</span> -m openstack keystone --relations
+
+<span class="m"># 2 · Les pods</span>
+<span class="c">sudo k8s kubectl</span> -n openstack get pods | grep keystone
+
+<span class="m"># 3 · Les journaux de Keystone</span>
+<span class="c">sudo k8s kubectl</span> -n openstack logs keystone-0 \
+  -c keystone --tail 100
+
+<span class="m"># 4 · Les journaux du charm</span>
+<span class="c">juju debug-log</span> -m openstack --include keystone/0
+
+<span class="m"># 5 · La configuration réellement appliquée</span>
+<span class="c">sudo k8s kubectl</span> -n openstack exec keystone-0 \
+  -c keystone -- cat /etc/keystone/keystone.conf
+
+<span class="m"># 6 · Les clés Fernet, pod par pod : mêmes fichiers ?</span>
+<span class="c">sudo k8s kubectl</span> -n openstack exec keystone-0 \
+  -c keystone -- ls /etc/keystone/fernet-keys</pre>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:40%">Constat</th><th>Piste</th></tr></thead>
+<tbody>
+<tr><td>unité <code>blocked</code> ou <code>waiting</code></td><td>lire le message d'état : relation manquante, base indisponible</td></tr>
+<tr><td>401 intermittents</td><td>un pod n'a pas les mêmes clés que les autres ; horloge d'un nœud décalée</td></tr>
+<tr><td>authentification lente</td><td>base de données ; annuaire LDAP lent à répondre</td></tr>
+<tr><td>échec pour un seul domaine</td><td>configuration LDAP de ce domaine ; certificat de l'annuaire</td></tr>
+<tr><td>connexion fédérée refusée</td><td>règles de correspondance ; URL de retour déclarée chez le fournisseur</td></tr>
+<tr><td>tout le cloud en 401</td><td>Keystone injoignable par l'adresse interne ; Traefik interne</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Journal détaillé :</b> l'option de débogage du charm, à activer le temps du diagnostic puis à retirer — les journaux détaillés sont volumineux.</li>
+<li><b>Test de bout en bout le plus simple :</b> <code>openstack token issue</code>, d'abord depuis un nœud du cloud, puis depuis un poste extérieur.</li>
+</ul>
+<div class="note g">Noms des pods, des conteneurs et chemins à confirmer sur votre déploiement : ils dépendent de la révision des charms.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 57 -->
+<section class="slide">
+<header><span class="kick">7 · Exploitation</span><h2>Disponibilité, sécurité, traçabilité</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:19%">Sujet</th><th style="width:40%">Ce qui est en place sur un cloud Sunbeam à trois nœuds de contrôle</th><th>Ce qui reste à votre charge</th></tr></thead>
+<tbody>
+<tr><td>Disponibilité de l'API</td><td>plusieurs pods Keystone derrière Traefik ; aucun état local hormis les clés</td><td style="color:var(--ink);font-weight:400">surveiller le nombre d'unités actives ; tester la perte d'un nœud</td></tr>
+<tr><td>Base de données</td><td>grappe MySQL répliquée</td><td style="color:var(--ink);font-weight:400">sauvegarder : la base contient toutes les identités et attributions</td></tr>
+<tr><td>Clés Fernet</td><td>créées, tournées et distribuées par le charm</td><td style="color:var(--ink);font-weight:400">restreindre l'accès à Juju et à Kubernetes : qui lit les clés fabrique des jetons</td></tr>
+<tr><td>Chiffrement des échanges</td><td>TLS sur les points d'accès par la fonctionnalité dédiée</td><td style="color:var(--ink);font-weight:400">l'activer avant d'ouvrir le cloud ; distribuer l'autorité aux clients</td></tr>
+<tr><td>Comptes de service</td><td>créés et tournés par les relations entre charms</td><td style="color:var(--ink);font-weight:400">ne pas les utiliser à la main ; ne pas en changer les mots de passe</td></tr>
+<tr><td>Compte administrateur</td><td>créé à l'installation</td><td style="color:var(--ink);font-weight:400">le réserver au secours ; comptes nominatifs pour l'exploitation</td></tr>
+<tr><td>Horloges</td><td>—</td><td style="color:var(--ink);font-weight:400">synchronisation de tous les nœuds : un décalage fausse l'expiration des jetons</td></tr>
+<tr><td>Traçabilité</td><td>Keystone sait émettre des événements d'audit : authentifications, créations, attributions</td><td style="color:var(--ink);font-weight:400">les collecter et les conserver ; activer l'audit des appels d'API si exigé</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Trois actifs à protéger en priorité :</b> la base de Keystone, le dépôt de clés Fernet, le compte administrateur. La compromission d'un seul donne la main sur tout le cloud.</div>
+<div class="note g"><b>Après une restauration de la base :</b> les jetons en circulation restent valides — ils dépendent des clés, pas de la base — mais des attributions récentes peuvent avoir disparu : revérifier les droits.</div>
+</div>
+</div>
+</section>
+
+<!-- 58 -->
+<section class="slide">
+<header><span class="kick">Synthèse</span><h2>Ce qu'il faut retenir</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card cb"><h3>Entités et catalogue</h3>
+<ul class="pts sm"><li>Acteur + rôle + cible : la seule source de droits.</li><li>Le domaine délimite noms et délégation.</li><li>Trois portées : projet, domaine, système.</li><li>Le catalogue donne l'adresse de chaque service, par interface et par région.</li></ul></div>
+<div class="card ca"><h3>Jetons</h3>
+<ul class="pts sm"><li>Une preuve datée : identité et portée.</li><li>Fernet : chiffré, non stocké, validé par Keystone.</li><li>Trois sortes de clés ; rotation et distribution indissociables.</li><li>Le jeton de service couvre les opérations longues.</li></ul></div>
+<div class="card cv"><h3>Sources et politiques</h3>
+<ul class="pts sm"><li>Local, LDAP, fédération — par domaine.</li><li>Rôles et projets restent toujours dans Keystone.</li><li>Chaque service décide, avec ses propres règles.</li><li>401 : qui êtes-vous ? 403 : pas le droit.</li></ul></div>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:27%">Sur Sunbeam, pour…</th><th>La voie à suivre</th></tr></thead>
+<tbody>
+<tr><td>obtenir des identifiants d'administration</td><td><code>sunbeam openrc</code></td></tr>
+<tr><td>raccorder un annuaire</td><td><code>sunbeam enable ldap</code> puis <code>sunbeam ldap add-domain</code></td></tr>
+<tr><td>raccorder un fournisseur OIDC ou SAML</td><td><code>sunbeam identity provider add</code>, puis domaine, fournisseur, correspondance et protocole dans Keystone</td></tr>
+<tr><td>modifier le catalogue ou la configuration</td><td style="color:var(--ink);font-weight:400">par Sunbeam et les options du charm — jamais dans le pod</td></tr>
+<tr><td>diagnostiquer</td><td style="color:var(--ink);font-weight:400"><code>openstack --debug</code>, <code>juju status</code>, journaux du pod <code>keystone</code></td></tr>
+</tbody></table>
+<div class="note g"><b>Sources :</b> documentation de Keystone (jetons, Fernet, protection des API, politiques), documentation de Canonical OpenStack 2026.1 (intégration LDAP, fournisseurs d'identité) — consultées en octobre 2026.</div>
+</div>
+</section>
+
+</div>
+<div id="bar"></div>
+<div id="nav"><button id="bO" title="Vue d'ensemble (O)">▦</button><button id="bF" title="Plein écran (F)">⛶</button><button id="bP" title="Précédent (←)">←</button><button id="bN" title="Suivant (→)">→</button></div>
+<script>
+(function(){
+var stage=document.getElementById('stage'),bar=document.getElementById('bar'),body=document.body;
+var slides=Array.prototype.slice.call(document.querySelectorAll('.slide')),N=slides.length,cur=0;
+slides.forEach(function(s,i){
+  var f=document.createElement('div');f.className='foot';
+  f.innerHTML='<span>OpenStack — Keystone en profondeur</span><span>'+(i+1)+' / '+N+'</span>';
+  s.appendChild(f);
+  s.addEventListener('click',function(){if(body.classList.contains('ov')){body.classList.remove('ov');go(i);fit();}});
+});
+function go(n){
+  cur=Math.max(0,Math.min(N-1,n));
+  slides.forEach(function(s,i){s.classList.toggle('active',i===cur);});
+  bar.style.width=((cur+1)/N*100)+'%';
+  try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+}
+function fit(){
+  if(body.classList.contains('ov')){
+    stage.style.transform='';
+    document.documentElement.style.setProperty('--z',Math.max(.1,(window.innerWidth-40-4*14-20)/5/1280));
+  }else{
+    stage.style.transform='scale('+Math.min(window.innerWidth/1280,window.innerHeight/720)+')';
+  }
+}
+function overview(){body.classList.toggle('ov');fit();if(body.classList.contains('ov')){slides[cur].scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}}
+function full(){if(document.fullscreenElement){document.exitFullscreen();}else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen();}}
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'||k===' '||k==='ArrowDown'){e.preventDefault();go(cur+1);}
+  else if(k==='ArrowLeft'||k==='PageUp'||k==='ArrowUp'){e.preventDefault();go(cur-1);}
+  else if(k==='Home'){go(0);}
+  else if(k==='End'){go(N-1);}
+  else if(k==='o'||k==='O'||k==='Escape'){if(k!=='Escape'||body.classList.contains('ov'))overview();}
+  else if(k==='f'||k==='F'){full();}
+});
+document.getElementById('bN').onclick=function(){go(cur+1);};
+document.getElementById('bP').onclick=function(){go(cur-1);};
+document.getElementById('bO').onclick=overview;
+document.getElementById('bF').onclick=full;
+var tx=null;
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){if(tx===null||body.classList.contains('ov'))return;var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1));tx=null;},{passive:true});
+window.addEventListener('resize',fit);
+window.addEventListener('hashchange',function(){var h=parseInt(location.hash.slice(1),10);if(h&&h-1!==cur)go(h-1);});
+var h=parseInt(location.hash.slice(1),10);
+go(h?h-1:0);fit();
+})();
+</script>
+</body>
+</html>

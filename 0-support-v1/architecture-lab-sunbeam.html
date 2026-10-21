@@ -1,0 +1,526 @@
+<meta charset="utf-8">
+<title>Architecture du lab Sunbeam</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Mise en page : une page de cours ; le schéma est fait de boîtes imbriquées
+   (PC > VM > Kubernetes > modèles Juju), chaque couche a sa couleur, reprise partout. */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #1b2330;
+  --muted: #5a6577;
+  --line: #d5dbe4;
+  --win: #6b7486;       /* PC Windows */
+  --svc: #0f7b72;       /* Lab-Services */
+  --sun: #3949a8;       /* Lab-Sunbeam */
+  --ctl: #a8660a;       /* modèle controller */
+  --ops: #2463b8;       /* modèle openstack */
+  --mach: #2f7d3b;      /* modèle openstack-machines */
+  --tint-win: #eef0f4;
+  --tint-svc: #e3f3f1;
+  --tint-sun: #eceefb;
+  --tint-ctl: #fbf1e2;
+  --tint-ops: #e6effb;
+  --tint-mach: #e7f4e9;
+  --code-bg: #eef1f6;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161d; --surface: #1a1f28; --ink: #e5e9f0; --muted: #9aa5b6; --line: #2f3746;
+    --win: #a3abbb; --svc: #4fc2b6; --sun: #8f9cf0; --ctl: #e0a24a; --ops: #6fa6ee; --mach: #6cc27a;
+    --tint-win: #20252f; --tint-svc: #14302d; --tint-sun: #1f2440; --tint-ctl: #352816; --tint-ops: #162a45; --tint-mach: #18301c;
+    --code-bg: #232a36; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161d; --surface: #1a1f28; --ink: #e5e9f0; --muted: #9aa5b6; --line: #2f3746;
+  --win: #a3abbb; --svc: #4fc2b6; --sun: #8f9cf0; --ctl: #e0a24a; --ops: #6fa6ee; --mach: #6cc27a;
+  --tint-win: #20252f; --tint-svc: #14302d; --tint-sun: #1f2440; --tint-ctl: #352816; --tint-ops: #162a45; --tint-mach: #18301c;
+  --code-bg: #232a36; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 1.02rem; line-height: 1.55;
+  margin: 0;
+}
+.page {
+  max-width: 1120px; margin: 0 auto;
+  padding-block: 2.5rem 4rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 3rem;
+}
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; letter-spacing: .01em; text-wrap: balance; margin: 0; line-height: 1.1; }
+h1 { font-size: clamp(2.1rem, 5vw, 3.2rem); }
+h2 { font-size: clamp(1.6rem, 3.4vw, 2.1rem); }
+h3 { font-size: 1.3rem; }
+p { margin: 0; max-width: 68ch; }
+code, .mono { font-family: var(--font-mono); font-size: .86em; }
+code { background: var(--code-bg); padding: .08em .35em; border-radius: 4px; }
+section { display: grid; gap: 1.2rem; min-width: 0; }
+.lead { color: var(--muted); font-size: 1.12rem; }
+header.top { display: grid; gap: .8rem; }
+.eyebrow { font-family: var(--font-display); text-transform: uppercase; letter-spacing: .14em; font-weight: 600; color: var(--sun); font-size: .95rem; }
+
+/* Légende */
+.legend { display: flex; flex-wrap: wrap; gap: .5rem 1rem; font-size: .92rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: .4rem; }
+.legend i { width: .85rem; height: .85rem; border-radius: 3px; display: inline-block; border: 2px solid currentColor; }
+
+/* Schéma imbriqué */
+.diagram { overflow-x: auto; }
+.layer {
+  border: 2px solid var(--c); background: var(--t); border-radius: 10px;
+  padding: .9rem; display: grid; gap: .8rem; min-width: 0;
+}
+.layer > .lh { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .2rem 1rem; }
+.lh .name { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; color: var(--c); letter-spacing: .02em; }
+.lh .meta { font-family: var(--font-mono); font-size: .8rem; color: var(--muted); }
+.lh .what { font-size: .92rem; color: var(--muted); flex-basis: 100%; }
+.l-win { --c: var(--win); --t: var(--tint-win); }
+.l-svc { --c: var(--svc); --t: var(--tint-svc); }
+.l-sun { --c: var(--sun); --t: var(--tint-sun); }
+.l-ctl { --c: var(--ctl); --t: var(--tint-ctl); }
+.l-ops { --c: var(--ops); --t: var(--tint-ops); }
+.l-mach { --c: var(--mach); --t: var(--tint-mach); }
+.vms { display: grid; grid-template-columns: minmax(0, 1fr) minmax(9.5rem, .55fr) minmax(0, 2.2fr); gap: .7rem; align-items: start; }
+/* Colonne des liens entre les deux VM */
+.links { display: grid; gap: .55rem; align-content: start; padding-top: 3.2rem; }
+.link { position: relative; background: var(--surface); border: 1.5px solid var(--line); border-radius: 8px; padding: .45rem .55rem; font-size: .8rem; line-height: 1.35; min-width: 0; }
+.link .arrow { display: flex; align-items: center; gap: .3rem; font-family: var(--font-mono); font-size: .72rem; color: var(--lc); font-weight: 600; }
+.link .arrow::before, .link .arrow::after { content: ""; flex: 1; height: 2px; background: var(--lc); }
+.link .arrow.left::before { flex: 0 0 .5rem; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-right: 7px solid var(--lc); background: none; }
+.link .arrow.both::before { flex: 0 0 .5rem; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-right: 7px solid var(--lc); background: none; }
+.link .arrow.both::after { flex: 0 0 .5rem; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 7px solid var(--lc); background: none; }
+.link b { display: block; font-size: .86rem; margin-top: .15rem; }
+.link small { color: var(--muted); display: block; }
+.link.dns { --lc: var(--svc); }
+.link.nat { --lc: var(--svc); }
+.link.sso { --lc: var(--ctl); }
+.link.ca { --lc: var(--muted); }
+
+/* Schéma fléché des échanges */
+.svgwrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: .6rem; }
+.svgwrap svg { display: block; width: 100%; min-width: 760px; height: auto; font-family: var(--font-body); }
+.s-svc { fill: var(--tint-svc); stroke: var(--svc); stroke-width: 2; }
+.s-sun { fill: var(--tint-sun); stroke: var(--sun); stroke-width: 2; }
+.s-win { fill: var(--tint-win); stroke: var(--win); stroke-width: 2; }
+.s-in  { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+.s-title { font-family: var(--font-display); font-weight: 700; font-size: 20px; }
+.s-t-svc { fill: var(--svc); } .s-t-sun { fill: var(--sun); } .s-t-win { fill: var(--win); }
+.s-lbl { fill: var(--ink); font-size: 13.5px; font-weight: 600; }
+.s-sub { fill: var(--muted); font-size: 12px; }
+.s-mono { fill: var(--muted); font-family: var(--font-mono); font-size: 11.5px; }
+.e-dns { stroke: var(--svc); } .e-nat { stroke: var(--svc); } .e-sso { stroke: var(--ctl); } .e-usr { stroke: var(--win); }
+.edge { fill: none; stroke-width: 2.4; }
+.edge.dash { stroke-dasharray: 7 5; }
+.m-svc { fill: var(--svc); } .m-sso { fill: var(--ctl); } .m-win { fill: var(--win); }
+.e-txt { font-size: 12.5px; font-weight: 700; }
+.e-txt.svc { fill: var(--svc); } .e-txt.sso { fill: var(--ctl); } .e-txt.win { fill: var(--win); }
+.badge { fill: var(--bg); stroke: var(--line); }
+.nets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+.net { border: 2px dashed var(--muted); border-radius: 8px; padding: .5rem .7rem; font-size: .9rem; background: var(--surface); min-width: 0; }
+.net b { font-family: var(--font-mono); font-size: .85rem; }
+.chips { display: flex; flex-wrap: wrap; gap: .35rem; }
+.chip {
+  font-family: var(--font-mono); font-size: .76rem; padding: .2rem .45rem; border-radius: 5px;
+  background: var(--surface); border: 1px solid var(--line); color: var(--ink); white-space: nowrap;
+}
+.chip.k { border-color: var(--c); }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: .55rem .7rem; font-size: .9rem; min-width: 0; }
+.box b { display: block; font-size: .95rem; }
+.box small { color: var(--muted); display: block; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+.models { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 2fr); gap: .8rem; }
+.vips { display: flex; flex-wrap: wrap; gap: .4rem; }
+.vip { font-family: var(--font-mono); font-size: .76rem; border-radius: 5px; padding: .2rem .45rem; background: var(--sun); color: var(--surface); white-space: nowrap; }
+.xm { font-size: .85rem; color: var(--muted); }
+
+@media (max-width: 860px) {
+  .vms, .models { grid-template-columns: minmax(0, 1fr); }
+  .links { padding-top: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .link .arrow.left::before { transform: rotate(90deg); }
+}
+@media (max-width: 520px) { .links { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 520px) {
+  .nets, .grid2 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Tableaux */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+th, td { text-align: left; vertical-align: top; padding: .55rem .7rem; border-bottom: 1px solid var(--line); }
+th { font-family: var(--font-display); font-size: 1rem; letter-spacing: .03em; text-transform: uppercase; color: var(--muted); font-weight: 600; background: var(--bg); }
+tr:last-child td { border-bottom: none; }
+td.svc { white-space: nowrap; font-weight: 700; }
+.tag { display: inline-block; font-size: .72rem; font-family: var(--font-mono); padding: .05rem .35rem; border-radius: 4px; border: 1.5px solid var(--c); color: var(--c); white-space: nowrap; }
+.group td { background: var(--t); font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; color: var(--c); letter-spacing: .03em; }
+
+/* Parcours */
+.flows { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+@media (max-width: 900px) { .flows { grid-template-columns: minmax(0, 1fr); } }
+.flow { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 1rem; display: grid; gap: .7rem; align-content: start; min-width: 0; }
+.flow ol { margin: 0; padding-left: 1.3rem; display: grid; gap: .45rem; font-size: .93rem; }
+.flow .cmd { font-family: var(--font-mono); font-size: .8rem; background: var(--code-bg); border-radius: 6px; padding: .45rem .6rem; overflow-x: auto; white-space: nowrap; }
+.boot { margin: 0; padding-left: 1.3rem; display: grid; gap: .5rem; }
+.note { border-left: 3px solid var(--sun); padding: .2rem 0 .2rem .9rem; color: var(--muted); max-width: 75ch; }
+a { color: var(--sun); }
+:focus-visible { outline: 2px solid var(--sun); outline-offset: 2px; }
+</style>
+
+<div class="page">
+
+<header class="top">
+  <div class="eyebrow">Formation OpenStack · lab de référence</div>
+  <h1>Architecture du lab Sunbeam</h1>
+  <p class="lead">Ce que contiennent les deux machines virtuelles du lab, à quoi sert chaque composant dans notre projet, et comment ils se parlent. Les adresses et les noms sont ceux du lab réel, relevés en octobre 2026 (OpenStack 2024.1 « Caracal », déployé par Sunbeam).</p>
+</header>
+
+<!-- 1. Le schéma -->
+<section aria-labelledby="s1">
+  <h2 id="s1">Vue d’ensemble</h2>
+  <p>Chaque cadre en contient d’autres : le PC de l’apprenant héberge deux VM ; dans Lab-Sunbeam, un Kubernetes fait tourner OpenStack ; Juju range le tout en trois <em>modèles</em>. La couleur d’un cadre est reprise dans les tableaux plus bas.</p>
+  <div class="legend" aria-hidden="true">
+    <span style="color:var(--win)"><i></i>PC Windows</span>
+    <span style="color:var(--svc)"><i></i>Lab-Services</span>
+    <span style="color:var(--sun)"><i></i>Lab-Sunbeam</span>
+    <span style="color:var(--ctl)"><i></i>Modèle Juju controller</span>
+    <span style="color:var(--ops)"><i></i>Modèle Juju openstack</span>
+    <span style="color:var(--mach)"><i></i>Modèle Juju openstack-machines</span>
+  </div>
+
+  <div class="diagram">
+  <div class="layer l-win">
+    <div class="lh">
+      <span class="name">PC Windows · VirtualBox</span>
+      <span class="meta">192.168.56.1 · 192.168.57.1</span>
+      <span class="what">Le poste de l’apprenant : navigateur (Horizon, Keycloak), SSH vers les VM et les instances. Il est branché sur les deux réseaux du lab.</span>
+    </div>
+
+    <div class="nets">
+      <div class="net"><b>192.168.56.0/24</b> · réseau de <strong>gestion</strong><br><small>API OpenStack, Keycloak, SSH vers les VM, Juju</small></div>
+      <div class="net"><b>192.168.57.0/24</b> · réseau <strong>externe</strong> (provider)<br><small>IP flottantes des instances : 192.168.57.100 à .199</small></div>
+    </div>
+
+    <div class="vms">
+      <!-- Lab-Services -->
+      <div class="layer l-svc">
+        <div class="lh">
+          <span class="name">Lab-Services</span>
+          <span class="meta">192.168.56.20 · 192.168.57.2</span>
+          <span class="what">Les services d’appui, hors OpenStack. Ubuntu 24.04, Docker.</span>
+        </div>
+        <div class="box"><b>dnsmasq · DNS du lab</b><small>Résout <code>cloud.lab.test</code>, <code>internal.lab.test</code>, <code>rgw.lab.test</code>, <code>sso.lab.test</code> ; relaie le reste vers Internet. Utilisé par Lab-Sunbeam, par Kubernetes et par les instances.</small></div>
+        <div class="box"><b>Passerelle NAT</b><small>Donne Internet aux deux réseaux du lab (script <code>lab-router</code>) : téléchargements de Lab-Sunbeam, <code>apt</code> dans les instances.</small></div>
+        <div class="box"><b>Keycloak 26.8 + PostgreSQL</b><small>Conteneurs Docker. Fournisseur d’identité externe (SAML), <code>https://sso.lab.test:8443</code>, realm <code>lab</code>.</small></div>
+        <div class="box"><b>CA du lab</b><small>« Sunbeam Lab Root CA » : signe le certificat de Keycloak. Fichier <code>ca.crt</code> distribué aux postes.</small></div>
+      </div>
+
+      <!-- Liens entre les deux VM -->
+      <div class="links" aria-label="Échanges entre Lab-Sunbeam et Lab-Services">
+        <div class="link dns">
+          <div class="arrow left">DNS · 53</div>
+          <b>Résoudre les noms</b>
+          <small>La machine, les pods (CoreDNS) et les instances demandent à Lab-Services les adresses de <code>*.lab.test</code>.</small>
+        </div>
+        <div class="link nat">
+          <div class="arrow left">via 192.168.57.2</div>
+          <b>Internet des instances</b>
+          <small>Les VM d’OpenStack sortent par la passerelle NAT de Lab-Services.</small>
+        </div>
+        <div class="link sso">
+          <div class="arrow both">HTTPS · 8443</div>
+          <b>Fédération SAML</b>
+          <small>Keystone fait confiance à Keycloak (journée sécurité, démo 2).</small>
+        </div>
+        <div class="link ca">
+          <div class="arrow left">ca.crt</div>
+          <b>Confiance</b>
+          <small>La CA du lab permet de vérifier le certificat de Keycloak.</small>
+        </div>
+      </div>
+
+      <!-- Lab-Sunbeam -->
+      <div class="layer l-sun">
+        <div class="lh">
+          <span class="name">Lab-Sunbeam</span>
+          <span class="meta">192.168.56.10 · provider0 sans IP</span>
+          <span class="what">Le cloud, sur un seul nœud qui joue tous les rôles : contrôle, calcul, stockage. Ubuntu 24.04, snap <code>openstack</code> (Sunbeam). Un second disque virtuel de 100 Go est donné à Ceph.</span>
+        </div>
+
+        <div class="layer l-sun" style="--t: var(--surface)">
+          <div class="lh">
+            <span class="name">Canonical Kubernetes (snap k8s)</span>
+            <span class="meta">MetalLB : 192.168.56.200–220</span>
+            <span class="what">Fait tourner chaque service d’OpenStack dans un pod. MetalLB donne aux points d’entrée une adresse fixe sur le réseau de gestion :</span>
+          </div>
+          <div class="vips">
+            <span class="vip">.200 contrôleur Juju</span>
+            <span class="vip">.201 cloud.lab.test</span>
+            <span class="vip">.202 internal.lab.test</span>
+            <span class="vip">.203 rgw.lab.test</span>
+          </div>
+
+          <div class="models">
+            <div class="layer l-ctl">
+              <div class="lh"><span class="name">admin/controller</span><span class="what">Le cerveau de Juju.</span></div>
+              <div class="chips"><span class="chip k">controller</span><span class="chip">dashboard</span></div>
+              <p class="xm">Le contrôleur garde l’état voulu de tout le cloud et pilote les agents. Le dashboard est l’interface web de Juju (installée en démo).</p>
+            </div>
+            <div class="layer l-ops">
+              <div class="lh"><span class="name">openstack</span><span class="meta">25 unités</span><span class="what">Les services d’OpenStack, en pods.</span></div>
+              <div class="chips">
+                <span class="chip k">traefik-public</span><span class="chip k">traefik</span><span class="chip k">traefik-rgw</span>
+                <span class="chip k">keystone</span><span class="chip k">horizon</span><span class="chip k">glance</span>
+                <span class="chip k">nova</span><span class="chip k">placement</span><span class="chip k">neutron</span>
+                <span class="chip k">ovn-central</span><span class="chip k">ovn-relay</span><span class="chip k">cinder</span>
+                <span class="chip k">mysql</span><span class="chip k">rabbitmq</span><span class="chip k">certificate-authority</span>
+                <span class="chip">keystone-mysql-router</span><span class="chip">glance-mysql-router</span><span class="chip">nova-mysql-router</span>
+                <span class="chip">nova-api-mysql-router</span><span class="chip">nova-cell-mysql-router</span><span class="chip">placement-mysql-router</span>
+                <span class="chip">neutron-mysql-router</span><span class="chip">cinder-mysql-router</span><span class="chip">cinder-volume-mysql-router</span>
+                <span class="chip">horizon-mysql-router</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="layer l-mach">
+          <div class="lh"><span class="name">admin/openstack-machines</span><span class="meta">machine 0 · 7 applications</span><span class="what">Ce qui doit tourner directement sur la machine, hors Kubernetes, sous forme de snaps.</span></div>
+          <div class="grid2">
+            <div class="box"><b>openstack-hypervisor</b><small><code>nova-compute</code>, libvirt et KVM (les instances), <code>ovn-controller</code> (le réseau des instances), agent de métadonnées.</small></div>
+            <div class="box"><b>microceph</b><small>Le stockage Ceph, sur le disque de 100 Go : images, volumes, stockage objet.</small></div>
+            <div class="box"><b>cinder-volume + cinder-volume-ceph</b><small>Crée réellement les volumes, dans Ceph.</small></div>
+            <div class="box"><b>k8s · sunbeam-machine · epa-orchestrator</b><small>Kubernetes lui-même, et la préparation de la machine pour Sunbeam.</small></div>
+          </div>
+          <p class="xm">Ces applications parlent aux services du modèle <code>openstack</code> par des <strong>relations entre modèles</strong> (offres Juju : <code>keystone-credentials</code>, <code>rabbitmq</code>, <code>nova</code>, <code>ovn-relay</code>, <code>certificate-authority</code>…).</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</section>
+
+<!-- 1 bis. Les échanges entre les deux VM -->
+<section aria-labelledby="s1b">
+  <h2 id="s1b">Ce que Lab-Sunbeam demande à Lab-Services</h2>
+  <p>Les deux VM sont séparées, mais le cloud ne fonctionne pas sans Lab-Services. Lab-Sunbeam lui demande trois choses : <strong>trouver les adresses</strong> (DNS), <strong>sortir sur Internet</strong> pour les instances, et, pendant la journée sécurité, <strong>vérifier l’identité</strong> des personnes avec Keycloak.</p>
+
+  <div class="svgwrap">
+  <svg viewBox="0 0 960 500" role="img" aria-labelledby="svgt svgd">
+    <title id="svgt">Échanges entre Lab-Sunbeam, Lab-Services et le PC Windows</title>
+    <desc id="svgd">Lab-Sunbeam interroge le DNS de Lab-Services pour sa machine, ses pods et ses instances ; les instances sortent sur Internet par la passerelle de Lab-Services ; Keystone lit les métadonnées SAML de Keycloak ; le PC Windows se connecte à Horizon et à Keycloak.</desc>
+    <defs>
+      <marker id="ah-svc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m-svc"/></marker>
+      <marker id="ah-sso" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m-sso"/></marker>
+      <marker id="ah-win" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="m-win"/></marker>
+    </defs>
+
+    <!-- Lab-Sunbeam -->
+    <rect x="20" y="40" width="400" height="345" rx="12" class="s-sun"/>
+    <text x="38" y="70" class="s-title s-t-sun">Lab-Sunbeam</text>
+    <text x="402" y="70" text-anchor="end" class="s-mono">192.168.56.10</text>
+
+    <rect x="40" y="88" width="360" height="56" rx="8" class="s-in"/>
+    <text x="54" y="111" class="s-lbl">Ubuntu de la machine</text>
+    <text x="54" y="131" class="s-mono">résolveur DNS = 192.168.56.20</text>
+
+    <rect x="40" y="156" width="360" height="56" rx="8" class="s-in"/>
+    <text x="54" y="179" class="s-lbl">Kubernetes : DNS des pods (CoreDNS)</text>
+    <text x="54" y="199" class="s-mono">upstream-nameservers 192.168.56.20</text>
+
+    <rect x="40" y="224" width="360" height="56" rx="8" class="s-in"/>
+    <text x="54" y="247" class="s-lbl">Keystone + charm keystone-saml</text>
+    <text x="54" y="267" class="s-sub">lit les métadonnées SAML de Keycloak</text>
+
+    <rect x="40" y="292" width="360" height="74" rx="8" class="s-in"/>
+    <text x="54" y="315" class="s-lbl">Instances OpenStack (VM Nova)</text>
+    <text x="54" y="335" class="s-mono">réseau externe 192.168.57.0/24</text>
+    <text x="54" y="353" class="s-mono">DNS et passerelle = 192.168.57.2</text>
+
+    <!-- Lab-Services -->
+    <rect x="560" y="40" width="380" height="345" rx="12" class="s-svc"/>
+    <text x="578" y="70" class="s-title s-t-svc">Lab-Services</text>
+    <text x="922" y="70" text-anchor="end" class="s-mono">.56.20 · .57.2</text>
+
+    <rect x="580" y="96" width="340" height="104" rx="8" class="s-in"/>
+    <text x="594" y="120" class="s-lbl">dnsmasq · port 53</text>
+    <text x="594" y="141" class="s-mono">cloud.lab.test    → .201</text>
+    <text x="594" y="158" class="s-mono">internal.lab.test → .202</text>
+    <text x="594" y="175" class="s-mono">sso.lab.test      → .20</text>
+    <text x="594" y="192" class="s-sub">le reste : relayé vers Internet</text>
+
+    <rect x="580" y="224" width="340" height="56" rx="8" class="s-in"/>
+    <text x="594" y="247" class="s-lbl">Keycloak · HTTPS 8443</text>
+    <text x="594" y="267" class="s-mono">sso.lab.test · realm lab</text>
+
+    <rect x="580" y="300" width="340" height="56" rx="8" class="s-in"/>
+    <text x="594" y="323" class="s-lbl">Passerelle NAT</text>
+    <text x="594" y="343" class="s-mono">192.168.57.2 → Internet</text>
+
+    <!-- Échanges -->
+    <path d="M400,116 C490,116 490,128 578,128" class="edge e-dns" marker-end="url(#ah-svc)"/>
+    <path d="M400,184 C490,184 490,160 578,160" class="edge e-dns" marker-end="url(#ah-svc)"/>
+    <path d="M400,310 C500,300 470,196 578,190" class="edge e-dns dash" marker-end="url(#ah-svc)"/>
+    <path d="M400,348 C490,348 490,328 578,328" class="edge e-nat" marker-end="url(#ah-svc)"/>
+    <path d="M400,252 L578,252" class="edge e-sso" marker-end="url(#ah-sso)"/>
+
+    <rect x="447" y="92" width="66" height="20" rx="10" class="badge"/>
+    <text x="480" y="106" text-anchor="middle" class="e-txt svc">DNS</text>
+    <rect x="447" y="232" width="66" height="20" rx="10" class="badge"/>
+    <text x="480" y="246" text-anchor="middle" class="e-txt sso">SAML</text>
+    <rect x="440" y="356" width="80" height="20" rx="10" class="badge"/>
+    <text x="480" y="370" text-anchor="middle" class="e-txt svc">Internet</text>
+
+    <!-- PC Windows -->
+    <rect x="270" y="430" width="420" height="54" rx="10" class="s-win"/>
+    <text x="288" y="455" class="s-title s-t-win" style="font-size:18px">PC Windows</text>
+    <text x="288" y="474" class="s-sub">navigateur · SSH · noms du lab et ca.crt (Configurer-Lab-Sunbeam.ps1)</text>
+    <path d="M330,430 L330,389" class="edge e-usr" marker-end="url(#ah-win)"/>
+    <path d="M630,430 L630,389" class="edge e-usr" marker-end="url(#ah-win)"/>
+    <text x="320" y="414" text-anchor="end" class="e-txt win">Horizon, API, SSH</text>
+    <text x="640" y="414" class="e-txt win">connexion Keycloak</text>
+  </svg>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Échange</th><th>Qui demande</th><th>À quoi ça sert dans notre projet</th><th>Si Lab-Services est éteinte ou figée</th></tr></thead>
+      <tbody>
+        <tr><td class="svc">DNS</td><td>La machine Lab-Sunbeam, les pods de Kubernetes, les instances</td><td>Chaque service joint les autres par leur <strong>nom</strong> (<code>internal.lab.test</code>, <code>cloud.lab.test</code>), jamais par leur adresse. Les instances résolvent aussi les dépôts Ubuntu.</td><td>Nova, Neutron, Cinder ne trouvent plus Keystone : <code>503 … The Keystone service is temporarily unavailable</code>. C’est la panne la plus fréquente du lab</td></tr>
+        <tr><td class="svc">Internet (NAT)</td><td>Les instances, par le routeur de leur projet</td><td>Installer des paquets (<code>apt</code>, Nginx de la démo <code>1-demo-openstack</code>).</td><td>Les instances démarrent, mais <code>apt</code> et <code>cloud-init</code> échouent</td></tr>
+        <tr><td class="svc">SAML (HTTPS 8443)</td><td>Keystone (charm <code>keystone-saml</code>), et le navigateur de la personne</td><td>Fédération d’identité de la journée sécurité : le mot de passe est vérifié par Keycloak, jamais par OpenStack.</td><td>Les comptes fédérés ne peuvent plus se connecter ; les comptes locaux (<code>admin</code>, <code>demo</code>) marchent toujours</td></tr>
+        <tr><td class="svc">CA du lab</td><td>Keystone, le PC Windows</td><td>Faire confiance au certificat HTTPS de Keycloak.</td><td>Sans objet : c’est un fichier, pas un service</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">D’où la règle de démarrage : <strong>Lab-Services d’abord, Lab-Sunbeam ensuite</strong>. Et, au moindre <code>503</code> général, vérifier Lab-Services en premier : <code>getent hosts internal.lab.test</code> sur Lab-Sunbeam.</p>
+</section>
+
+<!-- 2. Les adresses -->
+<section aria-labelledby="s2">
+  <h2 id="s2">Les adresses à connaître</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Adresse</th><th>Nom</th><th>Ce qui répond</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">192.168.56.10</td><td>Lab-Sunbeam</td><td>SSH (<code>vagrant</code>) : toutes les commandes <code>sunbeam</code>, <code>juju</code>, <code>openstack</code> se tapent ici</td></tr>
+        <tr><td class="mono">192.168.56.20</td><td>Lab-Services, <code>sso.lab.test</code></td><td>SSH, DNS, Keycloak sur le port 8443</td></tr>
+        <tr><td class="mono">192.168.56.200</td><td>contrôleur Juju</td><td>API de Juju, port 17070 (chiffrée)</td></tr>
+        <tr><td class="mono">192.168.56.201</td><td><code>cloud.lab.test</code></td><td>Traefik public : API publiques d’OpenStack et Horizon (<code>/openstack-horizon</code>)</td></tr>
+        <tr><td class="mono">192.168.56.202</td><td><code>internal.lab.test</code></td><td>Traefik interne : API utilisées par les services entre eux</td></tr>
+        <tr><td class="mono">192.168.56.203</td><td><code>rgw.lab.test</code></td><td>Traefik RGW : stockage objet de Ceph</td></tr>
+        <tr><td class="mono">192.168.57.2</td><td>Lab-Services</td><td>Passerelle et DNS du réseau externe des instances</td></tr>
+        <tr><td class="mono">192.168.57.100–199</td><td>IP flottantes</td><td>Adresses « publiques » des instances, joignables depuis Windows (pas depuis Internet)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 3. Rôle de chaque service -->
+<section aria-labelledby="s3">
+  <h2 id="s3">Le rôle de chaque composant dans notre projet</h2>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Composant</th><th>Où</th><th>À quoi il sert</th><th>Si il tombe</th></tr></thead>
+      <tbody>
+        <tr class="group l-ops"><td colspan="4">Les services d’OpenStack</td></tr>
+        <tr><td class="svc">Keystone</td><td><span class="tag l-ops">openstack</span></td><td>L’<strong>identité</strong> : comptes, domaines, projets, rôles, catalogue des adresses. Délivre et valide les jetons que présentent tous les autres appels.</td><td>Plus rien ne marche : <code>401</code>, <code>500</code> ou <code>503</code> partout</td></tr>
+        <tr><td class="svc">Horizon</td><td><span class="tag l-ops">openstack</span></td><td>L’<strong>interface web</strong>. Elle n’a pas de données : elle appelle les API des autres services avec le jeton de l’utilisateur connecté.</td><td>Le web est perdu, la ligne de commande marche encore</td></tr>
+        <tr><td class="svc">Glance</td><td><span class="tag l-ops">openstack</span></td><td>Le catalogue des <strong>images</strong> de VM (ici <code>ubuntu</code>), stockées dans Ceph.</td><td>Plus de création de VM (<code>502</code> dans Nova)</td></tr>
+        <tr><td class="svc">Nova</td><td><span class="tag l-ops">openstack</span></td><td>Les <strong>instances</strong>. Le pod contient <code>nova-api</code> (reçoit les demandes), <code>nova-scheduler</code> (choisit l’hyperviseur), <code>nova-conductor</code> (accès à la base).</td><td>Plus de gestion des VM ; celles qui tournent continuent</td></tr>
+        <tr><td class="svc">Placement</td><td><span class="tag l-ops">openstack</span></td><td>L’<strong>inventaire des capacités</strong> (vCPU, RAM, disque) de chaque hyperviseur. Le scheduler de Nova le consulte avant de placer une VM.</td><td>Plus aucune VM ne se crée</td></tr>
+        <tr><td class="svc">Neutron</td><td><span class="tag l-ops">openstack</span></td><td>Le <strong>réseau</strong> vu par l’utilisateur : réseaux, routeurs, IP flottantes, groupes de sécurité. Il traduit tout cela pour OVN.</td><td>Plus de création ni de modification réseau</td></tr>
+        <tr><td class="svc">OVN central, OVN relay</td><td><span class="tag l-ops">openstack</span></td><td>La <strong>description du réseau virtuel</strong> (bases nord et sud d’OVN) et son relais vers la machine.</td><td>Les changements de réseau ne s’appliquent plus</td></tr>
+        <tr><td class="svc">Cinder</td><td><span class="tag l-ops">openstack</span></td><td>Les <strong>volumes</strong> (disques ajoutables aux VM) : API et scheduler. Le travail est fait par <code>cinder-volume</code>, sur la machine.</td><td>Plus de volumes</td></tr>
+
+        <tr class="group l-ops"><td colspan="4">L’infrastructure des services</td></tr>
+        <tr><td class="svc">MySQL</td><td><span class="tag l-ops">openstack</span></td><td>La <strong>base de données</strong> de tous les services : comptes, VM, réseaux, volumes…</td><td>Tout s’arrête ; au démarrage, c’est le dernier prêt</td></tr>
+        <tr><td class="svc">*-mysql-router</td><td><span class="tag l-ops">openstack</span></td><td>Un <strong>routeur par service</strong> vers MySQL. Le service ne connaît que son routeur.</td><td>Le service concerné perd sa base (<code>500</code>)</td></tr>
+        <tr><td class="svc">RabbitMQ</td><td><span class="tag l-ops">openstack</span></td><td>La <strong>messagerie</strong> entre les morceaux d’un service (ex. <code>nova-conductor</code> → <code>nova-compute</code>).</td><td>Actions acceptées mais jamais terminées (VM en <code>BUILD</code>)</td></tr>
+        <tr><td class="svc">Traefik (×3)</td><td><span class="tag l-ops">openstack</span></td><td>Les <strong>portes d’entrée</strong> HTTP : public (<code>cloud.lab.test</code>), interne (<code>internal.lab.test</code>), objet (<code>rgw.lab.test</code>). Elles répartissent les appels vers les pods. Elles portent le HTTPS quand on l’active.</td><td>Le cloud n’est plus joignable</td></tr>
+        <tr><td class="svc">certificate-authority</td><td><span class="tag l-ops">openstack</span></td><td>La <strong>CA interne</strong> du cloud (<code>internal-ca</code>) : certificats d’OVN, et des API quand le TLS est activé.</td><td>Plus de nouveaux certificats</td></tr>
+
+        <tr class="group l-mach"><td colspan="4">Sur la machine</td></tr>
+        <tr><td class="svc">nova-compute + libvirt/KVM</td><td><span class="tag l-mach">machines</span></td><td>Lance <strong>réellement</strong> les VM. KVM tourne lui-même dans VirtualBox (virtualisation imbriquée).</td><td>VM en <code>ERROR</code> : « No valid host was found »</td></tr>
+        <tr><td class="svc">ovn-controller</td><td><span class="tag l-mach">machines</span></td><td>Applique le réseau virtuel et les groupes de sécurité au trafic des VM ; la carte <code>provider0</code> le relie au réseau externe.</td><td>VM injoignables</td></tr>
+        <tr><td class="svc">Agent de métadonnées</td><td><span class="tag l-mach">machines</span></td><td>Donne à chaque VM, au démarrage, sa clé SSH et son script <code>cloud-init</code>.</td><td>VM sans clé, <code>cloud-init</code> bloqué</td></tr>
+        <tr><td class="svc">MicroCeph</td><td><span class="tag l-mach">machines</span></td><td>Le <strong>stockage</strong> : un OSD Ceph sur le disque de 100 Go. Images de Glance, volumes de Cinder, stockage objet.</td><td>Plus d’images ni de volumes</td></tr>
+        <tr><td class="svc">cinder-volume</td><td><span class="tag l-mach">machines</span></td><td>Crée les volumes dans Ceph, à la demande de Cinder.</td><td>Volumes en <code>error</code></td></tr>
+
+        <tr class="group l-sun"><td colspan="4">Les outils qui construisent et pilotent le cloud</td></tr>
+        <tr><td class="svc">Sunbeam</td><td><span class="tag l-sun">Lab-Sunbeam</span></td><td>L’<strong>installateur</strong> (commande <code>sunbeam</code>) : il a déployé le cloud et active les fonctionnalités (TLS, Heat, observabilité…). Il s’appuie sur Terraform et Juju.</td><td>Le cloud tourne ; on ne peut plus le faire évoluer</td></tr>
+        <tr><td class="svc">Juju + charms</td><td><span class="tag l-ctl">controller</span></td><td>L’<strong>exploitation</strong> : chaque service est piloté par un <em>charm</em>, un programme qui l’installe, le configure et le relie aux autres (<em>relations</em>). <code>juju status</code> montre leur état.</td><td>Les services tournent, plus personne ne les pilote</td></tr>
+        <tr><td class="svc">Kubernetes</td><td><span class="tag l-sun">Lab-Sunbeam</span></td><td>Fait tourner les pods des services, les redémarre s’ils meurent, leur donne leurs adresses (MetalLB).</td><td>Tous les services du modèle <code>openstack</code></td></tr>
+        <tr><td class="svc">Pebble</td><td><span class="tag l-ops">dans chaque pod</span></td><td>Le gestionnaire de processus de chaque conteneur ; il teste régulièrement que le service répond (« healthcheck »).</td><td>Message <code>healthcheck failed</code> dans <code>juju status</code></td></tr>
+
+        <tr class="group l-svc"><td colspan="4">Lab-Services</td></tr>
+        <tr><td class="svc">dnsmasq</td><td><span class="tag l-svc">Lab-Services</span></td><td>Le <strong>DNS</strong> de tout le lab.</td><td><code>503 … Keystone service is temporarily unavailable</code> partout</td></tr>
+        <tr><td class="svc">Passerelle NAT</td><td><span class="tag l-svc">Lab-Services</span></td><td>L’accès à <strong>Internet</strong> du lab et des instances.</td><td>Plus de téléchargements, <code>apt</code> bloqué dans les VM</td></tr>
+        <tr><td class="svc">Keycloak</td><td><span class="tag l-svc">Lab-Services</span></td><td>L’<strong>identité externe</strong> de la journée sécurité : comptes des personnes, politique de mots de passe, fédération SAML avec Keystone.</td><td>Seuls les comptes fédérés sont touchés</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 4. Comment ils communiquent -->
+<section aria-labelledby="s4">
+  <h2 id="s4">Comment ils se parlent : trois parcours</h2>
+  <p>Suivre une commande à travers le cloud est la meilleure façon de comprendre son architecture, et de savoir où chercher quand elle échoue.</p>
+  <div class="flows">
+    <div class="flow">
+      <h3>Obtenir un jeton</h3>
+      <div class="cmd">openstack token issue</div>
+      <ol>
+        <li>Le client demande au DNS de Lab-Services l’adresse de <code>cloud.lab.test</code> : <code>192.168.56.201</code>.</li>
+        <li>Traefik public reçoit l’appel et le passe au pod <code>keystone</code>.</li>
+        <li>Keystone vérifie le mot de passe dans MySQL, via <code>keystone-mysql-router</code>.</li>
+        <li>Il renvoie un <strong>jeton</strong>, valable une heure, que le client joint à tous ses appels suivants.</li>
+      </ol>
+    </div>
+    <div class="flow">
+      <h3>Lancer une VM</h3>
+      <div class="cmd">openstack server create …</div>
+      <ol>
+        <li><code>nova-api</code> reçoit la demande et fait valider le jeton par Keystone.</li>
+        <li><code>nova-scheduler</code> demande à Placement un hyperviseur qui a la place.</li>
+        <li>Par RabbitMQ, <code>nova-conductor</code> confie la VM à <code>nova-compute</code>, sur la machine.</li>
+        <li><code>nova-compute</code> lit l’image dans Glance (Ceph) et demande un port à Neutron, qui le décrit à OVN.</li>
+        <li>libvirt et KVM démarrent la VM ; <code>ovn-controller</code> branche son réseau ; l’agent de métadonnées lui donne sa clé SSH.</li>
+      </ol>
+    </div>
+    <div class="flow">
+      <h3>Joindre la VM depuis Windows</h3>
+      <div class="cmd">ssh ubuntu@192.168.57.1xx</div>
+      <ol>
+        <li>Windows envoie le paquet sur le réseau externe <code>192.168.57.0/24</code>, à l’IP flottante de la VM.</li>
+        <li>Il entre dans Lab-Sunbeam par la carte <code>provider0</code>.</li>
+        <li><code>ovn-controller</code> traduit l’IP flottante en adresse privée (routeur du projet) et applique le groupe de sécurité.</li>
+        <li>Le paquet arrive dans la VM. Pour sortir sur Internet, la VM passe par le routeur, puis par la passerelle NAT de Lab-Services (<code>192.168.57.2</code>).</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Démarrage -->
+<section aria-labelledby="s5">
+  <h2 id="s5">Ce qui se passe au démarrage</h2>
+  <p>Les dépendances expliquent l’ordre de démarrage, et l’écran rouge de <code>juju status</code> des premières minutes :</p>
+  <ol class="boot">
+    <li><strong>Lab-Services d’abord</strong> : sans son DNS, aucun service ne trouve les autres.</li>
+    <li><strong>Lab-Sunbeam</strong> : Kubernetes relance les pods, puis le contrôleur Juju et ses agents.</li>
+    <li><strong>MySQL</strong> démarre (<code>maintenance</code> « Starting mysqld »). Les routeurs qui ont essayé trop tôt passent en <code>error</code> : on les relance avec <code>juju resolved</code>.</li>
+    <li><strong>Les services</strong> retrouvent leur base : leurs tests de santé repassent au vert, et <code>blocked</code> devient <code>active</code>.</li>
+    <li>Compter <strong>10 à 15 minutes</strong> avant un cloud sain.</li>
+  </ol>
+</section>
+
+</div>

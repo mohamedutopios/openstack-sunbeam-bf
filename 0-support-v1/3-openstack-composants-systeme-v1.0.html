@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenStack — composants système</title>
+<style>
+:root{--ink:#0f172a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;--navy:#101a33;--red:#e4002b;--red2:#b3122f;--blue:#2563eb;--teal:#0d9488;--amber:#d97706;--violet:#7c3aed;--green:#16a34a;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;--z:.2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#070b17;overflow:hidden;font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:#fff;color:var(--ink);padding:38px 64px 46px;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide>header{border-left:5px solid var(--red);padding:2px 0 2px 18px;margin-bottom:18px;flex:none}
+.kick{display:block;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+h2{font-size:32px;line-height:1.15;letter-spacing:-.012em;font-weight:750}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;font-size:17.5px;line-height:1.45;color:var(--ink2)}
+.body b,.body strong{color:var(--ink);font-weight:680}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;min-height:0}
+.cols.c3{grid-template-columns:repeat(3,1fr);gap:18px}
+.cols.c4{grid-template-columns:repeat(4,1fr);gap:14px}
+.cols.c5{grid-template-columns:repeat(5,1fr);gap:12px}
+.cols.w64{grid-template-columns:1.45fr 1fr}
+.cols.w46{grid-template-columns:1fr 1.35fr}
+.cols.nf{flex:none}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+ul.pts{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.pts li{padding-left:22px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.52em;width:8px;height:8px;border-radius:2px;background:var(--red)}
+ul.pts.sm{gap:5px;font-size:15px;line-height:1.38}
+ul.pts.sm li{padding-left:17px}
+ul.pts.sm li::before{width:6px;height:6px;top:.5em}
+.card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--c,var(--red));border-radius:10px;padding:13px 16px;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:15px;line-height:1.4;min-width:0}
+.card h3{font-size:16.5px;color:var(--ink);margin-bottom:5px;line-height:1.2}
+.card .os{display:block;margin-top:7px;font-size:13px;color:var(--mut)}
+.card .os b{color:var(--red2)}
+.cb{--c:var(--blue)}.ct{--c:var(--teal)}.ca{--c:var(--amber)}.cv{--c:var(--violet)}.cg{--c:var(--green)}.cn{--c:var(--navy)}
+.note{background:#fff5f6;border-left:4px solid var(--red);padding:9px 16px;border-radius:0 8px 8px 0;font-size:15.5px;color:var(--ink);flex:none}
+.note.b{background:#eff5ff;border-color:var(--blue)}
+.note.g{background:#f1f5f9;border-color:#64748b}
+table.tbl{width:100%;border-collapse:collapse;font-size:14.5px;line-height:1.35}
+.tbl th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-size:13px;letter-spacing:.03em;font-weight:650}
+.tbl td{padding:6.5px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:nth-child(even) td{background:#f8fafc}
+.tbl td:first-child{font-weight:680;color:var(--ink);white-space:nowrap}
+.tbl.os td:nth-child(2){color:var(--red2);font-weight:650}
+.tbl.tight td{padding:5px 12px;font-size:14px}
+table.resp{width:100%;border-collapse:separate;border-spacing:5px 4px;font-size:14.5px;text-align:center}
+.resp thead th{font-size:15px;color:var(--ink);padding:2px 4px 6px;line-height:1.2}
+.resp thead small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+.resp tbody th{text-align:right;padding-right:12px;font-weight:650;color:var(--ink);white-space:nowrap;width:210px}
+.resp td{padding:6px;border-radius:6px;font-weight:600}
+.resp .u{background:#e3edff;color:#1d4ed8}
+.resp .p{background:#fde8ec;color:var(--red2)}
+code{font-family:var(--mono);font-size:.87em;background:#f1f5f9;padding:1px 6px;border-radius:4px;color:var(--ink)}
+pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;font:13.5px/1.5 var(--mono);white-space:pre;overflow:hidden}
+pre .c{color:#7dd3fc}pre .k{color:#fda4af}pre .m{color:#94a3b8}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:#fde8ec;color:var(--red2);letter-spacing:.03em}
+.fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:100%}
+.foot{position:absolute;left:64px;right:64px;bottom:15px;display:flex;justify-content:space-between;font-size:11.5px;color:#94a3b8;letter-spacing:.02em}
+/* dark slides */
+.slide.dark{background:radial-gradient(1100px 600px at 85% 15%,#1c2a55 0%,var(--navy) 55%,#0b1226 100%);color:#fff;justify-content:center}
+.dark .foot{color:#64748b}
+.dark .kick{color:#ff6b84}
+h1{font-size:68px;line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:10px 0 14px}
+.sub{font-size:27px;color:#cbd5e1;font-weight:400}
+.chips{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin-top:34px}
+.chips li{border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:7px 16px;font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.04)}
+.ref{margin-top:36px;font-size:14px;color:#94a3b8}
+.deco{position:absolute;right:0;top:0;width:1280px;height:720px;pointer-events:none}
+.tt{position:relative;max-width:760px}
+.sec .num{font-size:150px;font-weight:800;line-height:.9;color:transparent;-webkit-text-stroke:2px #ff4d6a;letter-spacing:-.04em}
+.sec h2{font-size:50px;margin:16px 0 12px;letter-spacing:-.02em}
+.sec p{font-size:20px;color:#cbd5e1;max-width:820px;line-height:1.45}
+.sec ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:9px 40px;margin-top:30px;max-width:980px;font-size:16.5px;color:#e2e8f0}
+.sec ol li{padding-left:20px;position:relative}
+.sec ol li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:3px;background:#ff4d6a}
+/* svg */
+svg{display:block}
+svg{font-size:14px}
+svg text{font-family:inherit;fill:#0f172a}
+svg g.ts text{fill:#475569}svg g.tw text{fill:#fff}
+.big .card{font-size:17px;padding:18px 16px;display:flex;flex-direction:column;line-height:1.42}.big .card h3{font-size:19px;margin-bottom:12px}.big .card .os{font-size:14.5px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line);line-height:1.4}
+.dense .card{font-size:14px;padding:10px 14px;line-height:1.36}.dense .card h3{font-size:15.5px;margin-bottom:3px}
+.tc{text-anchor:middle}.te{text-anchor:end}
+svg .tb{font-weight:700}svg .ts{font-size:12px;fill:#475569}svg .tl{font-size:17px;font-weight:750}svg .tw{fill:#fff}svg .tr{fill:#b3122f}
+svg .tm{font-family:var(--mono);font-size:12px}
+.bx{fill:#fff;stroke:#94a3b8;stroke-width:1.5}
+.b-red{fill:#fde8ec;stroke:#e4002b;stroke-width:1.5}
+.b-blue{fill:#e3edff;stroke:#2563eb;stroke-width:1.5}
+.b-teal{fill:#d8f3ee;stroke:#0d9488;stroke-width:1.5}
+.b-amber{fill:#fdf0d5;stroke:#d97706;stroke-width:1.5}
+.b-violet{fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5}
+.b-green{fill:#dcf5e3;stroke:#16a34a;stroke-width:1.5}
+.b-grey{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5}
+.b-dark{fill:#101a33;stroke:#101a33}
+.f-red{fill:#e4002b}
+.zone{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 4}
+.ln{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar)}
+.ln2{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar);marker-start:url(#ar)}
+.lr{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr)}
+.lr2{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr);marker-start:url(#arr)}
+.ld{stroke-dasharray:5 4}
+.nl{stroke:#94a3b8;stroke-width:1.5;fill:none}
+/* ui */
+#bar{position:fixed;left:0;bottom:0;height:3px;background:var(--red);width:0;transition:width .2s;z-index:5}
+#nav{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;display:flex;gap:6px;z-index:6;opacity:.07;transition:opacity .2s}
+#nav:hover{opacity:1}
+#nav button{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;font:600 13px/1 inherit;padding:7px 10px;cursor:pointer}
+#nav button:hover{background:var(--red);border-color:var(--red)}
+body.ov{overflow:auto}
+body.ov #stage{position:static;margin:0;width:auto;height:auto;transform:none!important;display:flex;flex-wrap:wrap;gap:14px;padding:20px}
+body.ov .slide{display:flex;position:relative;inset:auto;flex:none;width:1280px;height:720px;zoom:var(--z);cursor:pointer;border-radius:8px}
+body.ov .slide.active{outline:14px solid var(--red)}
+@page{size:1280px 720px;margin:0}
+@media print{
+html,body{height:auto;overflow:visible;background:#fff}
+#stage{position:static;margin:0;width:1280px;height:auto;transform:none!important;display:block}
+.slide{display:flex!important;position:relative;inset:auto;width:1280px;height:720px;break-after:page;page-break-after:always;zoom:1!important}
+#bar,#nav{display:none}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.la{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA)}.la2{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA);marker-start:url(#arA)}
+.lt{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT)}.lt2{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT);marker-start:url(#arT)}
+.lb{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB)}.lb2{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB);marker-start:url(#arB)}
+svg text.fa,svg .fa{fill:#b45309}svg text.ft,svg .ft{fill:#0f766e}svg text.fb,svg .fb{fill:#1d4ed8}
+.tbl td.c,.tbl th.c{text-align:center}.tbl td.y{color:#16a34a;font-weight:800}.tbl td.n{color:#cbd5e1}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e4002b"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+<marker id="arT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker>
+<marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+</defs></svg>
+<div id="stage">
+
+<!-- 1 -->
+<section class="slide dark">
+<svg class="deco" viewBox="0 0 1280 720" aria-hidden="true"><g transform="translate(-60,0)">
+<g fill="none" stroke="#ff4d6a" stroke-width="2" opacity=".85">
+<path d="M900,470 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.16)"/>
+<path d="M900,400 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.24)"/>
+<path d="M900,330 l150,-60 l150,60 l-150,60 z" fill="rgba(228,0,43,.34)"/>
+</g>
+<g stroke="#334a85" stroke-width="1" opacity=".6"><path d="M860,220 H1240 M860,570 H1240 M860,220 V570 M1240,220 V570" stroke-dasharray="3 7"/></g>
+<g font-weight="700" letter-spacing="2" style="font-size:12px"><text x="1210" y="334" style="fill:#cbd5e1">API</text><text x="1210" y="404" style="fill:#cbd5e1">BUS</text><text x="1210" y="474" style="fill:#cbd5e1">BASE</text></g>
+</g></svg>
+<div class="tt">
+<span class="kick">Support de formation</span>
+<h1>Les composants système d'OpenStack</h1>
+<p class="sub">File de messages, base de données, serveur d'API : rôle, exposition, éléments de diagnostic</p>
+<ul class="chips"><li>RabbitMQ</li><li>MariaDB + Galera</li><li>HAProxy + serveur WSGI</li><li>Commandes et journaux</li></ul>
+<p class="ref">Version de référence : OpenStack 2026.2 « Hibiscus »</p>
+</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Objectif et déroulé</h2></header>
+<div class="body">
+<div class="note"><b>Objectif :</b> connaître les trois logiciels sur lesquels reposent tous les services OpenStack, savoir ce que chacun expose sur le réseau, et savoir l'interroger quand le cloud se comporte mal.</div>
+<div class="cols">
+<div class="col">
+<p><b>À l'issue de ce module, vous saurez :</b></p>
+<ul class="pts">
+<li>Expliquer ce que font RabbitMQ, MariaDB Galera et le serveur d'API, et ce qu'ils ne font pas.</li>
+<li>Citer leurs <b>ports</b>, leurs comptes et les réseaux sur lesquels ils doivent — ou ne doivent pas — être joignables.</li>
+<li>Relier chaque option de configuration d'un service au composant qu'elle pilote.</li>
+<li>Lancer les <b>commandes de diagnostic</b> de chacun et interpréter leur sortie.</li>
+<li>Reconnaître dans un journal le message qui désigne le composant fautif.</li>
+<li>Conduire les reprises courantes : partition du bus, perte de quorum de la base, backend d'API hors service.</li>
+</ul>
+</div>
+<div class="col">
+<div class="card ca"><h3>1 · La file de messages</h3>RabbitMQ : anatomie, connexions, types de files, cluster, ports, comptes, options, commandes, alarmes, partitions, journaux, métriques.</div>
+<div class="card cn"><h3>2 · La base de données</h3>MariaDB Galera : chaîne d'accès, réplication, quorum, ports, comptes, options, migrations, variables wsrep, erreurs, réamorçage, hygiène.</div>
+<div class="card"><h3>3 · Le serveur d'API</h3>HAProxy et serveur WSGI : pile, workers, middlewares, sockets, surface exposée, délais, tests manuels, codes HTTP, journaux, saturation.</div>
+<div class="card cb"><h3>Méthode de diagnostic</h3>Un arbre de décision commun aux trois composants, et une fiche réflexe.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Trois composants sous tous les services</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 400">
+<rect x="10" y="80" width="110" height="80" rx="8" class="b-blue"/><text x="65" y="116" class="tc tb">Client</text><text x="65" y="135" class="tc ts">CLI, Horizon</text>
+<path d="M120,120 H168" class="lr"/><text x="144" y="110" class="tc ts tb tr">HTTP</text>
+<rect x="170" y="40" width="300" height="160" rx="12" class="b-red"/><text x="208" y="70" class="tl tr">Serveur d'API</text>
+<circle cx="190" cy="64" r="13" class="f-red"/><text x="190" y="69" class="tc tw tb">1</text>
+<g class="tc" style="font-size:12.5px"><rect x="186" y="88" width="84" height="46" rx="6" class="b-dark"/><text x="228" y="116" class="tw tb">HAProxy</text>
+<rect x="278" y="88" width="84" height="46" rx="6" class="bx"/><text x="320" y="108" class="tb">serveur</text><text x="320" y="124" class="tb">WSGI</text>
+<rect x="370" y="88" width="84" height="46" rx="6" class="bx"/><text x="412" y="108" class="tb">code</text><text x="412" y="124" class="tb">du service</text></g>
+<text x="320" y="162" class="tc ts">porte d'entrée de chaque service</text><text x="320" y="180" class="tc ts tb">oslo.middleware, keystonemiddleware</text>
+<path d="M470,120 H538" class="la"/><text x="504" y="110" class="tc ts tb fa">RPC</text>
+<rect x="540" y="40" width="210" height="160" rx="12" class="b-amber"/><text x="578" y="70" class="tl">File de messages</text>
+<circle cx="560" cy="64" r="13" class="f-red"/><text x="560" y="69" class="tc tw tb">2</text>
+<text x="645" y="112" class="tc tb">RabbitMQ</text><text x="645" y="134" class="tc ts">transporte les ordres</text><text x="645" y="150" class="tc ts">entre processus</text><text x="645" y="180" class="tc ts tb">oslo.messaging</text>
+<path d="M750,120 H818" class="la"/><text x="784" y="110" class="tc ts tb fa">RPC</text>
+<rect x="820" y="40" width="320" height="160" rx="12" class="zone"/><text x="836" y="70" class="tl">Processus internes</text>
+<g class="tc tb" style="font-size:12.5px"><rect x="836" y="88" width="92" height="46" rx="6" class="bx"/><text x="882" y="116">scheduler</text>
+<rect x="936" y="88" width="92" height="46" rx="6" class="bx"/><text x="982" y="116">conductor</text>
+<rect x="1036" y="88" width="92" height="46" rx="6" class="bx"/><text x="1082" y="108">compute,</text><text x="1082" y="124">volume</text></g>
+<text x="980" y="170" class="tc ts">exécutent le travail en arrière-plan</text>
+<rect x="360" y="270" width="460" height="100" rx="12" class="b-grey" style="stroke:#101a33;stroke-width:2"/><text x="398" y="300" class="tl">Base de données</text>
+<circle cx="380" cy="294" r="13" class="f-red"/><text x="380" y="299" class="tc tw tb">3</text>
+<text x="590" y="328" class="tc tb">MariaDB + Galera</text><text x="590" y="350" class="tc ts">conserve l'état de toutes les ressources · <tspan class="tb">oslo.db</tspan></text>
+<path d="M320,200 V320 H358" class="ln"/><text x="330" y="246" class="ts tb">SQL</text>
+<path d="M980,200 V320 H822" class="ln"/><text x="990" y="246" class="ts tb">SQL</text>
+<text x="10" y="300" class="ts">Aucun des trois n'est</text><text x="10" y="318" class="ts">propre à OpenStack :</text><text x="10" y="336" class="ts">ce sont des logiciels</text><text x="10" y="354" class="ts">généralistes.</text>
+<text x="850" y="346" class="ts">Chaque service y accède par une bibliothèque</text><text x="850" y="364" class="ts">commune (oslo) : mêmes options et mêmes</text><text x="850" y="382" class="ts">messages d'erreur dans tous les services.</text>
+</svg>
+</div>
+<div class="note g">Conséquence pratique : savoir diagnostiquer ces trois composants, c'est savoir diagnostiquer la moitié des incidents de <b>n'importe quel</b> service — Nova, Neutron, Cinder ou Heat échouent de la même façon quand le bus ou la base ne répond plus.</div>
+</div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>La grille de lecture : rôle, exposition, diagnostic</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th></th><th>File de messages</th><th>Base de données</th><th>Serveur d'API</th></tr></thead>
+<tbody>
+<tr><td>Logiciel</td><td>RabbitMQ, en cluster de 3 nœuds</td><td>MariaDB + Galera, 3 nœuds</td><td>HAProxy + serveur WSGI (uWSGI ou Apache)</td></tr>
+<tr><td>Rôle</td><td>Acheminer les appels RPC et les notifications</td><td>Conserver l'état durable de chaque service</td><td>Recevoir, authentifier et traiter les requêtes REST</td></tr>
+<tr><td>Bibliothèque côté service</td><td>oslo.messaging</td><td>oslo.db (SQLAlchemy)</td><td>oslo.middleware, keystonemiddleware, paste</td></tr>
+<tr><td>Port principal</td><td>5672 (TLS : 5671)</td><td>3306, à travers la VIP interne</td><td>Un port par API : 5000, 8774, 9696…</td></tr>
+<tr><td>Qui s'y connecte</td><td>Les processus des services, depuis tous les nœuds</td><td>Les services des nœuds de contrôle uniquement</td><td>Utilisateurs (VIP externe) et services (VIP interne)</td></tr>
+<tr><td>Visible des utilisateurs ?</td><td>Jamais</td><td>Jamais</td><td>Oui : seule surface publique du cloud</td></tr>
+<tr><td>S'il s'arrête</td><td>Les opérations en cours restent figées</td><td>Toutes les API répondent en erreur</td><td>Le service concerné ne répond plus</td></tr>
+<tr><td>Premier contrôle</td><td><code>rabbitmqctl cluster_status</code></td><td><code>SHOW STATUS LIKE 'wsrep_%'</code></td><td><code>curl</code> sur la VIP, état des backends HAProxy</td></tr>
+</tbody></table>
+<div class="cols c3 nf">
+<div class="card ca"><h3>Rôle</h3>Ce que le composant fait pour les services, et ce qu'il ne fait pas. Savoir ce qu'on peut en attendre évite de chercher au mauvais endroit.</div>
+<div class="card cn"><h3>Exposition</h3>Ports, adresses d'écoute, comptes, chiffrement. Ce qui doit être joignable, par qui, et ce qui ne doit surtout pas l'être.</div>
+<div class="card"><h3>Diagnostic</h3>Commandes, variables d'état, messages de journal et métriques qui permettent de dire « c'est lui » ou « ce n'est pas lui ».</div>
+</div>
+</div>
+</section>
+
+<!-- 5 -->
+<section class="slide dark sec">
+<div class="num">01</div>
+<h2>La file de messages</h2>
+<p>RabbitMQ relie entre eux les processus d'un même service. Il est invisible tant qu'il fonctionne ; quand il faiblit, tout le cloud semble figé sans qu'aucune erreur n'apparaisse.</p>
+<ol><li>Rôle et anatomie de RabbitMQ</li><li>Connexions, canaux, types de files</li><li>Cluster, ports, comptes et hôtes virtuels</li><li>Options côté services</li><li>Commandes, lecture des files, alarmes</li><li>Partitions, journaux, métriques, interventions</li></ol>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Rôle : ce que le bus transporte, et pour qui</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Trois services rendus</b></p>
+<ul class="pts sm">
+<li><b>Appels RPC :</b> un processus demande à un autre processus du même service d'exécuter une fonction (créer une instance, attacher un volume).</li>
+<li><b>Notifications :</b> un service annonce qu'un événement a eu lieu, pour qui voudra l'entendre (mesure d'usage, audit).</li>
+<li><b>Découverte implicite :</b> un nova-compute devient joignable dès qu'il s'abonne à sa file. Il n'existe aucun registre d'adresses des processus.</li>
+</ul>
+<p><b>Ce qu'il n'est pas</b></p>
+<ul class="pts sm">
+<li>Un stockage : un message consommé disparaît. L'état durable est en base.</li>
+<li>Un canal <b>entre</b> services : Nova parle à Neutron en REST, jamais par le bus.</li>
+<li>Un chemin de données : aucun paquet ni bloc d'instance n'y transite.</li>
+</ul>
+<div class="note"><b>Découplage :</b> l'émetteur ignore où tourne le destinataire et combien d'exemplaires existent. C'est ce qui permet d'ajouter un hyperviseur ou un scheduler sans rien reconfigurer.</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Service</th><th class="c">RPC</th><th class="c">Notifications</th><th>Remarque</th></tr></thead>
+<tbody>
+<tr><td>Nova</td><td class="c y">●</td><td class="c y">●</td><td>Le plus gros utilisateur du bus</td></tr>
+<tr><td>Cinder</td><td class="c y">●</td><td class="c y">●</td><td></td></tr>
+<tr><td>Neutron</td><td class="c">○</td><td class="c y">●</td><td>RPC réduit au minimum avec OVN</td></tr>
+<tr><td>Heat, Octavia, Magnum</td><td class="c y">●</td><td class="c y">●</td><td>API ↔ moteur ou contrôleur</td></tr>
+<tr><td>Ironic, Manila, Designate</td><td class="c y">●</td><td class="c y">●</td><td></td></tr>
+<tr><td>Keystone</td><td class="c n">—</td><td class="c">○</td><td>Notifications optionnelles (audit)</td></tr>
+<tr><td>Glance</td><td class="c n">—</td><td class="c">○</td><td>Notifications optionnelles</td></tr>
+<tr><td>Placement</td><td class="c n">—</td><td class="c n">—</td><td>REST et SQL uniquement</td></tr>
+<tr><td>Swift</td><td class="c n">—</td><td class="c n">—</td><td>N'utilise ni bus ni base SQL</td></tr>
+</tbody></table>
+<div class="note g"><b>●</b> utilisé · <b>○</b> partiel ou optionnel. Tous partagent en général le même cluster RabbitMQ ; un cluster ou un hôte virtuel distinct par service est possible à grande échelle.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Anatomie d'un nœud RabbitMQ</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 400">
+<rect x="230" y="8" width="690" height="384" rx="14" class="zone"/><text x="248" y="32" class="tl">Nœud RabbitMQ — une machine virtuelle Erlang</text>
+<rect x="250" y="46" width="650" height="226" rx="10" class="bx" style="stroke-dasharray:6 4"/><text x="266" y="68" class="ts tb">Hôte virtuel « / » — un espace de noms isolé, avec ses propres droits</text>
+<g>
+<rect x="270" y="84" width="170" height="44" rx="7" class="b-amber"/><text x="355" y="103" class="tc tm tb">nova</text><text x="355" y="120" class="tc ts">échange topic</text>
+<rect x="270" y="140" width="170" height="44" rx="7" class="b-amber"/><text x="355" y="159" class="tc tm tb">scheduler_fanout</text><text x="355" y="176" class="tc ts">échange fanout</text>
+<rect x="270" y="196" width="170" height="44" rx="7" class="b-amber"/><text x="355" y="215" class="tc tm tb">reply_ab12…</text><text x="355" y="232" class="tc ts">échange direct</text>
+<rect x="710" y="84" width="170" height="44" rx="7" class="bx"/><text x="795" y="103" class="tc tm tb">scheduler</text><text x="795" y="120" class="tc ts">file à quorum</text>
+<rect x="710" y="140" width="170" height="44" rx="7" class="bx"/><text x="795" y="159" class="tc tm tb">scheduler_fanout_7e…</text><text x="795" y="176" class="tc ts">file de diffusion</text>
+<rect x="710" y="196" width="170" height="44" rx="7" class="bx"/><text x="795" y="215" class="tc tm tb">reply_ab12…</text><text x="795" y="232" class="tc ts">file de réponse</text>
+</g>
+<path d="M440,106 H708" class="ln"/><path d="M440,162 H708" class="ln"/><path d="M440,218 H708" class="ln"/>
+<g class="tc ts"><text x="574" y="98">liaison · clé « scheduler »</text><text x="574" y="154">liaison vers chaque abonné</text><text x="574" y="210">liaison · clé « reply_ab12… »</text></g>
+<text x="266" y="262" class="ts">Échanges : aiguillent, ne conservent rien.</text><text x="884" y="262" class="te ts">Files : conservent jusqu'à livraison.</text>
+<g class="tc">
+<rect x="250" y="292" width="205" height="76" rx="8" class="b-grey"/><text x="352" y="316" class="tb">Métadonnées</text><text x="352" y="336" class="ts">utilisateurs, droits, files,</text><text x="352" y="353" class="ts">liaisons (Khepri ou Mnesia)</text>
+<rect x="472" y="292" width="205" height="76" rx="8" class="b-grey"/><text x="574" y="316" class="tb">Journaux Raft</text><text x="574" y="336" class="ts">contenu des files à quorum,</text><text x="574" y="353" class="ts">écrit sur disque</text>
+<rect x="695" y="292" width="205" height="76" rx="8" class="b-grey"/><text x="797" y="316" class="tb">Extensions</text><text x="797" y="336" class="ts">management : 15672</text><text x="797" y="353" class="ts">Prometheus : 15692</text>
+</g>
+<rect x="10" y="100" width="180" height="170" rx="10" class="b-red"/><text x="100" y="126" class="tc tb">Service émetteur</text>
+<rect x="24" y="140" width="152" height="116" rx="7" class="bx"/><text x="100" y="161" class="tc ts tb">connexion TCP → 5672</text>
+<g class="tc ts"><rect x="34" y="172" width="62" height="30" rx="5" class="b-amber"/><text x="65" y="192">canal 1</text><rect x="104" y="172" width="62" height="30" rx="5" class="b-amber"/><text x="135" y="192">canal 2</text></g>
+<text x="100" y="226" class="tc ts">battements réguliers</text><text x="100" y="243" class="tc ts">(heartbeats)</text>
+<path d="M190,160 L268,110" class="lr"/><text x="206" y="118" class="ts tb tr">publie</text>
+<rect x="960" y="100" width="180" height="170" rx="10" class="b-blue"/><text x="1050" y="126" class="tc tb">Service consommateur</text>
+<g class="ts"><text x="974" y="160">• s'abonne à une file</text><text x="974" y="182">• reçoit les messages</text><text x="974" y="204">• acquitte chacun</text><text x="984" y="220">après traitement</text><text x="974" y="244">• non acquitté = relivré</text></g>
+<path d="M880,106 L958,150" class="lr"/><text x="930" y="114" class="ts tb tr">livre</text>
+</svg>
+</div></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Connexions et canaux : ce qu'un seul processus ouvre</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 430">
+<rect x="10" y="10" width="260" height="410" rx="12" class="zone"/><text x="26" y="35" class="tl">nova-conductor (1 worker)</text>
+<g class="tc">
+<rect x="26" y="56" width="228" height="64" rx="8" class="b-red"/><text x="140" y="82" class="tb">Écoute</text><text x="140" y="102" class="ts">abonné à la file conductor</text>
+<rect x="26" y="142" width="228" height="64" rx="8" class="b-red"/><text x="140" y="168" class="tb">Réponses</text><text x="140" y="188" class="ts">abonné à sa file reply_…</text>
+<rect x="26" y="228" width="228" height="64" rx="8" class="b-red"/><text x="140" y="254" class="tb">Émissions</text><text x="140" y="274" class="ts">pool de connexions réutilisées</text>
+<rect x="26" y="328" width="228" height="64" rx="8" class="b-grey"/><text x="140" y="354" class="tb">Battements</text><text x="140" y="374" class="ts">entretenus sur chaque connexion</text>
+<rect x="410" y="56" width="140" height="236" rx="10" class="b-amber"/><text x="480" y="168" class="tb">RabbitMQ</text><text x="480" y="188" class="ts">port 5672</text>
+</g>
+<path d="M254,88 H408" class="la2"/><path d="M254,174 H408" class="la2"/><path d="M254,260 H408" class="la2"/>
+<g class="tc ts"><text x="331" y="79">connexion 1</text><text x="331" y="165">connexion 2</text><text x="331" y="251">connexions 3 à n</text></g>
+<path d="M254,360 H480 V294" class="la ld"/>
+<text x="296" y="388" class="ts">Sans battement pendant 60 s,</text><text x="296" y="405" class="ts">la connexion est fermée et rouverte.</text>
+</svg>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li>Une <b>connexion</b> est une session TCP authentifiée ; un <b>canal</b> est un flux logique à l'intérieur. oslo.messaging ouvre plusieurs connexions par processus.</li>
+<li>Chaque <b>worker</b> d'un service est un processus distinct, avec ses propres connexions.</li>
+<li>Le total croît donc vite : nombre de nœuds × services × workers × quelques connexions.</li>
+</ul>
+<table class="tbl tight">
+<thead><tr><th>Option (oslo.messaging)</th><th>Défaut</th><th>Effet</th></tr></thead>
+<tbody>
+<tr><td><code>rpc_conn_pool_size</code></td><td>30</td><td>Taille maximale du pool d'émission</td></tr>
+<tr><td><code>executor_thread_pool_size</code></td><td>64</td><td>Messages traités en parallèle par processus</td></tr>
+<tr><td><code>heartbeat_timeout_threshold</code></td><td>60 s</td><td>Silence toléré avant de couper</td></tr>
+</tbody></table>
+<div class="note"><b>À vérifier côté RabbitMQ :</b> la limite de descripteurs de fichiers du processus (une connexion = un descripteur). Un cluster qui refuse de nouvelles connexions alors que la mémoire est saine a souvent atteint cette limite.</div>
+<div class="note g">Un pare-feu ou un répartiteur qui ferme les connexions inactives entre un nœud et RabbitMQ provoque des reconnexions en boucle : les battements servent précisément à garder ces sessions vivantes.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Les types de files et leur durée de vie</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Type RabbitMQ</th><th>Réplication</th><th>Survit à la perte d'un nœud ?</th><th>Usage par oslo.messaging</th><th>Option</th></tr></thead>
+<tbody>
+<tr><td>File classique</td><td>Aucune : vit sur un seul nœud</td><td>Non</td><td>Mode historique ; encore utilisé pour les files éphémères si rien n'est activé</td><td>—</td></tr>
+<tr><td>File classique en miroir</td><td>Copies maître / miroirs</td><td>Oui, avec des cas de perte</td><td>Ancien mode haute disponibilité ; <b>supprimé</b> des versions récentes de RabbitMQ</td><td>politique <code>ha-mode</code></td></tr>
+<tr><td>File à quorum</td><td>Raft, majorité requise</td><td>Oui</td><td>Files RPC des services : <code>scheduler</code>, <code>compute.cmp01</code>…</td><td><code>rabbit_quorum_queue</code></td></tr>
+<tr><td>File à quorum éphémère</td><td>Raft</td><td>Oui</td><td>Files de réponse et de diffusion</td><td><code>rabbit_transient_quorum_queue</code></td></tr>
+<tr><td>Flux (stream)</td><td>Journal répliqué, lu par plusieurs abonnés</td><td>Oui</td><td>Diffusion (fanout) : un seul flux remplace une file par abonné</td><td><code>rabbit_stream_fanout</code></td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="col">
+<p><b>Durée de vie</b></p>
+<ul class="pts sm">
+<li>Les files RPC d'un rôle (<code>scheduler</code>, <code>conductor</code>) sont durables : elles attendent leurs consommateurs.</li>
+<li>Les files de réponse et de diffusion appartiennent à un processus : sans consommateur, elles expirent au bout de <code>rabbit_transient_queues_ttl</code> (1800 s par défaut).</li>
+<li>Un service arrêté longtemps laisse donc des ordres en attente dans sa file ciblée : ils seront exécutés à son retour.</li>
+</ul>
+</div>
+<div class="note"><b>Changer de type n'est pas transparent.</b> Une file existe avec ses arguments ; un service qui la redéclare autrement est refusé : <code>PRECONDITION_FAILED - inequivalent arg 'x-queue-type'</code>. Le passage aux files à quorum impose d'arrêter les services, de supprimer les anciennes files, puis de redémarrer.</div>
+</div>
+</div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Le cluster : trois nœuds, un cookie, une majorité</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 285">
+<g class="tc">
+<rect x="40" y="20" width="300" height="170" rx="10" class="b-amber"/><text x="190" y="46" class="tb">rabbit@ctl01</text>
+<rect x="425" y="20" width="300" height="170" rx="10" class="b-amber"/><text x="575" y="46" class="tb">rabbit@ctl02</text>
+<rect x="810" y="20" width="300" height="170" rx="10" class="b-amber"/><text x="960" y="46" class="tb">rabbit@ctl03</text>
+</g>
+<g class="tc ts">
+<rect x="56" y="58" width="130" height="30" rx="5" class="bx"/><text x="121" y="78">epmd : 4369</text><rect x="194" y="58" width="130" height="30" rx="5" class="bx"/><text x="259" y="78">distribution : 25672</text>
+<rect x="441" y="58" width="130" height="30" rx="5" class="bx"/><text x="506" y="78">epmd : 4369</text><rect x="579" y="58" width="130" height="30" rx="5" class="bx"/><text x="644" y="78">distribution : 25672</text>
+<rect x="826" y="58" width="130" height="30" rx="5" class="bx"/><text x="891" y="78">epmd : 4369</text><rect x="964" y="58" width="130" height="30" rx="5" class="bx"/><text x="1029" y="78">distribution : 25672</text>
+<rect x="56" y="100" width="268" height="34" rx="5" class="b-red"/><text x="190" y="122" class="tb tr">file scheduler — leader</text>
+<rect x="441" y="100" width="268" height="34" rx="5" class="bx"/><text x="575" y="122">file scheduler — réplique</text>
+<rect x="826" y="100" width="268" height="34" rx="5" class="bx"/><text x="960" y="122">file scheduler — réplique</text>
+<rect x="56" y="142" width="268" height="34" rx="5" class="bx"/><text x="190" y="164">file conductor — réplique</text>
+<rect x="441" y="142" width="268" height="34" rx="5" class="b-red"/><text x="575" y="164" class="tb tr">file conductor — leader</text>
+<rect x="826" y="142" width="268" height="34" rx="5" class="bx"/><text x="960" y="164">file conductor — réplique</text>
+</g>
+<path d="M340,105 H423" class="ln2"/><path d="M725,105 H808" class="ln2"/>
+<path d="M190,192 C190,250 960,250 960,192" class="ln2"/>
+<text x="575" y="268" class="tc ts">Distribution Erlang entre les trois nœuds : même secret partagé (fichier .erlang.cookie), noms d'hôtes résolus de façon identique partout.</text>
+</svg>
+</div>
+<div class="cols nf">
+<table class="tbl tight">
+<thead><tr><th>Réaction à une partition</th><th>Comportement</th><th>Usage</th></tr></thead>
+<tbody>
+<tr><td><code>pause_minority</code></td><td>Le côté minoritaire se met en pause et refuse les clients</td><td>Recommandé à trois nœuds</td></tr>
+<tr><td><code>autoheal</code></td><td>Les deux côtés continuent, puis le perdant est redémarré</td><td>Privilégie la disponibilité, au prix de pertes</td></tr>
+<tr><td><code>ignore</code></td><td>Rien : les deux côtés divergent</td><td>À éviter</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li>Les <b>leaders</b> des files à quorum se répartissent sur les trois nœuds : aucun n'est « le maître ».</li>
+<li>Une file à quorum reste utilisable tant que <b>deux</b> de ses trois répliques se voient.</li>
+<li>Le cluster se forme par nom : un nœud dont le nom d'hôte change est vu comme un inconnu.</li>
+<li>Les services listent les trois nœuds et se reconnectent seuls : pas de VIP devant RabbitMQ.</li>
+</ul>
+</div>
+</div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Exposition : les ports de RabbitMQ</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Port</th><th>Protocole</th><th>Usage</th><th>Qui doit l'atteindre</th><th>Réseau</th></tr></thead>
+<tbody>
+<tr><td>5672</td><td>AMQP 0-9-1</td><td>Trafic des services, en clair</td><td>Tous les nœuds portant un service OpenStack</td><td>Gestion</td></tr>
+<tr><td>5671</td><td>AMQP sur TLS</td><td>Même trafic, chiffré</td><td>Idem, à la place de 5672</td><td>Gestion</td></tr>
+<tr><td>4369</td><td>epmd</td><td>Annuaire des nœuds Erlang</td><td>Les nœuds RabbitMQ entre eux, les outils en ligne de commande</td><td>Gestion, contrôleurs seulement</td></tr>
+<tr><td>25672</td><td>Distribution Erlang</td><td>Réplication, élections, état du cluster</td><td>Les nœuds RabbitMQ entre eux</td><td>Gestion, contrôleurs seulement</td></tr>
+<tr><td>15672</td><td>HTTP</td><td>Interface et API de gestion</td><td>Administrateurs, supervision</td><td>Gestion, accès restreint</td></tr>
+<tr><td>15692</td><td>HTTP</td><td>Métriques au format Prometheus</td><td>Serveur de supervision</td><td>Gestion</td></tr>
+<tr><td>35672–35682</td><td>Distribution Erlang</td><td>Outils <code>rabbitmqctl</code> lancés depuis un autre hôte</td><td>Postes d'administration, rarement</td><td>Gestion</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Règle d'exposition :</b> RabbitMQ n'écoute que sur l'adresse du réseau de gestion. Aucun de ces ports ne doit être joignable depuis le réseau public, ni depuis une instance. Qui peut publier sur le bus peut donner des ordres aux hyperviseurs.</div>
+<div class="note g"><b>Contrôle rapide :</b> <code>rabbitmq-diagnostics listeners</code> affiche les ports réellement ouverts et l'interface associée ; <code>ss -ltnp | grep beam</code> le confirme côté système.</div>
+</div>
+</div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Exposition : comptes, hôtes virtuels et chaîne de connexion</h2></header>
+<div class="body">
+<div class="fig" style="flex:none;height:150px">
+<svg viewBox="0 0 1150 150">
+<text x="20" y="20" class="tb">Anatomie de l'option transport_url</text>
+<g class="tc tm tb" style="font-size:13px">
+<rect x="20" y="36" width="110" height="44" rx="6" class="b-grey"/><text x="75" y="63">rabbit://</text>
+<rect x="138" y="36" width="190" height="44" rx="6" class="b-red"/><text x="233" y="63">openstack:S3cr3t</text>
+<rect x="336" y="36" width="200" height="44" rx="6" class="b-amber"/><text x="436" y="63">@10.20.0.11:5672</text>
+<rect x="544" y="36" width="430" height="44" rx="6" class="b-amber"/><text x="759" y="63">,openstack:S3cr3t@10.20.0.12:5672,…</text>
+<rect x="982" y="36" width="150" height="44" rx="6" class="b-blue"/><text x="1057" y="63">/openstack</text>
+</g>
+<g class="tc ts"><text x="75" y="102">pilote</text><text x="233" y="102">compte et mot de passe</text><text x="436" y="102">premier nœud</text><text x="759" y="102">nœuds suivants, essayés en cas d'échec</text><text x="1057" y="102">hôte virtuel</text>
+<text x="233" y="120">un compte par service possible</text><text x="759" y="120">pas de VIP : la liste complète est donnée</text><text x="1057" y="120">« / » si le chemin est vide</text></g>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<pre><span class="m"># Créer un hôte virtuel, un compte et ses droits</span>
+<span class="c">rabbitmqctl</span> add_vhost openstack
+<span class="c">rabbitmqctl</span> add_user nova 'S3cr3t'
+<span class="c">rabbitmqctl</span> set_permissions <span class="k">-p</span> openstack nova ".*" ".*" ".*"
+<span class="m">#                                 configurer  écrire  lire</span>
+
+<span class="m"># Vérifier</span>
+<span class="c">rabbitmqctl</span> list_users
+<span class="c">rabbitmqctl</span> list_permissions <span class="k">-p</span> openstack</pre>
+<div class="note g">Le compte <code>guest</code> par défaut n'est accepté que depuis l'hôte local ; il doit être supprimé ou désactivé en production.</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Droit</th><th>Autorise</th></tr></thead>
+<tbody>
+<tr><td>configurer</td><td>Créer et supprimer échanges et files (les services déclarent les leurs)</td></tr>
+<tr><td>écrire</td><td>Publier dans un échange</td></tr>
+<tr><td>lire</td><td>Consommer une file</td></tr>
+</tbody></table>
+<pre><span class="k">[oslo_messaging_rabbit]</span>     <span class="m"># chiffrement</span>
+ssl = true
+ssl_ca_file = /etc/ssl/certs/ca-interne.pem</pre>
+<ul class="pts sm">
+<li>Un hôte virtuel ou un compte par service limite l'effet d'un secret compromis.</li>
+<li>Le mot de passe figure en clair dans le fichier de configuration de chaque service : fichiers lisibles par le seul compte du service.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Les options côté services qui pilotent le bus</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Option</th><th>Section</th><th>Défaut</th><th>Rôle</th><th>Quand y toucher</th></tr></thead>
+<tbody>
+<tr><td><code>transport_url</code></td><td>[DEFAULT]</td><td>—</td><td>Adresse du bus pour le RPC</td><td>Toujours renseignée, avec les trois nœuds</td></tr>
+<tr><td><code>rpc_response_timeout</code></td><td>[DEFAULT]</td><td>60 s</td><td>Attente maximale de la réponse à un « call »</td><td>Rarement : l'augmenter masque le vrai problème</td></tr>
+<tr><td><code>rabbit_quorum_queue</code></td><td>[oslo_messaging_rabbit]</td><td>false</td><td>Déclare les files RPC en files à quorum</td><td>À activer partout, en une fois</td></tr>
+<tr><td><code>rabbit_transient_quorum_queue</code></td><td>[oslo_messaging_rabbit]</td><td>false</td><td>Idem pour les files de réponse et de diffusion</td><td>Avec la précédente</td></tr>
+<tr><td><code>rabbit_stream_fanout</code></td><td>[oslo_messaging_rabbit]</td><td>false</td><td>Diffusion par flux plutôt que par une file par abonné</td><td>Pour réduire le nombre de files</td></tr>
+<tr><td><code>use_queue_manager</code></td><td>[oslo_messaging_rabbit]</td><td>false</td><td>Noms de files stables d'un redémarrage à l'autre</td><td>Évite l'accumulation de files orphelines</td></tr>
+<tr><td><code>heartbeat_timeout_threshold</code></td><td>[oslo_messaging_rabbit]</td><td>60 s</td><td>Délai sans battement avant coupure</td><td>Si un équipement réseau coupe plus tôt</td></tr>
+<tr><td><code>driver</code></td><td>[oslo_messaging_notifications]</td><td>(vide)</td><td>Émission des notifications : <code>messagingv2</code> ou <code>noop</code></td><td><code>noop</code> si personne ne les consomme</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Cohérence obligatoire :</b> tous les processus d'un même service — API, scheduler, agents sur chaque hyperviseur — doivent déclarer les files de la même façon. Une option changée sur les contrôleurs mais pas sur les nœuds de calcul casse le service.</div>
+<div class="note g"><b>Vérifier la valeur réellement lue</b> par un processus : le fichier <code>/etc/&lt;service&gt;/&lt;service&gt;.conf</code> du conteneur ou de l'hôte, et le journal de démarrage en mode <code>debug</code>, qui liste toutes les options.</div>
+</div>
+</div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Diagnostic : les commandes à connaître</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre><span class="m"># 1. Le cluster est-il complet et sans alarme ?</span>
+<span class="c">rabbitmqctl</span> cluster_status
+<span class="c">rabbitmq-diagnostics</span> check_running
+<span class="c">rabbitmq-diagnostics</span> alarms
+
+<span class="m"># 2. Les files : messages en attente, consommateurs</span>
+<span class="c">rabbitmqctl</span> list_queues name type messages_ready \
+    messages_unacknowledged consumers
+
+<span class="m"># 3. Seulement celles qui posent question</span>
+<span class="c">rabbitmqctl</span> list_queues name messages consumers \
+    | awk '$2 &gt; 0 || $3 == 0'
+
+<span class="m"># 4. Qui est connecté, depuis où, dans quel état</span>
+<span class="c">rabbitmqctl</span> list_connections user peer_host state
+<span class="c">rabbitmqctl</span> list_consumers</pre>
+<div class="note g">Avec Kolla-Ansible, RabbitMQ tourne en conteneur : préfixer par <code>docker exec rabbitmq</code> (ou <code>podman exec</code>).</div>
+</div>
+<div class="col">
+<pre><span class="m"># 5. Ressources du nœud</span>
+<span class="c">rabbitmq-diagnostics</span> memory_breakdown
+<span class="c">rabbitmq-diagnostics</span> status
+<span class="c">rabbitmq-diagnostics</span> listeners
+
+<span class="m"># 6. Files à quorum : leader, membres, retard</span>
+<span class="c">rabbitmq-queues</span> quorum_status scheduler
+<span class="c">rabbitmq-queues</span> check_if_node_is_quorum_critical</pre>
+<table class="tbl tight">
+<thead><tr><th>Ce que l'on cherche</th><th>Sortie saine</th></tr></thead>
+<tbody>
+<tr><td>Nœuds en service</td><td>Trois « Running Nodes », aucune partition listée</td></tr>
+<tr><td>Alarmes</td><td>Aucune alarme mémoire ni disque</td></tr>
+<tr><td>Files RPC</td><td>0 message prêt, au moins un consommateur</td></tr>
+<tr><td>Connexions</td><td>État <code>running</code> ; jamais <code>blocked</code></td></tr>
+<tr><td>Files à quorum</td><td>Trois membres en ligne, un leader</td></tr>
+</tbody></table>
+<div class="note"><code>check_if_node_is_quorum_critical</code> répond à la question à se poser <b>avant</b> d'arrêter un nœud : son arrêt ferait-il perdre le quorum à certaines files ?</div>
+</div>
+</div></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Diagnostic : lire l'état des files pas à pas</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 460">
+<rect x="40" y="6" width="400" height="44" rx="8" class="b-dark"/><text x="240" y="33" class="tc tw tb">Opération figée ou MessagingTimeout</text>
+<path d="M240,50 V72" class="ln"/>
+<g>
+<rect x="40" y="74" width="400" height="66" rx="10" class="b-amber"/><text x="240" y="100" class="tc tb">1 · Le cluster est-il sain ?</text><text x="240" y="121" class="tc tm">rabbitmqctl cluster_status · alarms</text>
+<rect x="40" y="176" width="400" height="66" rx="10" class="b-amber"/><text x="240" y="202" class="tc tb">2 · La file du destinataire a-t-elle un consommateur ?</text><text x="240" y="223" class="tc tm">colonne consumers</text>
+<rect x="40" y="278" width="400" height="66" rx="10" class="b-amber"/><text x="240" y="304" class="tc tb">3 · Des messages s'y accumulent-ils ?</text><text x="240" y="325" class="tc tm">messages_ready · messages_unacknowledged</text>
+<rect x="40" y="380" width="400" height="66" rx="10" class="b-amber"/><text x="240" y="406" class="tc tb">4 · La réponse revient-elle à l'appelant ?</text><text x="240" y="427" class="tc tm">file reply_… de l'appelant</text>
+</g>
+<path d="M240,140 V174" class="ln"/><path d="M240,242 V276" class="ln"/><path d="M240,344 V378" class="ln"/>
+<g class="ts tb"><text x="250" y="162">oui</text><text x="250" y="264">oui</text><text x="250" y="366">non</text></g>
+<path d="M440,107 H598" class="lr"/><path d="M440,209 H598" class="lr"/><path d="M440,311 H598" class="lr"/><path d="M440,413 H598" class="lr"/>
+<g class="tc ts tb tr"><text x="519" y="98">non</text><text x="519" y="200">0 consommateur</text><text x="519" y="302">oui</text><text x="519" y="404">non</text></g>
+<g>
+<rect x="600" y="74" width="540" height="66" rx="10" class="b-red"/><text x="616" y="99" class="tb">Problème du bus lui-même</text><text x="616" y="120" class="ts">Nœud arrêté, partition, alarme mémoire ou disque : traiter RabbitMQ avant tout le reste.</text>
+<rect x="600" y="176" width="540" height="66" rx="10" class="b-red"/><text x="616" y="201" class="tb">Le destinataire n'est pas abonné</text><text x="616" y="222" class="ts">Service arrêté, ou incapable de se connecter : lire son journal, vérifier son transport_url.</text>
+<rect x="600" y="278" width="540" height="66" rx="10" class="b-red"/><text x="616" y="303" class="tb">Le destinataire ne suit pas</text><text x="616" y="324" class="ts">Prêts en hausse : trop lent. Non acquittés figés : bloqué en plein traitement.</text>
+<rect x="600" y="380" width="540" height="66" rx="10" class="b-red"/><text x="616" y="405" class="tb">La réponse se perd au retour</text><text x="616" y="426" class="ts">File de réponse expirée ou recréée, appelant redémarré, coupure réseau côté appelant.</text>
+</g>
+</svg>
+</div>
+<div class="note g">Si les quatre réponses sont rassurantes, le bus est hors de cause : le traitement est simplement plus long que <code>rpc_response_timeout</code>, ou la panne se trouve derrière le destinataire (base, hyperviseur, stockage).</div>
+</div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Alarmes de ressources : quand RabbitMQ bloque les émetteurs</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 235">
+<g class="tc">
+<rect x="10" y="20" width="250" height="92" rx="10" class="b-amber"/><text x="135" y="50" class="tb">Seuil franchi</text><text x="135" y="72" class="ts">mémoire au-dessus du seuil haut,</text><text x="135" y="90" class="ts">ou disque libre sous le seuil bas</text>
+<rect x="300" y="20" width="250" height="92" rx="10" class="b-red"/><text x="425" y="50" class="tb">Alarme de ressource</text><text x="425" y="72" class="ts">levée sur tout le cluster,</text><text x="425" y="90" class="ts">visible dans « alarms »</text>
+<rect x="590" y="20" width="250" height="92" rx="10" class="b-red"/><text x="715" y="50" class="tb">Émetteurs bloqués</text><text x="715" y="72" class="ts">connexions à l'état « blocking »</text><text x="715" y="90" class="ts">ou « blocked » ; la lecture continue</text>
+<rect x="880" y="20" width="260" height="92" rx="10" class="b-dark"/><text x="1010" y="50" class="tw tb">Cloud figé</text><text x="1010" y="72" class="tw" style="font-size:12px">plus aucun ordre ne part :</text><text x="1010" y="90" class="tw" style="font-size:12px">délais dépassés en cascade</text>
+</g>
+<path d="M260,66 H298" class="lr"/><path d="M550,66 H588" class="lr"/><path d="M840,66 H878" class="lr"/>
+<text x="10" y="148" class="tb">Causes habituelles</text>
+<g class="tc" style="font-size:13px">
+<rect x="10" y="160" width="365" height="56" rx="8" class="bx"/><text x="192" y="184" class="tb">Notifications sans consommateur</text><text x="192" y="203" class="ts">une file qui grossit sans fin</text>
+<rect x="392" y="160" width="365" height="56" rx="8" class="bx"/><text x="574" y="184" class="tb">Destinataires arrêtés</text><text x="574" y="203" class="ts">leurs files ciblées se remplissent</text>
+<rect x="775" y="160" width="365" height="56" rx="8" class="bx"/><text x="957" y="184" class="tb">Files et connexions orphelines</text><text x="957" y="203" class="ts">redémarrages en boucle d'un service</text>
+</g>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Paramètre RabbitMQ</th><th>Effet</th></tr></thead>
+<tbody>
+<tr><td><code>vm_memory_high_watermark</code></td><td>Part de la mémoire au-delà de laquelle l'alarme se lève (0,4 à 0,6 selon la version)</td></tr>
+<tr><td><code>disk_free_limit</code></td><td>Espace disque minimal ; la valeur par défaut, très basse, est à relever</td></tr>
+</tbody></table>
+<pre><span class="c">rabbitmq-diagnostics</span> alarms
+<span class="c">rabbitmqctl</span> list_connections name state | grep -i block
+<span class="c">rabbitmq-diagnostics</span> memory_breakdown</pre>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li>Le blocage est un <b>mécanisme de protection</b> : RabbitMQ préfère ralentir les émetteurs plutôt que tomber faute de mémoire.</li>
+<li>Vu des services, rien n'échoue tout de suite : les envois attendent, puis les appelants dépassent leur délai.</li>
+<li>Dans un conteneur, le seuil se calcule sur la mémoire de l'hôte si la limite du conteneur n'est pas déclarée à RabbitMQ.</li>
+</ul>
+<div class="note"><b>Sortie de crise :</b> trouver la file qui enfle (<code>list_queues</code> triée par taille), rétablir son consommateur ou, s'il s'agit de notifications inutiles, la purger et passer le pilote à <code>noop</code>.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Partition réseau : symptômes et reprise</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 270">
+<rect x="20" y="10" width="570" height="150" rx="12" class="zone"/><text x="36" y="34" class="tl">Majorité : continue de servir</text>
+<rect x="770" y="10" width="360" height="150" rx="12" class="zone"/><text x="786" y="34" class="tl">Minorité : en pause</text>
+<g class="tc">
+<rect x="50" y="52" width="230" height="84" rx="10" class="b-amber"/><text x="165" y="86" class="tb">rabbit@ctl01</text><text x="165" y="108" class="ts">en service</text>
+<rect x="330" y="52" width="230" height="84" rx="10" class="b-amber"/><text x="445" y="86" class="tb">rabbit@ctl02</text><text x="445" y="108" class="ts">en service</text>
+<rect x="835" y="52" width="230" height="84" rx="10" class="b-grey"/><text x="950" y="86" class="tb">rabbit@ctl03</text><text x="950" y="108" class="ts">refuse les clients (pause_minority)</text>
+<rect x="320" y="206" width="250" height="52" rx="8" class="b-red"/><text x="445" y="238" class="tb">Services OpenStack</text>
+</g>
+<path d="M280,94 H328" class="ln2"/>
+<path d="M592,94 H768" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6 5" fill="none"/>
+<circle cx="680" cy="94" r="16" fill="#fff" stroke="#e4002b" stroke-width="3"/><path d="M671,85 L689,103 M689,85 L671,103" stroke="#e4002b" stroke-width="3"/>
+<text x="680" y="66" class="tc ts tb tr">lien coupé</text>
+<path d="M395,204 L200,138" class="la2"/><path d="M445,204 V138" class="la2"/>
+<path d="M570,225 L900,138" class="la ld"/><text x="780" y="218" class="ts">connexions perdues vers ctl03 :</text><text x="780" y="235" class="ts">reconnexion vers ctl01 ou ctl02</text>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<p><b>Ce que l'on observe</b></p>
+<ul class="pts sm">
+<li>Dans les journaux des services : vagues de « AMQP server … is unreachable », puis reconnexions.</li>
+<li><code>cluster_status</code> : section « Network Partitions » non vide, ou un nœud absent des « Running Nodes ».</li>
+</ul>
+<p><b>Reprise après retour du lien</b></p>
+<ul class="pts sm">
+<li>Avec <code>pause_minority</code>, le nœud isolé rejoint seul le cluster.</li>
+<li>S'il reste à l'écart : <code>rabbitmqctl stop_app</code> puis <code>start_app</code> sur ce nœud.</li>
+</ul>
+</div>
+<div class="col">
+<p><b>Arrêt complet du cluster</b></p>
+<ul class="pts sm">
+<li>Le <b>dernier nœud arrêté</b> doit redémarrer en premier : lui seul connaît le dernier état.</li>
+<li>Si cet ordre est inconnu ou impossible : <code>rabbitmqctl force_boot</code> sur un nœud, puis démarrage des autres.</li>
+</ul>
+<div class="note">Après toute reprise, contrôler les services eux-mêmes : certains processus restent connectés à une file qui n'existe plus et ne s'en aperçoivent pas. Vérifier la colonne <code>consumers</code>, redémarrer ceux qui manquent.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 18 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Journaux : reconnaître les messages liés au bus</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Message</th><th>Où</th><th>Ce qu'il signifie</th><th>Suite à donner</th></tr></thead>
+<tbody>
+<tr><td style="white-space:normal"><code>AMQP server on 10.20.0.11:5672 is unreachable … Trying again in 1 seconds</code></td><td>Journal du service</td><td>Connexion impossible ou rompue vers ce nœud</td><td>Normal lors d'un redémarrage ; anormal s'il se répète sur les trois nœuds</td></tr>
+<tr><td style="white-space:normal"><code>MessagingTimeout: Timed out waiting for a reply to message ID …</code></td><td>Journal de l'appelant</td><td>Aucun destinataire n'a répondu dans le délai</td><td>Arbre de diagnostic des files</td></tr>
+<tr><td style="white-space:normal"><code>missed heartbeats from client, timeout: 60s</code></td><td>Journal RabbitMQ</td><td>Un client n'a plus donné signe de vie : processus gelé ou réseau coupé</td><td>Chercher l'hôte en cause ; charge, pare-feu, MTU</td></tr>
+<tr><td style="white-space:normal"><code>Connection reset by peer</code>, <code>Broken pipe</code></td><td>Journal du service</td><td>Session TCP fermée par l'autre extrémité ou par un équipement intermédiaire</td><td>Sans gravité si isolé ; sinon délai d'inactivité d'un pare-feu</td></tr>
+<tr><td style="white-space:normal"><code>NOT_FOUND - no queue 'reply_…' in vhost '/'</code></td><td>Journal du service</td><td>La file de réponse de l'appelant a disparu</td><td>Redémarrer l'appelant ; fréquent après une réinitialisation du bus</td></tr>
+<tr><td style="white-space:normal"><code>PRECONDITION_FAILED - inequivalent arg 'x-queue-type'</code></td><td>Journal du service</td><td>File déjà déclarée avec un autre type</td><td>Supprimer l'ancienne file ; aligner l'option sur tous les nœuds</td></tr>
+<tr><td style="white-space:normal"><code>ACCESS_REFUSED - Login was refused</code></td><td>Les deux</td><td>Compte ou mot de passe incorrect, hôte virtuel inexistant</td><td>Comparer <code>transport_url</code> et <code>list_users</code></td></tr>
+<tr><td style="white-space:normal"><code>memory resource limit alarm set on node …</code></td><td>Journal RabbitMQ</td><td>Alarme mémoire : les émetteurs sont bloqués</td><td>Trouver la file qui enfle</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Où lire :</b> RabbitMQ écrit dans <code>/var/log/rabbitmq/rabbit@&lt;hôte&gt;.log</code> (<code>/var/log/kolla/rabbitmq/</code> avec Kolla). Les services écrivent dans leur propre journal, sous le nom de module <code>oslo.messaging._drivers…</code></div>
+<div class="note"><b>Lecture croisée :</b> un même incident laisse une trace des deux côtés. L'heure exacte de la coupure dans le journal RabbitMQ permet de retrouver, par horodatage, tous les services touchés.</div>
+</div>
+</div>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Métriques à surveiller</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Métrique</th><th>Valeur saine</th><th>Signal d'alerte</th><th>Ce que cela révèle</th></tr></thead>
+<tbody>
+<tr><td>Nœuds en service</td><td>3 sur 3</td><td>Moins de 3</td><td>Redondance perdue ; à 1 sur 3, les files à quorum s'arrêtent</td></tr>
+<tr><td>Partitions</td><td>Aucune</td><td>Toute partition</td><td>Problème réseau entre contrôleurs</td></tr>
+<tr><td>Messages prêts, par file</td><td>Proche de 0</td><td>Croissance continue</td><td>Consommateur absent ou trop lent</td></tr>
+<tr><td>Messages non acquittés</td><td>Faible, fluctuant</td><td>Valeur figée</td><td>Consommateur bloqué pendant un traitement</td></tr>
+<tr><td>Consommateurs par file RPC</td><td>≥ 1</td><td>0</td><td>Service arrêté ou déconnecté</td></tr>
+<tr><td>Mémoire utilisée / seuil</td><td>Nettement sous le seuil</td><td>Approche du seuil</td><td>Alarme imminente : émetteurs bientôt bloqués</td></tr>
+<tr><td>Espace disque libre</td><td>Large marge</td><td>Approche de la limite</td><td>Idem ; journaux Raft des files à quorum</td></tr>
+<tr><td>Connexions et canaux</td><td>Stable</td><td>Hausse continue ou dents de scie</td><td>Fuite de connexions, service qui redémarre en boucle</td></tr>
+<tr><td>Descripteurs de fichiers</td><td>Loin de la limite</td><td>Proche de la limite</td><td>Nouvelles connexions bientôt refusées</td></tr>
+<tr><td>Nombre de files</td><td>Stable</td><td>Hausse continue</td><td>Files éphémères qui s'accumulent</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Sources :</b> extension Prometheus (port 15692) pour la collecte continue ; interface de gestion (port 15672) pour l'exploration ; <code>rabbitmqctl</code> pour le contrôle ponctuel.</div>
+<div class="note"><b>L'alerte la plus utile :</b> « une file RPC a plus de N messages prêts depuis plus de quelques minutes ». Elle précède presque tous les incidents visibles par les utilisateurs.</div>
+</div>
+</div>
+</section>
+
+<!-- 20 -->
+<section class="slide">
+<header><span class="kick">1 · La file de messages</span><h2>Intervenir sur le bus sans aggraver la situation</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Intervention</th><th>Effet sur le cloud</th><th>Précaution</th></tr></thead>
+<tbody>
+<tr><td>Redémarrer un nœud RabbitMQ</td><td>Reconnexion des clients vers les deux autres ; quelques appels en cours échouent</td><td>Un nœud à la fois ; vérifier d'abord <code>check_if_node_is_quorum_critical</code></td></tr>
+<tr><td>Redémarrer un service OpenStack</td><td>Ses files éphémères sont recréées ; ses ordres en attente sont repris</td><td>Sans risque pour le bus</td></tr>
+<tr><td>Purger une file de notifications</td><td>Mémoire libérée ; événements perdus</td><td>Acceptable si personne ne les consomme ; corriger la configuration ensuite</td></tr>
+<tr><td>Purger une file RPC</td><td>Les ordres en attente sont perdus : ressources figées dans un état transitoire</td><td>À éviter ; prévoir de remettre à plat l'état des ressources concernées</td></tr>
+<tr><td>Supprimer une file</td><td>Le service abonné ne reçoit plus rien jusqu'à son redémarrage</td><td>Uniquement service arrêté, pour un changement de type</td></tr>
+<tr><td>Réinitialiser le cluster</td><td>Tout est perdu : comptes, droits, files, messages</td><td>Dernier recours ; recréer les comptes puis redémarrer tous les services</td></tr>
+<tr><td>Monter RabbitMQ de version</td><td>Nœud par nœud, sans coupure si les files sont à quorum</td><td>Activer les « feature flags » demandés avant de passer à la version suivante</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Ce qu'un message perdu laisse derrière lui :</b> une instance en BUILD, un volume en « attaching », une migration à mi-chemin. Le bus ne rejoue rien de lui-même ; il faut remettre l'état en cohérence avec les commandes d'administration du service.</div>
+<div class="note b"><b>Bonne pratique :</b> avant une opération de maintenance sur le bus, s'assurer qu'aucune opération longue n'est en cours — migrations, créations en masse, sauvegardes de volumes.</div>
+</div>
+</div>
+</section>
+
+<!-- 21 -->
+<section class="slide dark sec">
+<div class="num">02</div>
+<h2>La base de données</h2>
+<p>MariaDB conserve tout ce que le cloud sait de lui-même. Galera en maintient trois copies identiques. Sans elle, aucune API ne peut répondre — mais les instances, elles, continuent de tourner.</p>
+<ol><li>Rôle et contenu</li><li>Chaîne d'accès et réplication Galera</li><li>Quorum et états des nœuds</li><li>Ports, comptes, options côté services</li><li>Migrations de schéma</li><li>Variables wsrep, erreurs, réamorçage, hygiène</li></ol>
+</section>
+
+<!-- 22 -->
+<section class="slide">
+<header><span class="kick">2 · La base de données</span><h2>Rôle : la mémoire du cloud</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Ce qu'elle contient</b></p>
+<ul class="pts sm">
+<li>L'<b>inventaire</b> : instances, ports, réseaux, volumes, images, utilisateurs, projets.</li>
+<li>L'<b>état</b> de chaque ressource et de chaque opération en cours (<code>vm_state</code>, <code>task_state</code>, <code>status</code>).</li>
+<li>Les <b>affectations</b> : quelle instance sur quel hôte, quel volume attaché où, quelles allocations dans Placement.</li>
+<li>Les <b>battements</b> des services et la configuration dynamique : quotas, gabarits, agrégats, rôles.</li>
+</ul>
+<p><b>Ce qu'elle ne contient pas</b></p>
+<ul class="pts sm">
+<li>Les données des utilisateurs : disques, objets et images vivent dans le stockage.</li>
+<li>Les jetons Keystone : au format Fernet, ils ne sont pas enregistrés.</li>
+<li>L'état réel des hyperviseurs : la base dit ce qui <b>devrait</b> être, pas ce qui est.</li>
+</ul>
+<div class="note">La base est la <b>référence</b>. En cas de divergence avec la réalité (instance disparue de l'hyperviseur, port orphelin), ce sont les services qui se resynchronisent sur elle — ou l'administrateur qui la corrige par les API, jamais par SQL.</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Schéma</th><th>Tables caractéristiques</th><th>Croissance</th></tr></thead>
+<tbody>
+<tr><td><code>keystone</code></td><td><code>project</code>, <code>user</code>, <code>assignment</code>, <code>endpoint</code></td><td>Faible</td></tr>
+<tr><td><code>nova_api</code></td><td><code>flavors</code>, <code>request_specs</code>, <code>cell_mappings</code>, <code>quotas</code></td><td>Modérée</td></tr>
+<tr><td><code>nova</code> (cellule)</td><td><code>instances</code>, <code>instance_actions</code>, <code>block_device_mapping</code>, <code>services</code></td><td>Forte</td></tr>
+<tr><td><code>nova_cell0</code></td><td>Instances jamais placées sur un hôte</td><td>Faible</td></tr>
+<tr><td><code>placement</code></td><td><code>resource_providers</code>, <code>inventories</code>, <code>allocations</code></td><td>Modérée</td></tr>
+<tr><td><code>neutron</code></td><td><code>networks</code>, <code>ports</code>, <code>ipallocations</code>, <code>securitygrouprules</code></td><td>Modérée</td></tr>
+<tr><td><code>cinder</code></td><td><code>volumes</code>, <code>snapshots</code>, <code>volume_attachment</code></td><td>Modérée</td></tr>
+<tr><td><code>glance</code></td><td><code>images</code>, <code>image_locations</code>, <code>image_properties</code></td><td>Faible</td></tr>
+<tr><td><code>heat</code></td><td><code>stack</code>, <code>resource</code>, <code>event</code></td><td>Forte</td></tr>
+</tbody></table>
+<div class="note g">« Forte » : des lignes s'ajoutent à chaque opération et les suppressions ne font que les marquer. Sans purge, ces schémas grossissent sans limite.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 23 -->
+<section class="slide">
+<header><span class="kick">2 · La base de données</span><h2>La chaîne d'accès : du service à la ligne écrite</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 250">
+<rect x="10" y="10" width="300" height="230" rx="12" class="zone"/><text x="26" y="34" class="tl">Processus du service (un worker)</text>
+<rect x="720" y="10" width="420" height="230" rx="12" class="zone"/><text x="736" y="34" class="tl">Cluster MariaDB + Galera</text>
+<g class="tc">
+<rect x="26" y="50" width="268" height="46" rx="8" class="b-red"/><text x="160" y="78" class="tb">Code du service</text>
+<rect x="26" y="108" width="268" height="46" rx="8" class="bx"/><text x="160" y="128" class="tb">oslo.db + SQLAlchemy</text><text x="160" y="145" class="ts">objets ↔ requêtes SQL, rejeu sur erreur</text>
+<rect x="26" y="166" width="268" height="58" rx="8" class="b-grey"/><text x="160" y="190" class="tb">Pool de connexions</text><text x="160" y="209" class="ts">5 permanentes, jusqu'à 50 de plus en pointe</text>
+<rect x="400" y="80" width="250" height="100" rx="10" class="b-dark"/><text x="525" y="108" class="tw tb">HAProxy — VIP interne : 3306</text><text x="525" y="130" class="tw" style="font-size:12px">mode TCP, un seul nœud actif</text><text x="525" y="148" class="tw" style="font-size:12px">contrôle de santé de chaque nœud</text><text x="525" y="166" class="tw" style="font-size:12px">délais d'inactivité longs</text>
+<rect x="740" y="48" width="380" height="56" rx="8" class="b-red"/><text x="930" y="72" class="tb">MariaDB ctl01 — actif</text><text x="930" y="91" class="ts">un thread par connexion · InnoDB · fournisseur wsrep</text>
+<rect x="740" y="114" width="380" height="46" rx="8" class="b-grey"/><text x="930" y="142" class="tb">MariaDB ctl02 — secours</text>
+<rect x="740" y="170" width="380" height="46" rx="8" class="b-grey"/><text x="930" y="198" class="tb">MariaDB ctl03 — secours</text>
+</g>
+<path d="M160,96 V106" class="ln"/><path d="M160,154 V164" class="ln"/>
+<path d="M294,195 H350 V130 H398" class="ln"/><text x="346" y="218" class="tc ts">TCP 3306</text>
+<path d="M650,112 L738,80" class="lr"/><path d="M650,130 L738,137" class="ln ld"/><path d="M650,148 L738,190" class="ln ld"/>
+<text x="930" y="232" class="tc ts">réplication Galera entre les trois nœuds (port 4567)</text>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Délai d'inactivité</th><th>Réglé où</th><th>Ordre de grandeur</th></tr></thead>
+<tbody>
+<tr><td><code>connection_recycle_time</code></td><td>Service, section <code>[database]</code></td><td>3600 s</td></tr>
+<tr><td><code>timeout client</code> / <code>server</code></td><td>HAProxy, bloc MariaDB</td><td>≥ 3600 s</td></tr>
+<tr><td><code>wait_timeout</code></td><td>MariaDB</td><td>28800 s</td></tr>
+</tbody></table>
+<div class="note"><b>Règle :</b> recyclage côté service &lt; délai HAProxy &lt; délai MariaDB. Sinon un équipement ferme une connexion que le pool croit vivante : « MySQL server has gone away ».</div>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li>Les services ne connaissent que la <b>VIP</b> : ils ignorent quel nœud est actif.</li>
+<li>HAProxy envoie tout vers <b>un seul nœud</b> ; les deux autres ne servent qu'en cas de panne du premier.</li>
+<li>Une bascule coupe toutes les connexions ouvertes : oslo.db les rouvre et rejoue la requête en cours.</li>
+<li>Chaque connexion occupe un thread et de la mémoire côté MariaDB : la somme de tous les pools doit rester sous <code>max_connections</code>.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 24 -->
+<section class="slide">
+<header><span class="kick">2 · La base de données</span><h2>Galera : la réplication par certification</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 740 440">
+<g class="tc tb" style="font-size:13px">
+<rect x="10" y="5" width="120" height="38" rx="7" class="b-red"/><text x="70" y="29">Service</text>
+<rect x="190" y="5" width="120" height="38" rx="7" class="b-grey"/><text x="250" y="29">ctl01 (actif)</text>
+<rect x="390" y="5" width="120" height="38" rx="7" class="b-grey"/><text x="450" y="29">ctl02</text>
+<rect x="570" y="5" width="120" height="38" rx="7" class="b-grey"/><text x="630" y="29">ctl03</text>
+</g>
+<g stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 4"><line x1="70" y1="43" x2="70" y2="360"/><line x1="250" y1="43" x2="250" y2="360"/><line x1="450" y1="43" x2="450" y2="360"/><line x1="630" y1="43" x2="630" y2="360"/></g>
+<path d="M70,84 H248" class="lr"/><text x="170" y="75" class="tc ts tm">BEGIN … COMMIT</text>
+<path d="M250,104 H292 V136 H253" class="lr"/><text x="302" y="116" class="ts">exécute localement, prépare</text><text x="302" y="132" class="ts">le jeu d'écritures (writeset)</text>
+<path d="M250,178 H628" class="lr"/><text x="446" y="169" class="tc ts">diffusion ordonnée : numéro de séquence global</text>
+<rect x="200" y="200" width="480" height="38" rx="8" class="b-amber"/><text x="440" y="224" class="tc tb" style="font-size:13px">certification sur chaque nœud : conflit avec une écriture concurrente ?</text>
+<path d="M248,282 H72" class="ln ld"/><text x="160" y="273" class="tc ts">OK : validé sur ctl01</text>
+<path d="M450,300 H485 V330 H453" class="lr"/><text x="492" y="320" class="ts">applique</text>
+<path d="M630,300 H665 V330 H633" class="lr"/><text x="672" y="320" class="ts">applique</text>
+<g class="tc tw tb" style="font-size:12px"><circle cx="84" cy="84" r="11" class="f-red"/><text x="84" y="88">1</text><circle cx="272" cy="104" r="11" class="f-red"/><text x="272" y="108">2</text><circle cx="264" cy="178" r="11" class="f-red"/><text x="264" y="182">3</text><circle cx="184" cy="219" r="11" class="f-red"/><text x="184" y="223">4</text><circle cx="236" cy="282" r="11" class="f-red"/><text x="236" y="286">5</text><circle cx="436" cy="300" r="11" class="f-red"/><text x="436" y="304">6</text><circle cx="616" cy="300" r="11" class="f-red"/><text x="616" y="304">6</text></g>
+<rect x="10" y="376" width="720" height="56" rx="8" class="b-grey"/><text x="26" y="399" class="ts"><tspan class="tb">Si la certification échoue :</tspan> la transaction est annulée et le service reçoit l'erreur 1213 (« deadlock »).</text><text x="26" y="419" class="ts">oslo.db la rejoue automatiquement ; c'est normal tant que cela reste occasionnel.</text>
+</svg>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Synchrone à la validation :</b> quand le service reçoit « OK », la transaction est connue et acceptée par la majorité. Aucune écriture validée ne se perd à la panne d'un nœud.</li>
+<li><b>Appliquée ensuite :</b> les autres nœuds l'écrivent avec un léger décalage. Lire sur un autre nœud juste après peut renvoyer l'ancienne valeur.</li>
+<li><b>Tous les nœuds acceptent les écritures</b>, mais deux transactions concurrentes sur les mêmes lignes via deux nœuds se heurtent à la certification. D'où le nœud d'écriture unique.</li>
+<li><b>Contrôle de flux :</b> un nœud trop lent à appliquer freine tout le cluster. Les trois nœuds doivent avoir des disques équivalents.</li>
+</ul>
+<div class="note b"><b>Contraintes de Galera :</b> tables InnoDB uniquement, clé primaire sur chaque table, grosses transactions à éviter. Les schémas d'OpenStack les respectent.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 25 -->
+<section class="slide">
+<header><span class="kick">2 · La base de données</span><h2>Quorum et états d'un nœud Galera</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 230">
+<rect x="20" y="8" width="1110" height="40" rx="8" class="b-red"/><text x="575" y="33" class="tc tb">Composant primaire (Primary) : le groupe de nœuds qui détient la majorité — le seul autorisé à traiter des requêtes</text>
+<g class="tc">
+<rect x="20" y="82" width="180" height="66" rx="9" class="bx"/><text x="110" y="108" class="tb">Joining</text><text x="110" y="128" class="ts">se connecte au groupe</text>
+<rect x="250" y="82" width="180" height="66" rx="9" class="b-amber"/><text x="340" y="108" class="tb">Transfert d'état</text><text x="340" y="128" class="ts">IST ou SST</text>
+<rect x="480" y="82" width="180" height="66" rx="9" class="bx"/><text x="570" y="108" class="tb">Joined</text><text x="570" y="128" class="ts">rattrape son retard</text>
+<rect x="710" y="82" width="180" height="66" rx="9" class="b-green"/><text x="800" y="108" class="tb">Synced</text><text x="800" y="128" class="ts">sert les requêtes</text>
+<rect x="940" y="82" width="190" height="66" rx="9" class="b-grey"/><text x="1035" y="108" class="tb">Donor / Desynced</text><text x="1035" y="128" class="ts">fournit un transfert</text>
+</g>
+<path d="M200,115 H248" class="ln"/><path d="M430,115 H478" class="ln"/><path d="M660,115 H708" class="ln"/><path d="M890,115 H938" class="ln2"/>
+<rect x="20" y="182" width="1110" height="40" rx="8" class="b-grey"/><text x="575" y="207" class="tc tb">Hors composant primaire (non-Primary) : nœud isolé ou groupe minoritaire — refuse toute requête (erreur 1047)</text>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Transfert</th><th>Principe</th><th>Quand</th><th>Durée</th></tr></thead>
+<tbody>
+<tr><td>IST (incrémental)</td><td>Rejoue les transactions manquantes depuis le cache d'un donneur</td><td>Absence courte : le retard tient dans le cache (<code>gcache</code>)</td><td>Secondes à minutes</td></tr>
+<tr><td>SST (complet)</td><td>Copie intégrale des données depuis un donneur (mariabackup)</td><td>Nœud neuf, absence longue, données corrompues</td><td>Proportionnelle à la taille de la base</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Majorité stricte :</b> à trois nœuds, deux doivent se voir. À deux, la moindre coupure entre eux arrête tout.</li>
+<li><b>Nombre pair :</b> ajouter un arbitre (<code>garbd</code>) qui vote sans stocker de données.</li>
+<li><b>Arrêt propre</b> d'un nœud : il quitte le groupe et la majorité se recalcule sur les nœuds restants.</li>
+<li><b>Arrêt brutal</b> des trois : plus de composant primaire, aucun nœud ne redémarre seul en service — il faut réamorcer le cluster.</li>
+<li>Pendant un SST, le donneur est mis à l'écart : à trois nœuds, un seul reste pleinement disponible.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 26 -->
+<section class="slide">
+<header><span class="kick">2 · La base de données</span><h2>Exposition : ports, écoute et répartiteur</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Port</th><th>Usage</th><th>Qui doit l'atteindre</th></tr></thead>
+<tbody>
+<tr><td>3306</td><td>Connexions SQL des clients</td><td>HAProxy des contrôleurs ; services, via la VIP</td></tr>
+<tr><td>4567</td><td>Réplication Galera (TCP, et UDP en multidiffusion)</td><td>Les nœuds MariaDB entre eux</td></tr>
+<tr><td>4568</td><td>Transfert incrémental (IST)</td><td>Les nœuds MariaDB entre eux</td></tr>
+<tr><td>4444</td><td>Transfert complet (SST)</td><td>Les nœuds MariaDB entre eux</td></tr>
+<tr><td>Port du contrôle de santé</td><td>Script qui répond « nœud synchronisé ou non »</td><td>HAProxy uniquement</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li>MariaDB écoute sur l'adresse du <b>réseau de gestion</b> de son nœud (<code>bind-address</code>), jamais sur toutes les interfaces.</li>
+<li>La VIP interne porte le même port 3306, sur une autre adresse : HAProxy et MariaDB cohabitent sur le même hôte.</li>
+<li>Aucun de ces ports n'est ouvert vers les nœuds de calcul, les instances ou le réseau public.</li>
+</ul>
+<div class="note"><b>Contrôle :</b> <code>ss -ltnp | grep -E '3306|4567'</code> sur chaque contrôleur ; depuis un nœud de calcul, <code>nc -zv &lt;VIP&gt; 3306</code> doit <b>échouer</b>.</div>
+</div>
+<div class="col">
+<pre style="font-size:12.2px"><span class="m"># haproxy.cfg — bloc MariaDB (forme type)</span>
+<span class="k">listen</span> mariadb
+    mode tcp
+    bind 10.20.0.10:3306
+    option tcpka
+    timeout client 3600s
+    timeout server 3600s
+    option httpchk
+    server ctl01 10.20.0.11:3306 check port 4569 inter 2000
+    server ctl02 10.20.0.12:3306 check port 4569 … <span class="k">backup</span>
+    server ctl03 10.20.0.13:3306 check port 4569 … <span class="k">backup</span></pre>
+<ul class="pts sm">
+<li><code>mode tcp</code> : HAProxy relaie la session sans la comprendre.</li>
+<li><code>backup</code> : ces serveurs ne reçoivent du trafic que si le premier est déclaré hors service.</li>
+<li><code>check port</code> : HAProxy interroge un petit service local à chaque nœud, qui ne répond « 200 » que si <code>wsrep_local_state</code> vaut <i>Synced</i>. Le numéro de port dépend de l'outil de déploiement.</li>
+<li>Sans ce contrôle, HAProxy enverrait des requêtes à un nœud vivant mais hors quorum.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 27 -->
+<section class="slide">
+<header><span class="kick">2 · La base de données</span><h2>Exposition : comptes, privilèges et chaîne de connexion</h2></header>
+<div class="body">
+<div class="fig" style="flex:none;height:140px">
+<svg viewBox="0 0 1150 140">
+<text x="20" y="20" class="tb">Anatomie de l'option connection</text>
+<g class="tc tm tb" style="font-size:13px">
+<rect x="20" y="36" width="190" height="44" rx="6" class="b-grey"/><text x="115" y="63">mysql+pymysql://</text>
+<rect x="218" y="36" width="150" height="44" rx="6" class="b-red"/><text x="293" y="63">nova:S3cr3t</text>
+<rect x="376" y="36" width="230" height="44" rx="6" class="b-dark"/><text x="491" y="63" class="tw">@int.cloud.lan:3306</text>
+<rect x="614" y="36" width="90" height="44" rx="6" class="b-blue"/><text x="659" y="63">/nova</text>
+<rect x="712" y="36" width="420" height="44" rx="6" class="b-amber"/><text x="922" y="63">?charset=utf8&amp;ssl_ca=/etc/ssl/ca.pem</text>
+</g>
+<g class="tc ts"><text x="115" y="102">dialecte + pilote Python</text><text x="293" y="102">compte du service</text><text x="491" y="102">VIP interne (HAProxy)</text><text x="659" y="102">schéma</text><text x="922" y="102">options : jeu de caractères, TLS</text>
+<text x="293" y="120">un compte par schéma</text><text x="491" y="120">jamais l'adresse d'un nœud</text></g>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<pre><span class="m">-- Ce que l'outil de déploiement crée pour chaque service</span>
+<span class="k">CREATE DATABASE</span> nova;
+<span class="k">CREATE USER</span> 'nova'@'10.20.0.%' IDENTIFIED BY 'S3cr3t';
+<span class="k">GRANT ALL PRIVILEGES ON</span> nova.* <span class="k">TO</span> 'nova'@'10.20.0.%';
+
+<span class="m">-- Vérifier</span>
+<span class="k">SELECT</span> user, host <span class="k">FROM</span> mysql.user;
+<span class="k">SHOW GRANTS FOR</span> 'nova'@'10.20.0.%';</pre>
+<div class="note g">Avec HAProxy en mode TCP, MariaDB voit l'adresse du <b>répartiteur</b>, pas celle du service : la restriction par hôte porte donc sur les contrôleurs.</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Compte</th><th>Portée</th><th>Utilisé par</th></tr></thead>
+<tbody>
+<tr><td>Un par service</td><td>Tous les droits sur son seul schéma</td><td>Les processus du service</td></tr>
+<tr><td>Contrôle de santé</td><td>Connexion sans privilège</td><td>Script interrogé par HAProxy</td></tr>
+<tr><td>Transfert d'état</td><td>Lecture complète, rechargement</td><td>mariabackup pendant un SST</td></tr>
+<tr><td>Supervision</td><td>Lecture des variables d'état</td><td>Exporteur de métriques</td></tr>
+<tr><td>root</td><td>Tout</td><td>Administrateur, en local seulement</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li>Un service compromis ne lit que son schéma : Glance n'accède pas aux tables de Keystone.</li>
+<li>Les nœuds de calcul n'ont aucun compte : nova-compute passe par nova-conductor.</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 28 -->
+<section class="slide">
+<header><span class="kick">2 · La base de données</span><h2>Les options côté services qui pilotent l'accès à la base</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Option de la section [database]</th><th>Défaut</th><th>Rôle</th><th>Point d'attention</th></tr></thead>
+<tbody>
+<tr><td><code>connection</code></td><td>—</td><td>Adresse, compte et schéma</td><td>Toujours la VIP interne ; contient un mot de passe en clair</td></tr>
+<tr><td><code>max_pool_size</code></td><td>5</td><td>Connexions gardées ouvertes par processus</td><td>Multiplié par le nombre de workers et de contrôleurs</td></tr>
+<tr><td><code>max_overflow</code></td><td>50</td><td>Connexions supplémentaires en pointe</td><td>Borne le pire cas : 55 connexions par processus</td></tr>
+<tr><td><code>pool_timeout</code></td><td>30 s</td><td>Attente d'une connexion libre dans le pool</td><td>Dépassement = service saturé, pas base en panne</td></tr>
+<tr><td><code>connection_recycle_time</code></td><td>3600 s</td><td>Âge maximal d'une connexion avant renouvellement</td><td>Doit rester inférieur aux délais de HAProxy et de MariaDB</td></tr>
+<tr><td><code>max_retries</code> · <code>retry_interval</code></td><td>10 · 10 s</td><td>Tentatives de connexion au démarrage</td><td>Un service démarré avant la base patiente, puis abandonne</td></tr>
+<tr><td><code>db_max_retries</code></td><td>20</td><td>Rejeux d'une transaction après erreur de connexion ou « deadlock »</td><td>Absorbe les conflits de certification occasionnels</td></tr>
+<tr><td><code>slave_connection</code></td><td>(vide)</td><td>Seconde adresse pour certaines lectures</td><td>Rarement utilisé avec Galera</td></tr>
+<tr><td><code>connection_debug</code></td><td>0</td><td>Journalise les requêtes SQL (0 à 100)</td><td>Très verbeux : diagnostic ponctuel uniquement</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Nova a plusieurs bases :</b> <code>[api_database]</code> pour le schéma <code>nova_api</code>, <code>[database]</code> pour la cellule. Les nœuds de calcul n'ont ni l'une ni l'autre section renseignée.</div>
+<div class="note g"><b>Côté MariaDB</b>, les réglages qui répondent à ceux-ci : <code>max_connections</code>, <code>wait_timeout</code>, <code>innodb_buffer_pool_size</code> (la mémoire consacrée aux données) et <code>wsrep_provider_options</code> (dont <code>gcache.size</code>).</div>
+</div>
+</div>
+</section>
+
+<!-- 29 -->
+<section class="slide">
+<header><span class="kick">2 · La base de données</span><h2>Schémas et migrations : la base évolue avec le code</h2></header>
+<div class="body">
+<p>Chaque service possède son schéma et l'outil qui le fait évoluer. À chaque montée de version, le schéma doit être migré <b>avant</b> que le nouveau code ne s'en serve.</p>
+<table class="tbl tight">
+<thead><tr><th>Service</th><th>Créer ou migrer le schéma</th><th>Migrations de données en ligne</th><th>Version courante</th></tr></thead>
+<tbody>
+<tr><td>Keystone</td><td><code>keystone-manage db_sync</code> (phases <code>--expand</code>, <code>--migrate</code>, <code>--contract</code>)</td><td>—</td><td><code>keystone-manage db_version</code></td></tr>
+<tr><td>Nova</td><td><code>nova-manage api_db sync</code> puis <code>nova-manage db sync</code></td><td><code>nova-manage db online_data_migrations</code></td><td><code>nova-manage db version</code></td></tr>
+<tr><td>Placement</td><td><code>placement-manage db sync</code></td><td><code>placement-manage db online_data_migrations</code></td><td><code>placement-manage db version</code></td></tr>
+<tr><td>Neutron</td><td><code>neutron-db-manage upgrade heads</code> (ou <code>--expand</code> puis <code>--contract</code>)</td><td>—</td><td><code>neutron-db-manage current</code></td></tr>
+<tr><td>Cinder</td><td><code>cinder-manage db sync</code></td><td><code>cinder-manage db online_data_migrations</code></td><td><code>cinder-manage db version</code></td></tr>
+<tr><td>Glance</td><td><code>glance-manage db sync</code> (ou <code>expand</code>, <code>migrate</code>, <code>contract</code>)</td><td>—</td><td><code>glance-manage db version</code></td></tr>
+<tr><td>Heat</td><td><code>heat-manage db_sync</code></td><td>—</td><td><code>heat-manage db_version</code></td></tr>
+</tbody></table>
+<div class="cols c3 nf">
+<div class="card cn"><h3>Étendre, puis contracter</h3>Phase 1 : ajouter colonnes et tables, sans rien retirer — l'ancien code fonctionne encore. Phase 2 : supprimer l'ancien, une fois tout le code mis à jour. C'est ce qui permet une montée de version sans arrêt des API.</div>
+<div class="card cn"><h3>Migrations en ligne</h3>Certaines transformations de données se font par lots, services en marche. Elles doivent être <b>terminées</b> avant la montée de version suivante : c'est un contrôle de <code>nova-status upgrade check</code>.</div>
+<div class="card"><h3>Symptôme d'un oubli</h3>Erreurs « Unknown column », « Table doesn't exist » ou refus de démarrer du service juste après une mise à jour : le schéma est en retard sur le code. Jamais de modification manuelle du schéma.</div>
+</div>
+</div>
+</section>
+
+<!-- 30 -->
+<section class="slide">
+<header><span class="kick">2 · La base de données</span><h2>Diagnostic : l'état du cluster Galera</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre><span class="c">MariaDB&gt;</span> <span class="k">SHOW GLOBAL STATUS LIKE</span> 'wsrep_%';
++----------------------------+--------------+
+| wsrep_cluster_size         | 3            |
+| wsrep_cluster_status       | Primary      |
+| wsrep_connected            | ON           |
+| wsrep_ready                | ON           |
+| wsrep_local_state_comment  | Synced       |
+| wsrep_incoming_addresses   | 10.20.0.11…  |
+| wsrep_last_committed       | 48211937     |
+| wsrep_local_recv_queue_avg | 0.02         |
+| wsrep_flow_control_paused  | 0.00         |
+| wsrep_local_cert_failures  | 117          |
++----------------------------+--------------+</pre>
+<pre><span class="m"># En une ligne, sur chaque contrôleur</span>
+<span class="c">mariadb</span> <span class="k">-e</span> "SHOW STATUS WHERE Variable_name IN
+  ('wsrep_cluster_size','wsrep_cluster_status',
+   'wsrep_local_state_comment','wsrep_ready')"</pre>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Variable</th><th>Sain</th><th>Sinon</th></tr></thead>
+<tbody>
+<tr><td><code>wsrep_cluster_size</code></td><td>3</td><td>Un nœud manque : redondance réduite</td></tr>
+<tr><td><code>wsrep_cluster_status</code></td><td>Primary</td><td>Ce nœud est hors quorum et refuse les requêtes</td></tr>
+<tr><td><code>wsrep_ready</code></td><td>ON</td><td>Le nœud n'accepte pas de requêtes</td></tr>
+<tr><td><code>wsrep_local_state_comment</code></td><td>Synced</td><td>Joining, Donor… : nœud en transfert</td></tr>
+<tr><td><code>wsrep_last_committed</code></td><td>Identique sur les trois</td><td>Écart durable : un nœud décroche</td></tr>
+<tr><td><code>wsrep_local_recv_queue_avg</code></td><td>Proche de 0</td><td>Ce nœud applique trop lentement</td></tr>
+<tr><td><code>wsrep_flow_control_paused</code></td><td>Proche de 0</td><td>Part du temps où le cluster a été freiné</td></tr>
+<tr><td><code>wsrep_local_cert_failures</code></td><td>Croissance lente</td><td>Hausse rapide : écritures sur plusieurs nœuds</td></tr>
+</tbody></table>
+<div class="note"><b>Interroger les trois nœuds</b>, pas seulement la VIP : chacun donne sa propre vision. Trois nœuds qui annoncent chacun <code>cluster_size = 1</code> forment trois clusters distincts — la pire situation.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 31 -->
+<section class="slide">
+<header><span class="kick">2 · La base de données</span><h2>Diagnostic : connexions, requêtes et volume</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre><span class="m">-- Connexions : utilisées, record, plafond</span>
+<span class="k">SHOW GLOBAL STATUS LIKE</span> 'Threads_connected';
+<span class="k">SHOW GLOBAL STATUS LIKE</span> 'Max_used_connections';
+<span class="k">SHOW VARIABLES LIKE</span> 'max_connections';
+
+<span class="m">-- Qui est connecté, par compte</span>
+<span class="k">SELECT</span> user, COUNT(*) <span class="k">FROM</span> information_schema.processlist
+  <span class="k">GROUP BY</span> user <span class="k">ORDER BY</span> 2 <span class="k">DESC</span>;
+
+<span class="m">-- Requêtes en cours depuis plus de 5 s</span>
+<span class="k">SELECT</span> id, user, time, state, LEFT(info, 80)
+  <span class="k">FROM</span> information_schema.processlist
+  <span class="k">WHERE</span> command &lt;&gt; 'Sleep' <span class="k">AND</span> time &gt; 5;
+
+<span class="m">-- Verrous et dernier interblocage</span>
+<span class="k">SHOW ENGINE INNODB STATUS</span>\G</pre>
+</div>
+<div class="col">
+<pre><span class="m">-- Taille de chaque schéma, en Mo</span>
+<span class="k">SELECT</span> table_schema,
+       ROUND(SUM(data_length + index_length)/1048576) <span class="k">AS</span> mo
+  <span class="k">FROM</span> information_schema.tables
+  <span class="k">GROUP BY</span> table_schema <span class="k">ORDER BY</span> mo <span class="k">DESC</span>;</pre>
+<ul class="pts sm">
+<li><b>Threads_connected proche de max_connections :</b> la somme des pools dépasse ce que la base accepte. Réduire les workers ou relever le plafond, mémoire à l'appui.</li>
+<li><b>Un compte domine la liste :</b> le service correspondant fuit des connexions ou a trop de workers.</li>
+<li><b>Requêtes longues :</b> souvent des listes non paginées sur des tables jamais purgées (<code>instances</code>, <code>instance_actions</code>, <code>event</code>).</li>
+<li><b>Schéma démesuré :</b> lignes marquées supprimées qui s'accumulent — voir l'archivage.</li>
+</ul>
+<div class="note g">Le <b>journal des requêtes lentes</b> (<code>slow_query_log</code>, <code>long_query_time</code>) s'active à chaud et donne, en quelques heures, la liste des requêtes à traiter.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 32 -->
+<section class="slide">
+<header><span class="kick">2 · La base de données</span><h2>Journaux : reconnaître les erreurs liées à la base</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Message dans le journal d'un service</th><th>Code</th><th>Signification</th><th>Cause probable</th></tr></thead>
+<tbody>
+<tr><td style="white-space:normal"><code>DBConnectionError … Can't connect to MySQL server</code></td><td>2003</td><td>Connexion refusée ou sans réponse</td><td>VIP interne absente, HAProxy sans nœud sain, pare-feu</td></tr>
+<tr><td style="white-space:normal"><code>Lost connection to MySQL server during query</code></td><td>2013</td><td>Session coupée en cours de requête</td><td>Bascule de nœud, redémarrage, délai d'un équipement</td></tr>
+<tr><td style="white-space:normal"><code>MySQL server has gone away</code></td><td>2006</td><td>Le pool a réutilisé une connexion déjà fermée</td><td>Délais d'inactivité mal ordonnés entre service, HAProxy et MariaDB</td></tr>
+<tr><td style="white-space:normal"><code>DBDeadlock … Deadlock found when trying to get lock</code></td><td>1213</td><td>Transaction annulée par la certification</td><td>Occasionnel : normal. Fréquent : écritures sur plusieurs nœuds</td></tr>
+<tr><td style="white-space:normal"><code>WSREP has not yet prepared node for application use</code></td><td>1047</td><td>Le nœud atteint est hors quorum ou en transfert</td><td>Contrôle de santé HAProxy absent ou trompé</td></tr>
+<tr><td style="white-space:normal"><code>Too many connections</code></td><td>1040</td><td>Plafond <code>max_connections</code> atteint</td><td>Trop de workers, fuite de connexions</td></tr>
+<tr><td style="white-space:normal"><code>Lock wait timeout exceeded</code></td><td>1205</td><td>Une ligne est restée verrouillée trop longtemps</td><td>Transaction longue : purge, migration, requête bloquée</td></tr>
+<tr><td style="white-space:normal"><code>Unknown column …</code>, <code>Table … doesn't exist</code></td><td>1054, 1146</td><td>Le schéma ne correspond pas au code</td><td>Migration oubliée après une montée de version</td></tr>
+<tr><td style="white-space:normal"><code>QueuePool limit … overflow … reached, connection timed out</code></td><td>—</td><td>Le pool du processus est épuisé</td><td>Service saturé : la base, elle, répond peut-être très bien</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Côté MariaDB</b>, le journal d'erreurs (<code>/var/log/mysql/</code>, ou <code>/var/log/kolla/mariadb/</code>) trace les changements de vue du cluster : lignes <code>WSREP: view</code>, <code>New cluster view</code>, <code>Shifting … → SYNCED</code>.</div>
+<div class="note"><b>Indice décisif :</b> une erreur de base touche <b>tous</b> les services au même instant. Si un seul service est en erreur, chercher d'abord chez lui — pool, compte, schéma.</div>
+</div>
+</div>
+</section>
+
+<!-- 33 -->
+<section class="slide">
+<header><span class="kick">2 · La base de données</span><h2>Perte de quorum : réamorcer le cluster</h2></header>
+<div class="body">
+<div class="fig" style="flex:none;height:185px">
+<svg viewBox="0 0 1150 185">
+<g>
+<rect x="10" y="24" width="206" height="150" rx="10" class="bx"/><rect x="236" y="24" width="206" height="150" rx="10" class="bx"/><rect x="462" y="24" width="206" height="150" rx="10" class="bx"/><rect x="688" y="24" width="206" height="150" rx="10" class="b-red"/><rect x="914" y="24" width="226" height="150" rx="10" class="b-green"/>
+</g>
+<path d="M216,99 H234" class="ln"/><path d="M442,99 H460" class="ln"/><path d="M668,99 H686" class="ln"/><path d="M894,99 H912" class="ln"/>
+<g class="tc tw tb"><circle cx="34" cy="24" r="14" class="f-red"/><text x="34" y="29">1</text><circle cx="260" cy="24" r="14" class="f-red"/><text x="260" y="29">2</text><circle cx="486" cy="24" r="14" class="f-red"/><text x="486" y="29">3</text><circle cx="712" cy="24" r="14" class="f-red"/><text x="712" y="29">4</text><circle cx="938" cy="24" r="14" class="f-red"/><text x="938" y="29">5</text></g>
+<g class="tc">
+<text x="113" y="66" class="tb">Constater</text><text x="113" y="92" class="ts">plus de composant primaire,</text><text x="113" y="110" class="ts">ou MariaDB arrêté partout</text><text x="113" y="140" class="ts">arrêter MariaDB sur les trois</text>
+<text x="339" y="66" class="tb">Mesurer</text><text x="339" y="92" class="ts">lire « seqno » dans</text><text x="339" y="110" class="ts">grastate.dat, sur chaque nœud</text><text x="339" y="140" class="ts">si −1 : mysqld --wsrep-recover</text>
+<text x="565" y="66" class="tb">Choisir</text><text x="565" y="92" class="ts">le nœud dont le numéro</text><text x="565" y="110" class="ts">de séquence est le plus élevé</text><text x="565" y="140" class="ts">il détient la dernière écriture</text>
+<text x="791" y="66" class="tb tr">Amorcer</text><text x="791" y="92" class="ts">safe_to_bootstrap: 1</text><text x="791" y="110" class="ts">puis galera_new_cluster</text><text x="791" y="140" class="ts tb">sur ce nœud, et lui seul</text>
+<text x="1027" y="66" class="tb">Rejoindre</text><text x="1027" y="92" class="ts">démarrer les deux autres,</text><text x="1027" y="110" class="ts">l'un après l'autre</text><text x="1027" y="140" class="ts">resynchronisation IST ou SST</text>
+</g>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<pre><span class="m"># /var/lib/mysql/grastate.dat</span>
+# GALERA saved state
+version: 2.1
+uuid:    7f3c2a91-5c1e-11ef-9a41-b7d0c5a8e2f1
+<span class="k">seqno:   48211937</span>
+<span class="k">safe_to_bootstrap: 0</span></pre>
+<pre><span class="m"># Avec Kolla-Ansible : toute la procédure en une commande</span>
+<span class="c">kolla-ansible</span> <span class="k">-i</span> inventaire mariadb_recovery</pre>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Pourquoi le plus avancé :</b> amorcer depuis un nœud en retard ferait perdre les transactions que seul un autre avait reçues. Les autres nœuds s'aligneraient sur lui.</li>
+<li><b>seqno = −1</b> signifie que le nœud ne s'est pas arrêté proprement : la position réelle se retrouve en rejouant le journal InnoDB.</li>
+<li><b>Ne jamais amorcer deux nœuds :</b> on obtiendrait deux clusters indépendants, qui divergent derrière la même VIP.</li>
+<li>Cas plus simple — nœuds vivants mais tous « non-Primary » : sur le plus avancé, <code>SET GLOBAL wsrep_provider_options='pc.bootstrap=YES'</code>.</li>
+</ul>
+<div class="note">Pendant toute l'opération, les API sont indisponibles et les instances continuent de fonctionner. Rien ne presse au point de sauter l'étape 2.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 34 -->
+<section class="slide">
+<header><span class="kick">2 · La base de données</span><h2>Hygiène : purger et sauvegarder</h2></header>
+<div class="body">
+<p>La plupart des services ne suppriment pas les lignes : ils les marquent (<code>deleted</code>, <code>deleted_at</code>). Sans traitement périodique, les tables grossissent, les requêtes ralentissent et les transferts d'état Galera s'allongent.</p>
+<table class="tbl tight">
+<thead><tr><th>Service</th><th>Commande de purge</th><th>Effet</th></tr></thead>
+<tbody>
+<tr><td>Nova</td><td><code>nova-manage db archive_deleted_rows --until-complete --all-cells</code></td><td>Déplace les lignes supprimées vers des tables « shadow »</td></tr>
+<tr><td>Nova</td><td><code>nova-manage db purge --before &lt;date&gt; --all-cells</code></td><td>Efface définitivement les lignes archivées</td></tr>
+<tr><td>Cinder</td><td><code>cinder-manage db purge &lt;jours&gt;</code></td><td>Efface les lignes supprimées depuis plus de N jours</td></tr>
+<tr><td>Glance</td><td><code>glance-manage db purge --age_in_days &lt;jours&gt;</code></td><td>Idem pour les images</td></tr>
+<tr><td>Heat</td><td><code>heat-manage purge_deleted -g days &lt;jours&gt;</code></td><td>Efface les piles supprimées et leurs événements</td></tr>
+<tr><td>Keystone</td><td><code>keystone-manage trust_flush</code></td><td>Efface les délégations expirées</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="col">
+<p><b>Sauvegarder</b></p>
+<ul class="pts sm">
+<li><b>mariabackup</b> : copie physique à chaud, complète ou incrémentale ; avec Kolla-Ansible : <code>kolla-ansible mariadb_backup</code>.</li>
+<li><b>mariadb-dump</b> : export logique, schéma par schéma ; lent sur les gros volumes mais lisible et portable.</li>
+<li>Sauvegarder sur <b>un</b> nœud, stocker <b>hors</b> du cluster, et tester la restauration.</li>
+</ul>
+</div>
+<div class="note"><b>Trois copies Galera ne sont pas une sauvegarde :</b> une suppression par erreur ou une migration ratée est répliquée instantanément sur les trois nœuds. Une sauvegarde est indispensable <b>avant chaque montée de version</b> — c'est la seule voie de retour arrière.</div>
+</div>
+</div>
+</section>
+
+<!-- 35 -->
+<section class="slide">
+<header><span class="kick">2 · La base de données</span><h2>Métriques à surveiller</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Métrique</th><th>Valeur saine</th><th>Signal d'alerte</th><th>Ce que cela révèle</th></tr></thead>
+<tbody>
+<tr><td>Taille du cluster</td><td>3</td><td>2 : alerte ; 1 : critique</td><td>Redondance entamée ; prochaine panne = arrêt des API</td></tr>
+<tr><td>État du cluster, par nœud</td><td>Primary, Synced</td><td>Tout autre état durable</td><td>Nœud hors quorum ou bloqué en transfert</td></tr>
+<tr><td>Pause du contrôle de flux</td><td>Proche de 0</td><td>Au-dessus de quelques pour cent</td><td>Un nœud trop lent freine toutes les écritures</td></tr>
+<tr><td>File de réception locale</td><td>Proche de 0</td><td>Croissance sur un nœud</td><td>Disque ou CPU de ce nœud en cause</td></tr>
+<tr><td>Échecs de certification</td><td>Croissance lente</td><td>Accélération</td><td>Écritures concurrentes sur plusieurs nœuds</td></tr>
+<tr><td>Connexions / plafond</td><td>Sous 70 %</td><td>Au-dessus de 85 %</td><td>Trop de workers ; refus de connexion imminent</td></tr>
+<tr><td>Requêtes lentes</td><td>Rares</td><td>En hausse</td><td>Tables à purger, index manquant, requête non paginée</td></tr>
+<tr><td>Latence d'écriture disque</td><td>Quelques millisecondes</td><td>Dizaines de millisecondes</td><td>Stockage inadapté ; première cause de lenteur des API</td></tr>
+<tr><td>Taille des schémas</td><td>Stable ou croissance douce</td><td>Croissance continue</td><td>Purge absente</td></tr>
+<tr><td>Âge de la dernière sauvegarde</td><td>Moins de 24 h</td><td>Au-delà</td><td>Tâche de sauvegarde en échec</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note g"><b>Sources :</b> exporteur Prometheus pour MariaDB (variables d'état et <code>wsrep_*</code>), journal d'erreurs, journal des requêtes lentes, statistiques HAProxy pour savoir quel nœud est actif.</div>
+<div class="note"><b>L'alerte la plus utile :</b> « <code>wsrep_cluster_size</code> inférieur à 3 ». Un cluster à deux nœuds fonctionne parfaitement — et n'a plus aucune marge.</div>
+</div>
+</div>
+</section>
+
+<!-- 36 -->
+<section class="slide dark sec">
+<div class="num">03</div>
+<h2>Le serveur d'API</h2>
+<p>C'est la seule partie du cloud que les utilisateurs touchent directement. Deux étages la composent : le répartiteur HAProxy, puis un serveur WSGI qui exécute le code Python du service.</p>
+<ol><li>La pile : HAProxy, serveur WSGI, application</li><li>Modes d'hébergement et workers</li><li>Middlewares, sockets, surface exposée</li><li>Délais en cascade</li><li>Tests manuels et codes HTTP</li><li>Journaux, état des backends, saturation</li></ol>
+</section>
+
+<!-- 37 -->
+<section class="slide">
+<header><span class="kick">3 · Le serveur d'API</span><h2>La pile : du répartiteur au code du service</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 320">
+<rect x="410" y="8" width="730" height="306" rx="12" class="zone"/><text x="426" y="32" class="tl">Contrôleur ctl01 — identique sur ctl02 et ctl03</text>
+<rect x="10" y="126" width="110" height="64" rx="8" class="b-blue"/><text x="65" y="154" class="tc tb">Client</text><text x="65" y="173" class="tc ts">HTTPS</text>
+<path d="M120,158 H158" class="lr"/>
+<rect x="160" y="86" width="200" height="144" rx="10" class="b-dark"/><text x="260" y="114" class="tc tw tb">HAProxy</text>
+<g class="tc tw" style="font-size:12px"><text x="260" y="140">frontend : VIP + port</text><text x="260" y="160">terminaison TLS</text><text x="260" y="180">en-têtes X-Forwarded-*</text><text x="260" y="200">backend : 3 contrôleurs</text><text x="260" y="220">contrôle de santé</text></g>
+<path d="M360,158 H428" class="lr"/><text x="394" y="148" class="tc ts tb tr">HTTP</text>
+<rect x="430" y="48" width="300" height="250" rx="10" class="b-grey"/><text x="580" y="74" class="tc tb">Serveur WSGI — uWSGI ou Apache</text>
+<rect x="446" y="88" width="268" height="38" rx="7" class="bx"/><text x="580" y="112" class="tc">processus maître : écoute, surveille</text>
+<g class="tc" style="font-size:12.5px">
+<rect x="446" y="140" width="82" height="62" rx="7" class="b-red"/><text x="487" y="166" class="tb">worker</text><text x="487" y="184" class="ts">processus</text>
+<rect x="539" y="140" width="82" height="62" rx="7" class="b-red"/><text x="580" y="166" class="tb">worker</text><text x="580" y="184" class="ts">processus</text>
+<rect x="632" y="140" width="82" height="62" rx="7" class="b-red"/><text x="673" y="166" class="tb">worker</text><text x="673" y="184" class="ts">processus</text>
+</g>
+<text x="580" y="230" class="tc ts">chaque worker charge l'application</text><text x="580" y="248" class="tc ts">et traite ses requêtes, en threads</text><text x="580" y="278" class="tc tm">écoute 10.20.0.11:8774</text>
+<path d="M730,120 H768" class="lr"/>
+<rect x="770" y="48" width="350" height="144" rx="10" class="b-red"/><text x="945" y="74" class="tc tb">Application WSGI du service</text>
+<g class="ts"><text x="790" y="102">• chaîne de middlewares (fichier api-paste.ini)</text><text x="790" y="124">• routage de l'URL, microversion</text><text x="790" y="146">• validation, politique d'accès</text><text x="790" y="168">• logique métier</text></g>
+<g class="tc tb" style="font-size:12px">
+<rect x="770" y="232" width="80" height="50" rx="7" class="b-dark"/><text x="810" y="262" class="tw">Keystone</text>
+<rect x="860" y="232" width="80" height="50" rx="7" class="bx"/><text x="900" y="262">Memcached</text>
+<rect x="950" y="232" width="80" height="50" rx="7" class="b-grey"/><text x="990" y="262">MariaDB</text>
+<rect x="1040" y="232" width="80" height="50" rx="7" class="b-amber"/><text x="1080" y="262">RabbitMQ</text>
+</g>
+<path d="M810,192 V230" class="ln"/><path d="M900,192 V230" class="ln"/><path d="M990,192 V230" class="ln"/><path d="M1080,192 V230" class="ln"/>
+<text x="945" y="302" class="tc ts">dépendances appelées pendant une requête</text>
+</svg>
+</div>
+<div class="cols c3 nf">
+<div class="card cn"><h3>HAProxy</h3>Reçoit toutes les connexions, déchiffre, choisit un contrôleur sain. Ne connaît rien d'OpenStack : il ne voit que du HTTP.</div>
+<div class="card"><h3>Serveur WSGI</h3>Fait tourner le code Python : gère les processus, les threads, les redémarrages. C'est lui qui fixe la capacité de traitement.</div>
+<div class="card"><h3>Application</h3>Le service lui-même. Une requête n'aboutit que si <b>toutes</b> ses dépendances répondent : la disponibilité de l'API est le produit des leurs.</div>
+</div>
+</div>
+</section>
+
+<!-- 38 -->
+<section class="slide">
+<header><span class="kick">3 · Le serveur d'API</span><h2>Modes d'hébergement de l'application</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Mode</th><th>Principe</th><th>Réglage de la capacité</th><th>Situation</th></tr></thead>
+<tbody>
+<tr><td>uWSGI</td><td>Serveur d'applications dédié : un maître, des workers, chacun avec ses threads</td><td><code>processes</code>, <code>threads</code> dans le fichier <code>.ini</code> du service</td><td>Mode de référence des déploiements récents</td></tr>
+<tr><td>Apache + mod_wsgi</td><td>Apache héberge l'application dans des processus démons</td><td><code>WSGIDaemonProcess … processes=N threads=M</code></td><td>Très répandu ; apporte les journaux d'accès d'Apache</td></tr>
+<tr><td>Serveur intégré (eventlet)</td><td>Le service écoute lui-même, avec des fils coopératifs</td><td>Option <code>*_workers</code> du service</td><td>Historique ; en cours de retrait dans tout OpenStack</td></tr>
+</tbody></table>
+<div class="cols nf">
+<table class="tbl tight">
+<thead><tr><th>Service</th><th>Module WSGI (versions récentes)</th></tr></thead>
+<tbody>
+<tr><td>Nova, API</td><td><code>nova.wsgi.osapi_compute</code></td></tr>
+<tr><td>Nova, métadonnées</td><td><code>nova.wsgi.metadata</code></td></tr>
+<tr><td>Keystone</td><td><code>keystone.wsgi.api</code></td></tr>
+<tr><td>Neutron</td><td><code>neutron.wsgi.api</code></td></tr>
+<tr><td>Cinder</td><td><code>cinder.wsgi.api</code></td></tr>
+<tr><td>Placement</td><td><code>placement.wsgi.api</code></td></tr>
+</tbody></table>
+<div class="col">
+<ul class="pts sm">
+<li><b>Nova</b> a supprimé ses scripts de serveur eventlet (<code>nova-api</code>, <code>nova-api-metadata</code>) : depuis sa version 33.0.0, seul le déploiement WSGI est accepté.</li>
+<li>L'outil de déploiement génère le fichier de configuration du serveur WSGI et y inscrit le module à charger.</li>
+<li>Savoir quel mode est en place : <code>ps aux | grep -E 'uwsgi|httpd|apache2'</code> sur un contrôleur.</li>
+</ul>
+<div class="note g">Le mode ne change rien pour les utilisateurs ni pour HAProxy. Il change <b>où</b> se règle le nombre de workers et <b>où</b> s'écrivent les journaux d'accès.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 39 -->
+<section class="slide">
+<header><span class="kick">3 · Le serveur d'API</span><h2>Workers : la capacité, et ce qu'elle coûte en aval</h2></header>
+<div class="body"><div class="cols w64">
+<div class="fig">
+<svg viewBox="0 0 690 420">
+<g class="tc">
+<rect x="10" y="10" width="210" height="170" rx="10" class="zone"/><text x="115" y="36" class="tb">ctl01</text>
+<rect x="240" y="10" width="210" height="170" rx="10" class="zone"/><text x="345" y="36" class="tb">ctl02</text>
+<rect x="470" y="10" width="210" height="170" rx="10" class="zone"/><text x="575" y="36" class="tb">ctl03</text>
+</g>
+<g class="tc ts tb">
+<rect x="24" y="50" width="56" height="42" rx="6" class="b-red"/><text x="52" y="76">w1</text><rect x="87" y="50" width="56" height="42" rx="6" class="b-red"/><text x="115" y="76">w2</text><rect x="150" y="50" width="56" height="42" rx="6" class="b-red"/><text x="178" y="76">w3</text><rect x="55" y="100" width="56" height="42" rx="6" class="b-red"/><text x="83" y="126">w4</text><rect x="119" y="100" width="56" height="42" rx="6" class="b-red"/><text x="147" y="126">w5</text>
+<rect x="254" y="50" width="56" height="42" rx="6" class="b-red"/><text x="282" y="76">w1</text><rect x="317" y="50" width="56" height="42" rx="6" class="b-red"/><text x="345" y="76">w2</text><rect x="380" y="50" width="56" height="42" rx="6" class="b-red"/><text x="408" y="76">w3</text><rect x="285" y="100" width="56" height="42" rx="6" class="b-red"/><text x="313" y="126">w4</text><rect x="349" y="100" width="56" height="42" rx="6" class="b-red"/><text x="377" y="126">w5</text>
+<rect x="484" y="50" width="56" height="42" rx="6" class="b-red"/><text x="512" y="76">w1</text><rect x="547" y="50" width="56" height="42" rx="6" class="b-red"/><text x="575" y="76">w2</text><rect x="610" y="50" width="56" height="42" rx="6" class="b-red"/><text x="638" y="76">w3</text><rect x="515" y="100" width="56" height="42" rx="6" class="b-red"/><text x="543" y="126">w4</text><rect x="579" y="100" width="56" height="42" rx="6" class="b-red"/><text x="607" y="126">w5</text>
+</g>
+<g class="tc ts"><text x="115" y="166">5 workers nova-api</text><text x="345" y="166">5 workers nova-api</text><text x="575" y="166">5 workers nova-api</text></g>
+<rect x="10" y="200" width="670" height="210" rx="10" class="b-grey"/>
+<text x="28" y="230" class="tb">Ce que ces 15 processus peuvent ouvrir</text>
+<text x="28" y="262"><tspan class="tb">3</tspan> contrôleurs × <tspan class="tb">5</tspan> workers = <tspan class="tb">15</tspan> processus nova-api</text>
+<text x="28" y="292">× jusqu'à <tspan class="tb">55</tspan> connexions SQL chacun (5 + 50) = <tspan class="tb tr">825 connexions possibles</tspan></text>
+<text x="28" y="322">× plusieurs connexions RabbitMQ chacun</text>
+<text x="28" y="352">× quelques centaines de Mo de mémoire chacun</text>
+<text x="28" y="388" class="ts">Et autant pour chaque autre API : Neutron, Cinder, Keystone, Glance, Placement, Heat…</text>
+</svg>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li>Un <b>worker</b> traite une requête à la fois par thread. Trop peu de workers : les requêtes attendent, HAProxy renvoie des 504.</li>
+<li>Trop de workers : mémoire épuisée sur les contrôleurs et plafond de connexions de la base dépassé.</li>
+<li>La bonne valeur se <b>mesure</b> : temps de réponse, file d'attente HAProxy, <code>Threads_connected</code>.</li>
+</ul>
+<table class="tbl tight">
+<thead><tr><th>Où se règle le nombre de workers</th></tr></thead>
+<tbody>
+<tr><td style="white-space:normal;font-weight:400">uWSGI : <code>processes</code> et <code>threads</code></td></tr>
+<tr><td style="white-space:normal;font-weight:400">mod_wsgi : directive <code>WSGIDaemonProcess</code></td></tr>
+<tr><td style="white-space:normal;font-weight:400">Kolla-Ansible : variable <code>openstack_service_workers</code></td></tr>
+</tbody></table>
+<div class="note"><b>Piège du défaut « un worker par cœur » :</b> sur un contrôleur de 64 cœurs, dix services à 64 workers font 640 processus et des dizaines de milliers de connexions potentielles. Toujours borner.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 40 -->
+<section class="slide">
+<header><span class="kick">3 · Le serveur d'API</span><h2>Les middlewares : ce que chaque requête traverse</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Middleware</th><th>Fonction</th><th>Réglage associé</th></tr></thead>
+<tbody>
+<tr><td>cors</td><td>Autorise les appels depuis un navigateur sur un autre domaine</td><td>Section <code>[cors]</code>, <code>allowed_origin</code></td></tr>
+<tr><td>http_proxy_to_wsgi</td><td>Rétablit protocole et hôte d'origine à partir des en-têtes posés par HAProxy</td><td><code>[oslo_middleware] enable_proxy_headers_parsing</code></td></tr>
+<tr><td>request_id</td><td>Attribue l'identifiant <code>req-…</code></td><td>—</td></tr>
+<tr><td>healthcheck</td><td>Répond sur <code>/healthcheck</code> sans authentification</td><td>Section <code>[healthcheck]</code></td></tr>
+<tr><td>sizelimit</td><td>Refuse les corps trop volumineux</td><td><code>max_request_body_size</code> (114 688 octets)</td></tr>
+<tr><td>authtoken</td><td>Valide le jeton, renseigne l'identité</td><td>Section <code>[keystone_authtoken]</code></td></tr>
+</tbody></table>
+<div class="note"><b>Sans <code>enable_proxy_headers_parsing</code></b>, le service se croit appelé en HTTP sur son adresse interne : les liens qu'il renvoie sont injoignables pour le client.</div>
+</div>
+<div class="col">
+<pre><span class="m"># /etc/nova/api-paste.ini (extrait)</span>
+<span class="k">[composite:openstack_compute_api_v21]</span>
+use = call:nova.api.auth:pipeline_factory_v21
+keystone = cors http_proxy_to_wsgi compute_req_id
+    faultwrap request_log sizelimit osprofiler
+    authtoken keystonecontext osapi_compute_app_v21</pre>
+<pre><span class="m"># nova.conf — ce dont authtoken a besoin</span>
+<span class="k">[keystone_authtoken]</span>
+www_authenticate_uri = https://cloud.example.org:5000
+auth_url = https://int.cloud.lan:5000
+memcached_servers = 10.20.0.11:11211,10.20.0.12:11211,…
+auth_type = password
+username = nova
+project_name = service
+service_token_roles_required = true</pre>
+<ul class="pts sm">
+<li>L'ordre compte : une requête sans jeton valide est rejetée par <b>authtoken</b> avant d'atteindre le code du service.</li>
+<li><code>memcached_servers</code> évite d'interroger Keystone à chaque requête : sans cache, Keystone devient le goulot de tout le cloud.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 41 -->
+<section class="slide">
+<header><span class="kick">3 · Le serveur d'API</span><h2>Exposition : qui écoute sur quelle adresse</h2></header>
+<div class="body"><div class="cols">
+<div class="fig">
+<svg viewBox="0 0 560 430">
+<rect x="10" y="8" width="540" height="414" rx="12" class="zone"/><text x="26" y="33" class="tl">ctl01 — sockets en écoute pour l'API Nova</text>
+<g class="tc">
+<rect x="26" y="56" width="140" height="70" rx="8" class="b-grey"/><text x="96" y="86" class="tb">bond0.30</text><text x="96" y="106" class="ts">API publique</text>
+<rect x="26" y="166" width="140" height="190" rx="8" class="b-grey"/><text x="96" y="252" class="tb">bond0.20</text><text x="96" y="272" class="ts">gestion</text>
+<rect x="196" y="56" width="338" height="70" rx="8" class="b-red"/><text x="365" y="86" class="tm tb" style="font-size:13.5px">192.0.2.10:8774</text><text x="365" y="107" class="ts">HAProxy — VIP externe, TLS</text>
+<rect x="196" y="166" width="338" height="70" rx="8" class="b-blue"/><text x="365" y="196" class="tm tb" style="font-size:13.5px">10.20.0.10:8774</text><text x="365" y="217" class="ts">HAProxy — VIP interne</text>
+<rect x="196" y="286" width="338" height="70" rx="8" class="bx" style="stroke-width:2.5"/><text x="365" y="316" class="tm tb" style="font-size:13.5px">10.20.0.11:8774</text><text x="365" y="337" class="ts">nova-api (uWSGI) — adresse propre du nœud</text>
+</g>
+<path d="M166,91 H194" class="nl"/><path d="M166,201 H194" class="nl"/><path d="M166,321 H194" class="nl"/>
+<path d="M500,126 V284" class="lr"/><path d="M290,236 V284" class="lb"/>
+<text x="300" y="266" class="ts">vers un backend sain :</text><text x="300" y="281" class="ts">ctl01, ctl02 ou ctl03</text>
+<text x="26" y="388" class="ts">Même port 8774 sur trois adresses différentes : aucun conflit.</text>
+<text x="26" y="406" class="ts">Les VIP ne sont présentes que sur le contrôleur actif (Keepalived).</text>
+</svg>
+</div>
+<div class="col">
+<pre style="font-size:12.2px"><span class="m"># haproxy.cfg — API Nova (forme type)</span>
+<span class="k">frontend</span> nova_api_external_front
+    mode http
+    bind 192.0.2.10:8774 ssl crt /etc/haproxy/certs/cloud.pem
+    http-request set-header X-Forwarded-Proto https
+    option forwardfor
+    default_backend nova_api_back
+
+<span class="k">frontend</span> nova_api_internal_front
+    mode http
+    bind 10.20.0.10:8774
+    default_backend nova_api_back
+
+<span class="k">backend</span> nova_api_back
+    mode http
+    option httpchk
+    server ctl01 10.20.0.11:8774 check inter 2000 rise 2 fall 5
+    server ctl02 10.20.0.12:8774 check inter 2000 rise 2 fall 5
+    server ctl03 10.20.0.13:8774 check inter 2000 rise 2 fall 5</pre>
+<ul class="pts sm">
+<li>L'application n'écoute <b>jamais</b> sur l'interface publique : seul HAProxy s'y présente.</li>
+<li><code>rise 2 fall 5</code> : un backend est retiré après 5 contrôles ratés, réintégré après 2 réussis.</li>
+<li>Vérifier : <code>ss -ltnp | grep 8774</code> doit montrer exactement ces adresses, pas <code>0.0.0.0</code>.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 42 -->
+<section class="slide">
+<header><span class="kick">3 · Le serveur d'API</span><h2>Exposition : la surface à maîtriser</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Élément exposé</th><th>Ce qu'il permet sans précaution</th><th>Où le maîtriser</th></tr></thead>
+<tbody>
+<tr><td>Découverte des versions (<code>GET /</code>)</td><td>Accessible sans jeton : révèle versions et microversions prises en charge</td><td>Comportement normal ; ne rien y ajouter</td></tr>
+<tr><td>Contrôle de santé (<code>/healthcheck</code>)</td><td>Accessible sans jeton ; le mode détaillé expose des informations internes</td><td>Mode détaillé désactivé ; filtrer le chemin sur la VIP externe</td></tr>
+<tr><td>Taille des requêtes</td><td>Corps énormes qui saturent la mémoire des workers</td><td><code>max_request_body_size</code> ; limites HAProxy</td></tr>
+<tr><td>Listes de ressources</td><td>Requêtes très coûteuses pour la base</td><td>Pagination imposée : <code>[api] max_limit</code> (1000 dans Nova)</td></tr>
+<tr><td>Débit d'appels</td><td>Aucune limitation dans la plupart des services : un client peut saturer les workers</td><td>HAProxy (tables de suivi), pare-feu applicatif</td></tr>
+<tr><td>Chiffrement</td><td>Protocoles et suites faibles s'ils restent activés</td><td>Directive <code>bind … ssl</code> de HAProxy : versions TLS, suites, HSTS</td></tr>
+<tr><td>Origines autorisées (CORS)</td><td>Appels depuis n'importe quel site web</td><td>Section <code>[cors]</code> : liste explicite</td></tr>
+<tr><td>Messages d'erreur</td><td>Traces Python renvoyées au client</td><td><code>debug = false</code> en production</td></tr>
+<tr><td>Consoles (port 6080) et Horizon</td><td>Autres portes d'entrée publiques, souvent oubliées</td><td>Mêmes exigences TLS que les API</td></tr>
+<tr><td>Interface interne</td><td>Atteignable depuis une instance si le filtrage est défaillant</td><td>Segmentation réseau ; TLS interne ; jetons de service</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Tout ce qui est public passe par HAProxy :</b> c'est là que se placent le chiffrement, les limites et le filtrage. L'application, derrière, suppose qu'un tri a déjà été fait.</div>
+<div class="note g"><b>Vérifier depuis l'extérieur :</b> un balayage de ports de la VIP externe ne doit montrer que les ports des API publiées, Horizon et les consoles — ni 3306, ni 5672, ni 15672, ni 11211.</div>
+</div>
+</div>
+</section>
+
+<!-- 43 -->
+<section class="slide">
+<header><span class="kick">3 · Le serveur d'API</span><h2>Délais en cascade : pourquoi un 504 n'annule rien</h2></header>
+<div class="body">
+<div class="fig">
+<svg viewBox="0 0 1150 300">
+<g class="te tb" style="font-size:13px"><text x="140" y="45">Client</text><text x="140" y="95">HAProxy</text><text x="140" y="145">Worker de l'API</text><text x="140" y="195">Appel RPC</text><text x="140" y="245">Destinataire</text></g>
+<rect x="150" y="26" width="450" height="32" rx="6" class="b-blue"/><text x="375" y="47" class="tc ts tb">attend la réponse</text>
+<rect x="150" y="76" width="450" height="32" rx="6" class="b-dark"/><text x="375" y="97" class="tc tw tb" style="font-size:12px">timeout server : 60 s</text>
+<rect x="150" y="126" width="465" height="32" rx="6" class="b-red"/><text x="382" y="147" class="tc ts tb">bloqué en attente de la réponse RPC</text>
+<rect x="160" y="176" width="450" height="32" rx="6" class="b-amber"/><text x="385" y="197" class="tc ts tb">rpc_response_timeout : 60 s</text>
+<rect x="200" y="226" width="600" height="32" rx="6" class="b-grey"/><text x="390" y="247" class="tc ts tb">traitement réel : 80 s — il va jusqu'au bout</text>
+<line x1="600" y1="14" x2="600" y2="270" stroke="#e4002b" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="612" y="47" class="ts tb tr">reçoit 504 Gateway Timeout</text>
+<text x="612" y="97" class="ts tb tr">coupe la connexion vers le backend</text>
+<text x="627" y="147" class="ts">MessagingTimeout → 500, que plus personne ne lit</text>
+<text x="622" y="197" class="ts">abandonne l'attente</text>
+<text x="812" y="247" class="ts tb">l'opération aboutit quand même</text>
+<line x1="150" y1="272" x2="1100" y2="272" stroke="#475569" stroke-width="1.5"/>
+<g stroke="#475569" stroke-width="1.5"><line x1="150" y1="267" x2="150" y2="277"/><line x1="375" y1="267" x2="375" y2="277"/><line x1="600" y1="267" x2="600" y2="277"/><line x1="825" y1="267" x2="825" y2="277"/><line x1="1050" y1="267" x2="1050" y2="277"/></g>
+<g class="tc ts"><text x="150" y="294">0 s</text><text x="375" y="294">30 s</text><text x="600" y="294" class="tb tr">60 s</text><text x="825" y="294">90 s</text><text x="1050" y="294">120 s</text></g>
+</svg>
+</div>
+<div class="cols">
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Étage</th><th>Délai</th><th>Réglé où</th></tr></thead>
+<tbody>
+<tr><td>Client</td><td>Propre à l'outil</td><td>Option <code>--timeout</code> de la CLI, SDK</td></tr>
+<tr><td>HAProxy</td><td><code>timeout client</code>, <code>timeout server</code></td><td><code>haproxy.cfg</code></td></tr>
+<tr><td>Serveur WSGI</td><td>Durée maximale d'une requête</td><td>uWSGI (<code>harakiri</code>), Apache</td></tr>
+<tr><td>RPC</td><td><code>rpc_response_timeout</code></td><td>Fichier du service</td></tr>
+<tr><td>Base</td><td><code>pool_timeout</code>, verrous</td><td>Service et MariaDB</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li>Le <b>premier</b> délai qui expire décide de ce que voit le client ; les étages suivants continuent de travailler.</li>
+<li>Un <b>504</b> signifie « pas de réponse à temps », pas « opération échouée ». Relancer aveuglément crée des doublons.</li>
+<li>Après un 504, <b>vérifier l'état</b> de la ressource avant toute nouvelle tentative.</li>
+<li>Allonger les délais repousse le symptôme sans traiter la lenteur. La bonne question : pourquoi 80 s ?</li>
+</ul>
+<div class="note">C'est aussi pourquoi les opérations longues sont des « cast » : l'API répond 202 tout de suite et n'attend rien.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 44 -->
+<section class="slide">
+<header><span class="kick">3 · Le serveur d'API</span><h2>Diagnostic : interroger l'API à la main</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:12.4px"><span class="m"># 1. La VIP répond-elle ? (aucun jeton requis)</span>
+<span class="c">curl</span> -s https://cloud.example.org:8774/ | python3 -m json.tool
+
+<span class="m"># 2. Chaque backend, directement, depuis un contrôleur</span>
+<span class="c">for</span> h in 10.20.0.11 10.20.0.12 10.20.0.13; do
+  <span class="c">curl</span> -s -o /dev/null \
+       -w "$h  %{http_code}  %{time_total}s\n" http://$h:8774/
+done
+
+<span class="m"># 3. Contrôle de santé (si le middleware est activé)</span>
+<span class="c">curl</span> -i http://10.20.0.11:8774/healthcheck
+
+<span class="m"># 4. Un appel authentifié, tous les échanges affichés</span>
+<span class="c">openstack</span> <span class="k">--debug</span> <span class="k">--os-interface</span> internal server list
+
+<span class="m"># 5. Où passe le temps ?</span>
+<span class="c">curl</span> -s -o /dev/null -w "tcp %{time_connect}  tls %{time_appconnect}
+  premier octet %{time_starttransfer}  total %{time_total}\n" \
+  https://cloud.example.org:5000/v3</pre>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Constat</th><th>Conclusion</th></tr></thead>
+<tbody>
+<tr><td style="white-space:normal">La VIP échoue, les trois backends répondent</td><td>HAProxy ou Keepalived : VIP absente, certificat, frontend</td></tr>
+<tr><td style="white-space:normal">Un backend sur trois échoue</td><td>Serveur WSGI de ce contrôleur ; HAProxy doit déjà l'avoir retiré</td></tr>
+<tr><td style="white-space:normal">Tous répondent à <code>/</code>, l'appel authentifié échoue</td><td>Keystone, Memcached, ou la base derrière le service</td></tr>
+<tr><td style="white-space:normal">Interface interne correcte, publique en échec</td><td>Réseau ou TLS côté externe ; catalogue erroné</td></tr>
+<tr><td style="white-space:normal">Premier octet tardif, connexion rapide</td><td>Le temps est passé dans le service ou ses dépendances</td></tr>
+<tr><td style="white-space:normal">Connexion TCP lente</td><td>Réseau, ou file d'attente de connexions saturée</td></tr>
+</tbody></table>
+<div class="note"><b>Démarche :</b> aller du plus simple au plus complet. <code>GET /</code> ne dépend ni de Keystone ni de la base : s'il répond, HAProxy et le serveur WSGI sont hors de cause, et le problème est en aval.</div>
+<div class="note g"><code>--debug</code> affiche chaque requête, chaque code de retour et l'identifiant <code>req-…</code> à rechercher ensuite dans les journaux.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 45 -->
+<section class="slide">
+<header><span class="kick">3 · Le serveur d'API</span><h2>Diagnostic : ce que dit le code HTTP</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th>Code</th><th>Émis par</th><th>Signification</th><th>Où regarder</th></tr></thead>
+<tbody>
+<tr><td>400</td><td>Application</td><td>Requête mal formée ou paramètre invalide</td><td>Corps de la réponse : le message est explicite</td></tr>
+<tr><td>401</td><td>Middleware authtoken</td><td>Jeton absent, expiré ou non validé</td><td>Keystone, Memcached, horloges, clés Fernet</td></tr>
+<tr><td>403</td><td>Application (politique)</td><td>Jeton valide mais rôle insuffisant, ou quota atteint</td><td>Rôles de l'utilisateur, fichier de politique, quotas</td></tr>
+<tr><td>404</td><td>Application</td><td>Ressource inconnue — ou appartenant à un autre projet</td><td>Projet du jeton ; URL du catalogue</td></tr>
+<tr><td>406, 409</td><td>Application</td><td>Microversion refusée ; état de la ressource incompatible avec l'action</td><td>Version demandée ; <code>status</code> et <code>task_state</code></td></tr>
+<tr><td>500</td><td>Application</td><td>Exception non prévue pendant le traitement</td><td>Journal de l'API : la trace nomme la base, le bus ou un autre service</td></tr>
+<tr><td>502</td><td>HAProxy</td><td>Le backend a fermé la connexion ou répondu de façon invalide</td><td>Worker tué ou redémarré : journal du serveur WSGI</td></tr>
+<tr><td>503</td><td>HAProxy ou authtoken</td><td>Aucun backend sain ; ou Keystone injoignable par le service</td><td>État des backends ; journal de l'API</td></tr>
+<tr><td>504</td><td>HAProxy</td><td>Le backend n'a pas répondu dans le délai</td><td>Lenteur en aval : base, bus, workers saturés</td></tr>
+</tbody></table>
+<div class="cols c3 nf">
+<div class="card cb"><h3>4xx : le client</h3>La requête a été comprise, le service fonctionne : revoir la demande, l'identité ou les droits.</div>
+<div class="card"><h3>500 : le service</h3>Le code s'est exécuté et a échoué. La réponse est dans le journal du service, à l'identifiant de la requête.</div>
+<div class="card cn"><h3>502, 503, 504 : l'infrastructure</h3>La requête n'a pas été traitée normalement. Le journal du service peut être vide : commencer par HAProxy.</div>
+</div>
+</div>
+</section>
+
+<!-- 46 -->
+<section class="slide">
+<header><span class="kick">3 · Le serveur d'API</span><h2>Journaux : lire une ligne de HAProxy</h2></header>
+<div class="body">
+<div class="fig" style="flex:none;height:205px">
+<svg viewBox="0 0 1150 205">
+<g class="tc tm tb">
+<rect x="10" y="12" width="170" height="40" rx="6" class="b-blue"/><text x="95" y="37">10.20.0.31:51522</text>
+<rect x="188" y="12" width="262" height="40" rx="6" class="b-grey"/><text x="319" y="37">[09/Oct/2026:10:41:07.123]</text>
+<rect x="458" y="12" width="236" height="40" rx="6" class="b-dark"/><text x="576" y="37" class="tw">nova_api_internal_front</text>
+<rect x="702" y="12" width="200" height="40" rx="6" class="b-red"/><text x="802" y="37">nova_api_back/ctl02</text>
+<rect x="910" y="12" width="230" height="40" rx="6" class="b-amber"/><text x="1025" y="37">0/0/1/312/313</text>
+<rect x="10" y="112" width="70" height="40" rx="6" class="b-green"/><text x="45" y="137">202</text>
+<rect x="88" y="112" width="80" height="40" rx="6" class="b-grey"/><text x="128" y="137">1843</text>
+<rect x="176" y="112" width="80" height="40" rx="6" class="b-red"/><text x="216" y="137">----</text>
+<rect x="264" y="112" width="160" height="40" rx="6" class="b-grey"/><text x="344" y="137">412/37/5/2/0</text>
+<rect x="432" y="112" width="70" height="40" rx="6" class="b-amber"/><text x="467" y="137">0/0</text>
+<rect x="510" y="112" width="330" height="40" rx="6" class="b-blue"/><text x="675" y="137">"POST /v2.1/servers HTTP/1.1"</text>
+</g>
+<g class="tc ts"><text x="95" y="72">client</text><text x="319" y="72">date de réception</text><text x="576" y="72">frontend</text><text x="802" y="72">backend / serveur choisi</text><text x="1025" y="72">durées en millisecondes</text>
+<text x="1025" y="90">requête / file / connexion / réponse / total</text>
+<text x="45" y="172">code</text><text x="128" y="172">octets</text><text x="216" y="172">état de fin</text><text x="344" y="172">connexions en cours</text><text x="467" y="172">files</text><text x="675" y="172">requête</text>
+<text x="467" y="190">d'attente</text></g>
+<text x="860" y="130" class="ts">Ici : 312 ms passées à attendre</text><text x="860" y="148" class="ts">la réponse de ctl02, aucune attente</text><text x="860" y="166" class="ts">en file, fin normale.</text>
+</svg>
+</div>
+<div class="cols">
+<table class="tbl tight">
+<thead><tr><th>État de fin</th><th>Lecture</th><th>Code associé</th></tr></thead>
+<tbody>
+<tr><td><code>----</code></td><td>Échange terminé normalement</td><td>Celui de l'application</td></tr>
+<tr><td><code>sH--</code></td><td>Délai dépassé en attendant la réponse du serveur</td><td>504</td></tr>
+<tr><td><code>SC--</code></td><td>Connexion refusée par le serveur</td><td>503</td></tr>
+<tr><td><code>SH--</code>, <code>PH--</code></td><td>Le serveur a coupé ou répondu de façon invalide</td><td>502</td></tr>
+<tr><td><code>cD--</code>, <code>CD--</code></td><td>Le client a abandonné ou expiré pendant le transfert</td><td>—</td></tr>
+<tr><td><code>&lt;NOSRV&gt;</code> à la place du serveur</td><td>Aucun backend disponible</td><td>503</td></tr>
+</tbody></table>
+<div class="col">
+<ul class="pts sm">
+<li><b>Quatrième durée élevée</b> : le backend a été lent → chercher dans le journal du service.</li>
+<li><b>Deuxième durée élevée</b>, ou files non nulles : tous les workers sont occupés → saturation.</li>
+<li><b>Troisième durée élevée</b> : établissement de connexion lent → réseau ou backend débordé.</li>
+</ul>
+<div class="note g">Le journal du service (<code>nova-api.log</code>) donne le détail <b>à l'intérieur</b> du traitement, avec l'identifiant <code>req-…</code> ; celui de HAProxy donne la vue <b>de l'extérieur</b>, y compris pour les requêtes qui n'ont jamais atteint le service.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 47 -->
+<section class="slide">
+<header><span class="kick">3 · Le serveur d'API</span><h2>Diagnostic : l'état des backends vu par HAProxy</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:12.6px"><span class="m"># Interroger HAProxy par son socket d'administration</span>
+<span class="c">echo</span> "show stat" | socat stdio /run/haproxy/admin.sock \
+  | cut -d, -f1,2,3,5,18,22,24 | grep nova_api
+
+<span class="m"># pxname, svname, qcur, scur, status, chkfail, lastchg</span>
+nova_api_back,ctl01,0,12,<span class="c">UP</span>,0,86211
+nova_api_back,ctl02,0,11,<span class="c">UP</span>,0,86209
+nova_api_back,ctl03,0,0,<span class="k">DOWN</span>,7,312
+nova_api_back,BACKEND,0,23,UP,,86211</pre>
+<pre style="font-size:12.6px"><span class="m"># Retirer un contrôleur avant maintenance, puis le remettre</span>
+<span class="c">echo</span> "set server nova_api_back/ctl03 state drain" \
+  | socat stdio /run/haproxy/admin.sock
+<span class="c">echo</span> "set server nova_api_back/ctl03 state ready" \
+  | socat stdio /run/haproxy/admin.sock</pre>
+<div class="note g">Le chemin du socket et la présence d'une page de statistiques HTTP dépendent de l'outil de déploiement.</div>
+</div>
+<div class="col">
+<table class="tbl tight">
+<thead><tr><th>Champ</th><th>Sens</th><th>À surveiller</th></tr></thead>
+<tbody>
+<tr><td><code>status</code></td><td>UP, DOWN, DRAIN, MAINT</td><td>Tout serveur DOWN ; un backend entier DOWN = 503</td></tr>
+<tr><td><code>scur</code></td><td>Sessions en cours</td><td>Répartition très inégale entre serveurs</td></tr>
+<tr><td><code>qcur</code></td><td>Requêtes en file d'attente</td><td>Toute valeur durablement non nulle</td></tr>
+<tr><td><code>chkfail</code></td><td>Contrôles de santé ratés</td><td>Compteur qui augmente</td></tr>
+<tr><td><code>lastchg</code></td><td>Secondes depuis le dernier changement d'état</td><td>Valeur faible : bascule récente ou instable</td></tr>
+<tr><td><code>hrsp_5xx</code></td><td>Réponses 5xx cumulées</td><td>Hausse sur un seul serveur</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li>Un serveur qui <b>oscille</b> entre UP et DOWN indique un backend à la limite : workers saturés ou dépendance lente.</li>
+<li>Le contrôle de santé par défaut ne vérifie que la réponse HTTP : un service qui répond à <code>/</code> mais dont la base est en panne reste « UP ».</li>
+<li><b>Drainer</b> un serveur avant de l'arrêter : il termine ses requêtes en cours et n'en reçoit plus de nouvelles.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 48 -->
+<section class="slide">
+<header><span class="kick">3 · Le serveur d'API</span><h2>Saturation : la reconnaître et en trouver la cause</h2></header>
+<div class="body">
+<table class="tbl">
+<thead><tr><th>Signe</th><th>Mesure</th><th>Cause probable</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td>Latence qui monte sur toutes les requêtes</td><td>Durées dans le journal HAProxy</td><td>Workers tous occupés, ou dépendance lente</td><td>Distinguer : file HAProxy non nulle, ou temps de réponse du backend élevé</td></tr>
+<tr><td>504 par vagues</td><td>État de fin <code>sH--</code></td><td>Requêtes plus longues que le délai du répartiteur</td><td>Trouver la requête lente ; base, bus</td></tr>
+<tr><td>503 intermittents</td><td>Serveurs qui oscillent UP / DOWN</td><td>Contrôles de santé qui expirent sous la charge</td><td>Capacité des workers ; mémoire du contrôleur</td></tr>
+<tr><td>502 isolés</td><td>Journal du serveur WSGI</td><td>Worker tué : mémoire épuisée, durée maximale atteinte</td><td>Mémoire par worker ; fuite ; requête anormale</td></tr>
+<tr><td>CPU des contrôleurs à 100 %</td><td>Par processus</td><td>Trop de workers pour le nombre de cœurs, ou appels en rafale</td><td>Borner les workers ; identifier le client bavard</td></tr>
+<tr><td>Erreurs de pool SQL</td><td>« QueuePool limit … reached »</td><td>Plus de requêtes simultanées que de connexions</td><td>Requêtes lentes d'abord, taille du pool ensuite</td></tr>
+<tr><td>Keystone lent, tout ralentit</td><td>Durée des validations de jeton</td><td>Cache Memcached absent ou inaccessible</td><td><code>memcached_servers</code> dans chaque service</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="col">
+<p><b>Identifier le client à l'origine de la charge</b></p>
+<ul class="pts sm">
+<li>Journal HAProxy : adresses sources et URL les plus fréquentes.</li>
+<li>Journal de l'API : projet et utilisateur de chaque requête.</li>
+<li>Coupables classiques : supervision trop fréquente, script en boucle, outil d'infrastructure as code qui rafraîchit des milliers de ressources.</li>
+</ul>
+</div>
+<div class="note b"><b>Voir ce que fait un processus bloqué :</b> les services savent produire un rapport d'état de leurs fils d'exécution (« Guru Meditation Report », bibliothèque oslo.reports). Il montre où chaque thread est arrêté — attente SQL, attente RPC, verrou.</div>
+</div>
+</div>
+</section>
+
+<!-- 49 -->
+<section class="slide">
+<header><span class="kick">Méthode</span><h2>Un arbre de diagnostic commun aux trois composants</h2></header>
+<div class="body"><div class="fig">
+<svg viewBox="0 0 1150 475">
+<rect x="375" y="4" width="400" height="42" rx="8" class="b-dark"/><text x="575" y="30" class="tc tw tb">Un appel API échoue ou n'aboutit pas</text>
+<path d="M575,46 V62 H192 V78" class="ln"/><path d="M575,46 V78" class="ln"/><path d="M575,62 H958 V78" class="ln"/>
+<rect x="10" y="80" width="365" height="346" rx="12" class="zone"/><rect x="392" y="80" width="365" height="346" rx="12" class="zone"/><rect x="775" y="80" width="365" height="346" rx="12" class="zone"/>
+<rect x="26" y="94" width="333" height="40" rx="8" class="b-red"/><text x="192" y="120" class="tc tb tr">Serveur d'API</text>
+<rect x="408" y="94" width="333" height="40" rx="8" class="b-amber"/><text x="574" y="120" class="tc tb">File de messages</text>
+<rect x="791" y="94" width="333" height="40" rx="8" class="b-grey" style="stroke:#101a33;stroke-width:2"/><text x="957" y="120" class="tc tb">Base de données</text>
+<g class="ts">
+<text x="26" y="160" class="tb">Signes</text>
+<text x="26" y="182">• 502, 503, 504, connexion refusée</text>
+<text x="26" y="202">• 401 par intermittence</text>
+<text x="26" y="222">• latence en hausse sur toutes les requêtes</text>
+<text x="26" y="262" class="tb">Vérifier, dans l'ordre</text>
+<text x="26" y="284">1. curl sur la VIP, puis sur chaque backend</text>
+<text x="26" y="304">2. état des backends dans HAProxy</text>
+<text x="26" y="324">3. journal HAProxy : durées, état de fin</text>
+<text x="26" y="344">4. journal de l'API à l'identifiant req-…</text>
+<text x="26" y="364">5. Keystone, Memcached, horloges</text>
+<text x="26" y="404" class="tb tr">Reprise type : retirer le backend fautif</text>
+<text x="408" y="160" class="tb">Signes</text>
+<text x="408" y="182">• 202 reçu, mais ressource figée (BUILD…)</text>
+<text x="408" y="202">• MessagingTimeout dans un journal</text>
+<text x="408" y="222">• services « down » en série</text>
+<text x="408" y="262" class="tb">Vérifier, dans l'ordre</text>
+<text x="408" y="284">1. cluster_status, alarmes</text>
+<text x="408" y="304">2. list_queues : messages, consommateurs</text>
+<text x="408" y="324">3. journal du service destinataire</text>
+<text x="408" y="344">4. connexions : état, nombre</text>
+<text x="408" y="364">5. réseau entre le nœud et les contrôleurs</text>
+<text x="408" y="404" class="tb tr">Reprise type : rétablir le consommateur</text>
+<text x="791" y="160" class="tb">Signes</text>
+<text x="791" y="182">• 500 avec DBConnectionError, DBDeadlock</text>
+<text x="791" y="202">• toutes les API en erreur en même temps</text>
+<text x="791" y="222">• erreur 1047 : nœud hors quorum</text>
+<text x="791" y="262" class="tb">Vérifier, dans l'ordre</text>
+<text x="791" y="284">1. wsrep_cluster_size, wsrep_cluster_status</text>
+<text x="791" y="304">2. nœud actif vu par HAProxy</text>
+<text x="791" y="324">3. Threads_connected / max_connections</text>
+<text x="791" y="344">4. requêtes lentes, verrous</text>
+<text x="791" y="364">5. latence disque des contrôleurs</text>
+<text x="791" y="404" class="tb tr">Reprise type : rétablir le quorum</text>
+</g>
+<rect x="10" y="438" width="1130" height="32" rx="8" class="b-grey"/><text x="575" y="459" class="tc tb" style="font-size:13px">Dans tous les cas : partir de l'identifiant de requête et suivre l'opération dans les journaux, étage par étage.</text>
+</svg>
+</div></div>
+</section>
+
+<!-- 50 -->
+<section class="slide">
+<header><span class="kick">Synthèse</span><h2>Fiche réflexe</h2></header>
+<div class="body">
+<table class="tbl tight">
+<thead><tr><th></th><th>File de messages</th><th>Base de données</th><th>Serveur d'API</th></tr></thead>
+<tbody>
+<tr><td>Rôle en une phrase</td><td>Porte les ordres entre processus d'un service</td><td>Garde l'état de référence du cloud</td><td>Reçoit et traite les requêtes REST</td></tr>
+<tr><td>Ports</td><td>5672 · 4369, 25672 · 15672, 15692</td><td>3306 · 4567, 4568, 4444</td><td>Un par API, sur VIP externe et VIP interne</td></tr>
+<tr><td>Accès des services</td><td>Direct, liste des 3 nœuds</td><td>Par la VIP interne, 1 nœud actif</td><td>Par la VIP, 3 backends actifs</td></tr>
+<tr><td>Option clé côté service</td><td><code>transport_url</code></td><td><code>[database] connection</code></td><td><code>[keystone_authtoken]</code>, catalogue</td></tr>
+<tr><td>Première commande</td><td><code>rabbitmqctl cluster_status</code></td><td><code>SHOW STATUS LIKE 'wsrep_%'</code></td><td><code>curl</code> VIP et backends</td></tr>
+<tr><td>Deuxième commande</td><td><code>rabbitmqctl list_queues name messages consumers</code></td><td><code>SHOW PROCESSLIST</code></td><td><code>show stat</code> sur le socket HAProxy</td></tr>
+<tr><td>Message caractéristique</td><td><code>MessagingTimeout</code></td><td><code>DBConnectionError</code>, <code>DBDeadlock</code></td><td>502, 503, 504</td></tr>
+<tr><td>Tolère la perte de</td><td>1 nœud sur 3</td><td>1 nœud sur 3</td><td>2 backends sur 3</td></tr>
+<tr><td>Panne majeure</td><td>Partition, alarme mémoire</td><td>Perte de quorum</td><td>Aucun backend sain, VIP absente</td></tr>
+<tr><td>Reprise</td><td>Rétablir la majorité, redémarrer les services déconnectés</td><td>Réamorcer depuis le nœud le plus avancé</td><td>Rétablir un backend ; vérifier Keepalived</td></tr>
+<tr><td>À ne jamais faire</td><td>Purger une file RPC en production</td><td>Amorcer deux nœuds ; modifier le schéma à la main</td><td>Exposer l'application sans HAProxy</td></tr>
+</tbody></table>
+<div class="note"><b>Trois signatures :</b> le bus tombe, les opérations se figent sans erreur ; la base tombe, toutes les API répondent en erreur ; une API tombe, un seul service est touché. Dans les trois cas, les instances continuent de tourner.</div>
+</div>
+</section>
+
+</div>
+<div id="bar"></div>
+<div id="nav"><button id="bO" title="Vue d'ensemble (O)">▦</button><button id="bF" title="Plein écran (F)">⛶</button><button id="bP" title="Précédent (←)">←</button><button id="bN" title="Suivant (→)">→</button></div>
+<script>
+(function(){
+var stage=document.getElementById('stage'),bar=document.getElementById('bar'),body=document.body;
+var slides=Array.prototype.slice.call(document.querySelectorAll('.slide')),N=slides.length,cur=0;
+slides.forEach(function(s,i){
+  var f=document.createElement('div');f.className='foot';
+  f.innerHTML='<span>OpenStack — composants système</span><span>'+(i+1)+' / '+N+'</span>';
+  s.appendChild(f);
+  s.addEventListener('click',function(){if(body.classList.contains('ov')){body.classList.remove('ov');go(i);fit();}});
+});
+function go(n){
+  cur=Math.max(0,Math.min(N-1,n));
+  slides.forEach(function(s,i){s.classList.toggle('active',i===cur);});
+  bar.style.width=((cur+1)/N*100)+'%';
+  try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+}
+function fit(){
+  if(body.classList.contains('ov')){
+    stage.style.transform='';
+    document.documentElement.style.setProperty('--z',Math.max(.1,(window.innerWidth-40-4*14-20)/5/1280));
+  }else{
+    stage.style.transform='scale('+Math.min(window.innerWidth/1280,window.innerHeight/720)+')';
+  }
+}
+function overview(){body.classList.toggle('ov');fit();if(body.classList.contains('ov')){slides[cur].scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}}
+function full(){if(document.fullscreenElement){document.exitFullscreen();}else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen();}}
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'||k===' '||k==='ArrowDown'){e.preventDefault();go(cur+1);}
+  else if(k==='ArrowLeft'||k==='PageUp'||k==='ArrowUp'){e.preventDefault();go(cur-1);}
+  else if(k==='Home'){go(0);}
+  else if(k==='End'){go(N-1);}
+  else if(k==='o'||k==='O'||k==='Escape'){if(k!=='Escape'||body.classList.contains('ov'))overview();}
+  else if(k==='f'||k==='F'){full();}
+});
+document.getElementById('bN').onclick=function(){go(cur+1);};
+document.getElementById('bP').onclick=function(){go(cur-1);};
+document.getElementById('bO').onclick=overview;
+document.getElementById('bF').onclick=full;
+var tx=null;
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){if(tx===null||body.classList.contains('ov'))return;var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1));tx=null;},{passive:true});
+window.addEventListener('resize',fit);
+window.addEventListener('hashchange',function(){var h=parseInt(location.hash.slice(1),10);if(h&&h-1!==cur)go(h-1);});
+var h=parseInt(location.hash.slice(1),10);
+go(h?h-1:0);fit();
+})();
+</script>
+</body>
+</html>

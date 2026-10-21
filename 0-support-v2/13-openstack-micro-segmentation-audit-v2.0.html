@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenStack · Module 13 — Micro-segmentation et audit</title>
+<style>
+:root{--ink:#0f172a;--ink2:#334155;--mut:#64748b;--line:#e2e8f0;--navy:#101a33;--red:#e4002b;--red2:#b3122f;--blue:#2563eb;--teal:#0d9488;--amber:#d97706;--violet:#7c3aed;--green:#16a34a;--mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;--z:.2}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#070b17;overflow:hidden;font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+#stage{position:absolute;left:50%;top:50%;width:1280px;height:720px;margin:-360px 0 0 -640px;transform-origin:center center}
+.slide{position:absolute;inset:0;background:#fff;color:var(--ink);padding:38px 64px 46px;display:none;flex-direction:column;overflow:hidden}
+.slide.active{display:flex}
+.slide>header{border-left:5px solid var(--red);padding:2px 0 2px 18px;margin-bottom:18px;flex:none}
+.kick{display:block;font-size:12.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--red);margin-bottom:5px}
+h2{font-size:32px;line-height:1.15;letter-spacing:-.012em;font-weight:750}
+.body{flex:1;min-height:0;display:flex;flex-direction:column;gap:14px;font-size:17.5px;line-height:1.45;color:var(--ink2)}
+.body b,.body strong{color:var(--ink);font-weight:680}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;min-height:0}
+.cols.c3{grid-template-columns:repeat(3,1fr);gap:18px}
+.cols.c4{grid-template-columns:repeat(4,1fr);gap:14px}
+.cols.c5{grid-template-columns:repeat(5,1fr);gap:12px}
+.cols.w64{grid-template-columns:1.45fr 1fr}
+.cols.w46{grid-template-columns:1fr 1.35fr}
+.cols.nf{flex:none}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0;min-width:0}
+ul.pts{list-style:none;display:flex;flex-direction:column;gap:8px}
+ul.pts li{padding-left:22px;position:relative}
+ul.pts li::before{content:"";position:absolute;left:2px;top:.52em;width:8px;height:8px;border-radius:2px;background:var(--red)}
+ul.pts.sm{gap:5px;font-size:15px;line-height:1.38}
+ul.pts.sm li{padding-left:17px}
+ul.pts.sm li::before{width:6px;height:6px;top:.5em}
+.card{background:#fff;border:1px solid var(--line);border-top:4px solid var(--c,var(--red));border-radius:10px;padding:13px 16px;box-shadow:0 1px 3px rgba(15,23,42,.06);font-size:15px;line-height:1.4;min-width:0}
+.card h3{font-size:16.5px;color:var(--ink);margin-bottom:5px;line-height:1.2}
+.card .os{display:block;margin-top:7px;font-size:13px;color:var(--mut)}
+.card .os b{color:var(--red2)}
+.cb{--c:var(--blue)}.ct{--c:var(--teal)}.ca{--c:var(--amber)}.cv{--c:var(--violet)}.cg{--c:var(--green)}.cn{--c:var(--navy)}
+.note{background:#fff5f6;border-left:4px solid var(--red);padding:9px 16px;border-radius:0 8px 8px 0;font-size:15.5px;color:var(--ink);flex:none}
+.note.b{background:#eff5ff;border-color:var(--blue)}
+.note.g{background:#f1f5f9;border-color:#64748b}
+table.tbl{width:100%;border-collapse:collapse;font-size:14.5px;line-height:1.35}
+.tbl th{background:var(--navy);color:#fff;text-align:left;padding:8px 12px;font-size:13px;letter-spacing:.03em;font-weight:650}
+.tbl td{padding:6.5px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:nth-child(even) td{background:#f8fafc}
+.tbl td:first-child{font-weight:680;color:var(--ink);white-space:nowrap}
+.tbl.os td:nth-child(2){color:var(--red2);font-weight:650}
+.tbl.tight td{padding:5px 12px;font-size:14px}
+table.resp{width:100%;border-collapse:separate;border-spacing:5px 4px;font-size:14.5px;text-align:center}
+.resp thead th{font-size:15px;color:var(--ink);padding:2px 4px 6px;line-height:1.2}
+.resp thead small{display:block;font-weight:500;color:var(--mut);font-size:12px}
+.resp tbody th{text-align:right;padding-right:12px;font-weight:650;color:var(--ink);white-space:nowrap;width:210px}
+.resp td{padding:6px;border-radius:6px;font-weight:600}
+.resp .u{background:#e3edff;color:#1d4ed8}
+.resp .p{background:#fde8ec;color:var(--red2)}
+code{font-family:var(--mono);font-size:.87em;background:#f1f5f9;padding:1px 6px;border-radius:4px;color:var(--ink)}
+pre{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:14px 16px;font:13.5px/1.5 var(--mono);white-space:pre;overflow:hidden}
+pre .c{color:#7dd3fc}pre .k{color:#fda4af}pre .m{color:#94a3b8}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;background:#fde8ec;color:var(--red2);letter-spacing:.03em}
+.fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.fig svg{width:100%;height:100%}
+.foot{position:absolute;left:64px;right:64px;bottom:15px;display:flex;justify-content:space-between;font-size:11.5px;color:#94a3b8;letter-spacing:.02em}
+/* dark slides */
+.slide.dark{background:radial-gradient(1100px 600px at 85% 15%,#1c2a55 0%,var(--navy) 55%,#0b1226 100%);color:#fff;justify-content:center}
+.dark .foot{color:#64748b}
+.dark .kick{color:#ff6b84}
+h1{font-size:68px;line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:10px 0 14px}
+.sub{font-size:27px;color:#cbd5e1;font-weight:400}
+.chips{list-style:none;display:flex;gap:10px;flex-wrap:wrap;margin-top:34px}
+.chips li{border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:7px 16px;font-size:15px;color:#e2e8f0;background:rgba(255,255,255,.04)}
+.ref{margin-top:36px;font-size:14px;color:#94a3b8}
+.deco{position:absolute;right:0;top:0;width:1280px;height:720px;pointer-events:none}
+.tt{position:relative;max-width:760px}
+.sec .num{font-size:150px;font-weight:800;line-height:.9;color:transparent;-webkit-text-stroke:2px #ff4d6a;letter-spacing:-.04em}
+.sec h2{font-size:50px;margin:16px 0 12px;letter-spacing:-.02em}
+.sec p{font-size:20px;color:#cbd5e1;max-width:820px;line-height:1.45}
+.sec ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:9px 40px;margin-top:30px;max-width:980px;font-size:16.5px;color:#e2e8f0}
+.sec ol li{padding-left:20px;position:relative}
+.sec ol li::before{content:"";position:absolute;left:0;top:.55em;width:9px;height:3px;background:#ff4d6a}
+/* svg */
+svg{display:block}
+svg{font-size:14px}
+svg text{font-family:inherit;fill:#0f172a}
+svg g.ts text{fill:#475569}svg g.tw text{fill:#fff}
+.big .card{font-size:17px;padding:18px 16px;display:flex;flex-direction:column;line-height:1.42}.big .card h3{font-size:19px;margin-bottom:12px}.big .card .os{font-size:14.5px;margin-top:auto;padding-top:14px;border-top:1px solid var(--line);line-height:1.4}
+.dense .card{font-size:14px;padding:10px 14px;line-height:1.36}.dense .card h3{font-size:15.5px;margin-bottom:3px}
+.tc{text-anchor:middle}.te{text-anchor:end}
+svg .tb{font-weight:700}svg .ts{font-size:12px;fill:#475569}svg .tl{font-size:17px;font-weight:750}svg .tw{fill:#fff}svg .tr{fill:#b3122f}
+svg .tm{font-family:var(--mono);font-size:12px}
+.bx{fill:#fff;stroke:#94a3b8;stroke-width:1.5}
+.b-red{fill:#fde8ec;stroke:#e4002b;stroke-width:1.5}
+.b-blue{fill:#e3edff;stroke:#2563eb;stroke-width:1.5}
+.b-teal{fill:#d8f3ee;stroke:#0d9488;stroke-width:1.5}
+.b-amber{fill:#fdf0d5;stroke:#d97706;stroke-width:1.5}
+.b-violet{fill:#ece5fd;stroke:#7c3aed;stroke-width:1.5}
+.b-green{fill:#dcf5e3;stroke:#16a34a;stroke-width:1.5}
+.b-grey{fill:#f1f5f9;stroke:#94a3b8;stroke-width:1.5}
+.b-dark{fill:#101a33;stroke:#101a33}
+.f-red{fill:#e4002b}
+.zone{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5;stroke-dasharray:6 4}
+.ln{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar)}
+.ln2{stroke:#475569;stroke-width:1.7;fill:none;marker-end:url(#ar);marker-start:url(#ar)}
+.lr{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr)}
+.lr2{stroke:#e4002b;stroke-width:2;fill:none;marker-end:url(#arr);marker-start:url(#arr)}
+.ld{stroke-dasharray:5 4}
+.nl{stroke:#94a3b8;stroke-width:1.5;fill:none}
+/* ui */
+#bar{position:fixed;left:0;bottom:0;height:3px;background:var(--red);width:0;transition:width .2s;z-index:5}
+#nav{position:fixed;left:50%;transform:translateX(-50%);bottom:8px;display:flex;gap:6px;z-index:6;opacity:.07;transition:opacity .2s}
+#nav:hover{opacity:1}
+#nav button{background:#1e293b;color:#e2e8f0;border:1px solid #334155;border-radius:6px;font:600 13px/1 inherit;padding:7px 10px;cursor:pointer}
+#nav button:hover{background:var(--red);border-color:var(--red)}
+body.ov{overflow:auto}
+body.ov #stage{position:static;margin:0;width:auto;height:auto;transform:none!important;display:flex;flex-wrap:wrap;gap:14px;padding:20px}
+body.ov .slide{display:flex;position:relative;inset:auto;flex:none;width:1280px;height:720px;zoom:var(--z);cursor:pointer;border-radius:8px}
+body.ov .slide.active{outline:14px solid var(--red)}
+@page{size:1280px 720px;margin:0}
+@media print{
+html,body{height:auto;overflow:visible;background:#fff}
+#stage{position:static;margin:0;width:1280px;height:auto;transform:none!important;display:block}
+.slide{display:flex!important;position:relative;inset:auto;width:1280px;height:720px;break-after:page;page-break-after:always;zoom:1!important}
+#bar,#nav{display:none}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.la{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA)}.la2{stroke:#d97706;stroke-width:2;fill:none;marker-end:url(#arA);marker-start:url(#arA)}
+.lt{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT)}.lt2{stroke:#0d9488;stroke-width:2;fill:none;marker-end:url(#arT);marker-start:url(#arT)}
+.lb{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB)}.lb2{stroke:#2563eb;stroke-width:2;fill:none;marker-end:url(#arB);marker-start:url(#arB)}
+svg text.fa,svg .fa{fill:#b45309}svg text.ft,svg .ft{fill:#0f766e}svg text.fb,svg .fb{fill:#1d4ed8}
+.tbl td.c,.tbl th.c{text-align:center}.tbl td.y{color:#16a34a;font-weight:800}.tbl td.n{color:#cbd5e1}
+.kick .deep{display:inline-block;margin-left:12px;padding:2px 10px;border-radius:99px;background:#eff5ff;color:#1d4ed8;font-weight:650;font-size:11.5px;letter-spacing:.02em;text-transform:none;vertical-align:1px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e4002b"/></marker>
+<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d97706"/></marker>
+<marker id="arT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0d9488"/></marker>
+<marker id="arB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/></marker>
+</defs></svg>
+<div id="stage">
+
+<style>
+.tbl.xs td{font-size:12.8px;padding:5px 9px;line-height:1.32}
+.tbl.xs th{font-size:12.2px;padding:7px 9px}
+.tbl.xs td:first-child{white-space:normal}
+.body code{white-space:nowrap}
+.tbl.wrap td:first-child{white-space:normal}
+.tbl.wrap td:first-child code{white-space:normal}
+.tbl td.n{color:#b91c1c;font-weight:600}
+</style>
+
+<!-- 1 -->
+<section class="slide dark">
+<svg class="deco" viewBox="0 0 1280 720" aria-hidden="true"><g transform="translate(-60,0)">
+<g fill="none" stroke="#ff4d6a" stroke-width="2" opacity=".85">
+<rect x="880" y="180" width="170" height="150" rx="14" fill="rgba(228,0,43,.22)"/>
+<rect x="1090" y="180" width="170" height="150" rx="14" fill="rgba(228,0,43,.12)"/>
+<circle cx="930" cy="230" r="14"/><circle cx="1000" cy="280" r="14"/><circle cx="1140" cy="230" r="14"/><circle cx="1210" cy="280" r="14"/>
+<path d="M1050,255 H1090" stroke-dasharray="6 5"/>
+<path d="M880,400 H1260 M880,430 H1200 M880,460 H1240 M880,490 H1160" opacity=".7"/>
+</g>
+<g font-weight="700" letter-spacing="2" style="font-size:12px"><text x="965" y="165" text-anchor="middle" style="fill:#cbd5e1">PROJET A</text><text x="1175" y="165" text-anchor="middle" style="fill:#cbd5e1">PROJET B</text><text x="880" y="525" style="fill:#cbd5e1">JOURNAUX</text></g>
+</g></svg>
+<div class="tt">
+<span class="kick">Comprendre OpenStack · module 13</span>
+<h1>Micro-segmentation, audit et traçabilité</h1>
+<p class="sub">Réseaux partagés et réseaux privés, isolation entre locataires, groupes de sécurité ; journalisation des services, corrélation et centralisation des journaux, sur Canonical OpenStack (Sunbeam)</p>
+<ul class="chips"><li>Neutron · OVN</li><li>RBAC réseau</li><li>Groupes de sécurité</li><li>Identifiants de requête</li><li>CADF</li><li>Loki · Grafana</li></ul>
+<p class="ref">Version déployée : Canonical OpenStack 2026.1 LTS, donc OpenStack 2026.1 · ANSSI, architecture d'un système de journalisation · CNIL, recommandation journalisation (2021)</p>
+</div>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+<header><span class="kick">Introduction</span><h2>Objectif et déroulé</h2></header>
+<div class="body">
+<div class="note"><b>Objectif :</b> isoler réellement les locataires et les composants d'une application sur le réseau, puis être capable de répondre, après coup, à « qui a fait quoi, quand, d'où, avec quel résultat » — en centralisant et en corrélant les journaux du cloud.</div>
+<div class="cols">
+<div class="col">
+<p><b>À l'issue de ce module, vous saurez :</b></p>
+<ul class="pts">
+<li>Expliquer ce qui isole deux projets dans <b>Neutron et OVN</b>.</li>
+<li>Choisir entre <b>réseau partagé</b>, <b>réseau privé</b> et partage ciblé par RBAC.</li>
+<li>Concevoir une <b>micro-segmentation</b> par groupes de sécurité et la tester.</li>
+<li>Retrouver une action dans les journaux grâce aux <b>identifiants de requête</b> et aux événements d'audit.</li>
+<li>Centraliser les journaux d'un cloud Sunbeam et écrire des <b>règles d'alerte</b> utiles.</li>
+</ul>
+</div>
+<div class="col dense">
+<div class="card"><h3>1 · Le réseau d'un cloud Sunbeam</h3>Briques de Neutron, OVN, ce qui isole deux projets.</div>
+<div class="card cb"><h3>2 · Partagé ou privé</h3>Réseaux de projet, partage, RBAC, réseau externe, exposition.</div>
+<div class="card ct"><h3>3 · Groupes de sécurité et micro-segmentation</h3>Règles, groupe distant, application à trois niveaux, OVN, journalisation des flux.</div>
+<div class="card ca"><h3>4 · Journalisation des services</h3>Sources, identifiants de requête, événements, CADF.</div>
+<div class="card cv"><h3>5 · Corrélation et centralisation</h3>Observabilité Sunbeam, requêtes, scénario d'enquête, alertes, conservation.</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- 3 -->
+<section class="slide dark sec">
+<div class="num">01</div>
+<h2>Le réseau d'un cloud Sunbeam</h2>
+<p>Avant de cloisonner, il faut savoir ce que l'on cloisonne. Neutron décrit le réseau ; OVN le réalise sur chaque hyperviseur. L'isolation entre projets est une propriété de ce couple.</p>
+<ol><li>Les briques de Neutron</li><li>Neutron et OVN sur Sunbeam</li><li>Trois catégories de réseaux</li><li>Ce qui isole deux projets</li><li>Le chemin d'un paquet</li><li>Ce que Sunbeam crée à l'installation</li></ol>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+<header><span class="kick">1 · Le réseau<span class="deep">Objets Neutron : module 4</span></span><h2>Les briques de Neutron</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:20%">Objet</th><th style="width:40%">Rôle</th><th style="width:16%">Appartient à</th><th>Point de cloisonnement</th></tr></thead>
+<tbody>
+<tr><td>Réseau</td><td>segment de niveau 2, isolé des autres réseaux</td><td>un projet</td><td style="color:var(--ink);font-weight:400">partagé ou non</td></tr>
+<tr><td>Sous-réseau</td><td>plage d'adresses, passerelle, DHCP, DNS</td><td>un projet</td><td style="color:var(--ink);font-weight:400">plages qui peuvent se recouvrir entre projets</td></tr>
+<tr><td>Port</td><td>point de raccordement d'une instance, d'un routeur, d'un service</td><td>un projet</td><td style="color:var(--ink);font-weight:400">porte les groupes de sécurité et la sécurité de port</td></tr>
+<tr><td>Routeur</td><td>relie des sous-réseaux entre eux et vers le réseau externe</td><td>un projet</td><td style="color:var(--ink);font-weight:400">seul passage entre réseaux</td></tr>
+<tr><td>Adresse flottante</td><td>adresse du réseau externe associée à un port</td><td>un projet</td><td style="color:var(--ink);font-weight:400">seul moyen d'être joint de l'extérieur</td></tr>
+<tr><td>Groupe de sécurité</td><td>ensemble de règles de filtrage appliquées aux ports</td><td>un projet</td><td style="color:var(--ink);font-weight:400">micro-segmentation</td></tr>
+<tr><td>Politique RBAC</td><td>partage d'un objet avec un ou plusieurs projets</td><td>le propriétaire</td><td style="color:var(--ink);font-weight:400">ouverture contrôlée</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Tout appartient à un projet :</b> c'est ce qui permet de cloisonner. Un objet partagé l'est toujours explicitement, par une politique RBAC.</div>
+<div class="note g">Les modules précédents ont traité le cloisonnement par l'identité, les projets et les quotas ; celui-ci traite la couche réseau et la traçabilité.</div>
+</div>
+</div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+<header><span class="kick">1 · Le réseau</span><h2>Neutron et OVN sur Sunbeam</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 312">
+<rect x="10" y="6" width="1130" height="116" rx="12" class="zone"/><text x="30" y="30" class="tl" style="text-anchor:start">Nœuds de contrôle — Kubernetes, modèle Juju « openstack »</text>
+<rect x="30" y="44" width="230" height="60" rx="9" class="b-grey"/><text x="145.0" y="70.0" class="tc tb" style="font-size:12.5px">API d'OpenStack</text><text x="145.0" y="89.0" class="tc ts">clients, Nova, Horizon</text>
+<rect x="320" y="44" width="230" height="60" rx="9" class="b-blue"/><text x="435.0" y="70.0" class="tc tb" style="font-size:12.5px">Serveur Neutron</text><text x="435.0" y="89.0" class="tc ts">API, pilote ML2/OVN</text>
+<rect x="610" y="44" width="230" height="60" rx="9" class="b-violet"/><text x="725.0" y="70.0" class="tc tb" style="font-size:12.5px">Base nord d'OVN</text><text x="725.0" y="89.0" class="tc ts">réseaux, routeurs, ACL</text>
+<rect x="900" y="44" width="220" height="60" rx="9" class="b-violet"/><text x="1010.0" y="70.0" class="tc tb" style="font-size:12.5px">Base sud d'OVN</text><text x="1010.0" y="89.0" class="tc ts">flux logiques, châssis</text>
+<path d="M260,74 H318" class="lr"/><path d="M550,74 H608" class="lr"/><path d="M840,74 H898" class="lr"/>
+<text x="869" y="66" class="tc ts" style="font-size:11px">northd</text>
+<rect x="10" y="140" width="550" height="166" rx="12" class="zone"/><text x="545" y="164" class="tl" style="text-anchor:end">Hyperviseur 1 — snap openstack-hypervisor</text>
+<rect x="30" y="178" width="190" height="44" rx="9" class="b-teal"/><text x="125.0" y="205.0" class="tc tb" style="font-size:12.5px">Contrôleur OVN</text>
+<rect x="30" y="232" width="190" height="40" rx="9" class="b-amber"/><text x="125.0" y="257.0" class="tc tb" style="font-size:12.5px">Open vSwitch</text>
+<rect x="260" y="186" width="130" height="30" rx="6" class="b-blue"/><text x="325.0" y="206" class="tc" style="font-size:11.5px">VM projet A</text><rect x="260" y="232" width="130" height="30" rx="6" class="b-green"/><text x="325.0" y="252" class="tc" style="font-size:11.5px">VM projet B</text>
+<path d="M220,252 H258" class="nl"/><path d="M220,252 H240 V201 H258" class="nl"/>
+<path d="M125,222 V230" class="nl"/>
+<rect x="590" y="140" width="550" height="166" rx="12" class="zone"/><text x="1125" y="164" class="tl" style="text-anchor:end">Hyperviseur 2 — snap openstack-hypervisor</text>
+<rect x="610" y="178" width="190" height="44" rx="9" class="b-teal"/><text x="705.0" y="205.0" class="tc tb" style="font-size:12.5px">Contrôleur OVN</text>
+<rect x="610" y="232" width="190" height="40" rx="9" class="b-amber"/><text x="705.0" y="257.0" class="tc tb" style="font-size:12.5px">Open vSwitch</text>
+<rect x="840" y="186" width="130" height="30" rx="6" class="b-blue"/><text x="905.0" y="206" class="tc" style="font-size:11.5px">VM projet A</text><rect x="840" y="232" width="130" height="30" rx="6" class="b-green"/><text x="905.0" y="252" class="tc" style="font-size:11.5px">VM projet B</text>
+<path d="M800,252 H838" class="nl"/><path d="M800,252 H820 V201 H838" class="nl"/>
+<path d="M705,222 V230" class="nl"/>
+<path d="M1010,104 V128 H125 V176" class="lr" stroke-dasharray="5 4"/><path d="M705,128 V176" class="lr" stroke-dasharray="5 4"/>
+<text x="420" y="124" class="tc ts" style="font-size:11px;paint-order:stroke;stroke:#fff;stroke-width:6px">programmation des flux</text>
+<path d="M125,272 V288 H705 V274" class="lr" style="stroke-width:2.5"/><text x="415" y="300" class="tc ts tb">tunnel Geneve, marqué de l'identifiant du réseau</text>
+</svg></div>
+<div class="cols nf">
+<div class="col"><ul class="pts sm">
+<li><b>Neutron décrit,</b> OVN réalise : chaque réseau devient un commutateur logique, chaque routeur un routeur logique, chaque groupe de sécurité un ensemble de règles de filtrage (ACL).</li>
+<li><b>Le plan de contrôle</b> — serveur Neutron, bases nord et sud d'OVN — tourne dans Kubernetes sur les nœuds de contrôle.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Le plan de données est distribué :</b> le contrôleur OVN de chaque hyperviseur programme Open vSwitch localement ; le filtrage se fait au plus près de l'instance.</li>
+<li><b>Entre hyperviseurs,</b> le trafic des réseaux de projet circule dans des tunnels Geneve, marqué de l'identifiant de son réseau.</li>
+</ul></div>
+</div>
+</div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+<header><span class="kick">1 · Le réseau</span><h2>Trois catégories de réseaux</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:18%">Catégorie</th><th style="width:20%">Créé par</th><th style="width:26%">Transport</th><th style="width:18%">Visible par</th><th>Usage</th></tr></thead>
+<tbody>
+<tr><td>Réseau de fournisseur, externe</td><td>l'administration</td><td>réseau physique : à plat ou VLAN</td><td>tous, ou certains projets</td><td style="color:var(--ink);font-weight:400">sortie vers l'extérieur, adresses flottantes</td></tr>
+<tr><td>Réseau privé de projet</td><td>le projet</td><td>superposé : tunnels Geneve</td><td>le projet seul</td><td style="color:var(--ink);font-weight:400">cas général des applications</td></tr>
+<tr><td>Réseau partagé</td><td>l'administration, ou un projet propriétaire</td><td>superposé ou fournisseur</td><td>les projets autorisés</td><td style="color:var(--ink);font-weight:400">services communs, administration</td></tr>
+</tbody></table>
+<div class="cols c3 nf">
+<div class="card cb"><h3>Réseau superposé</h3>Créé librement par les projets, sans toucher au réseau physique. Les adresses de deux projets peuvent se recouvrir : <code>10.0.0.0/24</code> dans chacun, sans conflit.</div>
+<div class="card ca"><h3>Réseau de fournisseur</h3>Correspond à un réseau physique existant. Seule l'administration le déclare, car il engage l'infrastructure réelle : VLAN, routage, pare-feu de l'entreprise.</div>
+<div class="card cv"><h3>Partagé n'est pas une technologie</h3>C'est un attribut d'accès. Un réseau superposé comme un réseau de fournisseur peut être partagé, avec tous ou quelques projets.</div>
+</div>
+</div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+<header><span class="kick">1 · Le réseau</span><h2>Ce qui isole deux projets</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 270">
+<text x="440" y="20" class="tc tl">Projet A</text><text x="880" y="20" class="tc tl">Projet B</text>
+<rect x="10" y="34" width="190" height="38" rx="8" class="b-dark"/><text x="105" y="58" class="tc tb tw">Identité</text>
+<rect x="220" y="34" width="440" height="38" rx="8" class="b-blue"/><text x="440" y="58" class="tc" style="font-size:12.5px">projet A, ses membres</text>
+<rect x="690" y="34" width="450" height="38" rx="8" class="b-green"/><text x="915" y="58" class="tc" style="font-size:12.5px">projet B, ses membres</text>
+<rect x="10" y="80" width="190" height="38" rx="8" class="b-dark"/><text x="105" y="104" class="tc tb tw">Niveau 2</text>
+<rect x="220" y="80" width="440" height="38" rx="8" class="b-blue"/><text x="440" y="104" class="tc" style="font-size:12.5px">réseau a-net — identifiant Geneve 101</text>
+<rect x="690" y="80" width="450" height="38" rx="8" class="b-green"/><text x="915" y="104" class="tc" style="font-size:12.5px">réseau b-net — identifiant Geneve 214</text>
+<rect x="10" y="126" width="190" height="38" rx="8" class="b-dark"/><text x="105" y="150" class="tc tb tw">Adressage</text>
+<rect x="220" y="126" width="440" height="38" rx="8" class="b-blue"/><text x="440" y="150" class="tc" style="font-size:12.5px">10.0.0.0/24</text>
+<rect x="690" y="126" width="450" height="38" rx="8" class="b-green"/><text x="915" y="150" class="tc" style="font-size:12.5px">10.0.0.0/24 — recouvrement sans conflit</text>
+<rect x="10" y="172" width="190" height="38" rx="8" class="b-dark"/><text x="105" y="196" class="tc tb tw">Niveau 3</text>
+<rect x="220" y="172" width="440" height="38" rx="8" class="b-blue"/><text x="440" y="196" class="tc" style="font-size:12.5px">routeur a-rtr</text>
+<rect x="690" y="172" width="450" height="38" rx="8" class="b-green"/><text x="915" y="196" class="tc" style="font-size:12.5px">routeur b-rtr — aucune route commune</text>
+<rect x="10" y="218" width="190" height="38" rx="8" class="b-dark"/><text x="105" y="242" class="tc tb tw">Port</text>
+<rect x="220" y="218" width="440" height="38" rx="8" class="b-blue"/><text x="440" y="242" class="tc" style="font-size:12.5px">groupes de sécurité de A</text>
+<rect x="690" y="218" width="450" height="38" rx="8" class="b-green"/><text x="915" y="242" class="tc" style="font-size:12.5px">groupes de sécurité de B</text>
+<path d="M675,30 V262" style="stroke:#e4002b;stroke-width:4"/>
+<text x="675" y="266" class="tc ts tb tr" style="paint-order:stroke;stroke:#fff;stroke-width:6px">cloison</text>
+</svg></div>
+<div class="cols nf">
+<div class="note"><b>Par défaut, deux projets ne se voient pas :</b> réseaux distincts, adresses indépendantes, aucun routeur commun. Pour communiquer, ils doivent passer par le réseau externe et des adresses flottantes — comme deux entreprises sur Internet.</div>
+<div class="note g"><b>Chaque couche se défait par une décision explicite :</b> un réseau partagé, un routeur commun, un groupe de sécurité trop ouvert, une sécurité de port désactivée. La suite du module passe ces décisions en revue.</div>
+</div>
+</div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+<header><span class="kick">1 · Le réseau</span><h2>Le chemin d'un paquet entre deux projets</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 240">
+<rect x="10" y="40" width="140" height="64" rx="9" class="b-blue"/><text x="80.0" y="68.0" class="tc tb" style="font-size:12.5px">VM A</text><text x="80.0" y="87.0" class="tc ts">10.0.0.5</text>
+<path d="M150,72 H173" class="lr"/>
+<rect x="175" y="40" width="140" height="64" rx="9" class="b-amber"/><text x="245.0" y="68.0" class="tc tb" style="font-size:12.5px">Groupe de A</text><text x="245.0" y="87.0" class="tc ts">sortie</text>
+<path d="M315,72 H338" class="lr"/>
+<rect x="340" y="40" width="140" height="64" rx="9" class="b-violet"/><text x="410.0" y="68.0" class="tc tb" style="font-size:12.5px">Routeur A</text><text x="410.0" y="87.0" class="tc ts">traduit la source</text>
+<path d="M480,72 H503" class="lr"/>
+<rect x="505" y="40" width="140" height="64" rx="9" class="b-grey"/><text x="575.0" y="68.0" class="tc tb" style="font-size:12.5px">Réseau externe</text><text x="575.0" y="87.0" class="tc ts">203.0.113.0/24</text>
+<path d="M645,72 H668" class="lr"/>
+<rect x="670" y="40" width="140" height="64" rx="9" class="b-violet"/><text x="740.0" y="68.0" class="tc tb" style="font-size:12.5px">Routeur B</text><text x="740.0" y="87.0" class="tc ts">adresse flottante</text>
+<path d="M810,72 H833" class="lr"/>
+<rect x="835" y="40" width="140" height="64" rx="9" class="b-amber"/><text x="905.0" y="68.0" class="tc tb" style="font-size:12.5px">Groupe de B</text><text x="905.0" y="87.0" class="tc ts">entrée</text>
+<path d="M975,72 H998" class="lr"/>
+<rect x="1000" y="40" width="140" height="64" rx="9" class="b-green"/><text x="1070.0" y="68.0" class="tc tb" style="font-size:12.5px">VM B</text><text x="1070.0" y="87.0" class="tc ts">10.0.0.7</text>
+<text x="255" y="130" class="tc ts tb">① autorisé à sortir ?</text>
+<text x="420" y="150" class="tc ts tb">② source → 203.0.113.10</text>
+<text x="750" y="130" class="tc ts tb">③ 203.0.113.20 → 10.0.0.7</text>
+<text x="915" y="150" class="tc ts tb">④ autorisé à entrer, depuis 203.0.113.10 ?</text>
+<rect x="10" y="166" width="1130" height="64" rx="10" class="zone"/>
+<text x="575" y="192" class="tc ts">la règle d'entrée de B doit viser l'adresse de passerelle du routeur A, pas son réseau privé :</text>
+<text x="575" y="214" class="tc ts tb">deux projets qui communiquent le font comme deux sites distants, en traversant le réseau externe</text>
+</svg></div>
+<div class="cols nf">
+<div class="col"><ul class="pts sm">
+<li><b>Quatre contrôles successifs :</b> groupe de sécurité de sortie de A, traduction d'adresse par le routeur de A, routeur de B qui traduit l'adresse flottante, groupe de sécurité d'entrée de B.</li>
+<li><b>Le groupe de sécurité de B</b> voit l'adresse source traduite de A — l'adresse de passerelle de son routeur —, pas son adresse privée.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Avec OVN,</b> routage et traduction d'adresses sont distribués : le paquet peut ne jamais quitter l'hyperviseur, et pourtant subir les mêmes contrôles.</li>
+<li><b>Sans adresse flottante sur B,</b> aucun chemin : B est injoignable depuis A.</li>
+</ul></div>
+</div>
+</div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+<header><span class="kick">1 · Le réseau</span><h2>Ce que Sunbeam crée à l'installation</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:40%">Objet</th><th>Créé par</th></tr></thead>
+<tbody>
+<tr><td>Réseau externe et son sous-réseau</td><td><code>sunbeam configure</code> : plage, passerelle, plage d'adresses flottantes, type à plat ou VLAN</td></tr>
+<tr><td>Réseau et routeur du projet de démonstration</td><td><code>sunbeam configure</code></td></tr>
+<tr><td>Règles ouvrant SSH et ping</td><td><code>sunbeam configure</code>, sur le groupe par défaut du projet de démonstration</td></tr>
+<tr><td>Groupe <code>default</code> de chaque projet</td><td>Neutron, à la première utilisation du projet</td></tr>
+</tbody></table>
+<div class="note"><b>Le projet de démonstration</b> a un groupe par défaut ouvert en SSH et ping depuis partout : pratique pour valider l'installation, à ne pas reproduire ailleurs, et à supprimer en production.</div>
+</div>
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Prérequis : identifiants d'administrateur</span>
+<span class="c">sunbeam openrc</span> &gt; admin-openrc
+<span class="c">source</span> admin-openrc
+
+<span class="m"># Réseaux : externe, partagé, privé, et leur type</span>
+<span class="c">openstack network list</span> --long \
+  -c Name -c Project -c Shared -c "Router Type" \
+  -c "Network Type"
+
+<span class="m"># Qui partage quoi avec qui</span>
+<span class="c">openstack network rbac list</span> --long
+
+<span class="m"># Routeurs et leur passerelle externe</span>
+<span class="c">openstack router list</span> --long
+
+<span class="m"># Groupes de sécurité ouverts sur 0.0.0.0/0</span>
+<span class="c">openstack security group rule list</span> --long \
+  --ingress -f value -c ID -c "IP Range" \
+  -c "Port Range" -c "Security Group" | grep 0.0.0.0/0</pre>
+<div class="note g">Colonnes affichées selon la version du client ; <code>-f yaml</code> montre tous les champs.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 10 -->
+<section class="slide dark sec">
+<div class="num">02</div>
+<h2>Réseaux partagés et réseaux privés</h2>
+<p>Un réseau partagé met plusieurs projets sur le même segment : il n'y a plus de cloison de niveau 2 entre eux. Le partage doit donc être rare, ciblé et motivé — et le réseau privé par projet reste la règle.</p>
+<ol><li>Le réseau privé par projet</li><li>Ce que partager veut dire</li><li>Partagé ou privé : comparaison</li><li>Le partage ciblé (RBAC)</li><li>Le réseau externe</li><li>Adresses flottantes et exposition</li><li>Choisir</li></ol>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+<header><span class="kick">2 · Partagé ou privé</span><h2>Le réseau privé par projet</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Prérequis : jeton de portée projet, rôle member</span>
+<span class="k">export</span> OS_PROJECT_NAME=prod-web OS_PROJECT_DOMAIN_NAME=nord
+
+<span class="m"># Deux réseaux : façade et application</span>
+<span class="c">openstack network create</span> prod-web-front
+<span class="c">openstack subnet create</span> prod-web-front-v4 \
+  --network prod-web-front --subnet-range 10.10.1.0/24 \
+  --dns-nameserver 10.0.0.53
+<span class="c">openstack network create</span> prod-web-app
+<span class="c">openstack subnet create</span> prod-web-app-v4 \
+  --network prod-web-app --subnet-range 10.10.2.0/24 \
+  --gateway none
+
+<span class="m"># Routeur : façade vers l'extérieur seulement</span>
+<span class="c">openstack router create</span> prod-web-rtr
+<span class="c">openstack router set</span> prod-web-rtr \
+  --external-gateway external-network
+<span class="c">openstack router add subnet</span> prod-web-rtr prod-web-front-v4</pre>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Un réseau par zone de sécurité de l'application,</b> pas un par machine : façade exposée, application, données.</li>
+<li><b>Le réseau « app » n'a pas de passerelle</b> et n'est relié à aucun routeur : ses instances n'ont aucune route vers l'extérieur. Elles joignent la façade par des instances à deux interfaces, ou un répartiteur.</li>
+<li><b>Le routeur</b> est le seul point de sortie : sans lui, le projet est hermétique.</li>
+<li><b>Le nom du réseau externe</b> — ici <code>external-network</code> — est celui choisi à l'installation : <code>openstack network list --external</code>.</li>
+</ul>
+<table class="tbl tight os">
+<thead><tr><th style="width:44%">Décision</th><th>Effet de cloisonnement</th></tr></thead>
+<tbody>
+<tr><td>Sous-réseau sans passerelle</td><td>aucune route sortante</td></tr>
+<tr><td>Sous-réseau non relié au routeur</td><td>injoignable depuis les autres réseaux</td></tr>
+<tr><td>Routeur sans passerelle externe</td><td>routage interne seulement</td></tr>
+<tr><td>Quota d'adresses flottantes à 0</td><td>projet non exposable</td></tr>
+</tbody></table>
+</div>
+</div></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+<header><span class="kick">2 · Partagé ou privé</span><h2>Ce que partager un réseau veut dire</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 240">
+<rect x="10" y="6" width="540" height="228" rx="12" class="zone"/><text x="280.0" y="30" class="tc tl">Réseaux privés</text>
+<rect x="30" y="50" width="230" height="20" rx="5" class="b-blue"/><text x="145" y="64" class="tc ts tb">a-net</text>
+<rect x="300" y="50" width="230" height="20" rx="5" class="b-green"/><text x="415" y="64" class="tc ts tb">b-net</text>
+<path d="M75,70 V96" class="nl"/><rect x="40" y="96" width="70" height="30" rx="6" class="b-blue"/><text x="75.0" y="116" class="tc" style="font-size:11.5px">A</text>
+<path d="M185,70 V96" class="nl"/><rect x="150" y="96" width="70" height="30" rx="6" class="b-blue"/><text x="185.0" y="116" class="tc" style="font-size:11.5px">A</text>
+<path d="M345,70 V96" class="nl"/><rect x="310" y="96" width="70" height="30" rx="6" class="b-green"/><text x="345.0" y="116" class="tc" style="font-size:11.5px">B</text>
+<path d="M455,70 V96" class="nl"/><rect x="420" y="96" width="70" height="30" rx="6" class="b-green"/><text x="455.0" y="116" class="tc" style="font-size:11.5px">B</text>
+<path d="M280,46 V140" style="stroke:#e4002b;stroke-width:4"/>
+<text x="280" y="170" class="tc ts">pas de chemin de niveau 2 entre A et B</text><text x="280" y="190" class="tc ts">un routeur et des adresses flottantes seraient nécessaires</text><text x="280" y="214" class="tc ts tb">cloisons : réseau, routeur, groupes de sécurité</text>
+<rect x="600" y="6" width="540" height="228" rx="12" class="zone"/><text x="870.0" y="30" class="tc tl">Réseau partagé</text>
+<rect x="620" y="50" width="500" height="20" rx="5" class="b-amber"/><text x="870" y="64" class="tc ts tb">commun-net — partagé</text>
+<path d="M665,70 V96" class="nl"/><rect x="630" y="96" width="70" height="30" rx="6" class="b-blue"/><text x="665.0" y="116" class="tc" style="font-size:11.5px">A</text>
+<path d="M765,70 V96" class="nl"/><rect x="730" y="96" width="70" height="30" rx="6" class="b-green"/><text x="765.0" y="116" class="tc" style="font-size:11.5px">B</text>
+<path d="M865,70 V96" class="nl"/><rect x="830" y="96" width="70" height="30" rx="6" class="b-blue"/><text x="865.0" y="116" class="tc" style="font-size:11.5px">A</text>
+<path d="M965,70 V96" class="nl"/><rect x="930" y="96" width="70" height="30" rx="6" class="b-green"/><text x="965.0" y="116" class="tc" style="font-size:11.5px">B</text>
+<path d="M1065,70 V96" class="nl"/><rect x="1030" y="96" width="70" height="30" rx="6" class="b-blue"/><text x="1065.0" y="116" class="tc" style="font-size:11.5px">A</text>
+<path d="M700,140 C740,160 800,160 835,140" class="lr" stroke-dasharray="5 4"/>
+<text x="870" y="170" class="tc ts">A et B sur le même segment : joignables directement</text><text x="870" y="190" class="tc ts">chaque projet ne voit que ses ports, pas ses voisins</text><text x="870" y="214" class="tc ts tb tr">seule cloison : les groupes de sécurité</text>
+</svg></div>
+<div class="cols nf">
+<div class="col"><ul class="pts sm">
+<li><b>Sur un réseau partagé,</b> les instances de plusieurs projets sont sur le même segment de niveau 2. Elles se joignent directement, sans routeur — <b>seuls les groupes de sécurité les séparent.</b></li>
+<li><b>Chaque projet ne voit que ses propres ports,</b> mais il peut découvrir les autres adresses du segment par balayage.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Le groupe <code>default</code></b> d'un projet n'autorise l'entrée que depuis ce même groupe — donc pas depuis les autres projets. C'est ce qui protège le cas général ; une seule règle trop large l'annule.</li>
+<li><b>Usage légitime :</b> réseau d'administration ou de supervision, avec des règles d'entrée strictes du côté des instances.</li>
+</ul></div>
+</div>
+</div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+<header><span class="kick">2 · Partagé ou privé</span><h2>Réseau partagé ou réseau privé : comparaison</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:24%">Critère</th><th style="width:38%">Réseau privé par projet</th><th>Réseau partagé</th></tr></thead>
+<tbody>
+<tr><td>Isolation de niveau 2</td><td class="y">oui : segment propre</td><td class="n">non : segment commun</td></tr>
+<tr><td>Ce qui sépare les projets</td><td>réseau, routeur, groupes de sécurité</td><td style="color:var(--ink);font-weight:400">groupes de sécurité seuls</td></tr>
+<tr><td>Plan d'adressage</td><td>libre, recouvrement possible</td><td style="color:var(--ink);font-weight:400">unique, géré par le propriétaire</td></tr>
+<tr><td>Qui gère le sous-réseau</td><td>le projet</td><td style="color:var(--ink);font-weight:400">le propriétaire du réseau</td></tr>
+<tr><td>Communication entre projets</td><td>par adresses flottantes, contrôlée</td><td style="color:var(--ink);font-weight:400">directe, sans traduction</td></tr>
+<tr><td>Traçabilité des flux</td><td>passages par routeur identifiables</td><td style="color:var(--ink);font-weight:400">flux directs, plus difficiles à attribuer</td></tr>
+<tr><td>Simplicité pour les équipes</td><td>moindre : réseau et routeur à créer</td><td style="color:var(--ink);font-weight:400">grande : on se branche</td></tr>
+<tr><td>Recommandé pour</td><td class="y">applications, données, production</td><td style="color:var(--ink);font-weight:400">services communs à accès strict</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>La simplicité du réseau partagé est un piège :</b> c'est le choix par défaut des débutants, et la principale source de flux inattendus entre locataires.</div>
+<div class="note g"><b>Compromis courant :</b> réseaux privés pour les applications, plus un réseau d'administration partagé par RBAC avec les seuls projets qui en ont besoin.</div>
+</div>
+</div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+<header><span class="kick">2 · Partagé ou privé<span class="deep">Vu au module 10</span></span><h2>Le partage ciblé : RBAC de Neutron</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:34%">Type d'objet</th><th>Ce que le partage permet</th></tr></thead>
+<tbody>
+<tr><td><code>network</code></td><td>créer des ports sur le réseau ; ou s'en servir comme réseau externe</td></tr>
+<tr><td><code>security_group</code></td><td>appliquer le groupe à ses ports</td></tr>
+<tr><td><code>address_group</code></td><td>utiliser le groupe d'adresses dans ses règles</td></tr>
+<tr><td><code>qos_policy</code></td><td>appliquer la politique de qualité de service</td></tr>
+<tr><td><code>subnetpool</code>, <code>address_scope</code></td><td>tirer des sous-réseaux d'un réservoir commun</td></tr>
+</tbody></table>
+<table class="tbl tight">
+<thead><tr><th style="width:34%">Action</th><th>Sens</th></tr></thead>
+<tbody>
+<tr><td><code>access_as_shared</code></td><td>utilisation partagée</td></tr>
+<tr><td><code>access_as_external</code></td><td>usage comme réseau externe : passerelle de routeur, adresses flottantes</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Partager le réseau d'administration avec UN projet</span>
+<span class="c">openstack network rbac create</span> \
+  --type network --action access_as_shared \
+  --target-project prod-web --target-project-domain nord \
+  admin-net
+
+<span class="m"># Équivalent de --share : cible « * » (tous)</span>
+<span class="m"># — à éviter, et souvent réservé à l'administration</span>
+<span class="c">openstack network rbac create</span> --type network \
+  --action access_as_shared --target-all-projects admin-net
+
+<span class="m"># Revue</span>
+<span class="c">openstack network rbac list</span> --long
+<span class="c">openstack network rbac delete</span> &lt;id&gt;</pre>
+<ul class="pts sm">
+<li><b><code>--share</code> à la création = cible « * » :</b> tous les projets, présents et futurs.</li>
+<li><b>Retrait bloqué</b> tant que le projet cible a des ports sur le réseau : nettoyer d'abord.</li>
+<li><b>Qui peut partager :</b> le propriétaire, avec un projet nommé ; la cible « * » est en principe réservée à l'administration — règle <code>create_rbac_policy</code> à resserrer si besoin.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+<header><span class="kick">2 · Partagé ou privé</span><h2>Le réseau externe</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<ul class="pts sm">
+<li><b>Un réseau de fournisseur marqué externe :</b> il correspond à un réseau physique de l'entreprise ou d'Internet, et porte les passerelles des routeurs et les adresses flottantes.</li>
+<li><b>Par défaut, visible de tous les projets :</b> tout projet peut y raccorder un routeur et y prendre des adresses flottantes, dans la limite de ses quotas.</li>
+<li><b>Plusieurs réseaux externes</b> permettent des niveaux d'exposition différents : un vers Internet, un vers le réseau interne de l'entreprise.</li>
+<li><b>Réserver un réseau externe à certains projets :</b> le créer non partagé, puis l'ouvrir projet par projet avec <code>access_as_external</code>.</li>
+</ul>
+<div class="note"><b>Sur Sunbeam,</b> le réseau externe est déclaré par <code>sunbeam configure</code> ; d'autres réseaux de fournisseur s'ajoutent par l'API, sous réserve que le réseau physique correspondant soit raccordé aux hyperviseurs.</div>
+</div>
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Un second réseau externe, vers le SI interne,</span>
+<span class="m"># réservé aux projets qui en ont besoin (admin)</span>
+<span class="c">openstack network create</span> externe-si \
+  --external --no-share \
+  --provider-network-type vlan \
+  --provider-physical-network physnet1 \
+  --provider-segment 120
+<span class="c">openstack subnet create</span> externe-si-v4 \
+  --network externe-si --subnet-range 172.20.0.0/24 \
+  --allocation-pool start=172.20.0.100,end=172.20.0.199 \
+  --gateway 172.20.0.1 --no-dhcp
+
+<span class="c">openstack network rbac create</span> \
+  --type network --action access_as_external \
+  --target-project prod-web --target-project-domain nord \
+  externe-si</pre>
+<div class="note g">Nom du réseau physique (<code>physnet1</code>) et identifiant de VLAN : selon le câblage et la configuration réseau de vos hyperviseurs.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+<header><span class="kick">2 · Partagé ou privé<span class="deep">Quotas : module 10</span></span><h2>Adresses flottantes et exposition</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:38%">Moyen d'exposition</th><th>Contrôle</th></tr></thead>
+<tbody>
+<tr><td>Adresse flottante sur une instance</td><td>quota <code>floating-ips</code> ; groupe de sécurité de l'instance</td></tr>
+<tr><td>Adresse flottante sur un répartiteur</td><td>idem ; seul le répartiteur est exposé</td></tr>
+<tr><td>Redirection de port d'une adresse flottante</td><td>un port d'une adresse vers un port d'une instance</td></tr>
+<tr><td>Port directement sur un réseau de fournisseur</td><td>réservé à l'administration ou par RBAC</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Règle de conception :</b> une seule entrée par application — un répartiteur ou un bastion —, et aucune adresse flottante sur les serveurs d'application ou de données.</li>
+<li><b>Mesure simple et efficace :</b> quota d'adresses flottantes à 0 sur les projets qui n'ont rien à exposer.</li>
+</ul>
+</div>
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Inventaire de l'exposition : toutes les adresses</span>
+<span class="m"># flottantes et ce à quoi elles sont associées</span>
+<span class="c">openstack floating ip list</span> --long \
+  -c "Floating IP Address" -c "Fixed IP Address" \
+  -c Port -c Project
+
+<span class="m"># Adresses réservées mais inutilisées : à rendre</span>
+<span class="c">openstack floating ip list</span> --status DOWN
+
+<span class="m"># Interdire l'exposition d'un projet</span>
+<span class="c">openstack quota set</span> prod-bases --floating-ips 0</pre>
+<div class="note">Chaque adresse flottante associée est une porte ouverte sur le cloud : l'inventaire de l'exposition se fait au moins chaque mois, et toute nouvelle association mérite une alerte (partie 5).</div>
+</div>
+</div></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+<header><span class="kick">2 · Partagé ou privé</span><h2>Choisir</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 250">
+<rect x="10" y="20" width="300" height="62" rx="9" class="b-dark"/><text x="160.0" y="56.0" class="tc tb tw" style="font-size:12.5px">Le réseau sert-il à un seul projet ?</text>
+<rect x="10" y="150" width="300" height="62" rx="9" class="b-green"/><text x="160.0" y="177.0" class="tc tb" style="font-size:12.5px">Réseau privé du projet</text><text x="160.0" y="196.0" class="tc ts">le cas général</text>
+<path d="M160,82 V148" class="lr"/><text x="172" y="120" class="ts tb" style="text-anchor:start">oui</text>
+<rect x="380" y="20" width="330" height="62" rx="9" class="b-dark"/><text x="545.0" y="56.0" class="tc tb tw" style="font-size:12.5px">Faut-il un accès direct, sans routage ?</text>
+<path d="M310,51 H378" class="lr"/><text x="344" y="44" class="tc ts tb">non</text>
+<rect x="380" y="150" width="330" height="62" rx="9" class="b-blue"/><text x="545.0" y="177.0" class="tc tb" style="font-size:12.5px">Réseaux privés + service exposé</text><text x="545.0" y="196.0" class="tc ts">répartiteur, adresse flottante, API</text>
+<path d="M545,82 V148" class="lr"/><text x="557" y="120" class="ts tb" style="text-anchor:start">non</text>
+<rect x="780" y="20" width="360" height="62" rx="9" class="b-dark"/><text x="960.0" y="56.0" class="tc tb tw" style="font-size:12.5px">Les projets sont-ils connus et peu nombreux ?</text>
+<path d="M710,51 H778" class="lr"/><text x="744" y="44" class="tc ts tb">oui</text>
+<rect x="780" y="150" width="170" height="62" rx="9" class="b-amber"/><text x="865.0" y="177.0" class="tc tb" style="font-size:12.5px">RBAC ciblé</text><text x="865.0" y="196.0" class="tc ts">projet par projet</text>
+<rect x="970" y="150" width="170" height="62" rx="9" class="b-red"/><text x="1055.0" y="177.0" class="tc tb" style="font-size:12.5px">Cible « * »</text><text x="1055.0" y="196.0" class="tc ts">administration, rare</text>
+<path d="M865,82 V148" class="lr"/><text x="877" y="120" class="ts tb" style="text-anchor:start">oui</text>
+<path d="M1055,82 V148" class="lr"/><text x="1067" y="120" class="ts tb" style="text-anchor:start">non</text>
+<text x="1055" y="232" class="tc ts">ex. réseau externe</text>
+</svg></div>
+<div class="cols nf">
+<div class="note"><b>Règle par défaut :</b> réseau privé par projet. Tout partage est une exception documentée — qui, pourquoi, depuis quand — et revue comme une affectation de rôle.</div>
+</div>
+</div>
+</section>
+
+<!-- 18 -->
+<section class="slide dark sec">
+<div class="num">03</div>
+<h2>Groupes de sécurité et micro-segmentation</h2>
+<p>La micro-segmentation consiste à n'autoriser, entre chaque composant, que les flux nécessaires — même à l'intérieur d'un réseau. Dans OpenStack, l'outil est le groupe de sécurité, appliqué port par port.</p>
+<ol><li>Le groupe de sécurité</li><li>Le groupe « default »</li><li>Écrire des règles</li><li>Groupe distant ou adresse distante</li><li>Une application à trois niveaux</li><li>Groupes d'adresses, règles par défaut</li><li>Sécurité de port</li><li>Mise en œuvre par OVN</li><li>Journaliser les flux</li><li>Cloisonnement inter-locataires : synthèse</li></ol>
+</section>
+
+<!-- 19 -->
+<section class="slide">
+<header><span class="kick">3 · Micro-segmentation</span><h2>Le groupe de sécurité</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:34%">Propriété</th><th>Conséquence</th></tr></thead>
+<tbody>
+<tr><td>Liste d'autorisations</td><td>tout ce qui n'est pas autorisé est refusé ; aucune règle de refus</td></tr>
+<tr><td>Avec état</td><td>la réponse à un flux autorisé est autorisée d'office</td></tr>
+<tr><td>Appliqué au port</td><td>filtre au plus près de l'instance, même entre deux instances du même réseau</td></tr>
+<tr><td>Cumulatif</td><td>plusieurs groupes sur un port = union des autorisations</td></tr>
+<tr><td>Dynamique</td><td>une règle modifiée s'applique aux instances en cours</td></tr>
+<tr><td>Par projet</td><td>chaque projet gère ses groupes ; partageables par RBAC</td></tr>
+</tbody></table>
+<div class="note g"><b>Sans état</b> (<code>--stateless</code>) : les réponses doivent être autorisées explicitement. Réservé à des cas de performance particuliers.</div>
+</div>
+<div class="col">
+<p><b>Une règle</b></p>
+<table class="tbl tight">
+<thead><tr><th style="width:36%">Champ</th><th>Valeurs</th></tr></thead>
+<tbody>
+<tr><td>Direction</td><td>entrée (<code>--ingress</code>) ou sortie (<code>--egress</code>)</td></tr>
+<tr><td>Famille</td><td>IPv4 ou IPv6</td></tr>
+<tr><td>Protocole</td><td>tcp, udp, icmp, numéro, ou tous</td></tr>
+<tr><td>Ports</td><td>un port ou une plage</td></tr>
+<tr><td>Origine ou destination</td><td>un bloc d'adresses, <b>ou</b> un groupe de sécurité, <b>ou</b> un groupe d'adresses</td></tr>
+</tbody></table>
+<div class="note"><b>Pas de règle de refus :</b> on ne peut pas écrire « tout sauf ce port ». Pour interdire, on retire l'autorisation. Les refus explicites relèvent du pare-feu de réseau (FWaaS) ou du pare-feu périmétrique.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 20 -->
+<section class="slide">
+<header><span class="kick">3 · Micro-segmentation</span><h2>Le groupe « default »</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 230">
+<rect x="10" y="6" width="540" height="218" rx="12" class="zone"/><text x="280.0" y="30" class="tc tl">Tout dans « default »</text>
+<rect x="30" y="42" width="500" height="44" rx="8" class="b-grey"/><text x="280" y="60" class="tc ts tb">entrée : depuis les membres de default (IPv4, IPv6)</text><text x="280" y="78" class="tc ts tb">sortie : tout</text>
+<path d="M80,130 L280,130" class="nl" style="stroke:#e4002b;opacity:.6"/>
+<path d="M80,130 L480,130" class="nl" style="stroke:#e4002b;opacity:.6"/>
+<path d="M80,130 L180,190" class="nl" style="stroke:#e4002b;opacity:.6"/>
+<path d="M80,130 L380,190" class="nl" style="stroke:#e4002b;opacity:.6"/>
+<path d="M280,130 L480,130" class="nl" style="stroke:#e4002b;opacity:.6"/>
+<path d="M280,130 L180,190" class="nl" style="stroke:#e4002b;opacity:.6"/>
+<path d="M280,130 L380,190" class="nl" style="stroke:#e4002b;opacity:.6"/>
+<path d="M480,130 L180,190" class="nl" style="stroke:#e4002b;opacity:.6"/>
+<path d="M480,130 L380,190" class="nl" style="stroke:#e4002b;opacity:.6"/>
+<path d="M180,190 L380,190" class="nl" style="stroke:#e4002b;opacity:.6"/>
+<rect x="42" y="116" width="76" height="28" rx="6" class="b-blue"/><text x="80" y="135" class="tc" style="font-size:12px">lb</text>
+<rect x="242" y="116" width="76" height="28" rx="6" class="b-blue"/><text x="280" y="135" class="tc" style="font-size:12px">web</text>
+<rect x="442" y="116" width="76" height="28" rx="6" class="b-blue"/><text x="480" y="135" class="tc" style="font-size:12px">app</text>
+<rect x="142" y="176" width="76" height="28" rx="6" class="b-blue"/><text x="180" y="195" class="tc" style="font-size:12px">db</text>
+<rect x="342" y="176" width="76" height="28" rx="6" class="b-blue"/><text x="380" y="195" class="tc" style="font-size:12px">bastion</text>
+<text x="280" y="220" class="tc ts tb tr">tout le monde parle à tout le monde, sur tous les ports</text>
+<rect x="600" y="6" width="540" height="218" rx="12" class="zone"/><text x="870.0" y="30" class="tc tl">Un groupe par rôle</text>
+<rect x="610" y="120" width="80" height="30" rx="6" class="b-blue"/><text x="650" y="140" class="tc" style="font-size:12px">sg-lb</text>
+<path d="M690,135 H718" class="lr"/>
+<rect x="720" y="120" width="80" height="30" rx="6" class="b-blue"/><text x="760" y="140" class="tc" style="font-size:12px">sg-web</text>
+<path d="M800,135 H828" class="lr"/>
+<rect x="830" y="120" width="80" height="30" rx="6" class="b-blue"/><text x="870" y="140" class="tc" style="font-size:12px">sg-app</text>
+<path d="M910,135 H938" class="lr"/>
+<rect x="940" y="120" width="80" height="30" rx="6" class="b-blue"/><text x="980" y="140" class="tc" style="font-size:12px">sg-db</text>
+<text x="705" y="112" class="tc ts tb">8443</text>
+<text x="815" y="112" class="tc ts tb">8080</text>
+<text x="925" y="112" class="tc ts tb">5432</text>
+<rect x="1050" y="120" width="76" height="30" rx="6" class="b-amber"/><text x="1088" y="140" class="tc" style="font-size:12px">bastion</text>
+<path d="M1088,150 V176 H650 V152" class="lr" stroke-dasharray="5 4"/><text x="870" y="192" class="tc ts">22 depuis le bastion seulement</text>
+<text x="870" y="220" class="tc ts tb" style="fill:#0f7b4f">un flux autorisé par ligne de la matrice, rien d'autre</text>
+<text x="870" y="66" class="tc ts">entrée 443 depuis Internet sur sg-lb uniquement</text>
+</svg></div>
+<div class="cols nf">
+<div class="col"><ul class="pts sm">
+<li><b>Créé automatiquement</b> dans chaque projet, et appliqué à toute instance créée sans groupe explicite.</li>
+<li><b>Entrée :</b> uniquement depuis les membres du même groupe. <b>Sortie :</b> tout.</li>
+<li><b>Conséquence :</b> toutes les instances d'un projet qui gardent <code>default</code> se parlent librement, sur tous les ports — l'inverse de la micro-segmentation.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Bonne pratique :</b> ne pas y ajouter de règles ; créer des groupes par rôle et les appliquer explicitement.</li>
+<li><b>Sur le projet de démonstration Sunbeam,</b> il a été ouvert en SSH et ping depuis partout : ne pas s'en inspirer.</li>
+<li><b>Il ne se supprime pas</b> tant que le projet existe ; on peut en revanche en retirer les règles.</li>
+</ul></div>
+</div>
+</div>
+</section>
+
+<!-- 21 -->
+<section class="slide">
+<header><span class="kick">3 · Micro-segmentation</span><h2>Écrire des règles</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Prérequis : jeton de portée projet, rôle member</span>
+
+<span class="m"># Un groupe par rôle, vide au départ</span>
+<span class="c">openstack security group create</span> sg-bastion \
+  --description "Bastion d'administration"
+
+<span class="m"># SSH vers le bastion, depuis le réseau d'administration</span>
+<span class="c">openstack security group rule create</span> sg-bastion \
+  --ingress --ethertype IPv4 --protocol tcp \
+  --dst-port 22 --remote-ip 192.168.50.0/24 \
+  --description "SSH depuis le réseau d'admin"
+
+<span class="m"># Restreindre la sortie (règles de sortie par défaut</span>
+<span class="m"># à retirer d'abord)</span>
+<span class="c">openstack security group rule list</span> sg-bastion --egress
+<span class="c">openstack security group rule delete</span> &lt;id-sortie-v4&gt; &lt;id-sortie-v6&gt;
+<span class="c">openstack security group rule create</span> sg-bastion \
+  --egress --protocol tcp --dst-port 22 \
+  --remote-ip 10.10.0.0/16
+
+<span class="m"># Appliquer à une instance, retirer default</span>
+<span class="c">openstack server add security group</span> bastion-01 sg-bastion
+<span class="c">openstack server remove security group</span> bastion-01 default</pre>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Tout nouveau groupe</b> contient deux règles de sortie vers tout — IPv4 et IPv6 — et aucune d'entrée.</li>
+<li><b>Filtrer la sortie</b> limite l'exfiltration et les rebonds depuis une instance compromise : utile pour les serveurs de données et les bastions.</li>
+<li><b>Une description par règle :</b> qui l'a demandée, pour quel flux. Six mois plus tard, c'est la seule documentation qui reste.</li>
+<li><b>Éviter <code>0.0.0.0/0</code> en entrée,</b> sauf pour un service public derrière un répartiteur.</li>
+</ul>
+<table class="tbl tight os">
+<thead><tr><th style="width:46%">Règle à proscrire</th><th>Pourquoi</th></tr></thead>
+<tbody>
+<tr><td>tout protocole, entrée, <code>0.0.0.0/0</code></td><td>supprime tout filtrage</td></tr>
+<tr><td>SSH ou RDP depuis <code>0.0.0.0/0</code></td><td>exposition à Internet de l'administration</td></tr>
+<tr><td>port de base de données depuis un réseau entier</td><td>accès direct aux données</td></tr>
+</tbody></table>
+</div>
+</div></div>
+</section>
+
+<!-- 22 -->
+<section class="slide">
+<header><span class="kick">3 · Micro-segmentation</span><h2>Groupe distant ou adresse distante</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 240">
+<rect x="10" y="6" width="620" height="228" rx="12" class="zone"/><text x="320.0" y="30" class="tc tl">Par groupe distant</text>
+<rect x="30" y="44" width="220" height="176" rx="10" class="b-blue"/><text x="140" y="66" class="tc tb">membres de sg-web</text>
+<rect x="60" y="80" width="160" height="30" rx="6" class="bx"/><text x="140.0" y="100" class="tc" style="font-size:11.5px">web-01</text>
+<rect x="60" y="120" width="160" height="30" rx="6" class="bx"/><text x="140.0" y="140" class="tc" style="font-size:11.5px">web-02</text>
+<rect x="60" y="160" width="160" height="30" rx="6" class="bx" stroke-dasharray="5 4"/><text x="140" y="180" class="tc" style="font-size:11.5px">web-03 — ajouté</text>
+<text x="140" y="210" class="tc ts">la règle le couvre aussitôt</text>
+<rect x="400" y="80" width="210" height="110" rx="10" class="b-teal"/><text x="505" y="104" class="tc tb">sg-app</text><text x="505" y="128" class="tc ts">entrée TCP 8080</text><text x="505" y="146" class="tc ts tb">depuis le groupe sg-web</text>
+<path d="M250,135 H398" class="lr"/>
+<rect x="660" y="6" width="480" height="228" rx="12" class="zone"/><text x="900.0" y="30" class="tc tl">Par adresse distante</text>
+<rect x="680" y="60" width="180" height="80" rx="9" class="b-grey"/><text x="770.0" y="87.0" class="tc tb" style="font-size:12.5px">Postes d'admin</text><text x="770.0" y="106.0" class="tc ts">192.168.50.0/24</text><text x="770.0" y="123.0" class="tc ts">hors du cloud</text>
+<rect x="920" y="60" width="200" height="80" rx="10" class="b-amber"/><text x="1020" y="84" class="tc tb">sg-bastion</text><text x="1020" y="106" class="tc ts">entrée TCP 22</text><text x="1020" y="124" class="tc ts tb">depuis 192.168.50.0/24</text>
+<path d="M860,100 H918" class="lr"/>
+<text x="900" y="176" class="tc ts">pour ce qui n'est pas une instance du projet :</text><text x="900" y="196" class="tc ts">administration, supervision, partenaires</text><text x="900" y="218" class="tc ts tb">à mutualiser par un groupe d'adresses</text>
+</svg></div>
+<div class="cols nf">
+<div class="col"><ul class="pts sm">
+<li><b>Par groupe distant :</b> « autoriser le port 8080 depuis les membres de <code>sg-web</code> ». La règle suit les instances : ajouter un serveur web au groupe lui ouvre le flux, sans toucher aux règles.</li>
+<li><b>C'est la base de la micro-segmentation :</b> on raisonne en rôles, pas en adresses.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Par adresse distante :</b> pour ce qui n'est pas une instance du projet — réseau d'administration, sonde de supervision, partenaire.</li>
+<li><b>Limite du groupe distant :</b> il ne voit que les adresses fixes des ports ; un flux qui passe par une adresse flottante ou un routeur arrive avec une autre adresse source.</li>
+</ul></div>
+</div>
+</div>
+</section>
+
+<!-- 23 -->
+<section class="slide">
+<header><span class="kick">3 · Micro-segmentation</span><h2>Une application à trois niveaux : la matrice de flux</h2></header>
+<div class="body">
+<table class="tbl os xs">
+<thead><tr><th style="width:16%">Source</th><th style="width:16%">Destination</th><th style="width:14%">Flux</th><th style="width:28%">Règle (sur le groupe destination)</th><th>Justification</th></tr></thead>
+<tbody>
+<tr><td>Internet</td><td><code>sg-lb</code></td><td>TCP 443</td><td>entrée 443 depuis <code>0.0.0.0/0</code></td><td>seul point exposé</td></tr>
+<tr><td><code>sg-lb</code></td><td><code>sg-web</code></td><td>TCP 8443</td><td>entrée 8443 depuis groupe <code>sg-lb</code></td><td>le répartiteur seul parle aux serveurs web</td></tr>
+<tr><td><code>sg-web</code></td><td><code>sg-app</code></td><td>TCP 8080</td><td>entrée 8080 depuis groupe <code>sg-web</code></td><td>appel de l'API métier</td></tr>
+<tr><td><code>sg-app</code></td><td><code>sg-db</code></td><td>TCP 5432</td><td>entrée 5432 depuis groupe <code>sg-app</code></td><td>seule l'application touche aux données</td></tr>
+<tr><td><code>sg-bastion</code></td><td>tous</td><td>TCP 22</td><td>entrée 22 depuis groupe <code>sg-bastion</code>, sur chaque groupe</td><td>administration par rebond</td></tr>
+<tr><td>supervision</td><td>tous</td><td>TCP 9100</td><td>entrée 9100 depuis l'adresse de la sonde</td><td>métriques</td></tr>
+<tr><td><code>sg-db</code></td><td>extérieur</td><td>aucun</td><td>sortie limitée au réseau du projet</td><td>pas d'exfiltration directe</td></tr>
+</tbody></table>
+<div class="cols c3 nf">
+<div class="card cb"><h3>Méthode</h3>Lister les flux nécessaires avant d'écrire une règle ; chaque ligne de la matrice devient une règle, et réciproquement.</div>
+<div class="card ca"><h3>Ce qui n'y figure pas</h3>Serveur web vers base de données, Internet vers l'application, bastion vers Internet : ces flux sont refusés sans rien écrire.</div>
+<div class="card cv"><h3>Un seul réseau suffit</h3>Les quatre niveaux peuvent partager un réseau : les groupes séparent. Des réseaux distincts ajoutent une seconde barrière.</div>
+</div>
+</div>
+</section>
+
+<!-- 24 -->
+<section class="slide">
+<header><span class="kick">3 · Micro-segmentation</span><h2>Pas à pas : les groupes de l'application</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.4px"><span class="m"># Prérequis : projet prod-web, rôle member</span>
+<span class="k">for</span> g <span class="k">in</span> sg-lb sg-web sg-app sg-db sg-bastion; <span class="k">do</span>
+  <span class="c">openstack security group create</span> $g
+<span class="k">done</span>
+
+R=<span class="c">"openstack security group rule create"</span>
+$R sg-lb  --ingress --protocol tcp --dst-port 443 \
+   --remote-ip 0.0.0.0/0 --description "HTTPS public"
+$R sg-web --ingress --protocol tcp --dst-port 8443 \
+   --remote-group sg-lb  --description "LB vers web"
+$R sg-app --ingress --protocol tcp --dst-port 8080 \
+   --remote-group sg-web --description "web vers app"
+$R sg-db  --ingress --protocol tcp --dst-port 5432 \
+   --remote-group sg-app --description "app vers base"
+$R sg-bastion --ingress --protocol tcp --dst-port 22 \
+   --remote-ip 192.168.50.0/24 --description "admin"
+<span class="k">for</span> g <span class="k">in</span> sg-web sg-app sg-db; <span class="k">do</span>
+  $R $g --ingress --protocol tcp --dst-port 22 \
+     --remote-group sg-bastion --description "rebond SSH"
+<span class="k">done</span>
+<span class="m"># sg-db : sortie limitée au réseau du projet (matrice)</span>
+<span class="k">for</span> r <span class="k">in</span> $(openstack security group rule list sg-db \
+           --egress -f value -c ID); <span class="k">do</span>
+  openstack security group rule delete $r
+<span class="k">done</span>
+$R sg-db --egress --remote-ip 10.10.0.0/16 --description "sortie interne"</pre>
+</div>
+<div class="col">
+<pre style="font-size:11.4px"><span class="m"># Créer les instances avec leur seul groupe</span>
+<span class="c">openstack server create</span> db-01 --flavor m1.medium \
+  --image ubuntu-24.04 --network prod-web-app \
+  --security-group sg-db --key-name exploitation
+
+<span class="m"># Vérifier les groupes effectifs d'un port</span>
+<span class="c">openstack port list</span> --server db-01 -c ID -c "Fixed IP Addresses"
+<span class="c">openstack port show</span> &lt;port&gt; -c security_group_ids</pre>
+<table class="tbl tight os">
+<thead><tr><th style="width:52%">Test de cloison</th><th>Attendu</th></tr></thead>
+<tbody>
+<tr><td>web-01 → db-01:5432</td><td class="n">refusé</td></tr>
+<tr><td>app-01 → db-01:5432</td><td class="y">accepté</td></tr>
+<tr><td>app-01 → db-01:22</td><td class="n">refusé</td></tr>
+<tr><td>bastion → db-01:22</td><td class="y">accepté</td></tr>
+<tr><td>Internet → web-01:8443</td><td class="n">refusé</td></tr>
+</tbody></table>
+<div class="note g">Tester avec <code>nc -zv -w 3 &lt;ip&gt; &lt;port&gt;</code> depuis chaque instance : un refus par groupe de sécurité se traduit par un délai dépassé, pas par un refus de connexion.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 25 -->
+<section class="slide">
+<header><span class="kick">3 · Micro-segmentation</span><h2>Groupes d'adresses</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Problème :</b> la même liste d'adresses — réseau d'administration, sondes de supervision, partenaires — revient dans des dizaines de règles. La modifier impose de toutes les retrouver.</p>
+<p><b>Solution :</b> un groupe d'adresses, nommé, référencé par les règles. On modifie le groupe ; toutes les règles suivent.</p>
+<pre style="font-size:11.6px;flex:none"><span class="m"># Le groupe : les réseaux d'administration</span>
+<span class="c">openstack address group create</span> ag-admin \
+  --address 192.168.50.0/24 --address 192.168.51.0/24 \
+  --description "Postes d'administration"
+
+<span class="m"># Les règles le référencent</span>
+<span class="c">openstack security group rule create</span> sg-bastion \
+  --ingress --protocol tcp --dst-port 22 \
+  --remote-address-group ag-admin
+
+<span class="m"># Un nouveau site d'administration : une commande</span>
+<span class="c">openstack address group set</span> ag-admin --address 192.168.52.0/24</pre>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:40%">Groupe d'adresses type</th><th>Contenu</th></tr></thead>
+<tbody>
+<tr><td><code>ag-admin</code></td><td>postes et bastions d'administration</td></tr>
+<tr><td><code>ag-supervision</code></td><td>collecteurs de métriques et de journaux</td></tr>
+<tr><td><code>ag-partenaire-x</code></td><td>adresses publiques d'un partenaire</td></tr>
+<tr><td><code>ag-sauvegarde</code></td><td>serveurs de sauvegarde</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Partageables par RBAC :</b> l'équipe plateforme publie <code>ag-admin</code> ; chaque projet l'utilise sans le modifier.</li>
+<li><b>Prise en charge</b> par le pilote OVN : à vérifier sur votre version, par un essai.</li>
+</ul>
+<div class="note g">Un groupe d'adresses partagé par la plateforme garantit qu'un changement d'adressage de l'administration se propage dans tous les projets, le jour même.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 26 -->
+<section class="slide">
+<header><span class="kick">3 · Micro-segmentation</span><h2>Règles par défaut des nouveaux groupes</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Depuis 2023.2,</b> l'administration peut définir les règles que Neutron place dans les nouveaux groupes : groupes <code>default</code> des projets, et groupes créés par les utilisateurs.</p>
+<pre style="font-size:11.6px;flex:none"><span class="m"># Prérequis : identifiants d'administrateur</span>
+<span class="c">openstack default security group rule list</span>
+
+<span class="m"># Supervision autorisée dans tous les futurs groupes</span>
+<span class="c">openstack default security group rule create</span> \
+  --ingress --protocol tcp --dst-port 9100 \
+  --remote-address-group ag-supervision \
+  --for-default-sg --for-custom-sg \
+  --description "Métriques, plateforme"
+
+<span class="m"># Supprimer un modèle de règle</span>
+<span class="c">openstack default security group rule delete</span> &lt;id&gt;</pre>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:34%">Option</th><th>S'applique à</th></tr></thead>
+<tbody>
+<tr><td><code>--for-default-sg</code></td><td>groupes <code>default</code> créés automatiquement</td></tr>
+<tr><td><code>--for-custom-sg</code></td><td>groupes créés par les utilisateurs</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Seulement pour les groupes futurs :</b> supprimer ou ajouter un modèle ne modifie pas les groupes existants.</li>
+<li><b>Usage utile :</b> retirer la sortie libre des nouveaux groupes, ou ajouter les flux de la plateforme — supervision, sauvegarde — partout.</li>
+<li><b>À manier avec prudence :</b> une règle trop large ajoutée ici se retrouve dans tous les projets.</li>
+</ul>
+<div class="note">Référencer un groupe d'adresses dans un modèle suppose qu'il soit partagé avec tous les projets ; sinon, utiliser un bloc d'adresses.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 27 -->
+<section class="slide">
+<header><span class="kick">3 · Micro-segmentation</span><h2>Sécurité de port et paires d'adresses autorisées</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:38%">Mécanisme</th><th>Effet</th></tr></thead>
+<tbody>
+<tr><td>Sécurité de port activée (défaut)</td><td>le port n'émet qu'avec son adresse MAC et ses adresses IP ; groupes de sécurité appliqués</td></tr>
+<tr><td>Sécurité de port désactivée</td><td>aucune protection contre l'usurpation d'adresse, aucun groupe de sécurité</td></tr>
+<tr><td>Paires d'adresses autorisées</td><td>adresses supplémentaires qu'un port peut utiliser — adresse virtuelle partagée par deux instances</td></tr>
+</tbody></table>
+<div class="note"><b>Désactiver la sécurité de port</b> retire toute micro-segmentation pour ce port et lui permet d'usurper l'adresse d'un voisin. À n'accepter que pour des appliances réseau — routeur virtuel, pare-feu — dans un réseau dédié.</div>
+</div>
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Adresse virtuelle partagée par deux répartiteurs</span>
+<span class="m"># (keepalived), sans désactiver la sécurité de port</span>
+<span class="c">openstack port set</span> &lt;port-lb-01&gt; \
+  --allowed-address ip-address=10.10.1.250
+<span class="c">openstack port set</span> &lt;port-lb-02&gt; \
+  --allowed-address ip-address=10.10.1.250
+
+<span class="m"># Repérer les ports sans sécurité de port</span>
+<span class="c">openstack port list</span> --long -f json \
+  | jq -r '.[] | select(.["Port Security"]==false) | .ID'
+<span class="m"># (nom de colonne selon le client ; sinon port show)</span>
+
+<span class="m"># Rétablir</span>
+<span class="c">openstack port set</span> &lt;port&gt; --enable-port-security \
+  --security-group sg-web</pre>
+<div class="note g">Les paires d'adresses autorisées sont la bonne réponse à « j'ai besoin d'une adresse virtuelle » ; la désactivation de la sécurité de port ne l'est presque jamais.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 28 -->
+<section class="slide">
+<header><span class="kick">3 · Micro-segmentation</span><h2>Mise en œuvre par OVN</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 230">
+<rect x="10" y="30" width="250" height="110" rx="9" class="b-blue"/><text x="135.0" y="72.0" class="tc tb" style="font-size:12.5px">Neutron</text><text x="135.0" y="91.0" class="tc ts">groupe sg-db</text><text x="135.0" y="108.0" class="tc ts">règle : 5432 depuis sg-app</text>
+<rect x="300" y="30" width="250" height="110" rx="9" class="b-violet"/><text x="425.0" y="63.0" class="tc tb" style="font-size:12.5px">Base nord d'OVN</text><text x="425.0" y="82.0" class="tc ts">groupe de ports pg_sg_db</text><text x="425.0" y="99.0" class="tc ts">ACL : to-lport, tcp 5432</text><text x="425.0" y="116.0" class="tc ts">source dans pg_sg_app</text>
+<rect x="590" y="30" width="250" height="110" rx="9" class="b-violet"/><text x="715.0" y="72.0" class="tc tb" style="font-size:12.5px">Base sud d'OVN</text><text x="715.0" y="91.0" class="tc ts">flux logiques</text><text x="715.0" y="108.0" class="tc ts">par commutateur logique</text>
+<rect x="880" y="30" width="260" height="110" rx="9" class="b-teal"/><text x="1010.0" y="63.0" class="tc tb" style="font-size:12.5px">Chaque hyperviseur</text><text x="1010.0" y="82.0" class="tc ts">contrôleur OVN</text><text x="1010.0" y="99.0" class="tc ts">flux Open vSwitch</text><text x="1010.0" y="116.0" class="tc ts">suivi de connexion</text>
+<path d="M260,85 H298" class="lr"/>
+<path d="M550,85 H588" class="lr"/>
+<path d="M840,85 H878" class="lr"/>
+<rect x="10" y="166" width="1130" height="54" rx="10" class="zone"/>
+<text x="575" y="188" class="tc ts">le paquet est filtré sur l'hyperviseur, sur le port de l'instance, avant d'entrer dans l'instance ou dès qu'il en sort</text>
+<text x="575" y="208" class="tc ts tb">aucun équipement central : le filtrage croît avec le nombre d'hyperviseurs</text>
+</svg></div>
+<div class="cols nf">
+<div class="col"><ul class="pts sm">
+<li><b>Un groupe de sécurité devient un groupe de ports OVN</b> et ses règles des ACL, inscrites dans la base nord puis traduites pour chaque hyperviseur.</li>
+<li><b>Le filtrage se fait dans Open vSwitch</b> sur l'hyperviseur de l'instance, avec suivi de connexion : il n'y a pas de pare-feu central à saturer.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Une instance compromise ne peut pas contourner ses règles :</b> elles s'appliquent hors de l'instance, sur le port.</li>
+<li><b>Lire ce qu'OVN a reçu :</b> <code>ovn-nbctl acl-list</code> dans le conteneur de la base nord — réservé au diagnostic, jamais pour modifier.</li>
+</ul></div>
+</div>
+</div>
+</section>
+
+<!-- 29 -->
+<section class="slide">
+<header><span class="kick">3 · Micro-segmentation</span><h2>Groupes de sécurité, pare-feu de réseau, pare-feu périmétrique</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:20%">Critère</th><th style="width:27%">Groupes de sécurité</th><th style="width:27%">Pare-feu de réseau (FWaaS v2)</th><th>Pare-feu périmétrique</th></tr></thead>
+<tbody>
+<tr><td>Point d'application</td><td>chaque port d'instance</td><td>ports de routeur</td><td>sortie physique du cloud</td></tr>
+<tr><td>Règles de refus</td><td class="n">non</td><td class="y">oui</td><td class="y">oui</td></tr>
+<tr><td>Ordre des règles</td><td>sans objet : union</td><td>ordonnées</td><td>ordonnées</td></tr>
+<tr><td>Géré par</td><td>le projet</td><td>le projet</td><td>l'équipe réseau</td></tr>
+<tr><td>Trafic interne à un réseau</td><td class="y">filtré</td><td class="n">non vu</td><td class="n">non vu</td></tr>
+<tr><td>Inspection applicative</td><td class="n">non</td><td class="n">non</td><td>selon le produit</td></tr>
+<tr><td>Sur Sunbeam</td><td class="y">disponible</td><td>OVN le prend en charge ; disponibilité dans Sunbeam à vérifier</td><td>hors du cloud</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Défense en profondeur :</b> le pare-feu périmétrique filtre l'entrée du cloud ; les groupes de sécurité filtrent entre composants. L'un ne remplace pas l'autre.</div>
+<div class="note g">Pour ce module, les groupes de sécurité suffisent à la micro-segmentation ; le pare-feu de réseau ne s'ajoute que si l'on a besoin de règles de refus ordonnées entre sous-réseaux.</div>
+</div>
+</div>
+</section>
+
+<!-- 30 -->
+<section class="slide">
+<header><span class="kick">3 · Micro-segmentation</span><h2>Journaliser les flux des groupes de sécurité</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Prérequis : extension « log » de Neutron active</span>
+<span class="c">openstack extension list</span> --network | grep -i logging
+
+<span class="m"># Journaliser les flux acceptés et refusés d'un groupe</span>
+<span class="c">openstack network log create</span> log-sg-db \
+  --resource-type security_group --resource sg-db \
+  --event ALL
+
+<span class="m"># Seulement les refus (attention : avec OVN, les refus</span>
+<span class="m"># de tous les groupes sont agrégés)</span>
+<span class="c">openstack network log create</span> log-drop \
+  --resource-type security_group --event DROP
+
+<span class="c">openstack network log list</span>
+<span class="c">openstack network log set</span> --disable log-sg-db</pre>
+<div class="note g">Exemple de ligne, dans le journal du contrôleur OVN de l'hyperviseur : <code style="white-space:normal">name="neutron-e9eb…", verdict=allow, severity=info, direction=to-lport, tcp, nw_src=10.10.2.15, nw_dst=10.10.3.20, tp_dst=5432</code></div>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:40%">Point</th><th>Détail</th></tr></thead>
+<tbody>
+<tr><td>Où sont les lignes</td><td>journal du contrôleur OVN de chaque hyperviseur : chacun ne voit que ses instances</td></tr>
+<tr><td>Débit</td><td>limité par <code>[network_log] rate_limit</code> et <code>burst_limit</code> — au moins 100 et 25</td></tr>
+<tr><td>Cible par port</td><td>non disponible avec OVN</td></tr>
+<tr><td>Refus</td><td>une ACL agrège tous les refus : journaliser DROP les capture tous</td></tr>
+<tr><td>Volume</td><td>sans <code>--resource</code>, tout le cloud : volume considérable</td></tr>
+</tbody></table>
+<div class="note"><b>Sur Sunbeam :</b> l'activation du greffon de journalisation dans Neutron et l'acheminement du journal du contrôleur OVN vers la centralisation sont à vérifier sur votre déploiement avant de compter sur cette source.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 31 -->
+<section class="slide">
+<header><span class="kick">3 · Micro-segmentation</span><h2>Cloisonnement inter-locataires : synthèse et contrôles</h2></header>
+<div class="body">
+<table class="tbl os xs">
+<thead><tr><th style="width:20%">Couche</th><th style="width:28%">Ce qui cloisonne</th><th style="width:26%">Ce qui le défait</th><th>Contrôle périodique</th></tr></thead>
+<tbody>
+<tr><td>Identité</td><td>projets, rôles, domaines</td><td>rôle sur plusieurs projets, <code>admin</code></td><td><code>role assignment list --effective</code></td></tr>
+<tr><td>Niveau 2</td><td>réseau privé par projet, Geneve</td><td>réseau partagé</td><td><code>network rbac list</code> ; réseaux <code>Shared</code></td></tr>
+<tr><td>Niveau 3</td><td>routeur propre, pas de route commune</td><td>routeur relié aux sous-réseaux de deux projets</td><td><code>router list --long</code>, interfaces</td></tr>
+<tr><td>Exposition</td><td>pas d'adresse flottante</td><td>adresses flottantes inutiles</td><td><code>floating ip list --long</code></td></tr>
+<tr><td>Port</td><td>groupes de sécurité par rôle</td><td><code>0.0.0.0/0</code> en entrée, <code>default</code> élargi</td><td>règles larges, voir slide 9</td></tr>
+<tr><td>Anti-usurpation</td><td>sécurité de port</td><td>sécurité de port désactivée</td><td>ports sans sécurité de port</td></tr>
+<tr><td>Ressources</td><td>quotas</td><td>quotas illimités</td><td><code>quota show --usage</code></td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Test de cloison entre locataires,</b> après chaque changement : depuis une instance du projet A, tenter de joindre l'adresse fixe et l'adresse flottante d'une instance du projet B, sur un port non autorisé. Attendu : échec dans les deux cas.</div>
+<div class="note g">Ces contrôles s'automatisent en un script lancé chaque semaine, dont le résultat part dans les journaux centralisés — ce qui fait la transition avec la suite.</div>
+</div>
+</div>
+</section>
+
+<!-- 32 -->
+<section class="slide dark sec">
+<div class="num">04</div>
+<h2>Audit et traçabilité : la journalisation des services</h2>
+<p>Un cloud produit des journaux partout : chaque service, chaque nœud, chaque hyperviseur. Pour l'audit, il ne suffit pas qu'ils existent ; il faut savoir où ils sont, ce qu'ils contiennent, et comment relier entre elles les lignes d'une même action.</p>
+<ol><li>Les questions de l'audit</li><li>Les sources de journaux</li><li>Anatomie d'une ligne</li><li>Les identifiants de requête</li><li>Les événements d'instance</li><li>Les notifications CADF de Keystone</li><li>Le filtre d'audit des API</li><li>Niveaux et données sensibles</li></ol>
+</section>
+
+<!-- 33 -->
+<section class="slide">
+<header><span class="kick">4 · Journalisation</span><h2>Les questions de l'audit</h2></header>
+<div class="body">
+<div class="cols c5 nf dense">
+<div class="card cb"><h3>Qui ?</h3>Utilisateur, projet, domaine ; compte de service ; identifiant d'application.</div>
+<div class="card ct"><h3>Quoi ?</h3>L'opération : création d'instance, ajout de rôle, règle de sécurité.</div>
+<div class="card ca"><h3>Sur quoi ?</h3>La ressource visée, par son identifiant.</div>
+<div class="card cv"><h3>Quand, d'où ?</h3>Horodatage synchronisé ; adresse source de la requête.</div>
+<div class="card"><h3>Avec quel résultat ?</h3>Succès, refus (401, 403), erreur.</div>
+</div>
+<table class="tbl os">
+<thead><tr><th style="width:34%">Question type d'enquête</th><th>Source qui y répond</th></tr></thead>
+<tbody>
+<tr><td>Qui a supprimé l'instance <code>db-01</code> ?</td><td style="color:var(--ink);font-weight:400">événements d'instance de Nova ; journal de l'API de Nova</td></tr>
+<tr><td>Qui a donné le rôle <code>admin</code> à ce compte ?</td><td style="color:var(--ink);font-weight:400">notifications CADF de Keystone ; journal de Keystone</td></tr>
+<tr><td>Qui a ouvert le port 22 à tout Internet ?</td><td style="color:var(--ink);font-weight:400">journal de l'API de Neutron, par identifiant de requête</td></tr>
+<tr><td>Combien d'échecs de connexion cette nuit, depuis où ?</td><td style="color:var(--ink);font-weight:400">journal de Keystone ; autorité fédérée</td></tr>
+<tr><td>Cette instance a-t-elle parlé à la base ?</td><td style="color:var(--ink);font-weight:400">journal des groupes de sécurité, s'il est activé</td></tr>
+</tbody></table>
+<div class="note g"><b>Ces cinq questions</b> sont celles du format d'événement d'audit CADF, qu'OpenStack utilise : initiateur, action, cible, horodatage et observateur, résultat.</div>
+</div>
+</section>
+
+<!-- 34 -->
+<section class="slide">
+<header><span class="kick">4 · Journalisation</span><h2>Les sources de journaux d'un cloud Sunbeam</h2></header>
+<div class="body">
+<table class="tbl os xs">
+<thead><tr><th style="width:22%">Source</th><th style="width:26%">Où elle tourne</th><th style="width:30%">Ce qu'elle trace</th><th>Lire localement</th></tr></thead>
+<tbody>
+<tr><td>API des services : Keystone, Nova, Neutron, Cinder, Glance…</td><td>pods Kubernetes, modèle Juju <code>openstack</code></td><td>requêtes, utilisateur, projet, code de retour</td><td><code>sudo k8s kubectl -n openstack logs &lt;pod&gt; -c &lt;conteneur&gt;</code></td></tr>
+<tr><td>Services de calcul et réseau des hyperviseurs</td><td>snap <code>openstack-hypervisor</code></td><td>démarrage d'instances, contrôleur OVN, libvirt</td><td><code>sudo snap logs openstack-hypervisor</code>, journal système</td></tr>
+<tr><td>Charms</td><td>agents Juju</td><td>changements de configuration, actions</td><td><code>juju debug-log -m openstack</code></td></tr>
+<tr><td>Horizon</td><td>pod</td><td>connexions au tableau de bord</td><td>journaux du pod</td></tr>
+<tr><td>Base de données, messagerie</td><td>pods MySQL, RabbitMQ</td><td>erreurs, connexions</td><td>journaux des pods</td></tr>
+<tr><td>Vault</td><td>pod</td><td>accès aux secrets, certificats</td><td>journal d'audit de Vault, s'il est activé</td></tr>
+<tr><td>Systèmes des nœuds</td><td>Ubuntu</td><td>connexions SSH, sudo, noyau</td><td><code>journalctl</code>, <code>/var/log/auth.log</code></td></tr>
+<tr><td>Autorité fédérée</td><td>hors du cloud</td><td>authentifications, multifacteur</td><td>console de l'autorité</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Les journaux d'un pod sont éphémères :</b> un redémarrage ou un remplacement du pod les fait disparaître. Sans centralisation, une enquête sur un incident de la semaine passée est souvent impossible.</div>
+<div class="note g">Chemins et noms de conteneurs à vérifier sur votre version de Sunbeam ; la partie 5 évite d'avoir à les connaître en centralisant tout.</div>
+</div>
+</div>
+</section>
+
+<!-- 35 -->
+<section class="slide">
+<header><span class="kick">4 · Journalisation</span><h2>Anatomie d'une ligne de journal</h2></header>
+<div class="body">
+<pre style="font-size:12px;flex:none">2026-10-13 09:42:17.512 12 INFO nova.osapi_compute.wsgi.server
+  [req-0b9f…  req-7c1e…  4f2a…(utilisateur)  9d81…(projet)  -  default  default]
+  10.20.0.15 "DELETE /v2.1/servers/5e3b…  HTTP/1.1" status: 204 len: 0 time: 0.2134</pre>
+<table class="tbl os">
+<thead><tr><th style="width:26%">Élément</th><th style="width:38%">Sens</th><th>Usage en enquête</th></tr></thead>
+<tbody>
+<tr><td>Horodatage</td><td>heure du nœud qui écrit</td><td style="color:var(--ink);font-weight:400">ordonner — à condition que les horloges soient synchronisées</td></tr>
+<tr><td>Niveau, module</td><td>INFO, WARNING, ERROR ; composant</td><td style="color:var(--ink);font-weight:400">filtrer</td></tr>
+<tr><td>1<sup>er</sup> <code>req-…</code></td><td>identifiant global, transmis d'un service à l'autre</td><td style="color:var(--ink);font-weight:400">suivre une action à travers les services</td></tr>
+<tr><td>2<sup>e</sup> <code>req-…</code></td><td>identifiant de la requête dans ce service</td><td style="color:var(--ink);font-weight:400">retrouver toutes les lignes de cette requête</td></tr>
+<tr><td>Utilisateur, projet, domaines</td><td>identité extraite du jeton</td><td style="color:var(--ink);font-weight:400">qui, pour quel projet</td></tr>
+<tr><td>Adresse, requête, statut, durée</td><td>ligne d'accès de l'API</td><td style="color:var(--ink);font-weight:400">d'où, quoi, résultat</td></tr>
+</tbody></table>
+<div class="note g">Format indicatif, reconstitué : l'ordre et la présence des champs dépendent du service et de sa configuration de journalisation (<code>logging_context_format_string</code>).</div>
+</div>
+</section>
+
+<!-- 36 -->
+<section class="slide">
+<header><span class="kick">4 · Journalisation</span><h2>Les identifiants de requête</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 314">
+<path d="M130,46 V310" class="nl" stroke-dasharray="4 5"/>
+<path d="M430,46 V310" class="nl" stroke-dasharray="4 5"/>
+<path d="M730,46 V310" class="nl" stroke-dasharray="4 5"/>
+<path d="M1030,46 V310" class="nl" stroke-dasharray="4 5"/>
+<rect x="10.0" y="4" width="240" height="40" rx="8" class="b-grey"/><text x="130" y="29" class="tc tb">Client</text>
+<rect x="310.0" y="4" width="240" height="40" rx="8" class="b-blue"/><text x="430" y="29" class="tc tb">API de Nova</text>
+<rect x="610.0" y="4" width="240" height="40" rx="8" class="b-teal"/><text x="730" y="29" class="tc tb">Neutron</text>
+<rect x="910.0" y="4" width="240" height="40" rx="8" class="b-amber"/><text x="1030" y="29" class="tc tb">Cinder</text>
+<path d="M140,78 H427" class="lr"/>
+<text x="280.0" y="72" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">POST /servers</text>
+<circle cx="130" cy="78" r="10" class="f-red"/><text x="130" y="82" class="tc tw tb" style="font-size:11px">1</text>
+<rect x="215.0" y="93" width="430" height="24" rx="6" class="b-grey"/><text x="442.0" y="110" class="tc" style="font-size:12px">journal de Nova : req-N1</text>
+<circle cx="229.0" cy="108" r="10" class="f-red"/><text x="229.0" y="112" class="tc tw tb" style="font-size:11px">2</text>
+<path d="M440,138 H727" class="lr"/>
+<text x="580.0" y="132" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">crée le port — transmet req-N1</text>
+<circle cx="430" cy="138" r="10" class="f-red"/><text x="430" y="142" class="tc tw tb" style="font-size:11px">3</text>
+<rect x="515.0" y="153" width="430" height="24" rx="6" class="b-grey"/><text x="742.0" y="170" class="tc" style="font-size:12px">journal de Neutron : req-Q7, global req-N1</text>
+<circle cx="529.0" cy="168" r="10" class="f-red"/><text x="529.0" y="172" class="tc tw tb" style="font-size:11px">4</text>
+<path d="M440,198 H1027" class="lr"/>
+<text x="730.0" y="192" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">attache le volume — transmet req-N1</text>
+<circle cx="430" cy="198" r="10" class="f-red"/><text x="430" y="202" class="tc tw tb" style="font-size:11px">5</text>
+<rect x="714" y="213" width="430" height="24" rx="6" class="b-grey"/><text x="941.0" y="230" class="tc" style="font-size:12px">journal de Cinder : req-C3, global req-N1</text>
+<circle cx="728" cy="228" r="10" class="f-red"/><text x="728" y="232" class="tc tw tb" style="font-size:11px">6</text>
+<path d="M420,258 H133" class="ln ld"/>
+<text x="280.0" y="252" class="tc" style="font-size:12px;paint-order:stroke;stroke:#fff;stroke-width:5px">202 — en-tête X-OpenStack-Request-ID : req-N1</text>
+<circle cx="430" cy="258" r="10" class="f-red"/><text x="430" y="262" class="tc tw tb" style="font-size:11px">7</text>
+<rect x="6" y="273" width="430" height="24" rx="6" class="b-grey"/><text x="233.0" y="290" class="tc" style="font-size:12px">rechercher « req-N1 » : toutes les lignes, tous services</text>
+<circle cx="20" cy="288" r="10" class="f-red"/><text x="20" y="292" class="tc tw tb" style="font-size:11px">8</text>
+</svg></div>
+<div class="cols nf">
+<div class="col"><ul class="pts sm">
+<li><b>Chaque service</b> attribue un identifiant <code>req-…</code> à chaque requête reçue et le renvoie dans l'en-tête de réponse <code>X-OpenStack-Request-ID</code>.</li>
+<li><b>Lorsqu'un service en appelle un autre,</b> il transmet l'identifiant d'origine : le service appelé l'inscrit comme identifiant global à côté du sien.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Le client peut fournir son propre identifiant</b> global ; un outil d'automatisation l'utilise pour relier ses actions aux journaux du cloud.</li>
+<li><b>En pratique :</b> on part de l'identifiant renvoyé à l'utilisateur ou affiché par <code>openstack --debug</code>, puis on cherche cette chaîne dans tous les journaux centralisés.</li>
+</ul></div>
+</div>
+</div>
+</section>
+
+<!-- 37 -->
+<section class="slide">
+<header><span class="kick">4 · Journalisation</span><h2>Les événements d'instance</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Historique des actions sur une instance</span>
+<span class="c">openstack server event list</span> db-01
+
++------------------+---------------+--------+---------------------+
+| Request ID       | Server ID     | Action | Start Time          |
++------------------+---------------+--------+---------------------+
+| req-7c1e…        | 5e3b…         | delete | 2026-10-13T09:42:17 |
+| req-31aa…        | 5e3b…         | reboot | 2026-10-12T22:05:03 |
+| req-f02c…        | 5e3b…         | create | 2026-10-01T08:11:46 |
++------------------+---------------+--------+---------------------+
+
+<span class="m"># Détail : qui, depuis quel projet, résultat</span>
+<span class="c">openstack server event show</span> db-01 req-7c1e…
+
+<span class="m"># Instance déjà supprimée : par identifiant,</span>
+<span class="m"># avec les droits d'administration</span>
+<span class="c">openstack server event list</span> 5e3b…</pre>
+<div class="note g">Sortie reconstituée pour l'exemple ; les colonnes dépendent de la microversion de l'API de Nova.</div>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:36%">Champ</th><th>Usage</th></tr></thead>
+<tbody>
+<tr><td>Action</td><td>création, arrêt, redémarrage, migration, suppression…</td></tr>
+<tr><td>Identifiant de requête</td><td>pivot vers les journaux de tous les services</td></tr>
+<tr><td>Utilisateur, projet</td><td>auteur de l'action</td></tr>
+<tr><td>Étapes, résultat</td><td>succès ou erreur de chaque étape interne</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Première source à consulter</b> pour toute question sur une instance : elle est dans la base de Nova, donc survit aux redémarrages des pods.</li>
+<li><b>Limites :</b> elle ne couvre que les instances. Pour les réseaux, les volumes, les rôles, il faut les journaux des autres services.</li>
+<li><b>Les membres du projet</b> voient les événements de leurs instances ; utile au support de premier niveau.</li>
+</ul>
+</div>
+</div></div>
+</section>
+
+<!-- 38 -->
+<section class="slide">
+<header><span class="kick">4 · Journalisation</span><h2>Les notifications CADF de Keystone</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.2px">{
+  "event_type": "identity.role_assignment.created",
+  "priority": "INFO",
+  "publisher_id": "identity.keystone-0",
+  "payload": {
+    "typeURI": "http://schemas.dmtf.org/cloud/audit/1.0/event",
+    "eventType": "activity",
+    "eventTime": "2026-10-13T09:58:02.114+0000",
+    "action": "created.role_assignment",
+    "outcome": "success",
+    "initiator": {
+      "id": "4f2a…",
+      "host": { "address": "10.20.0.15",
+                "agent": "openstacksdk/4.x" }
+    },
+    "target": { "typeURI": "…/role_assignment", "id": "…" },
+    "observer": { "typeURI": "service/security", "id": "…" },
+    "role": "…", "user": "…", "project": "…"
+  }
+}</pre>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:36%">Réglage de Keystone</th><th>Effet</th></tr></thead>
+<tbody>
+<tr><td><code>notification_format = cadf</code></td><td>événements au format d'audit CADF, plutôt que le format simple</td></tr>
+<tr><td><code>notification_opt_out</code></td><td>liste des événements à ne pas émettre ; par défaut, les authentifications réussies ou échouées sont supprimées</td></tr>
+<tr><td>Pilote de notifications</td><td>messagerie (vers un consommateur) ou journal</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Événements émis :</b> création, modification, suppression des utilisateurs, groupes, projets, domaines, rôles, affectations, points d'accès ; authentifications si on les réactive.</li>
+<li><b>Pour l'audit,</b> réactiver les échecs d'authentification : c'est la trace d'une attaque par essais.</li>
+</ul>
+<div class="note"><b>Sur Sunbeam :</b> le charm de Keystone propose l'option <code>enable-telemetry-notifications</code>, liée à la fonctionnalité de télémétrie. Format et destination des notifications sont à vérifier sur votre déploiement avant d'en faire une source d'audit.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 39 -->
+<section class="slide">
+<header><span class="kick">4 · Journalisation</span><h2>Le filtre d'audit des API</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Un filtre de keystonemiddleware</b>, placé dans la chaîne de traitement d'un service, produit un événement CADF pour chaque appel de son API : initiateur, action, cible, résultat.</p>
+<pre style="font-size:11.6px;flex:none"><span class="m"># api-paste.ini du service (exemple de Nova)</span>
+[filter:audit]
+paste.filter_factory = keystonemiddleware.audit:filter_factory
+audit_map_file = /etc/nova/api_audit_map.conf
+<span class="m"># ignorer les lectures, trop volumineuses</span>
+ignore_req_list = GET,HEAD
+
+<span class="m"># Placé APRÈS authtoken dans la chaîne</span>
+keystone = … authtoken keystonecontext … audit osapi_compute_app_v21
+
+<span class="m"># nova.conf : où envoyer les événements</span>
+[audit_middleware_notifications]
+driver = log</pre>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:40%">Source d'audit</th><th>Couverture</th></tr></thead>
+<tbody>
+<tr><td>Ligne d'accès de l'API</td><td>toutes les requêtes, format libre</td></tr>
+<tr><td>Événements d'instance</td><td>instances seulement, structuré</td></tr>
+<tr><td>Notifications de Keystone</td><td>identité seulement, CADF</td></tr>
+<tr><td>Filtre d'audit des API</td><td>toutes les API équipées, CADF</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Le plus complet</b> des mécanismes, et le plus volumineux : n'auditer que les écritures.</li>
+<li><b>Sans messagerie configurée,</b> les événements partent dans le journal du service — ce qui suffit si ce journal est centralisé.</li>
+</ul>
+<div class="note"><b>Sur Sunbeam,</b> la chaîne de traitement des API est écrite par les charms : le filtre d'audit n'est pas activable à la main de façon durable. Les lignes d'accès et les événements d'instance restent les sources disponibles.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 40 -->
+<section class="slide">
+<header><span class="kick">4 · Journalisation</span><h2>Niveaux de journalisation et données sensibles</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:24%">Niveau</th><th style="width:38%">Contenu</th><th>Usage</th></tr></thead>
+<tbody>
+<tr><td>ERROR</td><td>échecs</td><td>toujours</td></tr>
+<tr><td>WARNING</td><td>anomalies, refus d'authentification</td><td>par défaut des charms</td></tr>
+<tr><td>INFO</td><td>requêtes de l'API, actions</td><td>nécessaire à l'audit</td></tr>
+<tr><td>DEBUG</td><td>détails internes, attributs reçus</td><td>diagnostic ponctuel</td></tr>
+</tbody></table>
+<pre style="font-size:11.6px;flex:none"><span class="m"># Niveau de journalisation d'un service Sunbeam</span>
+juju config -m openstack keystone log-level
+juju config -m openstack nova log-level=INFO
+<span class="m"># (option à vérifier pour chaque charm)</span></pre>
+</div>
+<div class="col">
+<ul class="pts sm">
+<li><b>Le niveau WARNING par défaut</b> ne garde pas les lignes d'accès de l'API : l'audit des actions réussies demande au moins INFO sur les services d'API.</li>
+<li><b>Les jetons et mots de passe sont masqués</b> par les bibliothèques d'OpenStack dans les journaux ; le niveau DEBUG peut néanmoins exposer des attributs personnels — fédération, données utilisateur.</li>
+<li><b>Les journaux contiennent des données personnelles :</b> identifiants, adresses IP. Leur conservation et leur accès relèvent du RGPD — la CNIL a publié une recommandation sur ce point.</li>
+<li><b>Le volume</b> croît vite au niveau INFO : dimensionner le stockage de la centralisation en conséquence.</li>
+</ul>
+<div class="note">Passer en DEBUG pour un diagnostic, c'est ouvrir une fenêtre de données sensibles : en noter le début, la fin, et revenir au niveau normal le jour même.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 41 -->
+<section class="slide dark sec">
+<div class="num">05</div>
+<h2>Corrélation et centralisation des journaux</h2>
+<p>Un journal resté sur la machine qui l'a produit disparaît avec elle, et peut être effacé par qui la compromet. Centraliser, c'est le mettre hors de portée, le conserver, et pouvoir enfin relier les événements de toutes les sources.</p>
+<ol><li>Architecture de centralisation</li><li>Ce que recommandent l'ANSSI et la CNIL</li><li>L'observabilité de Sunbeam</li><li>Interroger les journaux</li><li>Une enquête pas à pas</li><li>Règles d'alerte</li><li>Vers un SIEM</li><li>Protéger la chaîne</li></ol>
+</section>
+
+<!-- 42 -->
+<section class="slide">
+<header><span class="kick">5 · Centralisation</span><h2>Architecture de centralisation</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 270">
+<rect x="10" y="6" width="300" height="258" rx="12" class="zone"/><text x="160.0" y="30" class="tc tl">Sources</text>
+<rect x="26" y="42" width="268" height="34" rx="7" class="b-grey"/><text x="160" y="64" class="tc" style="font-size:12.5px">pods des services d'API</text>
+<rect x="26" y="84" width="268" height="34" rx="7" class="b-grey"/><text x="160" y="106" class="tc" style="font-size:12.5px">hyperviseurs : snap, OVN</text>
+<rect x="26" y="126" width="268" height="34" rx="7" class="b-grey"/><text x="160" y="148" class="tc" style="font-size:12.5px">charms et agents Juju</text>
+<rect x="26" y="168" width="268" height="34" rx="7" class="b-grey"/><text x="160" y="190" class="tc" style="font-size:12.5px">systèmes des nœuds</text>
+<rect x="26" y="210" width="268" height="34" rx="7" class="b-grey"/><text x="160" y="232" class="tc" style="font-size:12.5px">autorité d'authentification</text>
+<rect x="340" y="90" width="170" height="90" rx="9" class="b-teal"/><text x="425.0" y="122.0" class="tc tb" style="font-size:12.5px">Collecte</text><text x="425.0" y="141.0" class="tc ts">agents, étiquettes</text><text x="425.0" y="158.0" class="tc ts">transport chiffré</text>
+<path d="M310,135 H338" class="lr"/>
+<rect x="540" y="6" width="420" height="258" rx="12" class="zone"/><text x="750" y="30" class="tc tl">Zone d'administration — hors du cloud surveillé</text>
+<rect x="560" y="50" width="180" height="90" rx="9" class="b-violet"/><text x="650.0" y="82.0" class="tc tb" style="font-size:12.5px">Loki</text><text x="650.0" y="101.0" class="tc ts">stockage, index</text><text x="650.0" y="118.0" class="tc ts">conservation, purge</text>
+<rect x="760" y="50" width="180" height="90" rx="9" class="b-blue"/><text x="850.0" y="82.0" class="tc tb" style="font-size:12.5px">Grafana</text><text x="850.0" y="101.0" class="tc ts">consultation</text><text x="850.0" y="118.0" class="tc ts">enquête</text>
+<rect x="660" y="160" width="180" height="80" rx="9" class="b-red"/><text x="750.0" y="196.0" class="tc tb" style="font-size:12.5px">Alertes</text><text x="750.0" y="215.0" class="tc ts">règles, destinataires</text>
+<path d="M510,135 H558" class="lr"/><path d="M740,95 H758" class="lr"/><path d="M650,140 V200 H658" class="lr"/>
+<rect x="990" y="50" width="150" height="90" rx="9" class="b-amber"/><text x="1065.0" y="82.0" class="tc tb" style="font-size:12.5px">SIEM</text><text x="1065.0" y="101.0" class="tc ts">événements</text><text x="1065.0" y="118.0" class="tc ts">de sécurité</text>
+<rect x="990" y="160" width="150" height="80" rx="9" class="b-grey"/><text x="1065.0" y="196.0" class="tc tb" style="font-size:12.5px">Exploitation</text><text x="1065.0" y="215.0" class="tc ts">astreinte, sécurité</text>
+<path d="M940,95 H988" class="lr" stroke-dasharray="5 4"/><path d="M840,200 H988" class="lr"/>
+</svg></div>
+<div class="cols nf">
+<div class="col"><ul class="pts sm">
+<li><b>Collecte au plus près :</b> un agent par nœud ou par modèle lit les journaux et les envoie, étiquetés par origine.</li>
+<li><b>Stockage hors des systèmes surveillés :</b> les journaux échappent à un administrateur ou un attaquant présent sur un nœud du cloud.</li>
+</ul></div>
+<div class="col"><ul class="pts sm">
+<li><b>Exploitation à deux usages :</b> consultation et enquête d'un côté, alertes de l'autre.</li>
+<li><b>Le SIEM de l'entreprise,</b> s'il existe, reçoit une copie des événements de sécurité pour les corréler avec le reste du système d'information.</li>
+</ul></div>
+</div>
+</div>
+</section>
+
+<!-- 43 -->
+<section class="slide">
+<header><span class="kick">5 · Centralisation</span><h2>Ce que recommandent l'ANSSI et la CNIL</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>ANSSI</b> — <i>Recommandations de sécurité pour l'architecture d'un système de journalisation</i> (31 recommandations)</p>
+<table class="tbl tight os wrap">
+<thead><tr><th style="width:34%">Thème</th><th>Idée principale</th></tr></thead>
+<tbody>
+<tr><td>Horodatage</td><td>synchroniser toutes les sources sur une même référence de temps</td></tr>
+<tr><td>Centralisation</td><td>exporter vers un système distinct de celui qui produit les journaux</td></tr>
+<tr><td>Zone de confiance</td><td>le serveur de collecte est une cible : le placer dans la zone d'administration, isolé</td></tr>
+<tr><td>Transport</td><td>choisir le mode — temps réel ou différé — et chiffrer le transfert</td></tr>
+<tr><td>Stockage</td><td>dimensionner, surveiller, protéger contre lecture, modification et suppression</td></tr>
+<tr><td>Santé de la chaîne</td><td>vérifier régulièrement que les journaux arrivent, complets</td></tr>
+<tr><td>Événements</td><td>authentification, gestion des comptes, politique de sécurité — annexe du guide</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<p><b>CNIL</b> — recommandation relative aux mesures de journalisation (2021)</p>
+<table class="tbl tight os wrap">
+<thead><tr><th style="width:34%">Thème</th><th>Recommandation</th></tr></thead>
+<tbody>
+<tr><td>Conservation</td><td><b>entre six mois et un an</b> en règle générale ; au-delà, justification documentée</td></tr>
+<tr><td>Séparation</td><td>stocker à part, sur un équipement où les applications écrivent sans pouvoir réécrire</td></tr>
+<tr><td>Accès</td><td>habilitations spécifiques, limitées au strict nécessaire</td></tr>
+<tr><td>Analyse</td><td>analyse en temps réel ou à court terme, processus d'alerte formalisé</td></tr>
+<tr><td>Intégrité</td><td>horodater et signer dès la création</td></tr>
+<tr><td>Finalité</td><td>usage de sécurité seulement ; informer les utilisateurs</td></tr>
+</tbody></table>
+<div class="note g">La recommandation de la CNIL vise les journaux applicatifs de traitements de données personnelles ; ses durées sont un bon point de départ pour ceux d'un cloud, à confirmer avec le délégué à la protection des données.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 44 -->
+<section class="slide">
+<header><span class="kick">5 · Centralisation</span><h2>L'observabilité de Sunbeam</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Option 1 — pile d'observabilité intégrée au cloud</span>
+<span class="c">sunbeam enable observability embedded</span>
+
+<span class="m"># Option 2 — pile existante, sur un autre contrôleur Juju</span>
+<span class="m"># (contrôleur enregistré, droits de consommation des offres)</span>
+<span class="c">sunbeam enable observability external</span> \
+  cos-controller \
+  &lt;offre-grafana-dashboard&gt; \
+  &lt;offre-prometheus-receive-remote-write&gt; \
+  &lt;offre-loki-logging&gt;
+
+<span class="m"># Adresse de Grafana et mot de passe initial</span>
+<span class="c">sunbeam observability dashboard-url</span>
+juju run --model observability grafana/leader \
+  get-admin-password</pre>
+<div class="note"><b>Taille du stockage</b> de la pile intégrée : fixée dans le fichier manifeste au déploiement ; la modifier ensuite n'est pas pris en charge. À dimensionner dès le départ.</div>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:30%">Composant</th><th>Rôle</th></tr></thead>
+<tbody>
+<tr><td>Loki</td><td>stockage et requête des journaux</td></tr>
+<tr><td>Prometheus</td><td>métriques : services, hyperviseurs, capacité</td></tr>
+<tr><td>Grafana</td><td>tableaux de bord, consultation, alertes</td></tr>
+</tbody></table>
+<table class="tbl tight">
+<thead><tr><th style="width:48%">Tableau de bord fourni</th><th>Usage</th></tr></thead>
+<tbody>
+<tr><td>OpenStack Logging</td><td>journaux des services, codes HTTP des API</td></tr>
+<tr><td>OpenStack Service Overview</td><td>état des services</td></tr>
+<tr><td>OpenStack Project Overview</td><td>consommation par projet</td></tr>
+<tr><td>Capacity</td><td>projection de la capacité</td></tr>
+</tbody></table>
+<div class="note g"><b>Pile externe recommandée</b> pour l'audit : les journaux sortent du cloud qu'ils décrivent, comme le demande l'ANSSI.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 45 -->
+<section class="slide">
+<header><span class="kick">5 · Centralisation</span><h2>Interroger les journaux</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<pre style="font-size:11.6px"><span class="m"># Requêtes LogQL, dans Grafana > Explore > Loki</span>
+<span class="m"># (étiquettes Juju indicatives : juju_model,</span>
+<span class="m">#  juju_application, juju_unit)</span>
+
+<span class="m"># Toutes les lignes d'une requête, tous services</span>
+{juju_model="openstack"} |= "req-7c1e"
+
+<span class="m"># Suppressions d'instances</span>
+{juju_application="nova"} |= "DELETE /v2.1/servers"
+
+<span class="m"># Échecs d'authentification dans Keystone</span>
+{juju_application="keystone"} |= "Authorization failed"
+
+<span class="m"># Ajouts de règles de groupe de sécurité</span>
+{juju_application="neutron"} |= "POST /v2.0/security-group-rules"
+
+<span class="m"># Nombre de refus 403 par service, sur 5 minutes</span>
+sum by (juju_application) (
+  count_over_time({juju_model="openstack"} |= "status: 403" [5m]))</pre>
+</div>
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:36%">Élément LogQL</th><th>Rôle</th></tr></thead>
+<tbody>
+<tr><td><code>{…}</code></td><td>sélection des flux par étiquettes : modèle, application, unité</td></tr>
+<tr><td><code>|=</code>, <code>!=</code></td><td>contient, ne contient pas</td></tr>
+<tr><td><code>|~</code></td><td>expression régulière</td></tr>
+<tr><td><code>count_over_time</code></td><td>compter sur une fenêtre : base des alertes</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>Commencer large, filtrer ensuite :</b> un identifiant de requête suffit à retrouver toute une action.</li>
+<li><b>Les étiquettes</b> disponibles se lisent dans Grafana : explorer le sélecteur avant d'écrire une requête.</li>
+<li><b>Chaînes de recherche</b> à adapter au format réel de vos journaux — vérifier sur une ligne connue.</li>
+</ul>
+<div class="note g">Ces requêtes, enregistrées comme tableaux de bord, deviennent le poste de travail de l'enquête.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 46 -->
+<section class="slide">
+<header><span class="kick">5 · Centralisation</span><h2>Une enquête pas à pas : qui a supprimé la base ?</h2></header>
+<div class="body"><div class="fig"><svg viewBox="0 0 1150 250">
+<rect x="10" y="40" width="175" height="96" rx="9" class="b-grey"/><text x="97.5" y="75.0" class="tc tb" style="font-size:12.5px">1 · Constat</text><text x="97.5" y="94.0" class="tc ts">db-01 a disparu</text><text x="97.5" y="111.0" class="tc ts">à 9 h 50</text>
+<path d="M185,88 H198" class="lr"/>
+<rect x="200" y="40" width="175" height="96" rx="9" class="b-blue"/><text x="287.5" y="75.0" class="tc tb" style="font-size:12.5px">2 · Événements</text><text x="287.5" y="94.0" class="tc ts">server event list :</text><text x="287.5" y="111.0" class="tc ts">delete 09:42:17, req-7c1e</text>
+<path d="M375,88 H388" class="lr"/>
+<rect x="390" y="40" width="175" height="96" rx="9" class="b-violet"/><text x="477.5" y="75.0" class="tc tb" style="font-size:12.5px">3 · Loki</text><text x="477.5" y="94.0" class="tc ts">« req-7c1e » : Nova,</text><text x="477.5" y="111.0" class="tc ts">Neutron (ports), Cinder</text>
+<path d="M565,88 H578" class="lr"/>
+<rect x="580" y="40" width="175" height="96" rx="9" class="b-red"/><text x="667.5" y="75.0" class="tc tb" style="font-size:12.5px">4 · Keystone</text><text x="667.5" y="94.0" class="tc ts">utilisateur 4f2a… =</text><text x="667.5" y="111.0" class="tc ts">alice, domaine fédéré</text>
+<path d="M755,88 H768" class="lr"/>
+<rect x="770" y="40" width="175" height="96" rx="9" class="b-teal"/><text x="857.5" y="75.0" class="tc tb" style="font-size:12.5px">5 · Autorité</text><text x="857.5" y="94.0" class="tc ts">connexion d'alice 09:31,</text><text x="857.5" y="111.0" class="tc ts">10.20.0.15, 2e facteur OK</text>
+<path d="M945,88 H958" class="lr"/>
+<rect x="960" y="40" width="175" height="96" rx="9" class="b-amber"/><text x="1047.5" y="75.0" class="tc tb" style="font-size:12.5px">6 · Conclusion</text><text x="1047.5" y="94.0" class="tc ts">action légitime</text><text x="1047.5" y="111.0" class="tc ts">ou compte compromis ?</text>
+<rect x="10" y="160" width="1130" height="80" rx="10" class="zone"/>
+<text x="575" y="186" class="tc ts">pivot 1 : l'identifiant de requête relie Nova, Neutron, Cinder — pivot 2 : l'identifiant d'utilisateur relie le cloud à l'autorité</text>
+<text x="575" y="208" class="tc ts">contrôles complémentaires : rôles effectifs d'alice, autres actions de la même session, adresse source habituelle</text>
+<text x="575" y="230" class="tc ts tb">durée de l'enquête avec centralisation : quelques minutes ; sans : souvent impossible</text>
+</svg></div>
+<div class="cols nf">
+<div class="note"><b>La corrélation tient en deux pivots :</b> l'identifiant de requête relie les services entre eux ; l'identifiant d'utilisateur relie le cloud à l'autorité d'authentification.</div>
+<div class="note g"><b>Ce qui la rend possible :</b> horloges synchronisées, niveau INFO sur les API, journaux centralisés et conservés, événements d'authentification réactivés.</div>
+</div>
+</div>
+</section>
+
+<!-- 47 -->
+<section class="slide">
+<header><span class="kick">5 · Centralisation</span><h2>Règles d'alerte utiles</h2></header>
+<div class="body">
+<table class="tbl os xs">
+<thead><tr><th style="width:30%">Événement</th><th style="width:30%">Pourquoi</th><th style="width:22%">Source</th><th>Seuil indicatif</th></tr></thead>
+<tbody>
+<tr><td>Échecs d'authentification répétés sur un compte</td><td>attaque par essais, compte verrouillé</td><td>Keystone</td><td>&gt; 10 en 5 minutes</td></tr>
+<tr><td>Échec d'authentification d'un compte de service</td><td>secret changé, attaque, panne imminente</td><td>Keystone</td><td>dès le premier</td></tr>
+<tr><td>Affectation du rôle <code>admin</code></td><td>élévation de privilège</td><td>Keystone</td><td>chaque occurrence</td></tr>
+<tr><td>Règle d'entrée depuis <code>0.0.0.0/0</code> hors port 443</td><td>exposition non voulue</td><td>Neutron</td><td>chaque occurrence</td></tr>
+<tr><td>Création d'une politique RBAC réseau</td><td>ouverture entre locataires</td><td>Neutron</td><td>chaque occurrence</td></tr>
+<tr><td>Association d'une adresse flottante</td><td>nouvelle exposition</td><td>Neutron</td><td>revue quotidienne</td></tr>
+<tr><td>Sécurité de port désactivée</td><td>perte d'anti-usurpation</td><td>Neutron</td><td>chaque occurrence</td></tr>
+<tr><td>Suppressions en masse</td><td>erreur ou sabotage</td><td>Nova, Cinder</td><td>&gt; 20 en 10 minutes</td></tr>
+<tr><td>Connexion du compte de secours</td><td>usage exceptionnel</td><td>Keystone</td><td>chaque occurrence</td></tr>
+<tr><td>Source de journaux muette</td><td>chaîne de collecte cassée</td><td>Loki</td><td>aucune ligne depuis 15 minutes</td></tr>
+</tbody></table>
+<div class="cols nf">
+<div class="note"><b>Une alerte doit appeler une action :</b> chacune a un destinataire et une procédure. Une alerte que personne ne traite sera ignorée avec les autres.</div>
+<div class="note g"><b>La dernière ligne est la plus importante :</b> sans elle, une chaîne de collecte cassée passe inaperçue jusqu'au jour de l'enquête.</div>
+</div>
+</div>
+</section>
+
+<!-- 48 -->
+<section class="slide">
+<header><span class="kick">5 · Centralisation</span><h2>Vers le SIEM de l'entreprise</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os">
+<thead><tr><th style="width:36%">Voie</th><th>Principe et remarque</th></tr></thead>
+<tbody>
+<tr><td>Depuis Loki</td><td>le SIEM interroge Loki, ou un exportateur pousse une sélection d'événements</td></tr>
+<tr><td>Agent de collecte en double envoi</td><td>les mêmes journaux partent vers Loki et vers le SIEM</td></tr>
+<tr><td>Journal système des nœuds</td><td>transfert syslog chiffré depuis chaque nœud</td></tr>
+<tr><td>Notifications CADF</td><td>consommateur de la messagerie qui les relaie au SIEM</td></tr>
+</tbody></table>
+<ul class="pts sm">
+<li><b>N'envoyer au SIEM que la sécurité :</b> authentifications, changements de droits, de règles réseau, d'exposition ; pas les journaux de fonctionnement.</li>
+<li><b>Normaliser :</b> le SIEM attend des champs — utilisateur, source, action, résultat — ; CADF les fournit déjà, les lignes d'accès demandent une analyse.</li>
+</ul>
+</div>
+<div class="col">
+<div class="card cb"><h3>Ce que le SIEM apporte</h3>
+<ul class="pts sm"><li>la corrélation avec le reste du SI : poste de travail, autorité, pare-feu ;</li><li>la conservation longue, à part ;</li><li>une équipe de détection qui surveille déjà.</li></ul></div>
+<div class="card ca"><h3>Ce qu'il ne remplace pas</h3>
+<ul class="pts sm"><li>les tableaux de bord d'exploitation du cloud ;</li><li>la connaissance des identifiants de requête et des événements d'instance pour enquêter.</li></ul></div>
+<div class="note">Le choix de la voie dépend du SIEM en place et de son mode de collecte : à concevoir avec son équipe, en commençant par la liste des événements de la slide précédente.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 49 -->
+<section class="slide">
+<header><span class="kick">5 · Centralisation</span><h2>Protéger la chaîne de journalisation</h2></header>
+<div class="body">
+<table class="tbl os">
+<thead><tr><th style="width:22%">Exigence</th><th style="width:38%">Risque si absente</th><th>Mesure</th></tr></thead>
+<tbody>
+<tr><td>Horodatage commun</td><td>événements impossibles à ordonner</td><td style="color:var(--ink);font-weight:400">NTP sur tous les nœuds, l'autorité, la pile de journalisation ; supervision du décalage</td></tr>
+<tr><td>Transport chiffré</td><td>lecture ou falsification en transit</td><td style="color:var(--ink);font-weight:400">TLS entre agents et Loki ; relations Juju sur réseau d'administration</td></tr>
+<tr><td>Séparation</td><td>effacement par qui compromet le cloud</td><td style="color:var(--ink);font-weight:400">pile externe, administrée par d'autres personnes</td></tr>
+<tr><td>Accès restreint</td><td>fuite de données personnelles, détournement</td><td style="color:var(--ink);font-weight:400">comptes Grafana nominatifs, rôles de lecture, mot de passe initial changé</td></tr>
+<tr><td>Intégrité</td><td>preuve contestable</td><td style="color:var(--ink);font-weight:400">stockage en écriture seule ou objet verrouillé ; copie vers le SIEM</td></tr>
+<tr><td>Conservation</td><td>enquête impossible, ou conservation illégale</td><td style="color:var(--ink);font-weight:400">durée décidée — six mois à un an — et purge automatique</td></tr>
+<tr><td>Santé de la chaîne</td><td>trou de collecte non détecté</td><td style="color:var(--ink);font-weight:400">alerte sur source muette ; test mensuel de bout en bout</td></tr>
+<tr><td>Capacité</td><td>perte des journaux les plus récents</td><td style="color:var(--ink);font-weight:400">dimensionnement initial, alerte à 80 % du stockage</td></tr>
+</tbody></table>
+<div class="note g"><b>Test de bout en bout :</b> provoquer un événement connu — un échec d'authentification avec un compte d'essai —, puis le retrouver dans Grafana et dans le SIEM, avec la bonne heure.</div>
+</div>
+</section>
+
+<!-- 50 -->
+<section class="slide">
+<header><span class="kick">5 · Centralisation</span><h2>Bonnes pratiques et erreurs fréquentes</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<p><b>Réseau</b></p>
+<table class="tbl tight os">
+<thead><tr><th style="width:48%">Erreur</th><th>Correction</th></tr></thead>
+<tbody>
+<tr><td>Un réseau partagé « pour simplifier »</td><td>réseaux privés ; RBAC ciblé</td></tr>
+<tr><td>Règles ajoutées au groupe <code>default</code></td><td>groupes par rôle</td></tr>
+<tr><td>Ouverture par adresse plutôt que par groupe</td><td>groupe distant</td></tr>
+<tr><td>Sécurité de port désactivée pour une adresse virtuelle</td><td>paires d'adresses autorisées</td></tr>
+<tr><td>Adresse flottante sur chaque serveur</td><td>un répartiteur ou un bastion</td></tr>
+<tr><td>Règles sans description</td><td>une description par règle</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<p><b>Journalisation</b></p>
+<table class="tbl tight os">
+<thead><tr><th style="width:48%">Erreur</th><th>Correction</th></tr></thead>
+<tbody>
+<tr><td>Se fier aux journaux des pods</td><td>centraliser : ils disparaissent au redémarrage</td></tr>
+<tr><td>Niveau WARNING sur les API</td><td>INFO pour garder les accès</td></tr>
+<tr><td>Échecs d'authentification non émis</td><td>les réactiver</td></tr>
+<tr><td>Horloges non synchronisées</td><td>NTP partout, supervisé</td></tr>
+<tr><td>Pile de journaux dans le cloud surveillé</td><td>pile externe</td></tr>
+<tr><td>Aucune alerte sur la collecte</td><td>alerte sur source muette</td></tr>
+<tr><td>DEBUG laissé actif</td><td>fenêtre datée, retour au niveau normal</td></tr>
+</tbody></table>
+</div>
+</div></div>
+</section>
+
+<!-- 51 -->
+<section class="slide">
+<header><span class="kick">5 · Centralisation</span><h2>Exercices de mise en pratique</h2></header>
+<div class="body"><div class="cols">
+<div class="col">
+<table class="tbl tight os wrap">
+<thead><tr><th style="width:8%">#</th><th>Énoncé</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Inventorier les réseaux partagés et les politiques RBAC du cloud ; justifier ou supprimer chacun.</td></tr>
+<tr><td>2</td><td>Déployer l'application à trois niveaux avec ses cinq groupes ; jouer le tableau de tests de cloison.</td></tr>
+<tr><td>3</td><td>Partager un réseau d'administration avec un seul projet ; vérifier qu'un troisième projet ne le voit pas.</td></tr>
+<tr><td>4</td><td>Supprimer une instance d'essai ; retrouver, à partir de son nom, l'utilisateur, l'heure et l'identifiant de requête, puis toutes les lignes associées dans Loki.</td></tr>
+<tr><td>5</td><td>Écrire la requête qui compte les échecs d'authentification par utilisateur sur une heure, et en faire une alerte.</td></tr>
+<tr><td>6</td><td>Couper la collecte d'une source ; vérifier que l'alerte « source muette » se déclenche.</td></tr>
+</tbody></table>
+</div>
+<div class="col">
+<p><b>Corrigé — points clés</b></p>
+<ul class="pts sm">
+<li><b>1 :</b> <code>network list --long</code> et <code>network rbac list --long</code> ; toute cible « * » hors réseau externe est suspecte.</li>
+<li><b>2 :</b> refus = délai dépassé ; vérifier aussi que <code>default</code> n'est plus sur les ports.</li>
+<li><b>3 :</b> le projet non ciblé ne voit pas le réseau dans <code>network list</code>.</li>
+<li><b>4 :</b> <code>server event list</code> → identifiant de requête → recherche dans Loki ; nom d'utilisateur par son identifiant dans Keystone.</li>
+<li><b>5 :</b> filtrer « Authorization failed » puis <code>count_over_time</code> ; seuil et destinataire documentés.</li>
+<li><b>6 :</b> sans alerte de collecte, un trou de journaux passe inaperçu — c'est l'objet de l'exercice.</li>
+</ul>
+<div class="note g">Prérequis du TP : cloud Sunbeam avec <code>admin-openrc</code>, deux projets, observabilité activée, accès à Grafana.</div>
+</div>
+</div></div>
+</section>
+
+<!-- 52 -->
+<section class="slide">
+<header><span class="kick">Synthèse</span><h2>Ce qu'il faut retenir</h2></header>
+<div class="body">
+<div class="cols c3 nf">
+<div class="card cb"><h3>Réseaux</h3>
+<ul class="pts sm"><li>Réseau privé par projet par défaut : isolation de niveau 2.</li><li>Partage rare, ciblé par RBAC, jamais <code>--share</code>.</li><li>Exposition par adresses flottantes, sous quota.</li><li>Réseau externe réservable à certains projets.</li></ul></div>
+<div class="card ct"><h3>Micro-segmentation</h3>
+<ul class="pts sm"><li>Groupes par rôle, règles par groupe distant.</li><li><code>default</code> laissé intact et retiré des ports.</li><li>Sécurité de port toujours active.</li><li>Filtrage distribué par OVN sur chaque hyperviseur.</li></ul></div>
+<div class="card cv"><h3>Audit et traçabilité</h3>
+<ul class="pts sm"><li>Identifiant de requête : le pivot de toute enquête.</li><li>Événements d'instance, notifications CADF, lignes d'accès.</li><li>Centralisation hors du cloud, horloges synchronisées.</li><li>Conservation de six mois à un an ; alertes, dont la collecte elle-même.</li></ul></div>
+</div>
+<table class="tbl tight os">
+<thead><tr><th style="width:30%">Question</th><th>Réponse courte</th></tr></thead>
+<tbody>
+<tr><td>Qu'est-ce qui isole deux locataires ?</td><td>réseaux privés, routeurs distincts, groupes de sécurité — et aucun partage non voulu</td></tr>
+<tr><td>Comment segmenter une application ?</td><td style="color:var(--ink);font-weight:400">une matrice de flux, un groupe par rôle, une règle par flux</td></tr>
+<tr><td>Comment retrouver qui a fait quoi ?</td><td style="color:var(--ink);font-weight:400">événement → identifiant de requête → journaux centralisés → utilisateur</td></tr>
+<tr><td>Sur Sunbeam ?</td><td style="color:var(--ink);font-weight:400"><code>sunbeam enable observability</code> (de préférence externe) ; niveaux de journalisation par <code>juju config</code></td></tr>
+</tbody></table>
+<div class="note g"><b>Sources :</b> documentation de Neutron (RBAC, journalisation des flux, fonctionnalités OVN), client OpenStack (règles par défaut des groupes), Keystone (notifications), keystonemiddleware (audit), Canonical OpenStack 2026.1 (observabilité), ANSSI (architecture d'un système de journalisation), CNIL (recommandation journalisation, 2021) — consultées en octobre 2026.</div>
+</div>
+</section>
+
+</div>
+<div id="bar"></div>
+<div id="nav"><button id="bO" title="Vue d'ensemble (O)">▦</button><button id="bF" title="Plein écran (F)">⛶</button><button id="bP" title="Précédent (←)">←</button><button id="bN" title="Suivant (→)">→</button></div>
+<script>
+(function(){
+var stage=document.getElementById('stage'),bar=document.getElementById('bar'),body=document.body;
+var slides=Array.prototype.slice.call(document.querySelectorAll('.slide')),N=slides.length,cur=0;
+slides.forEach(function(s,i){
+  var f=document.createElement('div');f.className='foot';
+  f.innerHTML='<span>OpenStack · Module 13 — Micro-segmentation et audit</span><span>'+(i+1)+' / '+N+'</span>';
+  s.appendChild(f);
+  s.addEventListener('click',function(){if(body.classList.contains('ov')){body.classList.remove('ov');go(i);fit();}});
+});
+function go(n){
+  cur=Math.max(0,Math.min(N-1,n));
+  slides.forEach(function(s,i){s.classList.toggle('active',i===cur);});
+  bar.style.width=((cur+1)/N*100)+'%';
+  try{history.replaceState(null,'','#'+(cur+1));}catch(e){}
+}
+function fit(){
+  if(body.classList.contains('ov')){
+    stage.style.transform='';
+    document.documentElement.style.setProperty('--z',Math.max(.1,(window.innerWidth-40-4*14-20)/5/1280));
+  }else{
+    stage.style.transform='scale('+Math.min(window.innerWidth/1280,window.innerHeight/720)+')';
+  }
+}
+function overview(){body.classList.toggle('ov');fit();if(body.classList.contains('ov')){slides[cur].scrollIntoView({block:'center'});}else{window.scrollTo(0,0);}}
+function full(){if(document.fullscreenElement){document.exitFullscreen();}else if(document.documentElement.requestFullscreen){document.documentElement.requestFullscreen();}}
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey)return;
+  var k=e.key;
+  if(k==='ArrowRight'||k==='PageDown'||k===' '||k==='ArrowDown'){e.preventDefault();go(cur+1);}
+  else if(k==='ArrowLeft'||k==='PageUp'||k==='ArrowUp'){e.preventDefault();go(cur-1);}
+  else if(k==='Home'){go(0);}
+  else if(k==='End'){go(N-1);}
+  else if(k==='o'||k==='O'||k==='Escape'){if(k!=='Escape'||body.classList.contains('ov'))overview();}
+  else if(k==='f'||k==='F'){full();}
+});
+document.getElementById('bN').onclick=function(){go(cur+1);};
+document.getElementById('bP').onclick=function(){go(cur-1);};
+document.getElementById('bO').onclick=overview;
+document.getElementById('bF').onclick=full;
+var tx=null;
+document.addEventListener('touchstart',function(e){tx=e.touches[0].clientX;},{passive:true});
+document.addEventListener('touchend',function(e){if(tx===null||body.classList.contains('ov'))return;var d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>50)go(cur+(d<0?1:-1));tx=null;},{passive:true});
+window.addEventListener('resize',fit);
+window.addEventListener('hashchange',function(){var h=parseInt(location.hash.slice(1),10);if(h&&h-1!==cur)go(h-1);});
+var h=parseInt(location.hash.slice(1),10);
+go(h?h-1:0);fit();
+})();
+</script>
+</body>
+</html>
